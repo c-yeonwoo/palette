@@ -27,6 +27,9 @@ class SecurityConfig(
             .httpBasic { it.disable() }
             .formLogin { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+            .headers { headers ->
+                headers.frameOptions { it.sameOrigin() }
+            }
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers(
@@ -35,7 +38,8 @@ class SecurityConfig(
                         "/favicon.ico",
                         "/api/v1/auth/**",
                         "/oauth2/**",
-                        "/login/**"
+                        "/login/**",
+                        "/h2-console/**"
                     ).permitAll()
                     .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                     .anyRequest().authenticated()
