@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { LoginScreen } from "./components/LoginScreen";
 import { OAuth2RedirectHandler } from "./components/OAuth2RedirectHandler";
 import { RequiredInfoScreen } from "./components/RequiredInfoScreen";
+import { AccountTypeSelectionScreen } from "./components/AccountTypeSelectionScreen";
 import { BasicInfoScreen } from "./components/BasicInfoScreen";
 import { PhotoUploadScreen } from "./components/PhotoUploadScreen";
 import { AboutMeScreen } from "./components/AboutMeScreen";
@@ -21,6 +22,7 @@ type Screen =
   | "login"
   | "oauth2Redirect"
   | "requiredInfo"
+  | "accountTypeSelection"
   | "basicInfo"
   | "photoUpload"
   | "aboutMe"
@@ -88,10 +90,10 @@ export default function App() {
       return;
     }
 
-    // If new user or profile incomplete, start onboarding
+    // If new user, go to account type selection
     if (isNewUser) {
-      setCurrentScreen("basicInfo");
-      toast.success("환영합니다! 프로필을 설정해주세요.");
+      setCurrentScreen("accountTypeSelection");
+      toast.success("환영합니다!");
     } else {
       setCurrentScreen("mainFeed");
       toast.success("로그인되었습니다!");
@@ -104,9 +106,19 @@ export default function App() {
   };
 
   const handleRequiredInfoComplete = () => {
-    // After filling required info, start onboarding
-    setCurrentScreen("basicInfo");
-    toast.success("정보가 저장되었습니다!");
+    // After filling required info, go to account type selection
+    setCurrentScreen("accountTypeSelection");
+  };
+
+  const handleAccountTypeSelection = (accountType: "REGULAR" | "MATCHMAKER_ONLY") => {
+    if (accountType === "REGULAR") {
+      // 일반 회원: 프로필 작성으로 이동
+      setCurrentScreen("basicInfo");
+    } else {
+      // 주선자 전용: 메인 피드로 바로 이동
+      setCurrentScreen("mainFeed");
+      toast.success("주선자로 가입되었습니다!");
+    }
   };
 
   const handleBasicInfoNext = () => {
@@ -164,6 +176,10 @@ export default function App() {
         />
       )}
 
+      {currentScreen === "accountTypeSelection" && (
+        <AccountTypeSelectionScreen onComplete={handleAccountTypeSelection} />
+      )}
+
       {currentScreen === "basicInfo" && (
         <BasicInfoScreen onNext={handleBasicInfoNext} />
       )}
@@ -193,7 +209,7 @@ export default function App() {
       {currentScreen === "connectorDashboard" && <ConnectorDashboard />}
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding */}
-      {isLoggedIn && !["login", "oauth2Redirect", "requiredInfo", "basicInfo", "photoUpload", "aboutMe", "idealType", "aiProfileEnhance"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "aboutMe", "idealType", "aiProfileEnhance"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}

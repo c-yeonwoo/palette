@@ -2,6 +2,7 @@ package kr.ai.palette.presentation.auth
 
 import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.auth.AuthenticationService
+import kr.ai.palette.domain.user.AccountType
 import kr.ai.palette.domain.user.PrivateInfo
 import kr.ai.palette.domain.user.UserRepository
 import org.springframework.http.ResponseEntity
@@ -70,6 +71,22 @@ class AuthController(
 
         return ResponseEntity.ok().build()
     }
+
+    @PatchMapping("/account-type")
+    @Transactional
+    fun updateAccountType(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @RequestBody request: UpdateAccountTypeRequest
+    ): ResponseEntity<Unit> {
+        val user = userRepository.findById(authUser.userId)
+            ?: return ResponseEntity.notFound().build()
+
+        // AccountType 업데이트
+        val updatedUser = user.copy(accountType = request.accountType)
+        userRepository.save(updatedUser)
+
+        return ResponseEntity.ok().build()
+    }
 }
 
 data class RefreshTokenRequest(
@@ -95,4 +112,8 @@ data class UserResponse(
 data class UpdateBasicInfoRequest(
     val realName: String?,
     val email: String?
+)
+
+data class UpdateAccountTypeRequest(
+    val accountType: AccountType
 )
