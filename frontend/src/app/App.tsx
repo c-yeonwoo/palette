@@ -9,7 +9,6 @@ import { IdealTypeScreen } from "./components/IdealTypeScreen";
 import { AIProfileEnhanceScreen } from "./components/AIProfileEnhanceScreen";
 import { MyProfileScreen } from "./components/MyProfileScreen";
 import { MainFeedScreen } from "./components/MainFeedScreen";
-import { ProfileDetailScreen } from "./components/ProfileDetailScreen";
 import { ConnectorDashboard } from "./components/ConnectorDashboard";
 import { Toaster } from "./components/ui/sonner";
 import { Button } from "./components/ui/button";
@@ -29,24 +28,10 @@ type Screen =
   | "aiProfileEnhance"
   | "myProfile"
   | "mainFeed"
-  | "profileDetail"
   | "connectorDashboard";
-
-interface Profile {
-  id: number;
-  name: string;
-  age: number;
-  job: string;
-  height: number;
-  intro: string;
-  photo: string;
-  recommender: string;
-  isBlurred: boolean;
-}
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>("login");
-  const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [missingRequiredFields, setMissingRequiredFields] = useState<string[]>([]);
@@ -145,28 +130,6 @@ export default function App() {
     toast.success("프로필이 성공적으로 생성되었습니다!");
   };
 
-  const handleProfileClick = (profile: Profile) => {
-    setSelectedProfile({ ...profile, isBlurred: false });
-    setCurrentScreen("profileDetail");
-  };
-
-  const handleProfileBack = () => {
-    setCurrentScreen("mainFeed");
-    setSelectedProfile(null);
-  };
-
-  const handlePass = () => {
-    toast.info("프로필을 건너뛰었습니다.");
-    setCurrentScreen("mainFeed");
-    setSelectedProfile(null);
-  };
-
-  const handleLike = () => {
-    toast.success("주선 요청을 보냈습니다! 주선자의 승인을 기다려주세요.");
-    setCurrentScreen("mainFeed");
-    setSelectedProfile(null);
-  };
-
   const handleMyProfileBack = () => {
     setCurrentScreen("mainFeed");
   };
@@ -225,19 +188,8 @@ export default function App() {
         <MyProfileScreen onBack={handleMyProfileBack} />
       )}
       
-      {currentScreen === "mainFeed" && (
-        <MainFeedScreen onProfileClick={handleProfileClick} />
-      )}
-      
-      {currentScreen === "profileDetail" && selectedProfile && (
-        <ProfileDetailScreen
-          profile={selectedProfile}
-          onBack={handleProfileBack}
-          onPass={handlePass}
-          onLike={handleLike}
-        />
-      )}
-      
+      {currentScreen === "mainFeed" && <MainFeedScreen />}
+
       {currentScreen === "connectorDashboard" && <ConnectorDashboard />}
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding */}
