@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { LoginScreen } from "./components/LoginScreen";
 import { OAuth2RedirectHandler } from "./components/OAuth2RedirectHandler";
+import { RequiredInfoScreen } from "./components/RequiredInfoScreen";
 import { BasicInfoScreen } from "./components/BasicInfoScreen";
 import { PhotoUploadScreen } from "./components/PhotoUploadScreen";
 import { AboutMeScreen } from "./components/AboutMeScreen";
@@ -20,6 +21,7 @@ import { tokenStorage } from "../lib/auth/tokenStorage";
 type Screen =
   | "login"
   | "oauth2Redirect"
+  | "requiredInfo"
   | "basicInfo"
   | "photoUpload"
   | "aboutMe"
@@ -47,6 +49,7 @@ export default function App() {
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [missingRequiredFields, setMissingRequiredFields] = useState<string[]>([]);
 
   // Check authentication state on mount
   useEffect(() => {
@@ -89,8 +92,17 @@ export default function App() {
     checkAuth();
   }, []);
 
-  const handleOAuth2Success = (isNewUser: boolean) => {
+  const handleOAuth2Success = (isNewUser: boolean, missingFields?: string[]) => {
     setIsLoggedIn(true);
+
+    // If there are missing required fields, go to RequiredInfoScreen first
+    if (missingFields && missingFields.length > 0) {
+      setMissingRequiredFields(missingFields);
+      setCurrentScreen("requiredInfo");
+      toast.info("추가 정보를 입력해주세요");
+      return;
+    }
+
     // If new user or profile incomplete, start onboarding
     if (isNewUser) {
       setCurrentScreen("basicInfo");
@@ -104,6 +116,12 @@ export default function App() {
   const handleOAuth2Error = () => {
     toast.error("로그인에 실패했습니다. 다시 시도해주세요.");
     setCurrentScreen("login");
+  };
+
+  const handleRequiredInfoComplete = () => {
+    // After filling required info, start onboarding
+    setCurrentScreen("basicInfo");
+    toast.success("정보가 저장되었습니다!");
   };
 
   const handleBasicInfoNext = () => {
@@ -175,7 +193,14 @@ export default function App() {
           onError={handleOAuth2Error}
         />
       )}
-      
+
+      {currentScreen === "requiredInfo" && (
+        <RequiredInfoScreen
+          missingFields={missingRequiredFields}
+          onComplete={handleRequiredInfoComplete}
+        />
+      )}
+
       {currentScreen === "basicInfo" && (
         <BasicInfoScreen onNext={handleBasicInfoNext} />
       )}
@@ -216,7 +241,7 @@ export default function App() {
       {currentScreen === "connectorDashboard" && <ConnectorDashboard />}
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding */}
-      {isLoggedIn && !["login", "oauth2Redirect", "basicInfo", "photoUpload", "aboutMe", "idealType", "aiProfileEnhance"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "oauth2Redirect", "requiredInfo", "basicInfo", "photoUpload", "aboutMe", "idealType", "aiProfileEnhance"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}

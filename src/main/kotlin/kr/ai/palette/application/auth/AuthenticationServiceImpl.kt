@@ -35,6 +35,9 @@ class AuthenticationServiceImpl(
             // 사용자 저장
             val savedUser = userRepository.save(user)
 
+            // 누락된 필수 정보 체크
+            val missingFields = checkMissingRequiredFields(oauthUserInfo)
+
             // 토큰 생성
             val authToken = createAuthToken(savedUser.id)
 
@@ -49,7 +52,8 @@ class AuthenticationServiceImpl(
             AuthenticationResult.Success(
                 authToken = authToken,
                 authUser = authUser,
-                isNewUser = existingUser == null
+                isNewUser = existingUser == null,
+                missingRequiredFields = missingFields
             )
         } catch (e: Exception) {
             AuthenticationResult.Failure(
@@ -153,5 +157,21 @@ class AuthenticationServiceImpl(
     private fun generateNickname(): String {
         // 임시 닉네임 생성 (나중에 중복 체크 및 사용자 지정으로 변경)
         return "user_${UUID.randomUUID().toString().substring(0, 8)}"
+    }
+
+    private fun checkMissingRequiredFields(oauthUserInfo: OAuthUserInfo): List<String> {
+        val missingFields = mutableListOf<String>()
+
+        // 실명이 없거나 "Unknown"인 경우
+        if (oauthUserInfo.name.isNullOrBlank() || oauthUserInfo.name == "Unknown") {
+            missingFields.add("realName")
+        }
+
+        // 이메일이 없는 경우 (선택사항이지만 받을 수 있으면 받기)
+        if (oauthUserInfo.email.isNullOrBlank()) {
+            missingFields.add("email")
+        }
+
+        return missingFields
     }
 }

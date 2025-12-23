@@ -21,12 +21,17 @@ class OAuth2AuthenticationSuccessHandler(
     ) {
         val oAuth2User = authentication.principal as PaletteOAuth2User
 
-        val targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
+        val uriBuilder = UriComponentsBuilder.fromUriString(redirectUri)
             .queryParam("token", oAuth2User.authToken.accessToken)
             .queryParam("refreshToken", oAuth2User.authToken.refreshToken)
             .queryParam("isNewUser", oAuth2User.isNewUser)
-            .build()
-            .toUriString()
+
+        // 누락된 필수 정보가 있으면 추가
+        if (oAuth2User.missingRequiredFields.isNotEmpty()) {
+            uriBuilder.queryParam("missingFields", oAuth2User.missingRequiredFields.joinToString(","))
+        }
+
+        val targetUrl = uriBuilder.build().toUriString()
 
         redirectStrategy.sendRedirect(request, response, targetUrl)
     }

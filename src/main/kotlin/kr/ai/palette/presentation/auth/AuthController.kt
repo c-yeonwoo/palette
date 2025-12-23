@@ -2,14 +2,18 @@ package kr.ai.palette.presentation.auth
 
 import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.auth.AuthenticationService
+import kr.ai.palette.domain.user.PrivateInfo
+import kr.ai.palette.domain.user.UserRepository
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1/auth")
 class AuthController(
-    private val authenticationService: AuthenticationService
+    private val authenticationService: AuthenticationService,
+    private val userRepository: UserRepository
 ) {
 
     @PostMapping("/refresh")
@@ -45,6 +49,27 @@ class AuthController(
         authenticationService.logout(authUser.userId)
         return ResponseEntity.ok().build()
     }
+
+    @PatchMapping("/basic-info")
+    @Transactional
+    fun updateBasicInfo(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @RequestBody request: UpdateBasicInfoRequest
+    ): ResponseEntity<Unit> {
+        val user = userRepository.findById(authUser.userId)
+            ?: return ResponseEntity.notFound().build()
+
+        // PrivateInfo 업데이트
+        val updatedPrivateInfo = user.privateInfo.copy(
+            realName = request.realName ?: user.privateInfo.realName,
+            email = request.email ?: user.privateInfo.email
+        )
+
+        val updatedUser = user.updatePrivateInfo(updatedPrivateInfo)
+        userRepository.save(updatedUser)
+
+        return ResponseEntity.ok().build()
+    }
 }
 
 data class RefreshTokenRequest(
@@ -65,4 +90,9 @@ data class UserResponse(
     val isProfileCompleted: Boolean,
     val canAccessMatchingService: Boolean,
     val canAccessMatchmakerService: Boolean
+)
+
+data class UpdateBasicInfoRequest(
+    val realName: String?,
+    val email: String?
 )

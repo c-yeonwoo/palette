@@ -8,7 +8,8 @@ class PaletteOAuth2User(
     private val oAuth2User: OAuth2User,
     val userId: String,
     val authToken: AuthToken,
-    val isNewUser: Boolean
+    val isNewUser: Boolean,
+    val missingRequiredFields: List<String> = emptyList()
 ) : OAuth2User {
 
     override fun getName(): String = userId

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { tokenStorage } from '../../lib/auth/tokenStorage';
 
 interface OAuth2RedirectHandlerProps {
-  onSuccess: (isNewUser: boolean) => void;
+  onSuccess: (isNewUser: boolean, missingFields?: string[]) => void;
   onError: () => void;
 }
 
@@ -15,12 +15,18 @@ export function OAuth2RedirectHandler({ onSuccess, onError }: OAuth2RedirectHand
         const accessToken = params.get('token');
         const refreshToken = params.get('refreshToken');
         const isNewUser = params.get('isNewUser') === 'true';
+        const missingFieldsParam = params.get('missingFields');
 
         if (!accessToken || !refreshToken) {
           console.error('Missing tokens in OAuth2 redirect');
           onError();
           return;
         }
+
+        // Parse missing fields
+        const missingFields = missingFieldsParam
+          ? missingFieldsParam.split(',').map(field => field.trim())
+          : [];
 
         // Calculate token expiry (default to 1 hour for access, 30 days for refresh)
         const now = new Date();
@@ -39,8 +45,8 @@ export function OAuth2RedirectHandler({ onSuccess, onError }: OAuth2RedirectHand
         // Clear URL parameters
         window.history.replaceState({}, document.title, window.location.pathname);
 
-        // Call success callback
-        onSuccess(isNewUser);
+        // Call success callback with missing fields
+        onSuccess(isNewUser, missingFields);
       } catch (error) {
         console.error('Error handling OAuth2 redirect:', error);
         onError();

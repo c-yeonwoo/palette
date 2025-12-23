@@ -31,7 +31,8 @@ sealed class AuthenticationResult {
     data class Success(
         val authToken: AuthToken,
         val authUser: AuthUser,
-        val isNewUser: Boolean
+        val isNewUser: Boolean,
+        val missingRequiredFields: List<String> = emptyList()
     ) : AuthenticationResult()
 
     data class Failure(

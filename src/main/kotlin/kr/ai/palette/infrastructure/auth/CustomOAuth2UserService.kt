@@ -30,7 +30,8 @@ class CustomOAuth2UserService(
                     oAuth2User = oAuth2User,
                     userId = result.authUser.userId.value.toString(),
                     authToken = result.authToken,
-                    isNewUser = result.isNewUser
+                    isNewUser = result.isNewUser,
+                    missingRequiredFields = result.missingRequiredFields
                 )
             }
             is AuthenticationResult.Failure -> {
