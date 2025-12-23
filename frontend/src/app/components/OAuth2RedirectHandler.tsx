@@ -42,8 +42,8 @@ export function OAuth2RedirectHandler({ onSuccess, onError }: OAuth2RedirectHand
           refreshExpiresAt: refreshTokenExpiry.toISOString(),
         });
 
-        // Clear URL parameters
-        window.history.replaceState({}, document.title, window.location.pathname);
+        // Clear URL and navigate to root
+        window.history.replaceState({}, document.title, '/');
 
         // Call success callback with missing fields
         onSuccess(isNewUser, missingFields);
