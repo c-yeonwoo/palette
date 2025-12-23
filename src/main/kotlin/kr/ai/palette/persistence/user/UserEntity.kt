@@ -1,0 +1,115 @@
+package kr.ai.palette.persistence.user
+
+import jakarta.persistence.*
+import java.time.Instant
+import java.time.LocalDate
+import java.util.UUID
+
+@Entity
+@Table(name = "users")
+class UserEntity(
+    @Id
+    @Column(name = "id", columnDefinition = "BINARY(16)")
+    var id: UUID,
+
+    // OAuth Info
+    @Column(name = "oauth_provider", nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
+    var oauthProvider: OAuthProviderEntity,
+
+    @Column(name = "oauth_id", nullable = false, length = 255)
+    var oauthId: String,
+
+    // Private Info
+    @Column(name = "real_name", nullable = false, length = 50)
+    var realName: String,
+
+    @Column(name = "email", length = 255)
+    var email: String?,
+
+    @Column(name = "phone_number", length = 20)
+    var phoneNumber: String?,
+
+    // Public Info
+    @Column(name = "nickname", nullable = false, unique = true, length = 20)
+    var nickname: String,
+
+    @Column(name = "birth_date", nullable = false)
+    var birthDate: LocalDate,
+
+    @Column(name = "gender", nullable = false, length = 10)
+    @Enumerated(EnumType.STRING)
+    var gender: GenderEntity,
+
+    // Account Type
+    @Column(name = "account_type", nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
+    var accountType: AccountTypeEntity = AccountTypeEntity.REGULAR,
+
+    // Profile Status
+    @Column(name = "is_profile_completed", nullable = false)
+    var isProfileCompleted: Boolean = false,
+
+    // Terms Agreement
+    @Column(name = "agreed_terms_service", nullable = false)
+    var agreedTermsService: Boolean,
+
+    @Column(name = "agreed_terms_privacy", nullable = false)
+    var agreedTermsPrivacy: Boolean,
+
+    @Column(name = "agreed_marketing", nullable = false)
+    var agreedMarketing: Boolean = false,
+
+    @Column(name = "agreed_at", nullable = false)
+    var agreedAt: Instant,
+
+    // Metadata
+    @Column(name = "created_at", nullable = false, updatable = false)
+    var createdAt: Instant = Instant.now(),
+
+    @Column(name = "updated_at", nullable = false)
+    var updatedAt: Instant = Instant.now(),
+
+    @Column(name = "last_login_at", nullable = false)
+    var lastLoginAt: Instant = Instant.now(),
+
+    @Column(name = "deleted_at")
+    var deletedAt: Instant? = null
+) {
+    protected constructor() : this(
+        id = UUID.randomUUID(),
+        oauthProvider = OAuthProviderEntity.KAKAO,
+        oauthId = "",
+        realName = "",
+        email = null,
+        phoneNumber = null,
+        nickname = "",
+        birthDate = LocalDate.now(),
+        gender = GenderEntity.MALE,
+        agreedTermsService = false,
+        agreedTermsPrivacy = false,
+        agreedAt = Instant.now()
+    )
+
+    @PreUpdate
+    fun preUpdate() {
+        updatedAt = Instant.now()
+    }
+}
+
+enum class OAuthProviderEntity {
+    KAKAO,
+    NAVER,
+    GOOGLE,
+    APPLE
+}
+
+enum class GenderEntity {
+    MALE,
+    FEMALE
+}
+
+enum class AccountTypeEntity {
+    REGULAR,
+    MATCHMAKER_ONLY
+}
