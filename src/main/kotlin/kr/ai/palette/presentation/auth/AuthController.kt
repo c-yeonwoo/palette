@@ -1,20 +1,25 @@
 package kr.ai.palette.presentation.auth
 
+import kr.ai.palette.domain.auth.AuthToken
 import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.auth.AuthenticationService
-import kr.ai.palette.domain.user.AccountType
-import kr.ai.palette.domain.user.PrivateInfo
-import kr.ai.palette.domain.user.UserRepository
+import kr.ai.palette.domain.common.UserId
+import kr.ai.palette.domain.user.*
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
+import java.time.Instant
+import java.time.LocalDate
+import java.util.*
 
 @RestController
 @RequestMapping("/api/v1/auth")
 class AuthController(
     private val authenticationService: AuthenticationService,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val passwordEncoder: PasswordEncoder
 ) {
 
     @PostMapping("/refresh")
@@ -117,3 +122,129 @@ data class UpdateBasicInfoRequest(
 data class UpdateAccountTypeRequest(
     val accountType: AccountType
 )
+
+data class EmailSignupRequest(
+    val email: String,
+    val password: String,
+    val realName: String,
+    val nickname: String,
+    val birthDate: LocalDate,
+    val gender: Gender
+)
+
+data class EmailLoginRequest(
+    val email: String,
+    val password: String
+)
+
+@RestController
+@RequestMapping("/api/v1/auth/email")
+class EmailAuthController(
+    private val userRepository: UserRepository,
+    private val passwordEncoder: PasswordEncoder,
+    private val tokenProvider: kr.ai.palette.domain.auth.TokenProvider
+) {
+
+    @PostMapping("/signup")
+    @Transactional
+    fun signup(@RequestBody request: EmailSignupRequest): ResponseEntity<TokenResponse> {
+        // 이메일 중복 체크
+        if (userRepository.existsByEmail(request.email)) {
+            return ResponseEntity.badRequest().build()
+        }
+
+        // 닉네임 중복 체크
+        if (userRepository.existsByNickname(request.nickname)) {
+            return ResponseEntity.badRequest().build()
+        }
+
+        val now = Instant.now()
+
+        // 사용자 생성
+        val user = User(
+            id = UserId(UUID.randomUUID()),
+            oauthInfo = null,  // 이메일 회원은 OAuth 정보 없음
+            password = passwordEncoder.encode(request.password),
+            privateInfo = PrivateInfo(
+                realName = request.realName,
+                email = request.email,
+                phoneNumber = null
+            ),
+            publicInfo = PublicInfo(
+                nickname = request.nickname,
+                birthDate = request.birthDate,
+                gender = request.gender
+            ),
+            accountType = AccountType.REGULAR,
+            isProfileCompleted = false,
+            termsAgreement = TermsAgreement(
+                agreedTermsService = true,
+                agreedTermsPrivacy = true,
+                agreedMarketing = false,
+                agreedAt = now
+            ),
+            metadata = UserMetadata(
+                createdAt = now,
+                updatedAt = now,
+                lastLoginAt = now
+            )
+        )
+
+        val savedUser = userRepository.save(user)
+
+        // JWT 토큰 생성
+        val authToken = AuthToken.create(
+            accessToken = generateAccessToken(savedUser.id),
+            refreshToken = generateRefreshToken(savedUser.id)
+        )
+
+        return ResponseEntity.ok(
+            TokenResponse(
+                accessToken = authToken.accessToken,
+                refreshToken = authToken.refreshToken,
+                tokenType = authToken.tokenType,
+                expiresIn = (authToken.expiresAt.epochSecond - Instant.now().epochSecond).toInt()
+            )
+        )
+    }
+
+    @PostMapping("/login")
+    @Transactional
+    fun login(@RequestBody request: EmailLoginRequest): ResponseEntity<TokenResponse> {
+        // 이메일로 사용자 찾기
+        val user = userRepository.findByEmail(request.email)
+            ?: return ResponseEntity.status(401).build()
+
+        // 비밀번호 확인
+        if (user.password == null || !passwordEncoder.matches(request.password, user.password)) {
+            return ResponseEntity.status(401).build()
+        }
+
+        // 로그인 시간 업데이트
+        val updatedUser = user.updateLogin()
+        userRepository.save(updatedUser)
+
+        // JWT 토큰 생성
+        val authToken = AuthToken.create(
+            accessToken = generateAccessToken(user.id),
+            refreshToken = generateRefreshToken(user.id)
+        )
+
+        return ResponseEntity.ok(
+            TokenResponse(
+                accessToken = authToken.accessToken,
+                refreshToken = authToken.refreshToken,
+                tokenType = authToken.tokenType,
+                expiresIn = (authToken.expiresAt.epochSecond - Instant.now().epochSecond).toInt()
+            )
+        )
+    }
+
+    private fun generateAccessToken(userId: UserId): String {
+        return tokenProvider.generateAccessToken(userId)
+    }
+
+    private fun generateRefreshToken(userId: UserId): String {
+        return tokenProvider.generateRefreshToken(userId)
+    }
+}

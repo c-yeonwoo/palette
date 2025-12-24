@@ -8,12 +8,18 @@ import org.springframework.stereotype.Component
 class UserMapper {
 
     fun toDomain(entity: UserEntity): User {
+        val oauthProvider = entity.oauthProvider
+        val oauthId = entity.oauthId
+
         return User(
             id = UserId(entity.id),
-            oauthInfo = OAuthInfo(
-                provider = entity.oauthProvider.toDomain(),
-                oauthId = entity.oauthId
-            ),
+            oauthInfo = if (oauthProvider != null && oauthId != null) {
+                OAuthInfo(
+                    provider = oauthProvider.toDomain(),
+                    oauthId = oauthId
+                )
+            } else null,
+            password = entity.password,
             privateInfo = PrivateInfo(
                 realName = entity.realName,
                 email = entity.email,
@@ -44,8 +50,9 @@ class UserMapper {
     fun toEntity(domain: User): UserEntity {
         return UserEntity(
             id = domain.id.value,
-            oauthProvider = domain.oauthInfo.provider.toEntity(),
-            oauthId = domain.oauthInfo.oauthId,
+            oauthProvider = domain.oauthInfo?.provider?.toEntity(),
+            oauthId = domain.oauthInfo?.oauthId,
+            password = domain.password,
             realName = domain.privateInfo.realName,
             email = domain.privateInfo.email,
             phoneNumber = domain.privateInfo.phoneNumber,
@@ -66,8 +73,9 @@ class UserMapper {
     }
 
     fun updateEntity(entity: UserEntity, domain: User) {
-        entity.oauthProvider = domain.oauthInfo.provider.toEntity()
-        entity.oauthId = domain.oauthInfo.oauthId
+        entity.oauthProvider = domain.oauthInfo?.provider?.toEntity()
+        entity.oauthId = domain.oauthInfo?.oauthId
+        entity.password = domain.password
         entity.realName = domain.privateInfo.realName
         entity.email = domain.privateInfo.email
         entity.phoneNumber = domain.privateInfo.phoneNumber

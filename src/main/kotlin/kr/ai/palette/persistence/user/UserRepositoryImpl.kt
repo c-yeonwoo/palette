@@ -41,6 +41,12 @@ class UserRepositoryImpl(
     }
 
     @Transactional(readOnly = true)
+    override fun findByEmail(email: String): User? {
+        return jpaRepository.findByEmail(email)
+            ?.let { mapper.toDomain(it) }
+    }
+
+    @Transactional(readOnly = true)
     override fun findByOAuthInfo(provider: OAuthProvider, oauthId: String): User? {
         val providerEntity = OAuthProviderEntity.valueOf(provider.name)
         return jpaRepository.findByOauthProviderAndOauthId(providerEntity, oauthId)
@@ -50,6 +56,11 @@ class UserRepositoryImpl(
     @Transactional(readOnly = true)
     override fun existsByNickname(nickname: String): Boolean {
         return jpaRepository.existsByNickname(nickname)
+    }
+
+    @Transactional(readOnly = true)
+    override fun existsByEmail(email: String): Boolean {
+        return jpaRepository.existsByEmail(email)
     }
 
     override fun delete(id: UserId) {

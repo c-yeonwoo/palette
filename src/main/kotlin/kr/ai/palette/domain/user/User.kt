@@ -4,7 +4,8 @@ import kr.ai.palette.domain.common.UserId
 
 data class User(
     val id: UserId,
-    val oauthInfo: OAuthInfo,
+    val oauthInfo: OAuthInfo?,  // nullable for email-based users
+    val password: String?,  // nullable for OAuth users, BCrypt hashed for email users
     val privateInfo: PrivateInfo,
     val publicInfo: PublicInfo,
     val accountType: AccountType,

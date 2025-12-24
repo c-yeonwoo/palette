@@ -12,13 +12,17 @@ class UserEntity(
     @Column(name = "id", columnDefinition = "BINARY(16)")
     var id: UUID,
 
-    // OAuth Info
-    @Column(name = "oauth_provider", nullable = false, length = 20)
+    // OAuth Info (nullable for email-based users)
+    @Column(name = "oauth_provider", length = 20)
     @Enumerated(EnumType.STRING)
-    var oauthProvider: OAuthProviderEntity,
+    var oauthProvider: OAuthProviderEntity?,
 
-    @Column(name = "oauth_id", nullable = false, length = 255)
-    var oauthId: String,
+    @Column(name = "oauth_id", length = 255)
+    var oauthId: String?,
+
+    // Password (nullable for OAuth users, BCrypt hashed for email users)
+    @Column(name = "password", length = 255)
+    var password: String?,
 
     // Private Info
     @Column(name = "real_name", nullable = false, length = 50)
@@ -78,8 +82,9 @@ class UserEntity(
 ) {
     protected constructor() : this(
         id = UUID.randomUUID(),
-        oauthProvider = OAuthProviderEntity.KAKAO,
-        oauthId = "",
+        oauthProvider = null,
+        oauthId = null,
+        password = null,
         realName = "",
         email = null,
         phoneNumber = null,

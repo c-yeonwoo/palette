@@ -118,6 +118,7 @@ class AuthenticationServiceImpl(
                 provider = oauthUserInfo.provider,
                 oauthId = oauthUserInfo.providerId
             ),
+            password = null,  // OAuth users don't have password
             privateInfo = PrivateInfo(
                 realName = oauthUserInfo.name ?: "Unknown",
                 email = oauthUserInfo.email,
