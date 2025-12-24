@@ -61,7 +61,7 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
         nickname: formData.nickname,
         birthDate: formData.birthDate,
         gender: formData.gender,
-      });
+      }, { requiresAuth: false });
 
       // 토큰 저장
       tokenStorage.setTokens(response.accessToken, response.refreshToken);

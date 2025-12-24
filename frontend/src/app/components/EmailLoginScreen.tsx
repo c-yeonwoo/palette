@@ -40,7 +40,7 @@ export function EmailLoginScreen({ onSuccess, onBackToLogin, onGoToSignup }: Ema
       }>("/api/v1/auth/email/login", {
         email: formData.email,
         password: formData.password,
-      });
+      }, { requiresAuth: false });
 
       // 토큰 저장
       tokenStorage.setTokens(response.accessToken, response.refreshToken);
