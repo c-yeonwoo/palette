@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { LoginScreen } from "./components/LoginScreen";
+import { EmailLoginScreen } from "./components/EmailLoginScreen";
+import { EmailSignupScreen } from "./components/EmailSignupScreen";
 import { OAuth2RedirectHandler } from "./components/OAuth2RedirectHandler";
 import { RequiredInfoScreen } from "./components/RequiredInfoScreen";
 import { AccountTypeSelectionScreen } from "./components/AccountTypeSelectionScreen";
@@ -20,6 +22,8 @@ import { tokenStorage } from "../lib/auth/tokenStorage";
 
 type Screen =
   | "login"
+  | "emailLogin"
+  | "emailSignup"
   | "oauth2Redirect"
   | "requiredInfo"
   | "accountTypeSelection"
@@ -146,6 +150,38 @@ export default function App() {
     setCurrentScreen("mainFeed");
   };
 
+  const handleEmailLogin = () => {
+    setCurrentScreen("emailLogin");
+  };
+
+  const handleEmailSignup = () => {
+    setCurrentScreen("emailSignup");
+  };
+
+  const handleEmailAuthSuccess = async () => {
+    setIsLoggedIn(true);
+
+    try {
+      const user = await authService.getCurrentUser();
+      if (user) {
+        if (user.isProfileCompleted) {
+          setCurrentScreen("mainFeed");
+          toast.success("로그인되었습니다!");
+        } else {
+          setCurrentScreen("accountTypeSelection");
+          toast.success("환영합니다!");
+        }
+      }
+    } catch (error) {
+      console.error('Error after email auth:', error);
+      setCurrentScreen("accountTypeSelection");
+    }
+  };
+
+  const handleBackToLogin = () => {
+    setCurrentScreen("login");
+  };
+
   // Show loading spinner while checking authentication
   if (isLoading) {
     return (
@@ -160,7 +196,22 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background">
-      {currentScreen === "login" && <LoginScreen />}
+      {currentScreen === "login" && <LoginScreen onEmailLogin={handleEmailLogin} />}
+
+      {currentScreen === "emailLogin" && (
+        <EmailLoginScreen
+          onSuccess={handleEmailAuthSuccess}
+          onBackToLogin={handleBackToLogin}
+          onGoToSignup={handleEmailSignup}
+        />
+      )}
+
+      {currentScreen === "emailSignup" && (
+        <EmailSignupScreen
+          onSuccess={handleEmailAuthSuccess}
+          onBackToLogin={handleBackToLogin}
+        />
+      )}
 
       {currentScreen === "oauth2Redirect" && (
         <OAuth2RedirectHandler
@@ -209,7 +260,7 @@ export default function App() {
       {currentScreen === "connectorDashboard" && <ConnectorDashboard />}
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding */}
-      {isLoggedIn && !["login", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "aboutMe", "idealType", "aiProfileEnhance"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "emailLogin", "emailSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "aboutMe", "idealType", "aiProfileEnhance"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}
