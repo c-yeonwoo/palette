@@ -38,6 +38,9 @@ class AuthController(
 
     @GetMapping("/me")
     fun getCurrentUser(@AuthenticationPrincipal authUser: AuthUser): ResponseEntity<UserResponse> {
+        val user = userRepository.findById(authUser.userId)
+            ?: return ResponseEntity.notFound().build()
+
         return ResponseEntity.ok(
             UserResponse(
                 userId = authUser.userId.value.toString(),
@@ -45,7 +48,10 @@ class AuthController(
                 accountType = authUser.accountType.name,
                 isProfileCompleted = authUser.isProfileCompleted,
                 canAccessMatchingService = authUser.canAccessMatchingService(),
-                canAccessMatchmakerService = authUser.canAccessMatchmakerService()
+                canAccessMatchmakerService = authUser.canAccessMatchmakerService(),
+                realName = user.privateInfo.realName,
+                birthDate = user.publicInfo.birthDate.toString(),
+                gender = user.publicInfo.gender.name
             )
         )
     }
@@ -53,6 +59,49 @@ class AuthController(
     @PostMapping("/logout")
     fun logout(@AuthenticationPrincipal authUser: AuthUser): ResponseEntity<Unit> {
         authenticationService.logout(authUser.userId)
+        return ResponseEntity.ok().build()
+    }
+
+    @PatchMapping("/convert-to-regular")
+    @Transactional
+    fun convertToRegular(@AuthenticationPrincipal authUser: AuthUser): ResponseEntity<Unit> {
+        println("🔄 Convert to regular request received for user: ${authUser.userId.value}")
+
+        val user = userRepository.findById(authUser.userId)
+        if (user == null) {
+            println("❌ User not found: ${authUser.userId.value}")
+            return ResponseEntity.notFound().build()
+        }
+
+        println("✅ User found: ${user.publicInfo.nickname}, accountType: ${user.accountType}")
+
+        // MATCHMAKER_ONLY를 REGULAR로 변경
+        if (user.accountType != AccountType.MATCHMAKER_ONLY) {
+            println("❌ User is not MATCHMAKER_ONLY, current type: ${user.accountType}")
+            return ResponseEntity.badRequest().build()
+        }
+
+        println("🔄 Converting user to REGULAR...")
+
+        val updatedUser = User(
+            id = user.id,
+            oauthInfo = user.oauthInfo,
+            password = user.password,
+            privateInfo = user.privateInfo,
+            publicInfo = user.publicInfo,
+            accountType = AccountType.REGULAR,
+            isProfileCompleted = false, // 프로필 작성 필요
+            termsAgreement = user.termsAgreement,
+            metadata = UserMetadata(
+                createdAt = user.metadata.createdAt,
+                updatedAt = Instant.now(),
+                lastLoginAt = user.metadata.lastLoginAt,
+                deletedAt = user.metadata.deletedAt
+            )
+        )
+
+        userRepository.save(updatedUser)
+        println("✅ User converted successfully to REGULAR")
         return ResponseEntity.ok().build()
     }
 
@@ -111,7 +160,10 @@ data class UserResponse(
     val accountType: String,
     val isProfileCompleted: Boolean,
     val canAccessMatchingService: Boolean,
-    val canAccessMatchmakerService: Boolean
+    val canAccessMatchmakerService: Boolean,
+    val realName: String,
+    val birthDate: String,
+    val gender: String
 )
 
 data class UpdateBasicInfoRequest(

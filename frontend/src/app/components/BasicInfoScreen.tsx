@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
-import { User, Calendar, Ruler, Briefcase, GraduationCap, MapPin } from "lucide-react";
+import { User, Calendar, Ruler, Briefcase, GraduationCap, MapPin, ArrowLeft } from "lucide-react";
+import { api } from "../../lib/api/apiClient";
+import { toast } from "sonner";
 
 interface BasicInfoScreenProps {
   onNext: () => void;
+  onBack?: () => void;
 }
 
 const jobCategories = [
@@ -18,7 +21,17 @@ const educationLevels = ["고졸", "전문대", "대졸", "석사", "박사"];
 const bodyTypes = ["슬림", "보통", "탄탄", "건장", "풍만"];
 const regions = ["서울", "경기", "인천", "부산", "대구", "광주", "대전", "울산", "세종", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
 
-export function BasicInfoScreen({ onNext }: BasicInfoScreenProps) {
+interface UserProfile {
+  userId: string;
+  nickname: string;
+  accountType: string;
+  isProfileCompleted: boolean;
+  realName?: string;
+  birthDate?: string; // YYYY-MM-DD format
+  gender?: string;
+}
+
+export function BasicInfoScreen({ onNext, onBack }: BasicInfoScreenProps) {
   const [formData, setFormData] = useState({
     name: "",
     birthYear: "",
@@ -36,6 +49,50 @@ export function BasicInfoScreen({ onNext }: BasicInfoScreenProps) {
     region: "",
     hometown: "",
   });
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load user data on mount
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const userData = await api.get<UserProfile>('/api/v1/auth/me');
+
+        // Fill in existing user data
+        if (userData.realName) {
+          setFormData(prev => ({ ...prev, name: userData.realName! }));
+        }
+
+        if (userData.birthDate) {
+          const [year, month, day] = userData.birthDate.split('-');
+          setFormData(prev => ({
+            ...prev,
+            birthYear: year,
+            birthMonth: month,
+            birthDay: day
+          }));
+        }
+
+        if (userData.gender) {
+          // Convert MALE/FEMALE to 남성/여성
+          const genderMap: { [key: string]: string } = {
+            'MALE': '남성',
+            'FEMALE': '여성'
+          };
+          setFormData(prev => ({
+            ...prev,
+            gender: genderMap[userData.gender!] || userData.gender!
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to load user data:', error);
+        toast.error('사용자 정보를 불러오는데 실패했습니다');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, []);
 
   const calculateAge = () => {
     if (formData.birthYear) {
@@ -48,11 +105,33 @@ export function BasicInfoScreen({ onNext }: BasicInfoScreenProps) {
   const isValid = formData.name && formData.birthYear && formData.birthMonth && formData.birthDay &&
     formData.gender && formData.bodyType && formData.jobCategory && formData.education && formData.region;
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent mx-auto mb-4"></div>
+          <p className="text-muted-foreground">정보를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header with Progress */}
       <div className="bg-card border-b border-border px-6 py-4 space-y-3">
-        <h2 className="text-center">기본 정보 입력</h2>
+        <div className="relative">
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="absolute left-0 top-1/2 -translate-y-1/2 p-2 hover:bg-muted rounded-lg transition-colors"
+              aria-label="뒤로 가기"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
+          <h2 className="text-center">기본 정보 입력</h2>
+        </div>
         <div className="space-y-2">
           <Progress value={20} className="h-2" />
           <p className="text-sm text-muted-foreground text-center">1/5 단계 - 약 2분 소요</p>

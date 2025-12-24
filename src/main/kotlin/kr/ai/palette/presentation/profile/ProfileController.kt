@@ -1,200 +1,148 @@
 package kr.ai.palette.presentation.profile
 
 import kr.ai.palette.domain.auth.AuthUser
-import kr.ai.palette.domain.matchmaker.*
 import kr.ai.palette.domain.profile.*
-import kr.ai.palette.domain.user.UserRepository
+import kr.ai.palette.infrastructure.storage.FileStorageService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
-import java.net.URI
+import org.springframework.web.multipart.MultipartFile
 import java.time.Instant
 import java.util.*
 
 @RestController
-@RequestMapping("/api/v1/profiles")
+@RequestMapping("/api/v1/profile")
 class ProfileController(
     private val profileRepository: ProfileRepository,
-    private val matchmakerRepository: MatchmakerRepository,
-    private val userRepository: UserRepository
+    private val profilePhotoRepository: ProfilePhotoRepository,
+    private val fileStorageService: FileStorageService
 ) {
 
-    @PostMapping
-    @Transactional
-    fun createProfile(
-        @AuthenticationPrincipal authUser: AuthUser,
-        @RequestBody request: CreateProfileRequest
-    ): ResponseEntity<ProfileResponse> {
-        // 이미 Profile이 존재하는지 확인
-        if (profileRepository.existsByUserId(authUser.userId)) {
-            return ResponseEntity.badRequest().build()
-        }
-
-        // Profile 생성
-        val now = Instant.now()
-        val profile = Profile(
-            id = ProfileId(UUID.randomUUID()),
-            userId = authUser.userId,
-            basicInfo = BasicInfo(
-                height = request.height,
-                bodyType = request.bodyType
-            ),
-            careerInfo = CareerInfo(
-                category = request.careerCategory,
-                company = request.company,
-                position = request.position
-            ),
-            educationInfo = EducationInfo(
-                level = request.educationLevel,
-                school = request.school,
-                major = request.major
-            ),
-            locationInfo = LocationInfo(
-                sido = request.sido,
-                sigungu = request.sigungu,
-                hometownSido = request.hometownSido,
-                hometownSigungu = request.hometownSigungu
-            ),
-            introduction = Introduction(
-                text = request.introductionText,
-                interests = request.interests ?: emptyList()
-            ),
-            lifestyleInfo = LifestyleInfo(
-                smoking = request.smoking,
-                drinking = request.drinking,
-                religion = request.religion
-            ),
-            idealType = IdealType(
-                ageRange = request.idealAgeRange,
-                heightRange = request.idealHeightRange,
-                bodyTypes = request.idealBodyTypes ?: emptyList(),
-                personalities = request.idealPersonalities ?: emptyList(),
-                dateStyle = request.idealDateStyle,
-                purpose = request.idealPurpose,
-                dealBreakers = request.idealDealBreakers
-            ),
-            colorType = ColorType(
-                type = request.colorType,
-                name = null,
-                hex = null,
-                description = null
-            ),
-            metrics = ProfileMetrics.initial(),
-            settings = ProfileSettings.initial(),
-            metadata = ProfileMetadata(
-                createdAt = now,
-                updatedAt = now,
-                lastAccessedAt = now,
-                deletedAt = null
-            )
-        )
-
-        val savedProfile = profileRepository.save(profile)
-
-        // Matchmaker도 함께 생성 (일반 유저도 주선 가능)
-        if (!matchmakerRepository.existsByUserId(authUser.userId)) {
-            val matchmaker = Matchmaker(
-                id = MatchmakerId(UUID.randomUUID()),
-                userId = authUser.userId,
-                stats = MatchmakerStats.initial(),
-                level = MatchmakerLevel.initial(),
-                earnings = MatchmakerEarnings.initial(),
-                profilePhoto = null,
-                metadata = MatchmakerMetadata(
-                    createdAt = now,
-                    updatedAt = now
-                )
-            )
-            matchmakerRepository.save(matchmaker)
-        }
-
-        // User의 isProfileCompleted를 true로 업데이트
-        val user = userRepository.findById(authUser.userId)
-        if (user != null) {
-            val completedUser = user.completeProfile()
-            userRepository.save(completedUser)
-        }
-
-        return ResponseEntity.created(
-            URI.create("/api/v1/profiles/${savedProfile.id.value}")
-        ).body(
-            ProfileResponse(
-                profileId = savedProfile.id.value.toString(),
-                userId = savedProfile.userId.value.toString(),
-                completionRate = savedProfile.metrics.completionRate,
-                trustScore = savedProfile.metrics.trustScore,
-                createdAt = savedProfile.metadata.createdAt
-            )
-        )
-    }
-
-    @GetMapping("/me")
-    fun getMyProfile(
-        @AuthenticationPrincipal authUser: AuthUser
-    ): ResponseEntity<ProfileResponse> {
+    @GetMapping
+    fun getMyProfile(@AuthenticationPrincipal authUser: AuthUser): ResponseEntity<ProfileResponse> {
         val profile = profileRepository.findByUserId(authUser.userId)
             ?: return ResponseEntity.notFound().build()
 
+        // Update last accessed time
+        profileRepository.save(profile.access())
+
+        return ResponseEntity.ok(ProfileResponse.from(profile))
+    }
+
+    @PutMapping
+    @Transactional
+    fun updateProfile(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @RequestBody request: UpdateProfileRequest
+    ): ResponseEntity<ProfileResponse> {
+        var profile = profileRepository.findByUserId(authUser.userId)
+            ?: Profile.create(authUser.userId)
+
+        // Update each section if provided
+        request.basicInfo?.let { basicInfoDto ->
+            profile = profile.updateBasicInfo(basicInfoDto.toDomain())
+        }
+
+        request.careerInfo?.let { careerInfoDto ->
+            profile = profile.updateCareerInfo(careerInfoDto.toDomain())
+        }
+
+        request.educationInfo?.let { educationInfoDto ->
+            profile = profile.updateEducationInfo(educationInfoDto.toDomain())
+        }
+
+        request.locationInfo?.let { locationInfoDto ->
+            profile = profile.updateLocationInfo(locationInfoDto.toDomain())
+        }
+
+        request.lifestyleInfo?.let { lifestyleInfoDto ->
+            profile = profile.updateLifestyleInfo(lifestyleInfoDto.toDomain())
+        }
+
+        request.introduction?.let { introductionDto ->
+            profile = profile.updateIntroduction(introductionDto.toDomain())
+        }
+
+        request.idealType?.let { idealTypeDto ->
+            profile = profile.updateIdealType(idealTypeDto.toDomain())
+        }
+
+        request.settings?.let { settingsDto ->
+            profile = profile.updateSettings(settingsDto.toDomain())
+        }
+
+        val savedProfile = profileRepository.save(profile)
+        return ResponseEntity.ok(ProfileResponse.from(savedProfile))
+    }
+
+    @PostMapping("/photo")
+    @Transactional
+    fun uploadProfilePhoto(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @RequestParam("file") file: MultipartFile
+    ): ResponseEntity<PhotoUploadResponse> {
+        // 파일 유효성 검사
+        if (file.isEmpty) {
+            return ResponseEntity.badRequest().build()
+        }
+
+        // 이미지 파일인지 확인
+        val contentType = file.contentType
+        if (contentType == null || !contentType.startsWith("image/")) {
+            return ResponseEntity.badRequest().build()
+        }
+
+        // 파일 크기 제한 (10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            return ResponseEntity.badRequest().build()
+        }
+
+        var profile = profileRepository.findByUserId(authUser.userId)
+            ?: Profile.create(authUser.userId)
+
+        // 파일 저장
+        val photoUrl = fileStorageService.storeFile(file)
+
+        // 기존 primary 사진 삭제
+        val existingPrimaryPhoto = profilePhotoRepository.findPrimaryByProfileId(profile.id)
+        existingPrimaryPhoto?.let { oldPhoto ->
+            fileStorageService.deleteFile(oldPhoto.url)
+            profilePhotoRepository.delete(oldPhoto.id)
+        }
+
+        // 새 사진 생성 및 저장
+        val newPhoto = ProfilePhoto(
+            id = ProfilePhotoId(UUID.randomUUID()),
+            profileId = profile.id,
+            s3Key = photoUrl,
+            url = photoUrl,
+            displayOrder = 0,
+            isPrimary = true,
+            trustAnalysis = TrustAnalysis(
+                trustFactor = TrustFactor.UNKNOWN,
+                trustScore = 0
+            ),
+            aiAnalysis = null,
+            createdAt = Instant.now()
+        )
+
+        profilePhotoRepository.save(newPhoto)
+
+        // Profile에도 사진 추가
+        profile = profile.addPhoto(newPhoto)
+        profileRepository.save(profile)
+
         return ResponseEntity.ok(
-            ProfileResponse(
-                profileId = profile.id.value.toString(),
-                userId = profile.userId.value.toString(),
-                completionRate = profile.metrics.completionRate,
-                trustScore = profile.metrics.trustScore,
-                createdAt = profile.metadata.createdAt
+            PhotoUploadResponse(
+                photoUrl = photoUrl,
+                uploadedAt = Instant.now()
             )
         )
     }
 }
 
-data class CreateProfileRequest(
-    // BasicInfo
-    val height: Int?,
-    val bodyType: BodyType?,
-
-    // CareerInfo
-    val careerCategory: CareerCategory?,
-    val company: String?,
-    val position: String?,
-
-    // EducationInfo
-    val educationLevel: EducationLevel?,
-    val school: String?,
-    val major: String?,
-
-    // LocationInfo
-    val sido: String?,
-    val sigungu: String?,
-    val hometownSido: String?,
-    val hometownSigungu: String?,
-
-    // Introduction
-    val introductionText: String?,
-    val interests: List<String>?,
-
-    // LifestyleInfo
-    val smoking: Frequency?,
-    val drinking: Frequency?,
-    val religion: Religion?,
-
-    // IdealType
-    val idealAgeRange: AgeRange?,
-    val idealHeightRange: HeightRange?,
-    val idealBodyTypes: List<BodyType>?,
-    val idealPersonalities: List<String>?,
-    val idealDateStyle: DateStyle?,
-    val idealPurpose: DatingPurpose?,
-    val idealDealBreakers: String?,
-
-    // ColorType
-    val colorType: ColorTypeEnum?
-)
-
-data class ProfileResponse(
-    val profileId: String,
-    val userId: String,
-    val completionRate: Int,
-    val trustScore: Int,
-    val createdAt: Instant
+data class PhotoUploadResponse(
+    val photoUrl: String,
+    val uploadedAt: Instant
 )

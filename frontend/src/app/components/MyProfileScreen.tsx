@@ -1,12 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Edit3, Loader2 } from "lucide-react";
+import { Edit3, Loader2, Settings, LogOut, Camera } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
+import { authService } from "../../lib/auth/authService";
 import { toast } from "sonner";
+import { MatchmakerProfileScreen } from "./MatchmakerProfileScreen";
 
 interface MyProfileScreenProps {
   onBack: () => void;
+  onEdit: () => void;
+  onConvertToRegular: () => void;
 }
 
 interface UserProfile {
@@ -16,25 +20,180 @@ interface UserProfile {
   isProfileCompleted: boolean;
 }
 
-export function MyProfileScreen({ onBack }: MyProfileScreenProps) {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+interface ProfileData {
+  id: string;
+  userId: string;
+  basicInfo: {
+    height: number | null;
+    bodyType: string | null;
+  };
+  careerInfo: {
+    category: string | null;
+    company: string | null;
+    position: string | null;
+  };
+  educationInfo: {
+    level: string | null;
+    school: string | null;
+    major: string | null;
+  };
+  locationInfo: {
+    sido: string | null;
+    sigungu: string | null;
+    hometownSido: string | null;
+    hometownSigungu: string | null;
+  };
+  lifestyleInfo: {
+    smoking: string | null;
+    drinking: string | null;
+    religion: string | null;
+  };
+  introduction: {
+    text: string | null;
+    interests: string[];
+  };
+  idealType: {
+    ageRange: { min: number; max: number } | null;
+    heightRange: { min: number; max: number } | null;
+    bodyTypes: string[];
+    personalities: string[];
+    dateStyle: string | null;
+    purpose: string | null;
+    dealBreakers: string | null;
+  };
+  primaryPhotoUrl: string | null;
+  metadata: {
+    createdAt: string;
+    updatedAt: string;
+    lastAccessedAt: string;
+    deletedAt: string | null;
+  };
+  metrics: {
+    completionRate: number;
+    trustScore: number;
+    viewCount: number;
+  };
+  settings: {
+    isAcceptingMatches: boolean;
+    hiddenAt: string | null;
+  };
+}
+
+export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfileScreenProps) {
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       try {
-        const data = await api.get<UserProfile>('/api/v1/auth/me');
-        setProfile(data);
+        const userData = await api.get<UserProfile>('/api/v1/auth/me');
+        setUserProfile(userData);
+
+        // Only fetch profile for REGULAR users
+        if (userData.accountType === "REGULAR") {
+          try {
+            const profileData = await api.get<ProfileData>('/api/v1/profile');
+            setProfile(profileData);
+          } catch (error) {
+            console.log('No profile found for user');
+          }
+        }
       } catch (error) {
-        console.error('Failed to fetch profile:', error);
+        console.error('Failed to fetch data:', error);
         toast.error('프로필을 불러오는데 실패했습니다');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProfile();
+    fetchData();
   }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowSettingsMenu(false);
+      }
+    };
+
+    if (showSettingsMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showSettingsMenu]);
+
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      toast.success('로그아웃되었습니다');
+      // Reload to clear state and redirect to login
+      window.location.reload();
+    } catch (error) {
+      console.error('Logout failed:', error);
+      toast.error('로그아웃에 실패했습니다');
+    }
+  };
+
+  const handlePhotoUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // 파일 타입 검증
+    if (!file.type.startsWith('image/')) {
+      toast.error('이미지 파일만 업로드 가능합니다');
+      return;
+    }
+
+    // 파일 크기 검증 (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('파일 크기는 10MB 이하여야 합니다');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('http://localhost:8080/api/v1/profile/photo', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      // 프로필 데이터 다시 불러오기
+      const updatedProfile = await api.get<ProfileData>('/api/v1/profile');
+      setProfile(updatedProfile);
+
+      toast.success('프로필 사진이 업로드되었습니다');
+    } catch (error) {
+      console.error('Failed to upload photo:', error);
+      toast.error('사진 업로드에 실패했습니다');
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   if (isLoading) {
     return (
@@ -44,7 +203,7 @@ export function MyProfileScreen({ onBack }: MyProfileScreenProps) {
     );
   }
 
-  if (!profile) {
+  if (!userProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -57,39 +216,116 @@ export function MyProfileScreen({ onBack }: MyProfileScreenProps) {
     );
   }
 
+  // Show MatchmakerProfileScreen for MATCHMAKER_ONLY users
+  if (userProfile.accountType === "MATCHMAKER_ONLY") {
+    return (
+      <MatchmakerProfileScreen
+        onBack={onBack}
+        onConvertToRegular={onConvertToRegular}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background pb-20">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+
       {/* Header */}
       <div className="bg-card border-b border-border px-6 py-4 flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={onBack}>
           ← 뒤로
         </Button>
         <h2 className="text-lg font-semibold">내 프로필</h2>
-        <div className="w-16"></div>
+        <div className="relative" ref={menuRef}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+          >
+            <Settings className="w-6 h-6" />
+          </Button>
+
+          {/* Settings Dropdown Menu */}
+          {showSettingsMenu && (
+            <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-1 z-50">
+              <button
+                onClick={() => {
+                  setShowSettingsMenu(false);
+                  onEdit();
+                }}
+                className="w-full px-4 py-3 text-left text-sm hover:bg-muted flex items-center gap-3 transition-colors"
+              >
+                <Edit3 className="w-4 h-4" />
+                프로필 수정
+              </button>
+              <div className="border-t border-border my-1" />
+              <button
+                onClick={handleLogout}
+                className="w-full px-4 py-3 text-left text-sm text-destructive hover:bg-destructive/10 flex items-center gap-3 transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                로그아웃
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Profile Content */}
       <div className="p-6 space-y-6">
         {/* Profile Header */}
         <div className="flex items-start gap-4">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-2xl">
-            {profile.nickname.charAt(0).toUpperCase()}
+          <div className="relative">
+            {profile?.primaryPhotoUrl ? (
+              <img
+                src={profile.primaryPhotoUrl}
+                alt="프로필 사진"
+                className="w-20 h-20 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-2xl">
+                {userProfile.nickname.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <button
+              onClick={handlePhotoUpload}
+              disabled={isUploading}
+              className="absolute bottom-0 right-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {isUploading ? (
+                <Loader2 className="w-4 h-4 text-primary-foreground animate-spin" />
+              ) : (
+                <Camera className="w-4 h-4 text-primary-foreground" />
+              )}
+            </button>
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-xl font-bold">{profile.nickname}</h3>
-              <Badge variant={profile.isProfileCompleted ? "default" : "secondary"}>
-                {profile.isProfileCompleted ? "프로필 완성" : "프로필 미완성"}
+              <h3 className="text-xl font-bold">{userProfile.nickname}</h3>
+              <Badge variant={userProfile.isProfileCompleted ? "default" : "secondary"}>
+                {userProfile.isProfileCompleted ? "프로필 완성" : "프로필 미완성"}
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground">
-              {profile.accountType === "REGULAR" ? "일반 회원" : "주선자"}
+              {userProfile.accountType === "REGULAR" ? "일반 회원" : "주선자"}
             </p>
+            {profile && (
+              <p className="text-sm text-muted-foreground mt-1">
+                프로필 완성도: {profile.metrics.completionRate}%
+              </p>
+            )}
           </div>
         </div>
 
         {/* Profile Completion Notice */}
-        {!profile.isProfileCompleted && (
+        {!userProfile.isProfileCompleted && (
           <div className="bg-accent/10 border border-accent/20 rounded-lg p-4">
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
@@ -100,7 +336,7 @@ export function MyProfileScreen({ onBack }: MyProfileScreenProps) {
                 <p className="text-sm text-muted-foreground mb-3">
                   프로필을 완성하면 매칭 서비스를 이용할 수 있습니다
                 </p>
-                <Button size="sm" className="w-full">
+                <Button size="sm" className="w-full" onClick={onEdit}>
                   프로필 완성하기
                 </Button>
               </div>
@@ -111,15 +347,93 @@ export function MyProfileScreen({ onBack }: MyProfileScreenProps) {
         {/* Profile Sections */}
         <div className="space-y-4">
           <Section title="기본 정보">
-            <EmptyContent message="프로필을 완성하면 정보가 표시됩니다" />
+            {profile ? (
+              <div className="space-y-2 text-sm">
+                {profile.basicInfo.height && (
+                  <InfoRow label="키" value={`${profile.basicInfo.height}cm`} />
+                )}
+                {profile.basicInfo.bodyType && (
+                  <InfoRow label="체형" value={getBodyTypeLabel(profile.basicInfo.bodyType)} />
+                )}
+                {profile.careerInfo.company && (
+                  <InfoRow label="회사" value={`${profile.careerInfo.company} ${profile.careerInfo.position || ''}`} />
+                )}
+                {profile.educationInfo.school && (
+                  <InfoRow label="학력" value={`${profile.educationInfo.school} ${profile.educationInfo.major || ''}`} />
+                )}
+                {profile.locationInfo.sido && (
+                  <InfoRow label="지역" value={`${profile.locationInfo.sido} ${profile.locationInfo.sigungu || ''}`} />
+                )}
+              </div>
+            ) : (
+              <EmptyContent message="프로필을 완성하면 정보가 표시됩니다" />
+            )}
           </Section>
 
           <Section title="사진">
-            <EmptyContent message="사진을 추가해주세요" />
+            {profile?.primaryPhotoUrl ? (
+              <div className="flex items-center justify-center">
+                <img
+                  src={profile.primaryPhotoUrl}
+                  alt="프로필 사진"
+                  className="w-48 h-48 rounded-lg object-cover"
+                />
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground mb-4">프로필 사진을 추가해주세요</p>
+                <Button onClick={handlePhotoUpload} variant="outline" disabled={isUploading}>
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      업로드 중...
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-4 h-4 mr-2" />
+                      사진 업로드
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
           </Section>
 
           <Section title="자기소개">
-            <EmptyContent message="자기소개를 작성해주세요" />
+            {profile?.introduction.text ? (
+              <div className="space-y-3">
+                <p className="text-sm leading-relaxed">{profile.introduction.text}</p>
+                {profile.introduction.interests.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {profile.introduction.interests.map((interest, idx) => (
+                      <Badge key={idx} variant="secondary">
+                        {interest}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <EmptyContent message="자기소개를 작성해주세요" />
+            )}
+          </Section>
+
+          <Section title="라이프스타일">
+            {profile ? (
+              <div className="space-y-2 text-sm">
+                {profile.lifestyleInfo.smoking && (
+                  <InfoRow label="흡연" value={getFrequencyLabel(profile.lifestyleInfo.smoking)} />
+                )}
+                {profile.lifestyleInfo.drinking && (
+                  <InfoRow label="음주" value={getFrequencyLabel(profile.lifestyleInfo.drinking)} />
+                )}
+                {profile.lifestyleInfo.religion && (
+                  <InfoRow label="종교" value={getReligionLabel(profile.lifestyleInfo.religion)} />
+                )}
+              </div>
+            ) : (
+              <EmptyContent message="라이프스타일 정보를 입력해주세요" />
+            )}
           </Section>
 
           <Section title="추천사">
@@ -146,4 +460,44 @@ function EmptyContent({ message }: { message: string }) {
       <p className="text-sm text-muted-foreground">{message}</p>
     </div>
   );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between items-center py-2 border-b border-border/50 last:border-0">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium">{value}</span>
+    </div>
+  );
+}
+
+function getBodyTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    SLIM: "슬림",
+    AVERAGE: "보통",
+    ATHLETIC: "운동함",
+    MUSCULAR: "근육질",
+    CURVY: "글래머"
+  };
+  return labels[type] || type;
+}
+
+function getFrequencyLabel(freq: string): string {
+  const labels: Record<string, string> = {
+    NEVER: "안함",
+    SOMETIMES: "가끔",
+    OFTEN: "자주"
+  };
+  return labels[freq] || freq;
+}
+
+function getReligionLabel(religion: string): string {
+  const labels: Record<string, string> = {
+    NONE: "무교",
+    CHRISTIANITY: "기독교",
+    CATHOLICISM: "천주교",
+    BUDDHISM: "불교",
+    OTHER: "기타"
+  };
+  return labels[religion] || religion;
 }

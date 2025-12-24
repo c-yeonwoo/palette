@@ -7,5 +7,4 @@ interface ProfileRepository {
     fun findById(id: ProfileId): Profile?
     fun findByUserId(userId: UserId): Profile?
     fun existsByUserId(userId: UserId): Boolean
-    fun delete(id: ProfileId)
 }

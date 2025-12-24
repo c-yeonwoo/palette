@@ -14,7 +14,7 @@ class ProfileEntity(
     @Column(name = "user_id", nullable = false, unique = true, columnDefinition = "BINARY(16)")
     var userId: UUID,
 
-    // Basic Info
+    // BasicInfo
     @Column(name = "height")
     var height: Int?,
 
@@ -22,49 +22,42 @@ class ProfileEntity(
     @Enumerated(EnumType.STRING)
     var bodyType: BodyTypeEntity?,
 
-    // Career Info
-    @Column(name = "career_category", length = 50)
+    // CareerInfo
+    @Column(name = "career_category", length = 30)
     @Enumerated(EnumType.STRING)
     var careerCategory: CareerCategoryEntity?,
 
-    @Column(name = "career_company", length = 100)
-    var careerCompany: String?,
+    @Column(name = "company", length = 100)
+    var company: String?,
 
-    @Column(name = "career_position", length = 50)
-    var careerPosition: String?,
+    @Column(name = "position", length = 100)
+    var position: String?,
 
-    // Education Info
+    // EducationInfo
     @Column(name = "education_level", length = 20)
     @Enumerated(EnumType.STRING)
     var educationLevel: EducationLevelEntity?,
 
-    @Column(name = "education_school", length = 100)
-    var educationSchool: String?,
+    @Column(name = "school", length = 100)
+    var school: String?,
 
-    @Column(name = "education_major", length = 50)
-    var educationMajor: String?,
+    @Column(name = "major", length = 100)
+    var major: String?,
 
-    // Location Info
-    @Column(name = "location_sido", length = 20)
-    var locationSido: String?,
+    // LocationInfo
+    @Column(name = "sido", length = 50)
+    var sido: String?,
 
-    @Column(name = "location_sigungu", length = 30)
-    var locationSigungu: String?,
+    @Column(name = "sigungu", length = 50)
+    var sigungu: String?,
 
-    @Column(name = "hometown_sido", length = 20)
+    @Column(name = "hometown_sido", length = 50)
     var hometownSido: String?,
 
-    @Column(name = "hometown_sigungu", length = 30)
+    @Column(name = "hometown_sigungu", length = 50)
     var hometownSigungu: String?,
 
-    // Introduction
-    @Column(name = "introduction", columnDefinition = "TEXT")
-    var introduction: String?,
-
-    @Column(name = "interests", columnDefinition = "JSON")
-    var interests: String?, // JSON array as String
-
-    // Lifestyle Info
+    // LifestyleInfo
     @Column(name = "smoking", length = 20)
     @Enumerated(EnumType.STRING)
     var smoking: FrequencyEntity?,
@@ -77,7 +70,14 @@ class ProfileEntity(
     @Enumerated(EnumType.STRING)
     var religion: ReligionEntity?,
 
-    // Ideal Type
+    // Introduction
+    @Column(name = "introduction_text", columnDefinition = "TEXT")
+    var introductionText: String?,
+
+    @Column(name = "interests", columnDefinition = "TEXT")
+    var interests: String?, // Comma-separated list
+
+    // IdealType
     @Column(name = "ideal_age_min")
     var idealAgeMin: Int?,
 
@@ -90,109 +90,55 @@ class ProfileEntity(
     @Column(name = "ideal_height_max")
     var idealHeightMax: Int?,
 
-    @Column(name = "ideal_body_types", columnDefinition = "JSON")
-    var idealBodyTypes: String?, // JSON array as String
+    @Column(name = "ideal_body_types", columnDefinition = "TEXT")
+    var idealBodyTypes: String?, // Comma-separated list
 
-    @Column(name = "ideal_personalities", columnDefinition = "JSON")
-    var idealPersonalities: String?, // JSON array as String
+    @Column(name = "ideal_personalities", columnDefinition = "TEXT")
+    var idealPersonalities: String?, // Comma-separated list
 
-    @Column(name = "ideal_date_style", length = 50)
+    @Column(name = "ideal_date_style", length = 30)
     @Enumerated(EnumType.STRING)
     var idealDateStyle: DateStyleEntity?,
 
-    @Column(name = "ideal_purpose", length = 50)
+    @Column(name = "ideal_purpose", length = 30)
     @Enumerated(EnumType.STRING)
     var idealPurpose: DatingPurposeEntity?,
 
     @Column(name = "ideal_deal_breakers", columnDefinition = "TEXT")
     var idealDealBreakers: String?,
 
-    // Color Type
-    @Column(name = "color_type", length = 50)
-    @Enumerated(EnumType.STRING)
-    var colorType: ColorTypeEntity?,
-
-    @Column(name = "color_name", length = 50)
-    var colorName: String?,
-
-    @Column(name = "color_hex", length = 7)
-    var colorHex: String?,
-
-    @Column(name = "color_description", columnDefinition = "TEXT")
-    var colorDescription: String?,
-
-    // Metrics
-    @Column(name = "completion_rate", nullable = false)
-    var completionRate: Int = 0,
-
-    @Column(name = "trust_score", nullable = false)
-    var trustScore: Int = 0,
-
-    @Column(name = "view_count", nullable = false)
-    var viewCount: Int = 0,
-
-    // Settings
-    @Column(name = "is_accepting_matches", nullable = false)
-    var isAcceptingMatches: Boolean = true,
-
-    @Column(name = "hidden_at")
-    var hiddenAt: Instant?,
-
-    // Metadata
-    @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant = Instant.now(),
+    // ProfileMetadata
+    @Column(name = "created_at", nullable = false)
+    var createdAt: Instant,
 
     @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now(),
+    var updatedAt: Instant,
 
     @Column(name = "last_accessed_at", nullable = false)
-    var lastAccessedAt: Instant = Instant.now(),
+    var lastAccessedAt: Instant,
 
     @Column(name = "deleted_at")
-    var deletedAt: Instant? = null
-) {
-    protected constructor() : this(
-        id = UUID.randomUUID(),
-        userId = UUID.randomUUID(),
-        height = null,
-        bodyType = null,
-        careerCategory = null,
-        careerCompany = null,
-        careerPosition = null,
-        educationLevel = null,
-        educationSchool = null,
-        educationMajor = null,
-        locationSido = null,
-        locationSigungu = null,
-        hometownSido = null,
-        hometownSigungu = null,
-        introduction = null,
-        interests = null,
-        smoking = null,
-        drinking = null,
-        religion = null,
-        idealAgeMin = null,
-        idealAgeMax = null,
-        idealHeightMin = null,
-        idealHeightMax = null,
-        idealBodyTypes = null,
-        idealPersonalities = null,
-        idealDateStyle = null,
-        idealPurpose = null,
-        idealDealBreakers = null,
-        colorType = null,
-        colorName = null,
-        colorHex = null,
-        colorDescription = null,
-        hiddenAt = null
-    )
+    var deletedAt: Instant?,
 
-    @PreUpdate
-    fun preUpdate() {
-        updatedAt = Instant.now()
-    }
-}
+    // ProfileMetrics
+    @Column(name = "completion_rate", nullable = false)
+    var completionRate: Int,
 
+    @Column(name = "trust_score", nullable = false)
+    var trustScore: Int,
+
+    @Column(name = "view_count", nullable = false)
+    var viewCount: Int,
+
+    // ProfileSettings
+    @Column(name = "is_accepting_matches", nullable = false)
+    var isAcceptingMatches: Boolean,
+
+    @Column(name = "hidden_at")
+    var hiddenAt: Instant?
+)
+
+// Enums for ProfileEntity
 enum class BodyTypeEntity {
     SLIM, AVERAGE, ATHLETIC, MUSCULAR, CURVY
 }
@@ -220,9 +166,4 @@ enum class DateStyleEntity {
 
 enum class DatingPurposeEntity {
     SERIOUS_DATING, MARRIAGE_PREMISE, FRIENDS_FIRST
-}
-
-enum class ColorTypeEntity {
-    WARM_ORANGE, CALM_BLUE, VIBRANT_RED, SOFT_PINK,
-    FRESH_GREEN, ELEGANT_PURPLE, BRIGHT_YELLOW, SOPHISTICATED_GRAY
 }

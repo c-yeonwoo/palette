@@ -11,6 +11,7 @@ import { AboutMeScreen } from "./components/AboutMeScreen";
 import { IdealTypeScreen } from "./components/IdealTypeScreen";
 import { AIProfileEnhanceScreen } from "./components/AIProfileEnhanceScreen";
 import { MyProfileScreen } from "./components/MyProfileScreen";
+import { ProfileEditScreen } from "./components/ProfileEditScreen";
 import { MainFeedScreen } from "./components/MainFeedScreen";
 import { ConnectorDashboard } from "./components/ConnectorDashboard";
 import { Toaster } from "./components/ui/sonner";
@@ -19,6 +20,7 @@ import { Home, UserCircle, MessageSquare, LayoutDashboard } from "lucide-react";
 import { toast } from "sonner";
 import { authService } from "../lib/auth/authService";
 import { tokenStorage } from "../lib/auth/tokenStorage";
+import { api } from "../lib/api/apiClient";
 
 type Screen =
   | "login"
@@ -33,6 +35,7 @@ type Screen =
   | "idealType"
   | "aiProfileEnhance"
   | "myProfile"
+  | "profileEdit"
   | "mainFeed"
   | "connectorDashboard";
 
@@ -41,6 +44,7 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [missingRequiredFields, setMissingRequiredFields] = useState<string[]>([]);
+  const [isConvertingToRegular, setIsConvertingToRegular] = useState(false);
 
   // Check authentication state on mount
   useEffect(() => {
@@ -129,6 +133,17 @@ export default function App() {
     setCurrentScreen("photoUpload");
   };
 
+  const handleBasicInfoBack = () => {
+    // 전환 중이었다면 전환 취소하고 주선자 프로필로 복귀
+    if (isConvertingToRegular) {
+      setIsConvertingToRegular(false);
+      toast.info("일반 회원 전환이 취소되었습니다");
+      setCurrentScreen("myProfile");
+    } else {
+      setCurrentScreen("accountTypeSelection");
+    }
+  };
+
   const handlePhotoNext = () => {
     setCurrentScreen("aboutMe");
   };
@@ -141,13 +156,48 @@ export default function App() {
     setCurrentScreen("aiProfileEnhance");
   };
 
-  const handleAIProfileComplete = () => {
+  const handleAIProfileComplete = async () => {
+    // 전환 중이었다면 실제로 전환 API 호출
+    if (isConvertingToRegular) {
+      try {
+        console.log('Converting to regular user...');
+        await api.patch('/api/v1/auth/convert-to-regular');
+        console.log('Conversion successful');
+        setIsConvertingToRegular(false);
+        toast.success("일반 회원으로 전환되었습니다!");
+      } catch (error: any) {
+        console.error('Failed to convert to regular:', error);
+        toast.error(`회원 전환에 실패했습니다: ${error?.message || '알 수 없는 오류'}`);
+        return; // 전환 실패 시 화면 전환하지 않음
+      }
+    }
+
     setCurrentScreen("mainFeed");
     toast.success("프로필이 성공적으로 생성되었습니다!");
   };
 
   const handleMyProfileBack = () => {
     setCurrentScreen("mainFeed");
+  };
+
+  const handleMyProfileEdit = () => {
+    setCurrentScreen("profileEdit");
+  };
+
+  const handleProfileEditSave = () => {
+    setCurrentScreen("myProfile");
+    toast.success("프로필이 저장되었습니다!");
+  };
+
+  const handleProfileEditBack = () => {
+    setCurrentScreen("myProfile");
+  };
+
+  const handleConvertToRegular = () => {
+    // 즉시 전환하지 않고, 프로필 작성 시작만 표시
+    setIsConvertingToRegular(true);
+    toast.info("프로필을 작성하면 일반 회원으로 전환됩니다");
+    setCurrentScreen("basicInfo");
   };
 
   const handleEmailLogin = () => {
@@ -159,22 +209,32 @@ export default function App() {
   };
 
   const handleEmailAuthSuccess = async () => {
+    console.log('handleEmailAuthSuccess called');
     setIsLoggedIn(true);
 
     try {
       const user = await authService.getCurrentUser();
+      console.log('User fetched:', user);
+
       if (user) {
         if (user.isProfileCompleted) {
+          console.log('Profile completed, going to mainFeed');
           setCurrentScreen("mainFeed");
           toast.success("로그인되었습니다!");
         } else {
+          console.log('Profile not completed, going to accountTypeSelection');
           setCurrentScreen("accountTypeSelection");
-          toast.success("환영합니다!");
+          toast.success("환영합니다! 계정 유형을 선택해주세요");
         }
+      } else {
+        console.log('No user found, going to accountTypeSelection');
+        setCurrentScreen("accountTypeSelection");
+        toast.info("계정 설정을 완료해주세요");
       }
     } catch (error) {
       console.error('Error after email auth:', error);
       setCurrentScreen("accountTypeSelection");
+      toast.info("계정 설정을 완료해주세요");
     }
   };
 
@@ -232,7 +292,7 @@ export default function App() {
       )}
 
       {currentScreen === "basicInfo" && (
-        <BasicInfoScreen onNext={handleBasicInfoNext} />
+        <BasicInfoScreen onNext={handleBasicInfoNext} onBack={handleBasicInfoBack} />
       )}
       
       {currentScreen === "photoUpload" && (
@@ -252,7 +312,15 @@ export default function App() {
       )}
       
       {currentScreen === "myProfile" && (
-        <MyProfileScreen onBack={handleMyProfileBack} />
+        <MyProfileScreen
+          onBack={handleMyProfileBack}
+          onEdit={handleMyProfileEdit}
+          onConvertToRegular={handleConvertToRegular}
+        />
+      )}
+
+      {currentScreen === "profileEdit" && (
+        <ProfileEditScreen onBack={handleProfileEditBack} onSave={handleProfileEditSave} />
       )}
       
       {currentScreen === "mainFeed" && <MainFeedScreen />}
@@ -260,7 +328,7 @@ export default function App() {
       {currentScreen === "connectorDashboard" && <ConnectorDashboard />}
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding */}
-      {isLoggedIn && !["login", "emailLogin", "emailSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "aboutMe", "idealType", "aiProfileEnhance"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "emailLogin", "emailSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "aboutMe", "idealType", "aiProfileEnhance", "profileEdit"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}

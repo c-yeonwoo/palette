@@ -87,6 +87,15 @@ export async function apiRequest<T>(
       return {} as T;
     }
 
+    // Check if response has content
+    const contentType = response.headers.get('content-type');
+    const contentLength = response.headers.get('content-length');
+
+    // If no content or empty body, return empty object
+    if (contentLength === '0' || (!contentType?.includes('application/json'))) {
+      return {} as T;
+    }
+
     return await response.json();
   } catch (error) {
     console.error('API request failed:', error);

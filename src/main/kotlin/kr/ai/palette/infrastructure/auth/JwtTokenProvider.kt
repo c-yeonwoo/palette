@@ -61,6 +61,8 @@ class JwtTokenProvider(
             parseClaims(token)
             true
         } catch (e: Exception) {
+            println("Token validation failed: ${e.message}")
+            e.printStackTrace()
             false
         }
     }

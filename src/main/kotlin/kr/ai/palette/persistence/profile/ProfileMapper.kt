@@ -1,16 +1,11 @@
 package kr.ai.palette.persistence.profile
 
-import tools.jackson.databind.ObjectMapper
-import tools.jackson.module.kotlin.jacksonObjectMapper
-import tools.jackson.module.kotlin.readValue
 import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.profile.*
 import org.springframework.stereotype.Component
 
 @Component
 class ProfileMapper {
-
-    private val objectMapper: ObjectMapper = jacksonObjectMapper()
 
     fun toDomain(entity: ProfileEntity): Profile {
         return Profile(
@@ -22,53 +17,50 @@ class ProfileMapper {
             ),
             careerInfo = CareerInfo(
                 category = entity.careerCategory?.toDomain(),
-                company = entity.careerCompany,
-                position = entity.careerPosition
+                company = entity.company,
+                position = entity.position
             ),
             educationInfo = EducationInfo(
                 level = entity.educationLevel?.toDomain(),
-                school = entity.educationSchool,
-                major = entity.educationMajor
+                school = entity.school,
+                major = entity.major
             ),
             locationInfo = LocationInfo(
-                sido = entity.locationSido,
-                sigungu = entity.locationSigungu,
+                sido = entity.sido,
+                sigungu = entity.sigungu,
                 hometownSido = entity.hometownSido,
                 hometownSigungu = entity.hometownSigungu
-            ),
-            introduction = Introduction(
-                text = entity.introduction,
-                interests = parseJsonArray(entity.interests)
             ),
             lifestyleInfo = LifestyleInfo(
                 smoking = entity.smoking?.toDomain(),
                 drinking = entity.drinking?.toDomain(),
                 religion = entity.religion?.toDomain()
             ),
+            introduction = Introduction(
+                text = entity.introductionText,
+                interests = entity.interests?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
+            ),
             idealType = IdealType(
-                ageRange = if (entity.idealAgeMin != null && entity.idealAgeMax != null) {
-                    AgeRange(entity.idealAgeMin!!, entity.idealAgeMax!!)
-                } else null,
-                heightRange = if (entity.idealHeightMin != null && entity.idealHeightMax != null) {
-                    HeightRange(entity.idealHeightMin!!, entity.idealHeightMax!!)
-                } else null,
-                bodyTypes = parseJsonArray(entity.idealBodyTypes).mapNotNull {
-                    try {
-                        BodyType.valueOf(it)
-                    } catch (e: IllegalArgumentException) {
-                        null
-                    }
-                },
-                personalities = parseJsonArray(entity.idealPersonalities),
+                ageRange = if (entity.idealAgeMin != null && entity.idealAgeMax != null)
+                    AgeRange(entity.idealAgeMin!!, entity.idealAgeMax!!) else null,
+                heightRange = if (entity.idealHeightMin != null && entity.idealHeightMax != null)
+                    HeightRange(entity.idealHeightMin!!, entity.idealHeightMax!!) else null,
+                bodyTypes = entity.idealBodyTypes?.split(",")
+                    ?.filter { it.isNotBlank() }
+                    ?.map { BodyType.valueOf(it) }
+                    ?: emptyList(),
+                personalities = entity.idealPersonalities?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
                 dateStyle = entity.idealDateStyle?.toDomain(),
                 purpose = entity.idealPurpose?.toDomain(),
                 dealBreakers = entity.idealDealBreakers
             ),
-            colorType = ColorType(
-                type = entity.colorType?.toDomain(),
-                name = entity.colorName,
-                hex = entity.colorHex,
-                description = entity.colorDescription
+            photos = emptyList(), // Photos are managed separately
+            videos = emptyList(), // Videos are managed separately
+            metadata = ProfileMetadata(
+                createdAt = entity.createdAt,
+                updatedAt = entity.updatedAt,
+                lastAccessedAt = entity.lastAccessedAt,
+                deletedAt = entity.deletedAt
             ),
             metrics = ProfileMetrics(
                 completionRate = entity.completionRate,
@@ -78,144 +70,71 @@ class ProfileMapper {
             settings = ProfileSettings(
                 isAcceptingMatches = entity.isAcceptingMatches,
                 hiddenAt = entity.hiddenAt
-            ),
-            metadata = ProfileMetadata(
-                createdAt = entity.createdAt,
-                updatedAt = entity.updatedAt,
-                lastAccessedAt = entity.lastAccessedAt,
-                deletedAt = entity.deletedAt
             )
         )
     }
 
-    fun toEntity(domain: Profile): ProfileEntity {
+    fun toEntity(profile: Profile): ProfileEntity {
         return ProfileEntity(
-            id = domain.id.value,
-            userId = domain.userId.value,
-            height = domain.basicInfo.height,
-            bodyType = domain.basicInfo.bodyType?.toEntity(),
-            careerCategory = domain.careerInfo.category?.toEntity(),
-            careerCompany = domain.careerInfo.company,
-            careerPosition = domain.careerInfo.position,
-            educationLevel = domain.educationInfo.level?.toEntity(),
-            educationSchool = domain.educationInfo.school,
-            educationMajor = domain.educationInfo.major,
-            locationSido = domain.locationInfo.sido,
-            locationSigungu = domain.locationInfo.sigungu,
-            hometownSido = domain.locationInfo.hometownSido,
-            hometownSigungu = domain.locationInfo.hometownSigungu,
-            introduction = domain.introduction.text,
-            interests = toJsonArray(domain.introduction.interests),
-            smoking = domain.lifestyleInfo.smoking?.toEntity(),
-            drinking = domain.lifestyleInfo.drinking?.toEntity(),
-            religion = domain.lifestyleInfo.religion?.toEntity(),
-            idealAgeMin = domain.idealType.ageRange?.min,
-            idealAgeMax = domain.idealType.ageRange?.max,
-            idealHeightMin = domain.idealType.heightRange?.min,
-            idealHeightMax = domain.idealType.heightRange?.max,
-            idealBodyTypes = toJsonArray(domain.idealType.bodyTypes.map { it.name }),
-            idealPersonalities = toJsonArray(domain.idealType.personalities),
-            idealDateStyle = domain.idealType.dateStyle?.toEntity(),
-            idealPurpose = domain.idealType.purpose?.toEntity(),
-            idealDealBreakers = domain.idealType.dealBreakers,
-            colorType = domain.colorType.type?.toEntity(),
-            colorName = domain.colorType.name,
-            colorHex = domain.colorType.hex,
-            colorDescription = domain.colorType.description,
-            completionRate = domain.metrics.completionRate,
-            trustScore = domain.metrics.trustScore,
-            viewCount = domain.metrics.viewCount,
-            isAcceptingMatches = domain.settings.isAcceptingMatches,
-            hiddenAt = domain.settings.hiddenAt,
-            createdAt = domain.metadata.createdAt,
-            updatedAt = domain.metadata.updatedAt,
-            lastAccessedAt = domain.metadata.lastAccessedAt,
-            deletedAt = domain.metadata.deletedAt
+            id = profile.id.value,
+            userId = profile.userId.value,
+            height = profile.basicInfo.height,
+            bodyType = profile.basicInfo.bodyType?.toEntity(),
+            careerCategory = profile.careerInfo.category?.toEntity(),
+            company = profile.careerInfo.company,
+            position = profile.careerInfo.position,
+            educationLevel = profile.educationInfo.level?.toEntity(),
+            school = profile.educationInfo.school,
+            major = profile.educationInfo.major,
+            sido = profile.locationInfo.sido,
+            sigungu = profile.locationInfo.sigungu,
+            hometownSido = profile.locationInfo.hometownSido,
+            hometownSigungu = profile.locationInfo.hometownSigungu,
+            smoking = profile.lifestyleInfo.smoking?.toEntity(),
+            drinking = profile.lifestyleInfo.drinking?.toEntity(),
+            religion = profile.lifestyleInfo.religion?.toEntity(),
+            introductionText = profile.introduction.text,
+            interests = profile.introduction.interests.joinToString(","),
+            idealAgeMin = profile.idealType.ageRange?.min,
+            idealAgeMax = profile.idealType.ageRange?.max,
+            idealHeightMin = profile.idealType.heightRange?.min,
+            idealHeightMax = profile.idealType.heightRange?.max,
+            idealBodyTypes = profile.idealType.bodyTypes.joinToString(","),
+            idealPersonalities = profile.idealType.personalities.joinToString(","),
+            idealDateStyle = profile.idealType.dateStyle?.toEntity(),
+            idealPurpose = profile.idealType.purpose?.toEntity(),
+            idealDealBreakers = profile.idealType.dealBreakers,
+            createdAt = profile.metadata.createdAt,
+            updatedAt = profile.metadata.updatedAt,
+            lastAccessedAt = profile.metadata.lastAccessedAt,
+            deletedAt = profile.metadata.deletedAt,
+            completionRate = profile.metrics.completionRate,
+            trustScore = profile.metrics.trustScore,
+            viewCount = profile.metrics.viewCount,
+            isAcceptingMatches = profile.settings.isAcceptingMatches,
+            hiddenAt = profile.settings.hiddenAt
         )
     }
 
-    fun updateEntity(entity: ProfileEntity, domain: Profile) {
-        entity.userId = domain.userId.value
-        entity.height = domain.basicInfo.height
-        entity.bodyType = domain.basicInfo.bodyType?.toEntity()
-        entity.careerCategory = domain.careerInfo.category?.toEntity()
-        entity.careerCompany = domain.careerInfo.company
-        entity.careerPosition = domain.careerInfo.position
-        entity.educationLevel = domain.educationInfo.level?.toEntity()
-        entity.educationSchool = domain.educationInfo.school
-        entity.educationMajor = domain.educationInfo.major
-        entity.locationSido = domain.locationInfo.sido
-        entity.locationSigungu = domain.locationInfo.sigungu
-        entity.hometownSido = domain.locationInfo.hometownSido
-        entity.hometownSigungu = domain.locationInfo.hometownSigungu
-        entity.introduction = domain.introduction.text
-        entity.interests = toJsonArray(domain.introduction.interests)
-        entity.smoking = domain.lifestyleInfo.smoking?.toEntity()
-        entity.drinking = domain.lifestyleInfo.drinking?.toEntity()
-        entity.religion = domain.lifestyleInfo.religion?.toEntity()
-        entity.idealAgeMin = domain.idealType.ageRange?.min
-        entity.idealAgeMax = domain.idealType.ageRange?.max
-        entity.idealHeightMin = domain.idealType.heightRange?.min
-        entity.idealHeightMax = domain.idealType.heightRange?.max
-        entity.idealBodyTypes = toJsonArray(domain.idealType.bodyTypes.map { it.name })
-        entity.idealPersonalities = toJsonArray(domain.idealType.personalities)
-        entity.idealDateStyle = domain.idealType.dateStyle?.toEntity()
-        entity.idealPurpose = domain.idealType.purpose?.toEntity()
-        entity.idealDealBreakers = domain.idealType.dealBreakers
-        entity.colorType = domain.colorType.type?.toEntity()
-        entity.colorName = domain.colorType.name
-        entity.colorHex = domain.colorType.hex
-        entity.colorDescription = domain.colorType.description
-        entity.completionRate = domain.metrics.completionRate
-        entity.trustScore = domain.metrics.trustScore
-        entity.viewCount = domain.metrics.viewCount
-        entity.isAcceptingMatches = domain.settings.isAcceptingMatches
-        entity.hiddenAt = domain.settings.hiddenAt
-        entity.updatedAt = domain.metadata.updatedAt
-        entity.lastAccessedAt = domain.metadata.lastAccessedAt
-        entity.deletedAt = domain.metadata.deletedAt
-    }
+    // Enum conversions
+    private fun BodyTypeEntity.toDomain(): BodyType = BodyType.valueOf(this.name)
+    private fun BodyType.toEntity(): BodyTypeEntity = BodyTypeEntity.valueOf(this.name)
 
-    private fun parseJsonArray(json: String?): List<String> {
-        if (json.isNullOrBlank()) return emptyList()
-        return try {
-            objectMapper.readValue<List<String>>(json)
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
+    private fun CareerCategoryEntity.toDomain(): CareerCategory = CareerCategory.valueOf(this.name)
+    private fun CareerCategory.toEntity(): CareerCategoryEntity = CareerCategoryEntity.valueOf(this.name)
 
-    private fun toJsonArray(list: List<String>): String? {
-        if (list.isEmpty()) return null
-        return try {
-            objectMapper.writeValueAsString(list)
-        } catch (e: Exception) {
-            null
-        }
-    }
+    private fun EducationLevelEntity.toDomain(): EducationLevel = EducationLevel.valueOf(this.name)
+    private fun EducationLevel.toEntity(): EducationLevelEntity = EducationLevelEntity.valueOf(this.name)
+
+    private fun FrequencyEntity.toDomain(): Frequency = Frequency.valueOf(this.name)
+    private fun Frequency.toEntity(): FrequencyEntity = FrequencyEntity.valueOf(this.name)
+
+    private fun ReligionEntity.toDomain(): Religion = Religion.valueOf(this.name)
+    private fun Religion.toEntity(): ReligionEntity = ReligionEntity.valueOf(this.name)
+
+    private fun DateStyleEntity.toDomain(): DateStyle = DateStyle.valueOf(this.name)
+    private fun DateStyle.toEntity(): DateStyleEntity = DateStyleEntity.valueOf(this.name)
+
+    private fun DatingPurposeEntity.toDomain(): DatingPurpose = DatingPurpose.valueOf(this.name)
+    private fun DatingPurpose.toEntity(): DatingPurposeEntity = DatingPurposeEntity.valueOf(this.name)
 }
-
-// Extension functions for enum conversion
-private fun BodyTypeEntity.toDomain(): BodyType = BodyType.valueOf(this.name)
-private fun BodyType.toEntity(): BodyTypeEntity = BodyTypeEntity.valueOf(this.name)
-
-private fun CareerCategoryEntity.toDomain(): CareerCategory = CareerCategory.valueOf(this.name)
-private fun CareerCategory.toEntity(): CareerCategoryEntity = CareerCategoryEntity.valueOf(this.name)
-
-private fun EducationLevelEntity.toDomain(): EducationLevel = EducationLevel.valueOf(this.name)
-private fun EducationLevel.toEntity(): EducationLevelEntity = EducationLevelEntity.valueOf(this.name)
-
-private fun FrequencyEntity.toDomain(): Frequency = Frequency.valueOf(this.name)
-private fun Frequency.toEntity(): FrequencyEntity = FrequencyEntity.valueOf(this.name)
-
-private fun ReligionEntity.toDomain(): Religion = Religion.valueOf(this.name)
-private fun Religion.toEntity(): ReligionEntity = ReligionEntity.valueOf(this.name)
-
-private fun DateStyleEntity.toDomain(): DateStyle = DateStyle.valueOf(this.name)
-private fun DateStyle.toEntity(): DateStyleEntity = DateStyleEntity.valueOf(this.name)
-
-private fun DatingPurposeEntity.toDomain(): DatingPurpose = DatingPurpose.valueOf(this.name)
-private fun DatingPurpose.toEntity(): DatingPurposeEntity = DatingPurposeEntity.valueOf(this.name)
-
-private fun ColorTypeEntity.toDomain(): ColorTypeEnum = ColorTypeEnum.valueOf(this.name)
-private fun ColorTypeEnum.toEntity(): ColorTypeEntity = ColorTypeEntity.valueOf(this.name)

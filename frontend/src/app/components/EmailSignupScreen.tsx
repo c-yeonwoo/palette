@@ -64,10 +64,24 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
       }, { requiresAuth: false });
 
       // 토큰 저장
-      tokenStorage.setTokens(response.accessToken, response.refreshToken);
+      const now = new Date();
+      const accessTokenExpiry = new Date(now.getTime() + response.expiresIn * 1000);
+      const refreshTokenExpiry = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+      tokenStorage.setTokens({
+        accessToken: response.accessToken,
+        refreshToken: response.refreshToken,
+        tokenType: response.tokenType,
+        expiresAt: accessTokenExpiry.toISOString(),
+        refreshExpiresAt: refreshTokenExpiry.toISOString(),
+      });
 
       toast.success("회원가입이 완료되었습니다!");
-      onSuccess();
+
+      // 화면 전환을 위해 약간의 딜레이
+      setTimeout(() => {
+        onSuccess();
+      }, 500);
     } catch (error: any) {
       console.error("Signup failed:", error);
       if (error.response?.status === 400) {

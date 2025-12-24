@@ -1,9 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Card } from "./ui/card";
-import { CheckCircle2, XCircle, TrendingUp, Users, Coins } from "lucide-react";
+import { CheckCircle2, XCircle, TrendingUp, Users, Coins, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { api } from "../../lib/api/apiClient";
+
+interface MatchmakerData {
+  matchmakerId: string;
+  userId: string;
+  level: number;
+  commissionRate: number;
+  totalPoints: number;
+  availablePoints: number;
+  withdrawnPoints: number;
+  pendingPoints: number;
+  totalMatchRequests: number;
+  approvedRequests: number;
+  rejectedRequests: number;
+  successfulMatches: number;
+  failedMatches: number;
+  successRate: number;
+  profilePhotoUrl: string | null;
+  createdAt: string;
+}
 
 interface MatchRequest {
   id: number;
@@ -15,32 +35,48 @@ interface MatchRequest {
   status: "pending" | "approved" | "declined";
 }
 
-const mockRequests: MatchRequest[] = [
-  {
-    id: 1,
-    requester: "김민수",
-    requesterPhoto: "https://images.unsplash.com/photo-1554765345-6ad6a5417cde?w=200",
-    target: "이지은",
-    targetPhoto: "https://images.unsplash.com/photo-1649589244330-09ca58e4fa64?w=200",
-    timestamp: "2시간 전",
-    status: "pending",
-  },
-  {
-    id: 2,
-    requester: "박서준",
-    requesterPhoto: "https://images.unsplash.com/photo-1764816657425-b3c79b616d14?w=200",
-    target: "최유진",
-    targetPhoto: "https://images.unsplash.com/photo-1760552069572-6a6caeeb82d9?w=200",
-    timestamp: "1일 전",
-    status: "pending",
-  },
-];
-
 export function ConnectorDashboard() {
-  const [requests, setRequests] = useState<MatchRequest[]>(mockRequests);
-  const totalPoints = 35000;
-  const totalConnections = 12;
-  const successRate = 85;
+  const [matchmakerData, setMatchmakerData] = useState<MatchmakerData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [requests, setRequests] = useState<MatchRequest[]>([]);
+
+  useEffect(() => {
+    const fetchMatchmakerData = async () => {
+      try {
+        const data = await api.get<MatchmakerData>('/api/v1/matchmakers/me');
+        setMatchmakerData(data);
+      } catch (error) {
+        console.error('Failed to fetch matchmaker data:', error);
+        toast.error('주선자 정보를 불러오는데 실패했습니다');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMatchmakerData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!matchmakerData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-muted-foreground mb-4">주선자 정보를 찾을 수 없습니다</p>
+        </div>
+      </div>
+    );
+  }
+
+  const totalPoints = matchmakerData.totalPoints;
+  const totalConnections = matchmakerData.successfulMatches;
+  const successRate = Math.round(matchmakerData.successRate * 100);
 
   const handleApprove = (requestId: number) => {
     setRequests(
@@ -69,33 +105,33 @@ export function ConnectorDashboard() {
 
       {/* Stats Cards */}
       <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           {/* Total Points */}
-          <Card className="p-6 bg-gradient-to-br from-accent/20 to-accent/5 border-accent/30">
-            <div className="flex items-center justify-between mb-3">
-              <Coins className="w-8 h-8 text-accent" />
-              <Badge className="bg-accent text-accent-foreground">누적</Badge>
+          <Card className="p-3 sm:p-6 bg-gradient-to-br from-accent/20 to-accent/5 border-accent/30">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <Coins className="w-5 h-5 sm:w-8 sm:h-8 text-accent" />
+              <Badge className="bg-accent text-accent-foreground text-xs hidden sm:inline-flex">누적</Badge>
             </div>
-            <p className="text-sm text-muted-foreground mb-1">누적 포인트</p>
-            <h2 className="text-accent-foreground">{totalPoints.toLocaleString()} P</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mb-1">누적 포인트</p>
+            <h2 className="text-base sm:text-2xl text-accent-foreground">{totalPoints.toLocaleString()} P</h2>
           </Card>
 
           {/* Total Connections */}
-          <Card className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-            <div className="flex items-center justify-between mb-3">
-              <Users className="w-8 h-8 text-primary" />
+          <Card className="p-3 sm:p-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <Users className="w-5 h-5 sm:w-8 sm:h-8 text-primary" />
             </div>
-            <p className="text-sm text-muted-foreground mb-1">총 주선 횟수</p>
-            <h2>{totalConnections}번</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mb-1">총 주선 횟수</p>
+            <h2 className="text-base sm:text-2xl">{totalConnections}번</h2>
           </Card>
 
           {/* Success Rate */}
-          <Card className="p-6 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
-            <div className="flex items-center justify-between mb-3">
-              <TrendingUp className="w-8 h-8 text-green-600" />
+          <Card className="p-3 sm:p-6 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <TrendingUp className="w-5 h-5 sm:w-8 sm:h-8 text-green-600" />
             </div>
-            <p className="text-sm text-muted-foreground mb-1">매칭 성공률</p>
-            <h2 className="text-green-600">{successRate}%</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mb-1">매칭 성공률</p>
+            <h2 className="text-base sm:text-2xl text-green-600">{successRate}%</h2>
           </Card>
         </div>
 

@@ -44,9 +44,13 @@ class JwtAuthenticationFilter(
 
     private fun extractJwtFromRequest(request: HttpServletRequest): String? {
         val bearerToken = request.getHeader("Authorization")
+        println("Authorization header: $bearerToken")
         return if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            bearerToken.substring(7)
+            val token = bearerToken.substring(7)
+            println("Extracted JWT token (first 50 chars): ${token.take(50)}...")
+            token
         } else {
+            println("No valid Authorization header found")
             null
         }
     }

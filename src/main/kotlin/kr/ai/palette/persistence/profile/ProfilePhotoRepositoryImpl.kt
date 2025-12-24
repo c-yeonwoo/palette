@@ -1,48 +1,32 @@
 package kr.ai.palette.persistence.profile
 
-import kr.ai.palette.domain.profile.ProfileId
-import kr.ai.palette.domain.profile.ProfilePhoto
-import kr.ai.palette.domain.profile.ProfilePhotoId
-import kr.ai.palette.domain.profile.ProfilePhotoRepository
+import kr.ai.palette.domain.profile.*
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Repository
-import org.springframework.transaction.annotation.Transactional
 
 @Repository
-@Transactional
 class ProfilePhotoRepositoryImpl(
     private val jpaRepository: ProfilePhotoJpaRepository,
     private val mapper: ProfilePhotoMapper
 ) : ProfilePhotoRepository {
 
     override fun save(photo: ProfilePhoto): ProfilePhoto {
-        val entity = jpaRepository.findById(photo.id.value)
-            .orElse(null)
-
-        return if (entity != null) {
-            mapper.updateEntity(entity, photo)
-            mapper.toDomain(jpaRepository.save(entity))
-        } else {
-            val newEntity = mapper.toEntity(photo)
-            mapper.toDomain(jpaRepository.save(newEntity))
-        }
+        val entity = mapper.toEntity(photo)
+        val savedEntity = jpaRepository.save(entity)
+        return mapper.toDomain(savedEntity)
     }
 
-    @Transactional(readOnly = true)
     override fun findById(id: ProfilePhotoId): ProfilePhoto? {
-        return jpaRepository.findById(id.value)
-            .map { mapper.toDomain(it) }
-            .orElse(null)
+        return jpaRepository.findByIdOrNull(id.value)?.let { mapper.toDomain(it) }
     }
 
-    @Transactional(readOnly = true)
     override fun findByProfileId(profileId: ProfileId): List<ProfilePhoto> {
-        return jpaRepository.findByProfileIdOrderByDisplayOrder(profileId.value)
-            .map { mapper.toDomain(it) }
+        return jpaRepository.findByProfileId(profileId.value).map { mapper.toDomain(it) }
     }
 
-    @Transactional(readOnly = true)
     override fun findPrimaryByProfileId(profileId: ProfileId): ProfilePhoto? {
-        return jpaRepository.findByProfileIdAndIsPrimaryTrue(profileId.value)
+        return jpaRepository.findByProfileId(profileId.value)
+            .firstOrNull { it.isPrimary }
             ?.let { mapper.toDomain(it) }
     }
 
