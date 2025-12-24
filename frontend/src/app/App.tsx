@@ -46,6 +46,53 @@ export default function App() {
   const [missingRequiredFields, setMissingRequiredFields] = useState<string[]>([]);
   const [isConvertingToRegular, setIsConvertingToRegular] = useState(false);
 
+  // Profile data collected during registration
+  const [profileData, setProfileData] = useState({
+    basicInfo: {
+      name: "",
+      birthYear: "",
+      birthMonth: "",
+      birthDay: "",
+      gender: "",
+      height: 170,
+      bodyType: "",
+    },
+    careerInfo: {
+      category: "",
+      company: "",
+      position: "",
+    },
+    educationInfo: {
+      level: "",
+      school: "",
+      major: "",
+    },
+    locationInfo: {
+      region: "",
+      district: "",
+      hometown: "",
+      hometownDistrict: "",
+    },
+    photos: [] as string[],
+    mainPhotoIndex: 0,
+    video: null as string | null,
+    introduction: {
+      text: "",
+      interests: [] as string[],
+    },
+    idealType: {
+      ageMin: null as number | null,
+      ageMax: null as number | null,
+      heightMin: null as number | null,
+      heightMax: null as number | null,
+      bodyTypes: [] as string[],
+      personalities: [] as string[],
+      dateStyle: "",
+      purpose: "",
+      dealBreakers: "",
+    },
+  });
+
   // Check authentication state on mount
   useEffect(() => {
     const checkAuth = async () => {
@@ -129,7 +176,14 @@ export default function App() {
     }
   };
 
-  const handleBasicInfoNext = () => {
+  const handleBasicInfoNext = (data: any) => {
+    setProfileData(prev => ({
+      ...prev,
+      basicInfo: data.basicInfo,
+      careerInfo: data.careerInfo,
+      educationInfo: data.educationInfo,
+      locationInfo: data.locationInfo,
+    }));
     setCurrentScreen("photoUpload");
   };
 
@@ -144,36 +198,138 @@ export default function App() {
     }
   };
 
-  const handlePhotoNext = () => {
+  const handlePhotoNext = (data: any) => {
+    setProfileData(prev => ({
+      ...prev,
+      photos: data.photos.filter((p: string | null) => p !== null),
+      mainPhotoIndex: data.mainPhotoIndex,
+      video: data.video,
+    }));
     setCurrentScreen("aboutMe");
   };
 
-  const handleAboutMeNext = () => {
+  const handlePhotoBack = () => {
+    setCurrentScreen("basicInfo");
+  };
+
+  const handleAboutMeNext = (data: any) => {
+    setProfileData(prev => ({
+      ...prev,
+      introduction: data.introduction,
+    }));
     setCurrentScreen("idealType");
   };
 
-  const handleIdealTypeNext = () => {
+  const handleIdealTypeNext = (data: any) => {
+    setProfileData(prev => ({
+      ...prev,
+      idealType: data.idealType,
+    }));
     setCurrentScreen("aiProfileEnhance");
   };
 
   const handleAIProfileComplete = async () => {
-    // 전환 중이었다면 실제로 전환 API 호출
-    if (isConvertingToRegular) {
-      try {
+    try {
+      // 프로필 생성 또는 업데이트
+      console.log('Creating/updating profile with data:', profileData);
+
+      // Convert form data to API format
+      const bodyTypeMap: { [key: string]: string } = {
+        '슬림': 'SLIM',
+        '보통': 'AVERAGE',
+        '탄탄': 'ATHLETIC',
+        '건장': 'MUSCULAR',
+        '풍만': 'CURVY',
+      };
+
+      const jobCategoryMap: { [key: string]: string } = {
+        'IT/개발': 'IT_DEVELOPMENT',
+        '금융/보험': 'FINANCE',
+        '교육': 'EDUCATION',
+        '의료/보건': 'MEDICAL',
+        '미디어/엔터': 'MEDIA',
+        '서비스/영업': 'SERVICE',
+        '제조/생산': 'MANUFACTURING',
+        '공무원/공공기관': 'PUBLIC_OFFICIAL',
+        '전문직': 'PROFESSIONAL',
+        '기타': 'OTHER',
+      };
+
+      const educationMap: { [key: string]: string } = {
+        '고졸': 'HIGH_SCHOOL',
+        '전문대': 'ASSOCIATE',
+        '대졸': 'BACHELOR',
+        '석사': 'MASTER',
+        '박사': 'DOCTORATE',
+      };
+
+      const apiData = {
+        basicInfo: {
+          height: profileData.basicInfo.height || null,
+          bodyType: profileData.basicInfo.bodyType ? bodyTypeMap[profileData.basicInfo.bodyType] : null,
+        },
+        careerInfo: {
+          category: profileData.careerInfo.category ? jobCategoryMap[profileData.careerInfo.category] : null,
+          company: profileData.careerInfo.company || null,
+          position: profileData.careerInfo.position || null,
+        },
+        educationInfo: {
+          level: profileData.educationInfo.level ? educationMap[profileData.educationInfo.level] : null,
+          school: profileData.educationInfo.school || null,
+          major: profileData.educationInfo.major || null,
+        },
+        locationInfo: {
+          sido: profileData.locationInfo.region || null,
+          sigungu: profileData.locationInfo.district || null,
+          hometownSido: profileData.locationInfo.hometown || null,
+          hometownSigungu: profileData.locationInfo.hometownDistrict || null,
+        },
+        lifestyleInfo: {
+          smoking: null,
+          drinking: null,
+          religion: null,
+        },
+        introduction: {
+          text: profileData.introduction.text || null,
+          interests: profileData.introduction.interests || [],
+        },
+        idealType: {
+          ageRange: profileData.idealType.ageMin && profileData.idealType.ageMax
+            ? { min: profileData.idealType.ageMin, max: profileData.idealType.ageMax }
+            : null,
+          heightRange: profileData.idealType.heightMin && profileData.idealType.heightMax
+            ? { min: profileData.idealType.heightMin, max: profileData.idealType.heightMax }
+            : null,
+          bodyTypes: profileData.idealType.bodyTypes.map(bt => bodyTypeMap[bt] || bt),
+          personalities: profileData.idealType.personalities || [],
+          dateStyle: profileData.idealType.dateStyle || null,
+          purpose: profileData.idealType.purpose || null,
+          dealBreakers: profileData.idealType.dealBreakers || null,
+        },
+        settings: {
+          isAcceptingMatches: true,
+          hiddenAt: null,
+        },
+      };
+
+      await api.put('/api/v1/profile', apiData);
+      console.log('Profile saved successfully');
+
+      // 전환 중이었다면 실제로 전환 API 호출
+      if (isConvertingToRegular) {
         console.log('Converting to regular user...');
         await api.patch('/api/v1/auth/convert-to-regular');
         console.log('Conversion successful');
         setIsConvertingToRegular(false);
         toast.success("일반 회원으로 전환되었습니다!");
-      } catch (error: any) {
-        console.error('Failed to convert to regular:', error);
-        toast.error(`회원 전환에 실패했습니다: ${error?.message || '알 수 없는 오류'}`);
-        return; // 전환 실패 시 화면 전환하지 않음
       }
-    }
 
-    setCurrentScreen("mainFeed");
-    toast.success("프로필이 성공적으로 생성되었습니다!");
+      setCurrentScreen("mainFeed");
+      toast.success("프로필이 성공적으로 생성되었습니다!");
+    } catch (error: any) {
+      console.error('Failed to complete profile:', error);
+      toast.error(`프로필 생성에 실패했습니다: ${error?.message || '알 수 없는 오류'}`);
+    }
   };
 
   const handleMyProfileBack = () => {
@@ -292,19 +448,46 @@ export default function App() {
       )}
 
       {currentScreen === "basicInfo" && (
-        <BasicInfoScreen onNext={handleBasicInfoNext} onBack={handleBasicInfoBack} />
+        <BasicInfoScreen
+          onNext={handleBasicInfoNext}
+          onBack={handleBasicInfoBack}
+          initialData={{
+            basicInfo: profileData.basicInfo,
+            careerInfo: profileData.careerInfo,
+            educationInfo: profileData.educationInfo,
+            locationInfo: profileData.locationInfo,
+          }}
+        />
       )}
       
       {currentScreen === "photoUpload" && (
-        <PhotoUploadScreen onNext={handlePhotoNext} />
+        <PhotoUploadScreen
+          onNext={handlePhotoNext}
+          onBack={handlePhotoBack}
+          initialData={{
+            photos: profileData.photos,
+            mainPhotoIndex: profileData.mainPhotoIndex,
+            video: profileData.video,
+          }}
+        />
       )}
       
       {currentScreen === "aboutMe" && (
-        <AboutMeScreen onNext={handleAboutMeNext} />
+        <AboutMeScreen
+          onNext={handleAboutMeNext}
+          initialData={{
+            introduction: profileData.introduction,
+          }}
+        />
       )}
       
       {currentScreen === "idealType" && (
-        <IdealTypeScreen onNext={handleIdealTypeNext} />
+        <IdealTypeScreen
+          onNext={handleIdealTypeNext}
+          initialData={{
+            idealType: profileData.idealType,
+          }}
+        />
       )}
       
       {currentScreen === "aiProfileEnhance" && (

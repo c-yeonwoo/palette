@@ -3,7 +3,8 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
-import { ArrowLeft, Loader2, Save } from "lucide-react";
+import { Badge } from "./ui/badge";
+import { ArrowLeft, Loader2, Save, Plus, Video, Star, X } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 
@@ -63,6 +64,9 @@ export function ProfileEditScreen({ onBack, onSave }: ProfileEditScreenProps) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [photos, setPhotos] = useState<(string | null)[]>(Array(6).fill(null));
+  const [mainPhotoIndex, setMainPhotoIndex] = useState(0);
+  const [video, setVideo] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -143,6 +147,98 @@ export function ProfileEditScreen({ onBack, onSave }: ProfileEditScreenProps) {
       </div>
 
       <div className="p-6 space-y-8">
+        {/* Photos and Video */}
+        <section className="space-y-4">
+          <h3 className="text-xl font-semibold">프로필 사진 및 동영상</h3>
+
+          {/* Photos */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <Label>프로필 사진 (최대 6장)</Label>
+              <p className="text-sm text-muted-foreground">
+                {photos.filter(p => p !== null).length}/6장
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              <Star className="w-3 h-3 inline text-amber-500" /> 표시를 눌러 메인 사진을 선택하세요
+            </p>
+            <div className="grid grid-cols-3 gap-4">
+              {photos.map((photo, index) => (
+                <div
+                  key={index}
+                  className={`relative aspect-square bg-muted rounded-lg border-2 overflow-hidden cursor-pointer transition-all ${
+                    index === mainPhotoIndex
+                      ? 'border-primary ring-2 ring-primary/20'
+                      : photo
+                      ? 'border-border hover:border-primary/50'
+                      : 'border-dashed border-muted-foreground/30 hover:border-primary/50'
+                  }`}
+                >
+                  {photo ? (
+                    <>
+                      <img src={photo} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        onClick={() => setMainPhotoIndex(index)}
+                        className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-1 hover:bg-primary/90"
+                      >
+                        <Star className={`w-3 h-3 ${index === mainPhotoIndex ? 'fill-current' : ''}`} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          const newPhotos = [...photos];
+                          newPhotos[index] = null;
+                          setPhotos(newPhotos);
+                        }}
+                        className="absolute top-1 left-1 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Plus className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Video */}
+          <div>
+            <Label className="mb-3 block">프로필 동영상 (선택)</Label>
+            <div className="grid grid-cols-3 gap-4">
+              <div
+                className={`relative aspect-square rounded-lg border-2 overflow-hidden cursor-pointer transition-all ${
+                  video
+                    ? 'border-primary bg-primary/5'
+                    : 'border-dashed border-muted-foreground/30 hover:border-primary/50 bg-muted'
+                }`}
+              >
+                {video ? (
+                  <>
+                    <video src={video} className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => setVideo(null)}
+                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </>
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                    <Video className="w-5 h-5 text-muted-foreground" />
+                    <p className="text-xs text-muted-foreground">동영상</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              💡 5-30초 권장, MP4/MOV, 최대 50MB
+            </p>
+          </div>
+        </section>
+
         {/* Basic Info */}
         <section className="space-y-4">
           <h3 className="text-xl font-semibold">기본 정보</h3>
@@ -166,25 +262,34 @@ export function ProfileEditScreen({ onBack, onSave }: ProfileEditScreenProps) {
               />
             </div>
             <div>
-              <Label htmlFor="bodyType">체형</Label>
-              <select
-                id="bodyType"
-                value={profile.basicInfo.bodyType || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    basicInfo: { ...profile.basicInfo, bodyType: e.target.value || null }
-                  })
-                }
-                className="w-full p-2 border rounded-md text-base"
-              >
-                <option value="">선택 안함</option>
-                <option value="SLIM">슬림</option>
-                <option value="AVERAGE">보통</option>
-                <option value="ATHLETIC">운동함</option>
-                <option value="MUSCULAR">근육질</option>
-                <option value="CURVY">글래머</option>
-              </select>
+              <Label className="mb-2 block">체형</Label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: "SLIM", label: "슬림" },
+                  { value: "AVERAGE", label: "보통" },
+                  { value: "ATHLETIC", label: "탄탄" },
+                  { value: "MUSCULAR", label: "건장" },
+                  { value: "CURVY", label: "풍만" },
+                ].map((type) => (
+                  <Badge
+                    key={type.value}
+                    onClick={() =>
+                      setProfile({
+                        ...profile,
+                        basicInfo: { ...profile.basicInfo, bodyType: type.value }
+                      })
+                    }
+                    className={`cursor-pointer px-4 py-2 transition-all ${
+                      profile.basicInfo.bodyType === type.value
+                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
+                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
+                    }`}
+                    variant={profile.basicInfo.bodyType === type.value ? "default" : "outline"}
+                  >
+                    {type.label}
+                  </Badge>
+                ))}
+              </div>
             </div>
           </div>
         </section>
@@ -194,30 +299,39 @@ export function ProfileEditScreen({ onBack, onSave }: ProfileEditScreenProps) {
           <h3 className="text-xl font-semibold">직업 정보</h3>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="careerCategory">직업 분야</Label>
-              <select
-                id="careerCategory"
-                value={profile.careerInfo.category || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    careerInfo: { ...profile.careerInfo, category: e.target.value || null }
-                  })
-                }
-                className="w-full p-2 border rounded-md text-base"
-              >
-                <option value="">선택 안함</option>
-                <option value="IT_DEVELOPMENT">IT/개발</option>
-                <option value="FINANCE">금융</option>
-                <option value="EDUCATION">교육</option>
-                <option value="MEDICAL">의료</option>
-                <option value="MEDIA">미디어</option>
-                <option value="SERVICE">서비스</option>
-                <option value="MANUFACTURING">제조</option>
-                <option value="PUBLIC_OFFICIAL">공무원</option>
-                <option value="PROFESSIONAL">전문직</option>
-                <option value="OTHER">기타</option>
-              </select>
+              <Label className="mb-2 block">직업 분야</Label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: "IT_DEVELOPMENT", label: "IT/개발" },
+                  { value: "FINANCE", label: "금융/보험" },
+                  { value: "EDUCATION", label: "교육" },
+                  { value: "MEDICAL", label: "의료/보건" },
+                  { value: "MEDIA", label: "미디어/엔터" },
+                  { value: "SERVICE", label: "서비스/영업" },
+                  { value: "MANUFACTURING", label: "제조/생산" },
+                  { value: "PUBLIC_OFFICIAL", label: "공무원/공공기관" },
+                  { value: "PROFESSIONAL", label: "전문직" },
+                  { value: "OTHER", label: "기타" },
+                ].map((category) => (
+                  <Badge
+                    key={category.value}
+                    onClick={() =>
+                      setProfile({
+                        ...profile,
+                        careerInfo: { ...profile.careerInfo, category: category.value }
+                      })
+                    }
+                    className={`cursor-pointer px-4 py-2 transition-all ${
+                      profile.careerInfo.category === category.value
+                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
+                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
+                    }`}
+                    variant={profile.careerInfo.category === category.value ? "default" : "outline"}
+                  >
+                    {category.label}
+                  </Badge>
+                ))}
+              </div>
             </div>
             <div>
               <Label htmlFor="company">회사명</Label>
@@ -255,25 +369,34 @@ export function ProfileEditScreen({ onBack, onSave }: ProfileEditScreenProps) {
           <h3 className="text-xl font-semibold">학력 정보</h3>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="educationLevel">학력</Label>
-              <select
-                id="educationLevel"
-                value={profile.educationInfo.level || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    educationInfo: { ...profile.educationInfo, level: e.target.value || null }
-                  })
-                }
-                className="w-full p-2 border rounded-md text-base"
-              >
-                <option value="">선택 안함</option>
-                <option value="HIGH_SCHOOL">고등학교</option>
-                <option value="ASSOCIATE">전문대</option>
-                <option value="BACHELOR">대학교</option>
-                <option value="MASTER">석사</option>
-                <option value="DOCTORATE">박사</option>
-              </select>
+              <Label className="mb-2 block">학력</Label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: "HIGH_SCHOOL", label: "고졸" },
+                  { value: "ASSOCIATE", label: "전문대" },
+                  { value: "BACHELOR", label: "대졸" },
+                  { value: "MASTER", label: "석사" },
+                  { value: "DOCTORATE", label: "박사" },
+                ].map((level) => (
+                  <Badge
+                    key={level.value}
+                    onClick={() =>
+                      setProfile({
+                        ...profile,
+                        educationInfo: { ...profile.educationInfo, level: level.value }
+                      })
+                    }
+                    className={`cursor-pointer px-4 py-2 transition-all ${
+                      profile.educationInfo.level === level.value
+                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
+                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
+                    }`}
+                    variant={profile.educationInfo.level === level.value ? "default" : "outline"}
+                  >
+                    {level.label}
+                  </Badge>
+                ))}
+              </div>
             </div>
             <div>
               <Label htmlFor="school">학교명</Label>
@@ -378,63 +501,90 @@ export function ProfileEditScreen({ onBack, onSave }: ProfileEditScreenProps) {
           <h3 className="text-xl font-semibold">라이프스타일</h3>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="smoking">흡연</Label>
-              <select
-                id="smoking"
-                value={profile.lifestyleInfo.smoking || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    lifestyleInfo: { ...profile.lifestyleInfo, smoking: e.target.value || null }
-                  })
-                }
-                className="w-full p-2 border rounded-md text-base"
-              >
-                <option value="">선택 안함</option>
-                <option value="NEVER">비흡연</option>
-                <option value="SOMETIMES">가끔</option>
-                <option value="OFTEN">자주</option>
-              </select>
+              <Label className="mb-2 block">흡연</Label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: "NEVER", label: "비흡연" },
+                  { value: "SOMETIMES", label: "가끔" },
+                  { value: "OFTEN", label: "자주" },
+                ].map((option) => (
+                  <Badge
+                    key={option.value}
+                    onClick={() =>
+                      setProfile({
+                        ...profile,
+                        lifestyleInfo: { ...profile.lifestyleInfo, smoking: option.value }
+                      })
+                    }
+                    className={`cursor-pointer px-4 py-2 transition-all ${
+                      profile.lifestyleInfo.smoking === option.value
+                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
+                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
+                    }`}
+                    variant={profile.lifestyleInfo.smoking === option.value ? "default" : "outline"}
+                  >
+                    {option.label}
+                  </Badge>
+                ))}
+              </div>
             </div>
             <div>
-              <Label htmlFor="drinking">음주</Label>
-              <select
-                id="drinking"
-                value={profile.lifestyleInfo.drinking || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    lifestyleInfo: { ...profile.lifestyleInfo, drinking: e.target.value || null }
-                  })
-                }
-                className="w-full p-2 border rounded-md text-base"
-              >
-                <option value="">선택 안함</option>
-                <option value="NEVER">안함</option>
-                <option value="SOMETIMES">가끔</option>
-                <option value="OFTEN">자주</option>
-              </select>
+              <Label className="mb-2 block">음주</Label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: "NEVER", label: "안마심" },
+                  { value: "SOMETIMES", label: "가끔" },
+                  { value: "OFTEN", label: "자주" },
+                ].map((option) => (
+                  <Badge
+                    key={option.value}
+                    onClick={() =>
+                      setProfile({
+                        ...profile,
+                        lifestyleInfo: { ...profile.lifestyleInfo, drinking: option.value }
+                      })
+                    }
+                    className={`cursor-pointer px-4 py-2 transition-all ${
+                      profile.lifestyleInfo.drinking === option.value
+                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
+                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
+                    }`}
+                    variant={profile.lifestyleInfo.drinking === option.value ? "default" : "outline"}
+                  >
+                    {option.label}
+                  </Badge>
+                ))}
+              </div>
             </div>
             <div>
-              <Label htmlFor="religion">종교</Label>
-              <select
-                id="religion"
-                value={profile.lifestyleInfo.religion || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    lifestyleInfo: { ...profile.lifestyleInfo, religion: e.target.value || null }
-                  })
-                }
-                className="w-full p-2 border rounded-md text-base"
-              >
-                <option value="">선택 안함</option>
-                <option value="NONE">무교</option>
-                <option value="CHRISTIANITY">기독교</option>
-                <option value="CATHOLICISM">천주교</option>
-                <option value="BUDDHISM">불교</option>
-                <option value="OTHER">기타</option>
-              </select>
+              <Label className="mb-2 block">종교</Label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: "NONE", label: "무교" },
+                  { value: "CHRISTIANITY", label: "기독교" },
+                  { value: "CATHOLICISM", label: "천주교" },
+                  { value: "BUDDHISM", label: "불교" },
+                  { value: "OTHER", label: "기타" },
+                ].map((option) => (
+                  <Badge
+                    key={option.value}
+                    onClick={() =>
+                      setProfile({
+                        ...profile,
+                        lifestyleInfo: { ...profile.lifestyleInfo, religion: option.value }
+                      })
+                    }
+                    className={`cursor-pointer px-4 py-2 transition-all ${
+                      profile.lifestyleInfo.religion === option.value
+                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
+                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
+                    }`}
+                    variant={profile.lifestyleInfo.religion === option.value ? "default" : "outline"}
+                  >
+                    {option.label}
+                  </Badge>
+                ))}
+              </div>
             </div>
           </div>
         </section>
@@ -544,43 +694,60 @@ export function ProfileEditScreen({ onBack, onSave }: ProfileEditScreenProps) {
               />
             </div>
             <div>
-              <Label htmlFor="idealDateStyle">데이트 스타일</Label>
-              <select
-                id="idealDateStyle"
-                value={profile.idealType.dateStyle || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    idealType: { ...profile.idealType, dateStyle: e.target.value || null }
-                  })
-                }
-                className="w-full p-2 border rounded-md text-base"
-              >
-                <option value="">선택 안함</option>
-                <option value="ACTIVE">활동적인</option>
-                <option value="INDOOR">실내</option>
-                <option value="CULTURAL">문화생활</option>
-                <option value="BALANCED">균형잡힌</option>
-              </select>
+              <Label className="mb-2 block">데이트 스타일</Label>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { value: "ACTIVE", label: "액티브", desc: "여행, 운동, 액티비티" },
+                  { value: "INDOOR", label: "인도어", desc: "집, 카페, 영화" },
+                  { value: "CULTURAL", label: "문화", desc: "전시, 공연, 맛집" },
+                  { value: "BALANCED", label: "밸런스", desc: "상황에 따라" },
+                ].map((style) => (
+                  <button
+                    key={style.value}
+                    onClick={() =>
+                      setProfile({
+                        ...profile,
+                        idealType: { ...profile.idealType, dateStyle: style.value }
+                      })
+                    }
+                    className={`p-4 rounded-xl border-2 text-left transition-all ${
+                      profile.idealType.dateStyle === style.value
+                        ? "bg-gradient-to-r from-pink-50 to-rose-50 border-pink-400"
+                        : "bg-white border-slate-200 hover:border-pink-300"
+                    }`}
+                  >
+                    <p className="font-medium text-slate-900 mb-1">{style.label}</p>
+                    <p className="text-sm text-slate-600">{style.desc}</p>
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
-              <Label htmlFor="idealPurpose">만남의 목적</Label>
-              <select
-                id="idealPurpose"
-                value={profile.idealType.purpose || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    idealType: { ...profile.idealType, purpose: e.target.value || null }
-                  })
-                }
-                className="w-full p-2 border rounded-md text-base"
-              >
-                <option value="">선택 안함</option>
-                <option value="SERIOUS_DATING">진지한 만남</option>
-                <option value="MARRIAGE_PREMISE">결혼 전제</option>
-                <option value="FRIENDS_FIRST">친구부터</option>
-              </select>
+              <Label className="mb-2 block">만남의 목적</Label>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { value: "SERIOUS_DATING", label: "진지한 연애" },
+                  { value: "MARRIAGE_PREMISE", label: "결혼 전제" },
+                  { value: "FRIENDS_FIRST", label: "친구부터 천천히" },
+                ].map((goal) => (
+                  <button
+                    key={goal.value}
+                    onClick={() =>
+                      setProfile({
+                        ...profile,
+                        idealType: { ...profile.idealType, purpose: goal.value }
+                      })
+                    }
+                    className={`py-3 rounded-xl border-2 font-medium transition-all ${
+                      profile.idealType.purpose === goal.value
+                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
+                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
+                    }`}
+                  >
+                    {goal.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
               <Label htmlFor="idealDealBreakers">비선호 사항</Label>

@@ -8,8 +8,14 @@ import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 
 interface BasicInfoScreenProps {
-  onNext: () => void;
+  onNext: (data: any) => void;
   onBack?: () => void;
+  initialData?: {
+    basicInfo?: any;
+    careerInfo?: any;
+    educationInfo?: any;
+    locationInfo?: any;
+  };
 }
 
 const jobCategories = [
@@ -31,23 +37,23 @@ interface UserProfile {
   gender?: string;
 }
 
-export function BasicInfoScreen({ onNext, onBack }: BasicInfoScreenProps) {
+export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreenProps) {
   const [formData, setFormData] = useState({
-    name: "",
-    birthYear: "",
-    birthMonth: "",
-    birthDay: "",
-    gender: "",
-    height: 170,
-    bodyType: "",
-    jobCategory: "",
-    company: "",
-    position: "",
-    education: "",
-    school: "",
-    major: "",
-    region: "",
-    hometown: "",
+    name: initialData?.basicInfo?.name || "",
+    birthYear: initialData?.basicInfo?.birthYear || "",
+    birthMonth: initialData?.basicInfo?.birthMonth || "",
+    birthDay: initialData?.basicInfo?.birthDay || "",
+    gender: initialData?.basicInfo?.gender || "",
+    height: initialData?.basicInfo?.height || 170,
+    bodyType: initialData?.basicInfo?.bodyType || "",
+    jobCategory: initialData?.careerInfo?.category || "",
+    company: initialData?.careerInfo?.company || "",
+    position: initialData?.careerInfo?.position || "",
+    education: initialData?.educationInfo?.level || "",
+    school: initialData?.educationInfo?.school || "",
+    major: initialData?.educationInfo?.major || "",
+    region: initialData?.locationInfo?.region || "",
+    hometown: initialData?.locationInfo?.hometown || "",
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -366,7 +372,33 @@ export function BasicInfoScreen({ onNext, onBack }: BasicInfoScreenProps) {
 
         {/* Next Button */}
         <Button
-          onClick={onNext}
+          onClick={() => onNext({
+            basicInfo: {
+              name: formData.name,
+              birthYear: formData.birthYear,
+              birthMonth: formData.birthMonth,
+              birthDay: formData.birthDay,
+              gender: formData.gender,
+              height: formData.height,
+              bodyType: formData.bodyType,
+            },
+            careerInfo: {
+              category: formData.jobCategory,
+              company: formData.company,
+              position: formData.position,
+            },
+            educationInfo: {
+              level: formData.education,
+              school: formData.school,
+              major: formData.major,
+            },
+            locationInfo: {
+              region: formData.region,
+              district: "",
+              hometown: formData.hometown,
+              hometownDistrict: "",
+            },
+          })}
           disabled={!isValid}
           className="w-full h-14 bg-gradient-to-r from-pink-400 to-rose-400 text-white disabled:opacity-50"
         >

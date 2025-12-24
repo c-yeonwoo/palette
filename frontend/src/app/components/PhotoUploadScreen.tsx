@@ -2,22 +2,37 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
-import { Upload, Share2, Camera, Plus, Video, Star, CheckCircle2 } from "lucide-react";
+import { Upload, Share2, Camera, Plus, Video, Star, CheckCircle2, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 interface PhotoUploadScreenProps {
-  onNext: () => void;
+  onNext: (data: any) => void;
+  onBack: () => void;
+  initialData?: {
+    photos?: string[];
+    mainPhotoIndex?: number;
+    video?: string | null;
+  };
 }
 
-export function PhotoUploadScreen({ onNext }: PhotoUploadScreenProps) {
-  const [photos, setPhotos] = useState<(string | null)[]>(Array(10).fill(null));
-  const [mainPhotoIndex, setMainPhotoIndex] = useState(0);
-  const [video, setVideo] = useState<string | null>(null);
-  
+export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadScreenProps) {
+  const [photos, setPhotos] = useState<(string | null)[]>(() => {
+    if (initialData?.photos && initialData.photos.length > 0) {
+      const photoArray = Array(6).fill(null);
+      initialData.photos.forEach((photo, index) => {
+        if (index < 6) photoArray[index] = photo;
+      });
+      return photoArray;
+    }
+    return Array(6).fill(null);
+  });
+  const [mainPhotoIndex, setMainPhotoIndex] = useState(initialData?.mainPhotoIndex || 0);
+  const [video, setVideo] = useState<string | null>(initialData?.video || null);
+
   // Mock trust score calculation
   const photoCount = photos.filter(p => p !== null).length;
   const hasVideo = video !== null;
-  const trustScore = Math.min(100, photoCount * 10 + (hasVideo ? 50 : 0));
+  const trustScore = Math.min(100, photoCount * 15 + (hasVideo ? 50 : 0));
   
   const getTrustLevel = (score: number) => {
     if (score >= 71) return { level: "Gold", circles: 3, color: "text-amber-500" };
@@ -27,7 +42,7 @@ export function PhotoUploadScreen({ onNext }: PhotoUploadScreenProps) {
 
   const trustLevel = getTrustLevel(trustScore);
   const uploadedCount = photos.filter(p => p !== null).length;
-  const isValid = uploadedCount >= 3;
+  const isValid = true; // 임시로 사진 없이도 진행 가능
 
   const handleShareRequest = () => {
     toast.success("친구에게 사진 요청 링크가 복사되었습니다!");
@@ -37,7 +52,16 @@ export function PhotoUploadScreen({ onNext }: PhotoUploadScreenProps) {
     <div className="min-h-screen bg-background">
       {/* Header with Progress */}
       <div className="bg-card border-b border-border px-6 py-4 space-y-3">
-        <h2 className="text-center">프로필 사진 등록</h2>
+        <div className="flex items-center justify-center relative">
+          <button
+            onClick={onBack}
+            className="absolute left-0 top-1/2 -translate-y-1/2 p-2 hover:bg-muted rounded-lg transition-colors"
+            aria-label="뒤로 가기"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h2 className="text-center">프로필 사진 등록</h2>
+        </div>
         <div className="space-y-2">
           <Progress value={40} className="h-2" />
           <p className="text-sm text-muted-foreground text-center">2/5 단계 - 약 5분 소요</p>
@@ -102,9 +126,9 @@ export function PhotoUploadScreen({ onNext }: PhotoUploadScreenProps) {
           <div className="flex items-start gap-3">
             <Camera className="w-5 h-5 text-pink-600 mt-0.5 flex-shrink-0" />
             <div>
-              <h3 className="text-pink-900 mb-1">셀카는 등록할 수 없어요</h3>
+              <h3 className="text-pink-900 mb-1">셀카는 승인 거절될 수 있어요</h3>
               <p className="text-sm text-pink-700">
-                남이 찍어준 자연스러운 사진만 올려주세요. 최소 3장, 최대 10장까지 등록할 수 있습니다.
+                남이 찍어준 자연스러운 사진만 올려주세요. 최대 6장까지 등록할 수 있습니다.
               </p>
             </div>
           </div>
@@ -113,13 +137,13 @@ export function PhotoUploadScreen({ onNext }: PhotoUploadScreenProps) {
         {/* Photo Upload Areas */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <Label>프로필 사진 * (최소 3장, 최대 10장)</Label>
-            <p className="text-sm text-slate-600">{uploadedCount}/10장</p>
+            <Label>프로필 사진 (최대 6장)</Label>
+            <p className="text-sm text-slate-600">{uploadedCount}/6장</p>
           </div>
           <p className="text-sm text-muted-foreground mb-3">
             <Star className="w-4 h-4 inline text-amber-500" /> 표시된 사진이 메인 프로필로 사용됩니다
           </p>
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-3 gap-4">
             {photos.map((photo, index) => (
               <div
                 key={index}
@@ -155,7 +179,7 @@ export function PhotoUploadScreen({ onNext }: PhotoUploadScreenProps) {
         {/* Video Upload */}
         <div>
           <Label className="mb-3 block">프로필 동영상 (선택) - 신뢰도 +50점!</Label>
-          <div className="grid grid-cols-5 gap-3">
+          <div className="grid grid-cols-3 gap-4">
             <div className={`relative aspect-square rounded-xl border-2 border-dashed overflow-hidden transition-colors cursor-pointer ${
               video ? 'border-amber-400 bg-amber-50' : 'border-orange-200 bg-gradient-to-br from-pink-50 to-orange-50 hover:border-orange-300'
             }`}>
@@ -163,8 +187,8 @@ export function PhotoUploadScreen({ onNext }: PhotoUploadScreenProps) {
                 <video src={video} className="w-full h-full object-cover" />
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                  <Video className="w-6 h-6 text-orange-400" />
-                  <p className="text-xs text-orange-600">동영상</p>
+                  <Video className="w-8 h-8 text-orange-400" />
+                  <p className="text-sm text-orange-600">동영상</p>
                 </div>
               )}
             </div>
@@ -186,16 +210,19 @@ export function PhotoUploadScreen({ onNext }: PhotoUploadScreenProps) {
 
         {/* Next Button */}
         <Button
-          onClick={onNext}
-          disabled={!isValid}
-          className="w-full h-14 bg-gradient-to-r from-pink-400 to-rose-400 text-white disabled:opacity-50"
+          onClick={() => onNext({
+            photos,
+            mainPhotoIndex,
+            video,
+          })}
+          className="w-full h-14 bg-gradient-to-r from-pink-400 to-rose-400 text-white"
         >
           다음 - 자기소개 작성
         </Button>
 
-        {!isValid && (
-          <p className="text-sm text-center text-rose-600">
-            최소 3장의 사진을 등록해주세요
+        {uploadedCount === 0 && (
+          <p className="text-sm text-center text-muted-foreground">
+            💡 나중에 사진을 추가할 수 있습니다
           </p>
         )}
       </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Edit3, Loader2, Settings, LogOut, Camera } from "lucide-react";
+import { Edit3, Loader2, Settings, LogOut } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { authService } from "../../lib/auth/authService";
 import { toast } from "sonner";
@@ -84,9 +84,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -140,61 +138,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
     }
   };
 
-  const handlePhotoUpload = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // 파일 타입 검증
-    if (!file.type.startsWith('image/')) {
-      toast.error('이미지 파일만 업로드 가능합니다');
-      return;
-    }
-
-    // 파일 크기 검증 (10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('파일 크기는 10MB 이하여야 합니다');
-      return;
-    }
-
-    setIsUploading(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('http://localhost:8080/api/v1/profile/photo', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-
-      // 프로필 데이터 다시 불러오기
-      const updatedProfile = await api.get<ProfileData>('/api/v1/profile');
-      setProfile(updatedProfile);
-
-      toast.success('프로필 사진이 업로드되었습니다');
-    } catch (error) {
-      console.error('Failed to upload photo:', error);
-      toast.error('사진 업로드에 실패했습니다');
-    } finally {
-      setIsUploading(false);
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -228,15 +171,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Hidden file input */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileSelect}
-        className="hidden"
-      />
-
       {/* Header */}
       <div className="bg-card border-b border-border px-6 py-4 flex items-center justify-between">
         <Button variant="ghost" size="sm" onClick={onBack}>
@@ -256,17 +190,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
           {showSettingsMenu && (
             <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-1 z-50">
               <button
-                onClick={() => {
-                  setShowSettingsMenu(false);
-                  onEdit();
-                }}
-                className="w-full px-4 py-3 text-left text-sm hover:bg-muted flex items-center gap-3 transition-colors"
-              >
-                <Edit3 className="w-4 h-4" />
-                프로필 수정
-              </button>
-              <div className="border-t border-border my-1" />
-              <button
                 onClick={handleLogout}
                 className="w-full px-4 py-3 text-left text-sm text-destructive hover:bg-destructive/10 flex items-center gap-3 transition-colors"
               >
@@ -282,7 +205,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
       <div className="p-6 space-y-6">
         {/* Profile Header */}
         <div className="flex items-start gap-4">
-          <div className="relative">
+          <div>
             {profile?.primaryPhotoUrl ? (
               <img
                 src={profile.primaryPhotoUrl}
@@ -294,17 +217,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
                 {userProfile.nickname.charAt(0).toUpperCase()}
               </div>
             )}
-            <button
-              onClick={handlePhotoUpload}
-              disabled={isUploading}
-              className="absolute bottom-0 right-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors disabled:opacity-50"
-            >
-              {isUploading ? (
-                <Loader2 className="w-4 h-4 text-primary-foreground animate-spin" />
-              ) : (
-                <Camera className="w-4 h-4 text-primary-foreground" />
-              )}
-            </button>
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
@@ -380,22 +292,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
                 />
               </div>
             ) : (
-              <div className="text-center py-8">
-                <p className="text-sm text-muted-foreground mb-4">프로필 사진을 추가해주세요</p>
-                <Button onClick={handlePhotoUpload} variant="outline" disabled={isUploading}>
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      업로드 중...
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="w-4 h-4 mr-2" />
-                      사진 업로드
-                    </>
-                  )}
-                </Button>
-              </div>
+              <EmptyContent message="프로필 수정에서 사진을 추가할 수 있습니다" />
             )}
           </Section>
 
@@ -439,6 +336,18 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
           <Section title="추천사">
             <EmptyContent message="아직 받은 추천사가 없습니다" />
           </Section>
+        </div>
+
+        {/* Edit Profile Button */}
+        <div className="pt-4 pb-6">
+          <Button
+            onClick={onEdit}
+            className="w-full h-14 bg-gradient-to-r from-pink-400 to-rose-400 text-white hover:from-pink-500 hover:to-rose-500"
+            size="lg"
+          >
+            <Edit3 className="w-5 h-5 mr-2" />
+            프로필 수정하기
+          </Button>
         </div>
       </div>
     </div>

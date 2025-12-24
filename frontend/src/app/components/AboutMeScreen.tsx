@@ -7,7 +7,13 @@ import { Textarea } from "./ui/textarea";
 import { Instagram, Sparkles, Lightbulb } from "lucide-react";
 
 interface AboutMeScreenProps {
-  onNext: () => void;
+  onNext: (data: any) => void;
+  initialData?: {
+    introduction?: {
+      text?: string;
+      interests?: string[];
+    };
+  };
 }
 
 const interests = {
@@ -20,9 +26,9 @@ const interests = {
   "자기계발": ["투자", "외국어", "자격증", "독서", "스터디"],
 };
 
-export function AboutMeScreen({ onNext }: AboutMeScreenProps) {
-  const [bio, setBio] = useState("");
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+export function AboutMeScreen({ onNext, initialData }: AboutMeScreenProps) {
+  const [bio, setBio] = useState(initialData?.introduction?.text || "");
+  const [selectedInterests, setSelectedInterests] = useState<string[]>(initialData?.introduction?.interests || []);
   const [smoking, setSmoking] = useState("");
   const [drinking, setDrinking] = useState("");
   const [religion, setReligion] = useState("");
@@ -232,7 +238,12 @@ export function AboutMeScreen({ onNext }: AboutMeScreenProps) {
 
         {/* Next Button */}
         <Button
-          onClick={onNext}
+          onClick={() => onNext({
+            introduction: {
+              text: bio,
+              interests: selectedInterests,
+            },
+          })}
           disabled={!isValid}
           className="w-full h-14 bg-gradient-to-r from-pink-400 to-rose-400 text-white disabled:opacity-50"
         >

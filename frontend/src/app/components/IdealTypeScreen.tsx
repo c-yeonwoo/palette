@@ -7,7 +7,10 @@ import { Textarea } from "./ui/textarea";
 import { Heart, Sparkles } from "lucide-react";
 
 interface IdealTypeScreenProps {
-  onNext: () => void;
+  onNext: (data: any) => void;
+  initialData?: {
+    idealType?: any;
+  };
 }
 
 const personalities = [
@@ -28,15 +31,15 @@ const dateStyles = [
 
 const relationshipGoals = ["진지한 연애", "결혼 전제", "친구부터 천천히"];
 
-export function IdealTypeScreen({ onNext }: IdealTypeScreenProps) {
-  const [ageRange, setAgeRange] = useState([25, 35]);
-  const [heightRange, setHeightRange] = useState([165, 180]);
-  const [selectedBodyTypes, setSelectedBodyTypes] = useState<string[]>([]);
+export function IdealTypeScreen({ onNext, initialData }: IdealTypeScreenProps) {
+  const [ageRange, setAgeRange] = useState(initialData?.idealType?.ageMin && initialData?.idealType?.ageMax ? [initialData.idealType.ageMin, initialData.idealType.ageMax] : [25, 35]);
+  const [heightRange, setHeightRange] = useState(initialData?.idealType?.heightMin && initialData?.idealType?.heightMax ? [initialData.idealType.heightMin, initialData.idealType.heightMax] : [165, 180]);
+  const [selectedBodyTypes, setSelectedBodyTypes] = useState<string[]>(initialData?.idealType?.bodyTypes || []);
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
-  const [selectedPersonalities, setSelectedPersonalities] = useState<string[]>([]);
-  const [dateStyle, setDateStyle] = useState("");
-  const [relationshipGoal, setRelationshipGoal] = useState("");
-  const [dealBreakers, setDealBreakers] = useState("");
+  const [selectedPersonalities, setSelectedPersonalities] = useState<string[]>(initialData?.idealType?.personalities || []);
+  const [dateStyle, setDateStyle] = useState(initialData?.idealType?.dateStyle || "");
+  const [relationshipGoal, setRelationshipGoal] = useState(initialData?.idealType?.purpose || "");
+  const [dealBreakers, setDealBreakers] = useState(initialData?.idealType?.dealBreakers || "");
 
   const toggleBodyType = (type: string) => {
     if (selectedBodyTypes.includes(type)) {
@@ -277,7 +280,19 @@ export function IdealTypeScreen({ onNext }: IdealTypeScreenProps) {
 
         {/* Next Button */}
         <Button
-          onClick={onNext}
+          onClick={() => onNext({
+            idealType: {
+              ageMin: ageRange[0],
+              ageMax: ageRange[1],
+              heightMin: heightRange[0],
+              heightMax: heightRange[1],
+              bodyTypes: selectedBodyTypes,
+              personalities: selectedPersonalities,
+              dateStyle,
+              purpose: relationshipGoal,
+              dealBreakers,
+            },
+          })}
           disabled={!isValid}
           className="w-full h-14 bg-gradient-to-r from-pink-400 to-rose-400 text-white disabled:opacity-50"
         >
