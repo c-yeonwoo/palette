@@ -36,9 +36,29 @@ Palette는 지인 네트워크 기반의 신뢰할 수 있는 주선 데이팅 �
 - **Phase 2** (3-6개월): 지인 네트워크 및 주선 시스템
 - **Phase 3** (6-12개월): AI 추천 알고리즘 및 그룹 매칭
 
-This is a Kotlin-based Spring Boot 4.0.1 application using Java 21.
+This is a Kotlin-based Spring Boot 4.0.1 application using Java 21, with a React TypeScript frontend.
 
 ## Build and Run Commands
+
+### Frontend (React + TypeScript)
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+### Backend (Spring Boot)
 
 ### Building the Project
 ```bash
@@ -69,6 +89,7 @@ This is a Kotlin-based Spring Boot 4.0.1 application using Java 21.
 
 ## Technology Stack
 
+### Backend
 - **Language**: Kotlin 2.2.21 with Java 21
 - **Framework**: Spring Boot 4.0.1
 - **Build Tool**: Gradle with Kotlin DSL
@@ -76,6 +97,16 @@ This is a Kotlin-based Spring Boot 4.0.1 application using Java 21.
 - **Security**: Spring Security with OAuth2 (both client and authorization server)
 - **ORM**: Spring Data JPA with Kotlin JPA plugin
 - **Testing**: JUnit 5 (Jupiter)
+
+### Frontend
+- **Language**: TypeScript
+- **Framework**: React 18
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS
+- **UI Components**: shadcn/ui (Radix UI primitives)
+- **Icons**: Lucide React
+- **Notifications**: Sonner (toast notifications)
+- **HTTP Client**: Fetch API with custom wrapper
 
 ## Architecture
 
@@ -133,6 +164,74 @@ kr.ai.palette/
 └── presentation/          # Presentation Layer (API)
     └── (To be implemented)
 ```
+
+### Frontend Structure
+
+```
+frontend/
+├── src/
+│   ├── app/
+│   │   ├── App.tsx              # Main application with routing
+│   │   └── components/
+│   │       ├── ui/              # shadcn/ui components (button, input, etc.)
+│   │       ├── LoginScreen.tsx
+│   │       ├── EmailLoginScreen.tsx
+│   │       ├── EmailSignupScreen.tsx
+│   │       ├── AccountTypeSelectionScreen.tsx
+│   │       ├── BasicInfoScreen.tsx
+│   │       ├── PhotoUploadScreen.tsx
+│   │       ├── AboutMeScreen.tsx
+│   │       ├── IdealTypeScreen.tsx
+│   │       ├── AIProfileEnhanceScreen.tsx
+│   │       ├── MyProfileScreen.tsx      # View own profile (read-only photos)
+│   │       ├── ProfileEditScreen.tsx    # Edit profile (includes photo upload)
+│   │       ├── ProfileDetailScreen.tsx  # View other user's profile
+│   │       ├── MainFeedScreen.tsx       # Main feed
+│   │       ├── ConnectorDashboard.tsx   # Matchmaker dashboard
+│   │       └── MatchmakerProfileScreen.tsx
+│   │
+│   ├── lib/
+│   │   ├── api/
+│   │   │   └── apiClient.ts     # HTTP client wrapper with auth
+│   │   ├── auth/
+│   │   │   ├── authService.ts   # Authentication service
+│   │   │   └── tokenStorage.ts  # Token management
+│   │   └── utils.ts
+│   │
+│   └── index.css                 # Tailwind CSS imports
+│
+├── vite.config.ts
+├── tailwind.config.js
+└── package.json
+```
+
+### Frontend Features
+
+#### Authentication Flow
+1. **OAuth2 Login**: Kakao, Naver, Google, Apple
+2. **Email Login/Signup**: Traditional email authentication
+3. **Token Management**: Access token in localStorage with refresh handling
+4. **Protected Routes**: Automatic redirect to login if unauthenticated
+
+#### Profile Registration Flow
+1. **Account Type Selection**: Regular user or Matchmaker-only
+2. **Basic Info**: Name, birth date, gender, height, body type, job, education, location
+3. **Photo Upload**: Up to 6 photos (3x2 grid), optional video, trust score calculation
+4. **About Me**: Self-introduction (50-500 chars), interests (max 10), lifestyle
+5. **Ideal Type**: Age/height range, body types, personalities, date style, purpose
+6. **AI Profile Enhancement**: Final review and completion
+
+#### Profile Management
+- **MyProfileScreen**: View own profile (read-only, photos cannot be uploaded here)
+- **ProfileEditScreen**: Edit all profile fields including photos (chip-style selections)
+- **Data Persistence**: Data saved only on completion, restored on back navigation
+
+#### UI Patterns
+- **Chip Selection**: Interactive badge-style selections (body type, job category, education, lifestyle, ideal type)
+- **Photo Grid**: 3 columns for edit screen, trust score visualization
+- **Progress Indicators**: 5-step progress bar during registration
+- **Toast Notifications**: Success/error feedback with sonner
+- **Bottom Navigation**: Home, Profile, Messages (TBD), Matchmaker Dashboard
 
 ### Domain Models
 
