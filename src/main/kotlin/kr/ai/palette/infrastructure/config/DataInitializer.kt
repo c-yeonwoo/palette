@@ -311,13 +311,11 @@ class DataInitializer(
                 interests = listOf("개발", "등산", "독서", "영화감상")
             ),
             idealType = IdealType(
-                ageRange = AgeRange(25, 32),
-                heightRange = HeightRange(160, 175),
-                bodyTypes = listOf(BodyType.SLIM, BodyType.AVERAGE),
+                datePreferences = listOf(DatePreference.ACTIVE, DatePreference.CULTURE),
+                importantValues = listOf(ImportantValue.PERSONALITY, ImportantValue.CAREER, ImportantValue.VALUES),
                 personalities = listOf("밝은", "유머러스한", "지적인"),
-                dateStyle = DateStyle.BALANCED,
-                purpose = DatingPurpose.SERIOUS_DATING,
-                dealBreakers = "담배, 거짓말"
+                appearanceStyles = listOf("CAT"), // 남성 유저 -> 여자 스타일 (하나만 선택)
+                dealBreakers = listOf(DealBreaker.SMOKING, DealBreaker.CONTACTS_EX)
             ),
             photos = emptyList(),
             videos = emptyList(),
@@ -370,13 +368,11 @@ class DataInitializer(
                 interests = listOf("여행", "맛집", "요가", "사진", "전시회")
             ),
             idealType = IdealType(
-                ageRange = AgeRange(27, 35),
-                heightRange = HeightRange(175, 185),
-                bodyTypes = listOf(BodyType.ATHLETIC, BodyType.AVERAGE),
+                datePreferences = listOf(DatePreference.ACTIVE, DatePreference.NATURE),
+                importantValues = listOf(ImportantValue.PERSONALITY, ImportantValue.CAREER, ImportantValue.APPEARANCE),
                 personalities = listOf("유머러스한", "배려심있는", "적극적인"),
-                dateStyle = DateStyle.ACTIVE,
-                purpose = DatingPurpose.MARRIAGE_PREMISE,
-                dealBreakers = "게으른 사람, 무계획적인 사람"
+                appearanceStyles = listOf("STUDENT_COUNCIL"), // 여성 유저 -> 남자 스타일 (하나만 선택)
+                dealBreakers = listOf(DealBreaker.SMOKING, DealBreaker.UNSTABLE_JOB)
             ),
             photos = emptyList(),
             videos = emptyList(),
@@ -429,13 +425,11 @@ class DataInitializer(
                 interests = listOf("헬스", "골프", "경제", "와인")
             ),
             idealType = IdealType(
-                ageRange = AgeRange(26, 32),
-                heightRange = HeightRange(160, 170),
-                bodyTypes = listOf(BodyType.SLIM, BodyType.AVERAGE, BodyType.ATHLETIC),
+                datePreferences = listOf(DatePreference.CULTURE, DatePreference.INDOOR),
+                importantValues = listOf(ImportantValue.PERSONALITY, ImportantValue.FAMILY, ImportantValue.VALUES),
                 personalities = listOf("차분한", "이해심있는", "따뜻한"),
-                dateStyle = DateStyle.BALANCED,
-                purpose = DatingPurpose.MARRIAGE_PREMISE,
-                dealBreakers = "불성실한 사람"
+                appearanceStyles = listOf("DEER"), // 남성 유저 -> 여자 스타일 (하나만 선택)
+                dealBreakers = listOf(DealBreaker.SMOKING, DealBreaker.HEAVY_DRINKING, DealBreaker.CONTACTS_EX)
             ),
             photos = emptyList(),
             videos = emptyList(),
@@ -488,13 +482,11 @@ class DataInitializer(
                 interests = listOf("피아노", "독서", "영화", "베이킹", "그림")
             ),
             idealType = IdealType(
-                ageRange = AgeRange(28, 36),
-                heightRange = HeightRange(170, 185),
-                bodyTypes = listOf(BodyType.AVERAGE, BodyType.ATHLETIC),
+                datePreferences = listOf(DatePreference.INDOOR, DatePreference.CULTURE),
+                importantValues = listOf(ImportantValue.PERSONALITY, ImportantValue.FAMILY, ImportantValue.JOB),
                 personalities = listOf("따뜻한", "책임감있는", "가정적인"),
-                dateStyle = DateStyle.INDOOR,
-                purpose = DatingPurpose.MARRIAGE_PREMISE,
-                dealBreakers = "거칠거나 무례한 사람"
+                appearanceStyles = listOf("TOFU"), // 여성 유저 -> 남자 스타일 (하나만 선택)
+                dealBreakers = listOf(DealBreaker.SMOKING, DealBreaker.HEAVY_DRINKING)
             ),
             photos = emptyList(),
             videos = emptyList(),
@@ -547,13 +539,11 @@ class DataInitializer(
                 interests = listOf("명상", "클래식", "독서", "산책")
             ),
             idealType = IdealType(
-                ageRange = AgeRange(25, 33),
-                heightRange = HeightRange(158, 170),
-                bodyTypes = listOf(BodyType.SLIM, BodyType.AVERAGE),
+                datePreferences = listOf(DatePreference.CULTURE, DatePreference.NATURE),
+                importantValues = listOf(ImportantValue.PERSONALITY, ImportantValue.VALUES, ImportantValue.EDUCATION),
                 personalities = listOf("차분한", "이해심있는", "지적인"),
-                dateStyle = DateStyle.CULTURAL,
-                purpose = DatingPurpose.FRIENDS_FIRST,
-                dealBreakers = "시끄럽거나 과격한 성격"
+                appearanceStyles = listOf("CAT"), // 남성 유저 -> 여자 스타일 (하나만 선택)
+                dealBreakers = listOf(DealBreaker.SMOKING, DealBreaker.HEAVY_DRINKING)
             ),
             photos = emptyList(),
             videos = emptyList(),

@@ -41,18 +41,20 @@ class ProfileMapper {
                 interests = entity.interests?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
             ),
             idealType = IdealType(
-                ageRange = if (entity.idealAgeMin != null && entity.idealAgeMax != null)
-                    AgeRange(entity.idealAgeMin!!, entity.idealAgeMax!!) else null,
-                heightRange = if (entity.idealHeightMin != null && entity.idealHeightMax != null)
-                    HeightRange(entity.idealHeightMin!!, entity.idealHeightMax!!) else null,
-                bodyTypes = entity.idealBodyTypes?.split(",")
+                datePreferences = entity.idealDatePreferences?.split(",")
                     ?.filter { it.isNotBlank() }
-                    ?.map { BodyType.valueOf(it) }
+                    ?.mapNotNull { try { DatePreference.valueOf(it) } catch (e: Exception) { null } }
+                    ?: emptyList(),
+                importantValues = entity.idealImportantValues?.split(",")
+                    ?.filter { it.isNotBlank() }
+                    ?.mapNotNull { try { ImportantValue.valueOf(it) } catch (e: Exception) { null } }
                     ?: emptyList(),
                 personalities = entity.idealPersonalities?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
-                dateStyle = entity.idealDateStyle?.toDomain(),
-                purpose = entity.idealPurpose?.toDomain(),
-                dealBreakers = entity.idealDealBreakers
+                appearanceStyles = entity.idealAppearanceStyles?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
+                dealBreakers = entity.idealDealBreakers?.split(",")
+                    ?.filter { it.isNotBlank() }
+                    ?.mapNotNull { try { DealBreaker.valueOf(it) } catch (e: Exception) { null } }
+                    ?: emptyList()
             ),
             photos = emptyList(), // Photos are managed separately
             videos = emptyList(), // Videos are managed separately
@@ -95,15 +97,11 @@ class ProfileMapper {
             religion = profile.lifestyleInfo.religion?.toEntity(),
             introductionText = profile.introduction.text,
             interests = profile.introduction.interests.joinToString(","),
-            idealAgeMin = profile.idealType.ageRange?.min,
-            idealAgeMax = profile.idealType.ageRange?.max,
-            idealHeightMin = profile.idealType.heightRange?.min,
-            idealHeightMax = profile.idealType.heightRange?.max,
-            idealBodyTypes = profile.idealType.bodyTypes.joinToString(","),
+            idealDatePreferences = profile.idealType.datePreferences.joinToString(",") { it.name },
+            idealImportantValues = profile.idealType.importantValues.joinToString(",") { it.name },
             idealPersonalities = profile.idealType.personalities.joinToString(","),
-            idealDateStyle = profile.idealType.dateStyle?.toEntity(),
-            idealPurpose = profile.idealType.purpose?.toEntity(),
-            idealDealBreakers = profile.idealType.dealBreakers,
+            idealAppearanceStyles = profile.idealType.appearanceStyles.joinToString(","),
+            idealDealBreakers = profile.idealType.dealBreakers.joinToString(",") { it.name },
             createdAt = profile.metadata.createdAt,
             updatedAt = profile.metadata.updatedAt,
             lastAccessedAt = profile.metadata.lastAccessedAt,
@@ -131,10 +129,4 @@ class ProfileMapper {
 
     private fun ReligionEntity.toDomain(): Religion = Religion.valueOf(this.name)
     private fun Religion.toEntity(): ReligionEntity = ReligionEntity.valueOf(this.name)
-
-    private fun DateStyleEntity.toDomain(): DateStyle = DateStyle.valueOf(this.name)
-    private fun DateStyle.toEntity(): DateStyleEntity = DateStyleEntity.valueOf(this.name)
-
-    private fun DatingPurposeEntity.toDomain(): DatingPurpose = DatingPurpose.valueOf(this.name)
-    private fun DatingPurpose.toEntity(): DatingPurposeEntity = DatingPurposeEntity.valueOf(this.name)
 }

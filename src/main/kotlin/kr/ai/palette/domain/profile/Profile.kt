@@ -120,7 +120,7 @@ data class Profile(
             locationInfo: LocationInfo = LocationInfo(null, null, null, null),
             lifestyleInfo: LifestyleInfo = LifestyleInfo(null, null, null),
             introduction: Introduction = Introduction(null, emptyList()),
-            idealType: IdealType = IdealType(null, null, emptyList(), emptyList(), null, null, null)
+            idealType: IdealType = IdealType(emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
         ): Profile {
             val now = Instant.now()
             return Profile(

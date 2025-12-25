@@ -45,6 +45,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [missingRequiredFields, setMissingRequiredFields] = useState<string[]>([]);
   const [isConvertingToRegular, setIsConvertingToRegular] = useState(false);
+  const [userGender, setUserGender] = useState<string | undefined>(undefined);
 
   // Profile data collected during registration
   const [profileData, setProfileData] = useState({
@@ -109,6 +110,7 @@ export default function App() {
           const user = await authService.getCurrentUser();
           if (user) {
             setIsLoggedIn(true);
+            setUserGender(user.gender); // Store user gender for profile editing
             // If profile is completed, go to main feed, otherwise start onboarding
             if (user.isProfileCompleted) {
               setCurrentScreen("mainFeed");
@@ -184,6 +186,7 @@ export default function App() {
       educationInfo: data.educationInfo,
       locationInfo: data.locationInfo,
     }));
+    setUserGender(data.basicInfo.gender); // Store gender for profile editing later
     setCurrentScreen("photoUpload");
   };
 
@@ -373,6 +376,7 @@ export default function App() {
       console.log('User fetched:', user);
 
       if (user) {
+        setUserGender(user.gender); // Store user gender
         if (user.isProfileCompleted) {
           console.log('Profile completed, going to mainFeed');
           setCurrentScreen("mainFeed");
@@ -487,6 +491,7 @@ export default function App() {
           initialData={{
             idealType: profileData.idealType,
           }}
+          userGender={profileData.basicInfo.gender}
         />
       )}
       
@@ -503,7 +508,11 @@ export default function App() {
       )}
 
       {currentScreen === "profileEdit" && (
-        <ProfileEditScreen onBack={handleProfileEditBack} onSave={handleProfileEditSave} />
+        <ProfileEditScreen
+          onBack={handleProfileEditBack}
+          onSave={handleProfileEditSave}
+          userGender={userGender || profileData.basicInfo.gender}
+        />
       )}
       
       {currentScreen === "mainFeed" && <MainFeedScreen />}

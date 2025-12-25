@@ -11,6 +11,7 @@ import { toast } from "sonner";
 interface ProfileEditScreenProps {
   onBack: () => void;
   onSave: () => void;
+  userGender?: string; // "MALE" or "FEMALE"
 }
 
 interface ProfileData {
@@ -46,13 +47,11 @@ interface ProfileData {
     interests: string[];
   };
   idealType: {
-    ageRange: { min: number; max: number } | null;
-    heightRange: { min: number; max: number } | null;
-    bodyTypes: string[];
+    datePreferences: string[];
+    importantValues: string[];
     personalities: string[];
-    dateStyle: string | null;
-    purpose: string | null;
-    dealBreakers: string | null;
+    appearanceStyles: string[];
+    dealBreakers: string[];
   };
   settings: {
     isAcceptingMatches: boolean;
@@ -60,13 +59,62 @@ interface ProfileData {
   };
 }
 
-export function ProfileEditScreen({ onBack, onSave }: ProfileEditScreenProps) {
+// 선호하는 성격 옵션
+const personalities = [
+  "유머있는", "다정한", "지적인", "활발한", "차분한",
+  "섬세한", "솔직한", "적극적인", "배려심많은", "독립적인"
+];
+
+// 남자가 선택하는 여자 외모 스타일 (enum -> 한글)
+const femaleAppearanceStyles: Record<string, string> = {
+  PUPPY: "강아지상",
+  CAT: "고양이상",
+  RABBIT: "토끼상",
+  FOX: "여우상",
+  DEER: "사슴상",
+  TOFU: "두부상",
+  SOFT_TOFU: "순두부상",
+  ARAB: "아랍상",
+  BOSS: "일진상",
+  MOTHER_IN_LAW_APPROVED: "상견례입구컷상"
+};
+
+// 여자가 선택하는 남자 외모 스타일 (enum -> 한글)
+const maleAppearanceStyles: Record<string, string> = {
+  PUPPY: "강아지상",
+  CAT: "고양이상",
+  STUDENT_COUNCIL: "전교회장상",
+  ATHLETIC: "체대상",
+  NERD: "너드상",
+  TOFU: "두부상",
+  ARAB: "아랍상",
+  DINOSAUR: "공룡상"
+};
+
+// Deal Breakers (절대 안되는 것들) - 최대 3개
+const dealBreakerOptions: Record<string, string> = {
+  SMOKING: "흡연자",
+  HEAVY_DRINKING: "과음하는 사람",
+  DISLIKES_PETS: "반려동물을 싫어하는 사람",
+  LONG_DISTANCE: "장거리 연애",
+  DIFFERENT_RELIGION: "종교가 다른 사람",
+  NO_MARRIAGE_PLAN: "결혼 의사가 없는 사람",
+  CHILDREN_PLAN: "자녀 계획이 맞지 않는 사람",
+  UNSTABLE_JOB: "직업이 불안정한 사람",
+  CONTACTS_EX: "전 연인과 연락하는 사람",
+  LARGE_AGE_GAP: "나이 차이가 많이 나는 사람"
+};
+
+export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScreenProps) {
+  // 사용자 성별에 따라 다른 외모 스타일 옵션 제공
+  const appearanceStyleOptions = userGender === "MALE" ? femaleAppearanceStyles : maleAppearanceStyles;
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [photos, setPhotos] = useState<(string | null)[]>(Array(6).fill(null));
   const [mainPhotoIndex, setMainPhotoIndex] = useState(0);
   const [video, setVideo] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"about" | "ideal">("about");
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -133,20 +181,51 @@ export function ProfileEditScreen({ onBack, onSave }: ProfileEditScreenProps) {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-card border-b border-border px-6 py-4">
-        <div className="flex items-center justify-center relative">
-          <button
-            onClick={onBack}
-            className="absolute left-0 top-1/2 -translate-y-1/2 p-2 hover:bg-muted rounded-lg transition-colors"
-            aria-label="뒤로 가기"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h2 className="text-lg font-semibold">프로필 수정</h2>
+      <div className="sticky top-0 z-10 bg-card border-b border-border">
+        <div className="px-6 py-4">
+          <div className="flex items-center justify-center relative">
+            <button
+              onClick={onBack}
+              className="absolute left-0 top-1/2 -translate-y-1/2 p-2 hover:bg-muted rounded-lg transition-colors"
+              aria-label="뒤로 가기"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h2 className="text-lg font-semibold">프로필 수정</h2>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="px-6">
+          <div className="flex gap-4">
+            <button
+              onClick={() => setActiveTab("about")}
+              className={`py-4 px-2 border-b-2 font-medium transition-colors ${
+                activeTab === "about"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              내소개
+            </button>
+            <button
+              onClick={() => setActiveTab("ideal")}
+              className={`py-4 px-2 border-b-2 font-medium transition-colors ${
+                activeTab === "ideal"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              이상형
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="p-6 space-y-8">
+        {/* About Me Tab Content */}
+        {activeTab === "about" && (
+          <>
         {/* Photos and Video */}
         <section className="space-y-4">
           <h3 className="text-xl font-semibold">프로필 사진 및 동영상</h3>
@@ -627,145 +706,226 @@ export function ProfileEditScreen({ onBack, onSave }: ProfileEditScreenProps) {
             </div>
           </div>
         </section>
+          </>
+        )}
 
+        {/* Ideal Type Tab Content */}
+        {activeTab === "ideal" && (
+          <>
         {/* Ideal Type */}
-        <section className="space-y-4">
+        <section className="space-y-6">
           <h3 className="text-xl font-semibold">이상형</h3>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="idealAgeMin">나이 (최소)</Label>
-                <Input
-                  id="idealAgeMin"
-                  type="number"
-                  value={profile.idealType.ageRange?.min || ""}
-                  onChange={(e) => {
-                    const min = e.target.value ? Number(e.target.value) : null;
+
+          {/* Date Preferences */}
+          <div>
+            <Label className="mb-3 block">연인과 어떤 데이트를 선호하시나요? (복수 선택)</Label>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { value: "ACTIVE", label: "액티브한 데이트", desc: "여행, 운동, 액티비티" },
+                { value: "INDOOR", label: "인도어 데이트", desc: "집, 카페, 영화관" },
+                { value: "CULTURE", label: "문화 데이트", desc: "전시, 공연, 맛집 투어" },
+                { value: "NATURE", label: "자연 데이트", desc: "산책, 드라이브, 피크닉" },
+              ].map((pref) => (
+                <button
+                  key={pref.value}
+                  type="button"
+                  onClick={() => {
+                    const current = profile.idealType.datePreferences;
+                    const newPrefs = current.includes(pref.value)
+                      ? current.filter(p => p !== pref.value)
+                      : [...current, pref.value];
                     setProfile({
                       ...profile,
-                      idealType: {
-                        ...profile.idealType,
-                        ageRange: min && profile.idealType.ageRange
-                          ? { min, max: profile.idealType.ageRange.max }
-                          : null
-                      }
+                      idealType: { ...profile.idealType, datePreferences: newPrefs }
                     });
                   }}
-                  placeholder="예: 25"
-                />
-              </div>
-              <div>
-                <Label htmlFor="idealAgeMax">나이 (최대)</Label>
-                <Input
-                  id="idealAgeMax"
-                  type="number"
-                  value={profile.idealType.ageRange?.max || ""}
-                  onChange={(e) => {
-                    const max = e.target.value ? Number(e.target.value) : null;
-                    setProfile({
-                      ...profile,
-                      idealType: {
-                        ...profile.idealType,
-                        ageRange: max && profile.idealType.ageRange
-                          ? { min: profile.idealType.ageRange.min, max }
-                          : null
+                  className={`p-4 rounded-xl border-2 text-left transition-all ${
+                    profile.idealType.datePreferences.includes(pref.value)
+                      ? "bg-gradient-to-r from-pink-50 to-rose-50 border-pink-400"
+                      : "bg-white border-slate-200 hover:border-pink-300"
+                  }`}
+                >
+                  <p className="font-medium text-slate-900 mb-1">{pref.label}</p>
+                  <p className="text-sm text-slate-600">{pref.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Important Values */}
+          <div>
+            <Label className="mb-3 block">
+              중요하게 보는 세 가지는? (최대 3개)
+              <span className="text-sm text-slate-500 ml-2">
+                {profile.idealType.importantValues.length}/3
+              </span>
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {["PERSONALITY", "APPEARANCE", "EDUCATION", "CAREER", "FAMILY", "JOB", "WEALTH", "VALUES"].map((value) => {
+                const labels: Record<string, string> = {
+                  PERSONALITY: "성격/성향",
+                  APPEARANCE: "외모",
+                  EDUCATION: "학력",
+                  CAREER: "능력/커리어",
+                  FAMILY: "집안/가족",
+                  JOB: "직업",
+                  WEALTH: "경제력",
+                  VALUES: "가치관"
+                };
+                const isSelected = profile.idealType.importantValues.includes(value);
+                return (
+                  <Badge
+                    key={value}
+                    onClick={() => {
+                      const current = profile.idealType.importantValues;
+                      let newValues;
+                      if (isSelected) {
+                        newValues = current.filter(v => v !== value);
+                      } else if (current.length < 3) {
+                        newValues = [...current, value];
+                      } else {
+                        return;
                       }
-                    });
-                  }}
-                  placeholder="예: 35"
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="idealPersonalities">선호 성격 (쉼표로 구분)</Label>
-              <Input
-                id="idealPersonalities"
-                value={profile.idealType.personalities.join(", ")}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    idealType: {
-                      ...profile.idealType,
-                      personalities: e.target.value.split(",").map((s) => s.trim()).filter((s) => s)
-                    }
-                  })
-                }
-                placeholder="예: 밝은, 유머러스한, 배려심있는"
-              />
-            </div>
-            <div>
-              <Label className="mb-2 block">데이트 스타일</Label>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { value: "ACTIVE", label: "액티브", desc: "여행, 운동, 액티비티" },
-                  { value: "INDOOR", label: "인도어", desc: "집, 카페, 영화" },
-                  { value: "CULTURAL", label: "문화", desc: "전시, 공연, 맛집" },
-                  { value: "BALANCED", label: "밸런스", desc: "상황에 따라" },
-                ].map((style) => (
-                  <button
-                    key={style.value}
-                    onClick={() =>
                       setProfile({
                         ...profile,
-                        idealType: { ...profile.idealType, dateStyle: style.value }
-                      })
-                    }
-                    className={`p-4 rounded-xl border-2 text-left transition-all ${
-                      profile.idealType.dateStyle === style.value
-                        ? "bg-gradient-to-r from-pink-50 to-rose-50 border-pink-400"
-                        : "bg-white border-slate-200 hover:border-pink-300"
-                    }`}
-                  >
-                    <p className="font-medium text-slate-900 mb-1">{style.label}</p>
-                    <p className="text-sm text-slate-600">{style.desc}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label className="mb-2 block">만남의 목적</Label>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { value: "SERIOUS_DATING", label: "진지한 연애" },
-                  { value: "MARRIAGE_PREMISE", label: "결혼 전제" },
-                  { value: "FRIENDS_FIRST", label: "친구부터 천천히" },
-                ].map((goal) => (
-                  <button
-                    key={goal.value}
-                    onClick={() =>
-                      setProfile({
-                        ...profile,
-                        idealType: { ...profile.idealType, purpose: goal.value }
-                      })
-                    }
-                    className={`py-3 rounded-xl border-2 font-medium transition-all ${
-                      profile.idealType.purpose === goal.value
+                        idealType: { ...profile.idealType, importantValues: newValues }
+                      });
+                    }}
+                    className={`cursor-pointer px-4 py-2 transition-all ${
+                      isSelected
                         ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
                         : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
                     }`}
+                    variant={isSelected ? "default" : "outline"}
                   >
-                    {goal.label}
-                  </button>
-                ))}
-              </div>
+                    {labels[value]}
+                  </Badge>
+                );
+              })}
             </div>
-            <div>
-              <Label htmlFor="idealDealBreakers">비선호 사항</Label>
-              <Textarea
-                id="idealDealBreakers"
-                value={profile.idealType.dealBreakers || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    idealType: { ...profile.idealType, dealBreakers: e.target.value || null }
-                  })
-                }
-                placeholder="선호하지 않는 사항을 입력하세요"
-                rows={2}
-              />
+          </div>
+
+          {/* Personalities */}
+          <div>
+            <Label className="mb-3 block">
+              어떤 성격의 사람을 선호하시나요? (최대 5개)
+              <span className="text-sm text-slate-500 ml-2">
+                {profile.idealType.personalities.length}/5
+              </span>
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {personalities.map((personality) => {
+                const isSelected = profile.idealType.personalities.includes(personality);
+                return (
+                  <Badge
+                    key={personality}
+                    onClick={() => {
+                      const current = profile.idealType.personalities;
+                      let newPersonalities;
+                      if (isSelected) {
+                        newPersonalities = current.filter(p => p !== personality);
+                      } else if (current.length < 5) {
+                        newPersonalities = [...current, personality];
+                      } else {
+                        return;
+                      }
+                      setProfile({
+                        ...profile,
+                        idealType: { ...profile.idealType, personalities: newPersonalities }
+                      });
+                    }}
+                    className={`cursor-pointer px-4 py-2 transition-all ${
+                      isSelected
+                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
+                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
+                    }`}
+                    variant={isSelected ? "default" : "outline"}
+                  >
+                    {personality}
+                  </Badge>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Appearance Styles */}
+          <div>
+            <Label className="mb-3 block">선호하는 외모 스타일은? (하나만 선택)</Label>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(appearanceStyleOptions).map(([enumValue, koreanLabel]) => {
+                const isSelected = profile.idealType.appearanceStyles.includes(enumValue);
+                return (
+                  <Badge
+                    key={enumValue}
+                    onClick={() => {
+                      const current = profile.idealType.appearanceStyles;
+                      const newStyles = isSelected
+                        ? []
+                        : [enumValue];
+                      setProfile({
+                        ...profile,
+                        idealType: { ...profile.idealType, appearanceStyles: newStyles }
+                      });
+                    }}
+                    className={`cursor-pointer px-4 py-2 transition-all ${
+                      isSelected
+                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
+                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
+                    }`}
+                    variant={isSelected ? "default" : "outline"}
+                  >
+                    {koreanLabel}
+                  </Badge>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Deal Breakers */}
+          <div>
+            <Label className="mb-3 block">
+              절대 안되는 것들은? (최대 3개)
+              <span className="text-sm text-slate-500 ml-2">
+                {profile.idealType.dealBreakers.length}/3
+              </span>
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(dealBreakerOptions).map(([enumValue, koreanLabel]) => {
+                const isSelected = profile.idealType.dealBreakers.includes(enumValue);
+                return (
+                  <Badge
+                    key={enumValue}
+                    onClick={() => {
+                      const current = profile.idealType.dealBreakers;
+                      let newDealBreakers;
+                      if (isSelected) {
+                        newDealBreakers = current.filter(d => d !== enumValue);
+                      } else if (current.length < 3) {
+                        newDealBreakers = [...current, enumValue];
+                      } else {
+                        return;
+                      }
+                      setProfile({
+                        ...profile,
+                        idealType: { ...profile.idealType, dealBreakers: newDealBreakers }
+                      });
+                    }}
+                    className={`cursor-pointer px-4 py-2 transition-all ${
+                      isSelected
+                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
+                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
+                    }`}
+                    variant={isSelected ? "default" : "outline"}
+                  >
+                    {koreanLabel}
+                  </Badge>
+                );
+              })}
             </div>
           </div>
         </section>
+          </>
+        )}
 
         {/* Save Button */}
         <div className="pt-4">

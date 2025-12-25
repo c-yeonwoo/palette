@@ -78,34 +78,20 @@ class ProfileEntity(
     var interests: String?, // Comma-separated list
 
     // IdealType
-    @Column(name = "ideal_age_min")
-    var idealAgeMin: Int?,
+    @Column(name = "ideal_date_preferences", columnDefinition = "TEXT")
+    var idealDatePreferences: String?, // Comma-separated list: ACTIVE, INDOOR, CULTURE, NATURE
 
-    @Column(name = "ideal_age_max")
-    var idealAgeMax: Int?,
-
-    @Column(name = "ideal_height_min")
-    var idealHeightMin: Int?,
-
-    @Column(name = "ideal_height_max")
-    var idealHeightMax: Int?,
-
-    @Column(name = "ideal_body_types", columnDefinition = "TEXT")
-    var idealBodyTypes: String?, // Comma-separated list
+    @Column(name = "ideal_important_values", columnDefinition = "TEXT")
+    var idealImportantValues: String?, // Comma-separated list: max 3
 
     @Column(name = "ideal_personalities", columnDefinition = "TEXT")
-    var idealPersonalities: String?, // Comma-separated list
+    var idealPersonalities: String?, // Comma-separated list: max 5
 
-    @Column(name = "ideal_date_style", length = 30)
-    @Enumerated(EnumType.STRING)
-    var idealDateStyle: DateStyleEntity?,
-
-    @Column(name = "ideal_purpose", length = 30)
-    @Enumerated(EnumType.STRING)
-    var idealPurpose: DatingPurposeEntity?,
+    @Column(name = "ideal_appearance_styles", columnDefinition = "TEXT")
+    var idealAppearanceStyles: String?, // Comma-separated enum values (Male/Female based on user gender)
 
     @Column(name = "ideal_deal_breakers", columnDefinition = "TEXT")
-    var idealDealBreakers: String?,
+    var idealDealBreakers: String?, // Comma-separated list: max 3
 
     // ProfileMetadata
     @Column(name = "created_at", nullable = false)
@@ -160,10 +146,28 @@ enum class ReligionEntity {
     NONE, CHRISTIANITY, CATHOLICISM, BUDDHISM, OTHER
 }
 
-enum class DateStyleEntity {
-    ACTIVE, INDOOR, CULTURAL, BALANCED
+// 남자 외모 스타일 (여자 유저가 선택)
+enum class MaleAppearanceStyleEntity {
+    PUPPY,           // 강아지상
+    CAT,             // 고양이상
+    STUDENT_COUNCIL, // 전교회장상
+    ATHLETIC,        // 체대상
+    NERD,            // 너드상
+    TOFU,            // 두부상
+    ARAB,            // 아랍상
+    DINOSAUR         // 공룡상
 }
 
-enum class DatingPurposeEntity {
-    SERIOUS_DATING, MARRIAGE_PREMISE, FRIENDS_FIRST
+// 여자 외모 스타일 (남자 유저가 선택)
+enum class FemaleAppearanceStyleEntity {
+    PUPPY,           // 강아지상
+    CAT,             // 고양이상
+    RABBIT,          // 토끼상
+    FOX,             // 여우상
+    DEER,            // 사슴상
+    TOFU,            // 두부상
+    SOFT_TOFU,       // 순두부상
+    ARAB,            // 아랍상
+    BOSS,            // 일진상
+    MOTHER_IN_LAW_APPROVED // 상견례입구컷상
 }

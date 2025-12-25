@@ -53,13 +53,11 @@ interface ProfileData {
     interests: string[];
   };
   idealType: {
-    ageRange: { min: number; max: number } | null;
-    heightRange: { min: number; max: number } | null;
-    bodyTypes: string[];
+    datePreferences: string[];
+    importantValues: string[];
     personalities: string[];
-    dateStyle: string | null;
-    purpose: string | null;
-    dealBreakers: string | null;
+    appearanceStyles: string[];
+    dealBreakers: string[];
   };
   primaryPhotoUrl: string | null;
   metadata: {
@@ -84,6 +82,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [activeTab, setActiveTab] = useState<"about" | "ideal">("about");
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -201,6 +200,32 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="bg-card border-b border-border px-6">
+        <div className="flex gap-4">
+          <button
+            onClick={() => setActiveTab("about")}
+            className={`py-4 px-2 border-b-2 font-medium transition-colors ${
+              activeTab === "about"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            내소개
+          </button>
+          <button
+            onClick={() => setActiveTab("ideal")}
+            className={`py-4 px-2 border-b-2 font-medium transition-colors ${
+              activeTab === "ideal"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            이상형
+          </button>
+        </div>
+      </div>
+
       {/* Profile Content */}
       <div className="p-6 space-y-6">
         {/* Profile Header */}
@@ -256,8 +281,9 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
           </div>
         )}
 
-        {/* Profile Sections */}
-        <div className="space-y-4">
+        {/* About Me Tab Content */}
+        {activeTab === "about" && (
+          <div className="space-y-4">
           <Section title="기본 정보">
             {profile ? (
               <div className="space-y-2 text-sm">
@@ -336,7 +362,83 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
           <Section title="추천사">
             <EmptyContent message="아직 받은 추천사가 없습니다" />
           </Section>
-        </div>
+          </div>
+        )}
+
+        {/* Ideal Type Tab Content */}
+        {activeTab === "ideal" && (
+          <div className="space-y-4">
+            <Section title="Q1. 연인과 어떤 데이트를 선호하시나요?">
+              {profile?.idealType.datePreferences && profile.idealType.datePreferences.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {profile.idealType.datePreferences.map((pref, idx) => (
+                    <Badge key={idx} variant="secondary">
+                      {getDatePreferenceLabel(pref)}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <EmptyContent message="데이트 선호도를 설정해주세요" />
+              )}
+            </Section>
+
+            <Section title="Q2. 중요하게 보는 세 가지는?">
+              {profile?.idealType.importantValues && profile.idealType.importantValues.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {profile.idealType.importantValues.map((value, idx) => (
+                    <Badge key={idx} variant="secondary">
+                      {getImportantValueLabel(value)}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <EmptyContent message="중요하게 보는 가치를 선택해주세요" />
+              )}
+            </Section>
+
+            <Section title="Q3. 어떤 성격의 사람을 선호하시나요?">
+              {profile?.idealType.personalities && profile.idealType.personalities.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {profile.idealType.personalities.map((personality, idx) => (
+                    <Badge key={idx} variant="secondary">
+                      {personality}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <EmptyContent message="선호하는 성격을 선택해주세요" />
+              )}
+            </Section>
+
+            <Section title="Q4. 선호하는 외모 스타일은?">
+              {profile?.idealType.appearanceStyles && profile.idealType.appearanceStyles.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {profile.idealType.appearanceStyles.map((style, idx) => (
+                    <Badge key={idx} variant="secondary">
+                      {getAppearanceStyleLabel(style)}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <EmptyContent message="선호하는 외모 스타일을 선택해주세요" />
+              )}
+            </Section>
+
+            <Section title="Q5. 절대 안되는 것들은?">
+              {profile?.idealType.dealBreakers && profile.idealType.dealBreakers.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {profile.idealType.dealBreakers.map((dealBreaker) => (
+                    <Badge key={dealBreaker} variant="outline" className="text-sm">
+                      {getDealBreakerLabel(dealBreaker)}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <EmptyContent message="절대 안되는 것들을 선택해주세요" />
+              )}
+            </Section>
+          </div>
+        )}
 
         {/* Edit Profile Button */}
         <div className="pt-4 pb-6">
@@ -409,4 +511,66 @@ function getReligionLabel(religion: string): string {
     OTHER: "기타"
   };
   return labels[religion] || religion;
+}
+
+function getDatePreferenceLabel(pref: string): string {
+  const labels: Record<string, string> = {
+    ACTIVE: "액티브한 데이트",
+    INDOOR: "인도어 데이트",
+    CULTURE: "문화 데이트",
+    NATURE: "자연 데이트"
+  };
+  return labels[pref] || pref;
+}
+
+function getImportantValueLabel(value: string): string {
+  const labels: Record<string, string> = {
+    PERSONALITY: "성격/성향",
+    APPEARANCE: "외모",
+    EDUCATION: "학력",
+    CAREER: "능력/커리어",
+    FAMILY: "집안/가족",
+    JOB: "직업",
+    WEALTH: "경제력",
+    VALUES: "가치관"
+  };
+  return labels[value] || value;
+}
+
+function getAppearanceStyleLabel(style: string): string {
+  const labels: Record<string, string> = {
+    // 남자 스타일
+    PUPPY: "강아지상",
+    CAT: "고양이상",
+    STUDENT_COUNCIL: "전교회장상",
+    ATHLETIC: "체대상",
+    NERD: "너드상",
+    TOFU: "두부상",
+    ARAB: "아랍상",
+    DINOSAUR: "공룡상",
+    // 여자 스타일
+    RABBIT: "토끼상",
+    FOX: "여우상",
+    DEER: "사슴상",
+    SOFT_TOFU: "순두부상",
+    BOSS: "일진상",
+    MOTHER_IN_LAW_APPROVED: "상견례입구컷상"
+  };
+  return labels[style] || style;
+}
+
+function getDealBreakerLabel(dealBreaker: string): string {
+  const labels: Record<string, string> = {
+    SMOKING: "흡연자",
+    HEAVY_DRINKING: "과음하는 사람",
+    DISLIKES_PETS: "반려동물을 싫어하는 사람",
+    LONG_DISTANCE: "장거리 연애",
+    DIFFERENT_RELIGION: "종교가 다른 사람",
+    NO_MARRIAGE_PLAN: "결혼 의사가 없는 사람",
+    CHILDREN_PLAN: "자녀 계획이 맞지 않는 사람",
+    UNSTABLE_JOB: "직업이 불안정한 사람",
+    CONTACTS_EX: "전 연인과 연락하는 사람",
+    LARGE_AGE_GAP: "나이 차이가 많이 나는 사람"
+  };
+  return labels[dealBreaker] || dealBreaker;
 }

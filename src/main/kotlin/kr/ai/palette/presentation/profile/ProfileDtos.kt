@@ -194,69 +194,37 @@ data class IntroductionDto(
 }
 
 data class IdealTypeDto(
-    val ageRange: AgeRangeDto?,
-    val heightRange: HeightRangeDto?,
-    val bodyTypes: List<String>,
-    val personalities: List<String>,
-    val dateStyle: String?,
-    val purpose: String?,
-    val dealBreakers: String?
+    val datePreferences: List<String>, // DatePreference enum values
+    val importantValues: List<String>, // ImportantValue enum values (max 3)
+    val personalities: List<String>, // max 5
+    val appearanceStyles: List<String>, // MaleAppearanceStyle or FemaleAppearanceStyle enum values
+    val dealBreakers: List<String> // DealBreaker enum values (max 3)
 ) {
     fun toDomain(): IdealType {
         return IdealType(
-            ageRange = ageRange?.toDomain(),
-            heightRange = heightRange?.toDomain(),
-            bodyTypes = bodyTypes.mapNotNull {
-                try { BodyType.valueOf(it) } catch (e: Exception) { null }
+            datePreferences = datePreferences.mapNotNull {
+                try { DatePreference.valueOf(it) } catch (e: Exception) { null }
+            },
+            importantValues = importantValues.mapNotNull {
+                try { ImportantValue.valueOf(it) } catch (e: Exception) { null }
             },
             personalities = personalities,
-            dateStyle = dateStyle?.let { DateStyle.valueOf(it) },
-            purpose = purpose?.let { DatingPurpose.valueOf(it) },
-            dealBreakers = dealBreakers
+            appearanceStyles = appearanceStyles, // Store as strings (enum values)
+            dealBreakers = dealBreakers.mapNotNull {
+                try { DealBreaker.valueOf(it) } catch (e: Exception) { null }
+            }
         )
     }
 
     companion object {
         fun from(idealType: IdealType): IdealTypeDto {
             return IdealTypeDto(
-                ageRange = idealType.ageRange?.let { AgeRangeDto.from(it) },
-                heightRange = idealType.heightRange?.let { HeightRangeDto.from(it) },
-                bodyTypes = idealType.bodyTypes.map { it.name },
+                datePreferences = idealType.datePreferences.map { it.name },
+                importantValues = idealType.importantValues.map { it.name },
                 personalities = idealType.personalities,
-                dateStyle = idealType.dateStyle?.name,
-                purpose = idealType.purpose?.name,
-                dealBreakers = idealType.dealBreakers
+                appearanceStyles = idealType.appearanceStyles,
+                dealBreakers = idealType.dealBreakers.map { it.name }
             )
-        }
-    }
-}
-
-data class AgeRangeDto(
-    val min: Int,
-    val max: Int
-) {
-    fun toDomain(): AgeRange {
-        return AgeRange(min, max)
-    }
-
-    companion object {
-        fun from(ageRange: AgeRange): AgeRangeDto {
-            return AgeRangeDto(ageRange.min, ageRange.max)
-        }
-    }
-}
-
-data class HeightRangeDto(
-    val min: Int,
-    val max: Int
-) {
-    fun toDomain(): HeightRange {
-        return HeightRange(min, max)
-    }
-
-    companion object {
-        fun from(heightRange: HeightRange): HeightRangeDto {
-            return HeightRangeDto(heightRange.min, heightRange.max)
         }
     }
 }
