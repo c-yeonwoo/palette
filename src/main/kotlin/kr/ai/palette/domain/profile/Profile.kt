@@ -111,13 +111,78 @@ data class Profile(
         return copy(metadata = metadata.delete())
     }
 
+    fun calculateCompletionRate(): Int {
+        var filledFields = 0
+        var totalFields = 0
+
+        // Basic Info (2 fields)
+        totalFields += 2
+        if (basicInfo.height != null) filledFields++
+        if (basicInfo.bodyType != null) filledFields++
+
+        // Career Info (3 fields)
+        totalFields += 3
+        if (careerInfo.category != null) filledFields++
+        if (careerInfo.company != null) filledFields++
+        if (careerInfo.position != null) filledFields++
+
+        // Education Info (3 fields)
+        totalFields += 3
+        if (educationInfo.level != null) filledFields++
+        if (educationInfo.school != null) filledFields++
+        if (educationInfo.major != null) filledFields++
+
+        // Location Info (2 fields minimum)
+        totalFields += 2
+        if (locationInfo.sido != null) filledFields++
+        if (locationInfo.sigungu != null) filledFields++
+
+        // Lifestyle Info (3 fields)
+        totalFields += 3
+        if (lifestyleInfo.smoking != null) filledFields++
+        if (lifestyleInfo.drinking != null) filledFields++
+        if (lifestyleInfo.religion != null) filledFields++
+
+        // Introduction - Interview Answers (5 fields)
+        totalFields += 5
+        introduction.interviewAnswers?.let { answers ->
+            if (answers.hobby != null) filledFields++
+            if (answers.charm != null) filledFields++
+            if (answers.passion != null) filledFields++
+            if (answers.happiness != null) filledFields++
+            if (answers.motto != null) filledFields++
+        }
+
+        // Ideal Type (3 minimum collections)
+        totalFields += 3
+        if (idealType.datePreferences.isNotEmpty()) filledFields++
+        if (idealType.importantValues.isNotEmpty()) filledFields++
+        if (idealType.personalities.isNotEmpty()) filledFields++
+
+        // Photos (1 field - at least one photo)
+        totalFields += 1
+        if (photos.isNotEmpty()) filledFields++
+
+        return if (totalFields > 0) {
+            ((filledFields.toDouble() / totalFields.toDouble()) * 100).toInt()
+        } else {
+            0
+        }
+    }
+
+    fun recalculateMetrics(): Profile {
+        return copy(
+            metrics = metrics.copy(completionRate = calculateCompletionRate())
+        )
+    }
+
     companion object {
         fun create(
             userId: UserId,
             basicInfo: BasicInfo = BasicInfo(null, null),
             careerInfo: CareerInfo = CareerInfo(null, null, null),
             educationInfo: EducationInfo = EducationInfo(null, null, null),
-            locationInfo: LocationInfo = LocationInfo(null, null, null, null),
+            locationInfo: LocationInfo = LocationInfo(null, null),
             lifestyleInfo: LifestyleInfo = LifestyleInfo(null, null, null),
             introduction: Introduction = Introduction(null, emptyList()),
             idealType: IdealType = IdealType(emptyList(), emptyList(), emptyList(), emptyList(), emptyList())

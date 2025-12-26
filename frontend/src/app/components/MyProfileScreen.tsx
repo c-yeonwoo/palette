@@ -51,6 +51,13 @@ interface ProfileData {
   introduction: {
     text: string | null;
     interests: string[];
+    interviewAnswers?: {
+      hobby: string | null;
+      charm: string | null;
+      passion: string | null;
+      happiness: string | null;
+      motto: string | null;
+    } | null;
   };
   idealType: {
     datePreferences: string[];
@@ -323,17 +330,37 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
           </Section>
 
           <Section title="자기소개">
-            {profile?.introduction.text ? (
-              <div className="space-y-3">
-                <p className="text-sm leading-relaxed">{profile.introduction.text}</p>
-                {profile.introduction.interests.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {profile.introduction.interests.map((interest, idx) => (
-                      <Badge key={idx} variant="secondary">
-                        {interest}
-                      </Badge>
-                    ))}
-                  </div>
+            {profile?.introduction.interviewAnswers ? (
+              <div className="space-y-4">
+                {profile.introduction.interviewAnswers.hobby && (
+                  <InterviewAnswer
+                    question="쉬는 날엔 주로 이렇게 시간을 보내요"
+                    answer={profile.introduction.interviewAnswers.hobby}
+                  />
+                )}
+                {profile.introduction.interviewAnswers.charm && (
+                  <InterviewAnswer
+                    question="제 매력 포인트는 바로 이거!"
+                    answer={profile.introduction.interviewAnswers.charm}
+                  />
+                )}
+                {profile.introduction.interviewAnswers.passion && (
+                  <InterviewAnswer
+                    question="요즘 제가 푹 빠져있는 것"
+                    answer={profile.introduction.interviewAnswers.passion}
+                  />
+                )}
+                {profile.introduction.interviewAnswers.happiness && (
+                  <InterviewAnswer
+                    question="저는 이럴 때 행복해요"
+                    answer={profile.introduction.interviewAnswers.happiness}
+                  />
+                )}
+                {profile.introduction.interviewAnswers.motto && (
+                  <InterviewAnswer
+                    question="제 인생의 좌우명은"
+                    answer={profile.introduction.interviewAnswers.motto}
+                  />
                 )}
               </div>
             ) : (
@@ -478,6 +505,15 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between items-center py-2 border-b border-border/50 last:border-0">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium">{value}</span>
+    </div>
+  );
+}
+
+function InterviewAnswer({ question, answer }: { question: string; answer: string }) {
+  return (
+    <div className="space-y-2 pb-3 border-b border-border/50 last:border-0">
+      <p className="text-sm font-medium text-primary">{question}</p>
+      <p className="text-sm leading-relaxed text-muted-foreground">{answer}</p>
     </div>
   );
 }

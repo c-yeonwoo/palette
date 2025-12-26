@@ -16,7 +16,8 @@ import java.util.*
 class ProfileController(
     private val profileRepository: ProfileRepository,
     private val profilePhotoRepository: ProfilePhotoRepository,
-    private val fileStorageService: FileStorageService
+    private val fileStorageService: FileStorageService,
+    private val userRepository: kr.ai.palette.domain.user.UserRepository
 ) {
 
     @GetMapping
@@ -36,6 +37,13 @@ class ProfileController(
         @AuthenticationPrincipal authUser: AuthUser,
         @RequestBody request: UpdateProfileRequest
     ): ResponseEntity<ProfileResponse> {
+        println("========== UPDATE PROFILE REQUEST ==========")
+        println("User ID: ${authUser.userId}")
+        println("Request: $request")
+        println("Introduction: ${request.introduction}")
+        println("LifestyleInfo: ${request.lifestyleInfo}")
+        println("==========================================")
+
         var profile = profileRepository.findByUserId(authUser.userId)
             ?: Profile.create(authUser.userId)
 
@@ -72,7 +80,18 @@ class ProfileController(
             profile = profile.updateSettings(settingsDto.toDomain())
         }
 
+        // Recalculate metrics (completion rate)
+        profile = profile.recalculateMetrics()
+
         val savedProfile = profileRepository.save(profile)
+
+        // Mark user profile as completed if not already
+        val user = userRepository.findById(authUser.userId)
+        if (user != null && !user.isProfileCompleted) {
+            val updatedUser = user.completeProfile()
+            userRepository.save(updatedUser)
+        }
+
         return ResponseEntity.ok(ProfileResponse.from(savedProfile))
     }
 
@@ -129,8 +148,8 @@ class ProfileController(
 
         profilePhotoRepository.save(newPhoto)
 
-        // Profile에도 사진 추가
-        profile = profile.addPhoto(newPhoto)
+        // Profile에도 사진 추가하고 metrics 재계산
+        profile = profile.addPhoto(newPhoto).recalculateMetrics()
         profileRepository.save(profile)
 
         return ResponseEntity.ok(

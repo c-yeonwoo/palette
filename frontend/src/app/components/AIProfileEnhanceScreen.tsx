@@ -5,38 +5,68 @@ import { Sparkles, RefreshCw, Check, ArrowRight } from "lucide-react";
 
 interface AIProfileEnhanceScreenProps {
   onComplete: () => void;
+  profileData: {
+    introduction: {
+      interviewAnswers: {
+        hobby: string;
+        charm: string;
+        passion: string;
+        happiness: string;
+        motto: string;
+      };
+    };
+    lifestyleInfo: {
+      smoking: string;
+      drinking: string;
+      religion: string;
+    };
+    idealType: {
+      datePreferences: string[];
+      importantValues: string[];
+      personalities: string[];
+      appearanceStyles: string[];
+      dealBreakers: string[];
+    };
+  };
 }
 
-export function AIProfileEnhanceScreen({ onComplete }: AIProfileEnhanceScreenProps) {
+export function AIProfileEnhanceScreen({ onComplete, profileData }: AIProfileEnhanceScreenProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentVersion, setCurrentVersion] = useState<"original" | "ai">("ai");
-  
-  // Mock data - 실제로는 사용자가 입력한 데이터 사용
+
+  // 실제 사용자 입력 데이터
   const originalProfile = {
-    bio: "안녕하세요. 개발자입니다. 운동 좋아하고 영화도 좋아합니다. 주말에는 주로 집에서 쉬거나 친구 만나요.",
-    interests: ["운동", "영화", "여행"],
+    interviewAnswers: profileData.introduction.interviewAnswers,
     lifestyle: {
-      smoking: "비흡연",
-      drinking: "가끔",
-      religion: "무교",
+      smoking: profileData.lifestyleInfo.smoking,
+      drinking: profileData.lifestyleInfo.drinking,
+      religion: profileData.lifestyleInfo.religion,
     },
-    idealType: "활발하고 유머있는 사람을 좋아합니다.",
+    idealType: {
+      datePreferences: profileData.idealType.datePreferences,
+      importantValues: profileData.idealType.importantValues,
+      personalities: profileData.idealType.personalities,
+      appearanceStyles: profileData.idealType.appearanceStyles,
+      dealBreakers: profileData.idealType.dealBreakers,
+    },
   };
 
+  // AI 개선 버전 (mock - 추후 LLM 연동)
   const aiEnhancedProfile = {
-    bio: "테크 스타트업에서 열정적으로 일하는 개발자예요. 평일엔 코드와 씨름하지만, 주말엔 헬스장에서 땀 흘리며 리프레시합니다. 감성적인 영화 한 편과 함께하는 저녁을 사랑해요. 친구들과의 소소한 모임도 즐기지만, 혼자만의 조용한 시간도 소중히 여기는 편이에요 🎬",
-    interests: ["운동", "영화", "여행", "맛집 탐방", "카페"],
-    lifestyle: {
-      smoking: "비흡연",
-      drinking: "가끔",
-      religion: "무교",
+    interviewAnswers: {
+      hobby: profileData.introduction.interviewAnswers.hobby + " 주변 사람들과 함께할 때 더욱 즐겁고 의미있는 시간을 보내려고 노력해요.",
+      charm: profileData.introduction.interviewAnswers.charm + " 이런 점들이 저를 특별하게 만들어주는 것 같아요.",
+      passion: profileData.introduction.interviewAnswers.passion + " 이 과정에서 배우고 성장하는 게 정말 즐거워요.",
+      happiness: profileData.introduction.interviewAnswers.happiness + " 그런 순간들이 제게 가장 큰 행복이에요.",
+      motto: profileData.introduction.interviewAnswers.motto + " 이 마음가짐으로 매일을 살아가고 있어요.",
     },
-    idealType: "활발하고 유머 감각이 있으면서도, 진지한 대화를 나눌 수 있는 분을 찾고 있어요. 서로의 일상을 존중하며 함께 성장할 수 있는 관계를 원합니다.",
+    lifestyle: originalProfile.lifestyle,
+    idealType: originalProfile.idealType,
     aiSuggestions: [
-      "직업적 열정과 일상의 균형을 잘 표현했어요",
-      "취미를 더 구체적이고 매력적으로 묘사했어요",
-      "이상형을 더 진솔하고 구체적으로 설명했어요",
-      "감성적인 터치를 더해 친근한 느낌을 강화했어요",
+      "인터뷰 답변에 더 구체적이고 매력적인 표현을 추가했어요",
+      "일상의 소소한 행복을 잘 표현했어요",
+      "진솔하고 따뜻한 느낌을 강화했어요",
+      "당신의 개성과 가치관이 잘 드러나도록 개선했어요",
     ],
   };
 
@@ -45,6 +75,17 @@ export function AIProfileEnhanceScreen({ onComplete }: AIProfileEnhanceScreenPro
     setTimeout(() => {
       setIsGenerating(false);
     }, 2000);
+  };
+
+  const handleComplete = () => {
+    const versionText = currentVersion === "ai" ? "AI 개선된 버전" : "원본 버전";
+    const confirmed = window.confirm(
+      `${versionText}으로 프로필을 작성하시겠습니까?\n\n선택하신 내용으로 프로필이 생성됩니다.`
+    );
+
+    if (confirmed) {
+      onComplete();
+    }
   };
 
   return (
@@ -115,32 +156,39 @@ export function AIProfileEnhanceScreen({ onComplete }: AIProfileEnhanceScreenPro
 
         {/* Profile Preview */}
         <div className="bg-card border border-border rounded-2xl p-6 space-y-6">
-          {/* Bio */}
-          <div>
-            <Label className="block mb-3 text-slate-700">자기소개</Label>
-            <p className="text-slate-900 leading-relaxed">
-              {currentVersion === "ai" ? aiEnhancedProfile.bio : originalProfile.bio}
-            </p>
-          </div>
+          {/* Interview Answers */}
+          <div className="space-y-4">
+            <Label className="block mb-3 text-slate-700 font-semibold">자기소개</Label>
 
-          {/* Interests */}
-          <div>
-            <Label className="block mb-3 text-slate-700">관심사</Label>
-            <div className="flex flex-wrap gap-2">
-              {(currentVersion === "ai" ? aiEnhancedProfile.interests : originalProfile.interests).map((interest) => (
-                <Badge
-                  key={interest}
-                  className="bg-pink-100 text-pink-700 border-pink-200 px-4 py-2"
-                >
-                  {interest}
-                </Badge>
-              ))}
-            </div>
+            <InterviewAnswerDisplay
+              question="쉬는 날엔 주로 이렇게 시간을 보내요"
+              answer={currentVersion === "ai" ? aiEnhancedProfile.interviewAnswers.hobby : originalProfile.interviewAnswers.hobby}
+            />
+
+            <InterviewAnswerDisplay
+              question="제 매력 포인트는 바로 이거!"
+              answer={currentVersion === "ai" ? aiEnhancedProfile.interviewAnswers.charm : originalProfile.interviewAnswers.charm}
+            />
+
+            <InterviewAnswerDisplay
+              question="요즘 제가 푹 빠져있는 것"
+              answer={currentVersion === "ai" ? aiEnhancedProfile.interviewAnswers.passion : originalProfile.interviewAnswers.passion}
+            />
+
+            <InterviewAnswerDisplay
+              question="저는 이럴 때 행복해요"
+              answer={currentVersion === "ai" ? aiEnhancedProfile.interviewAnswers.happiness : originalProfile.interviewAnswers.happiness}
+            />
+
+            <InterviewAnswerDisplay
+              question="제 인생의 좌우명은"
+              answer={currentVersion === "ai" ? aiEnhancedProfile.interviewAnswers.motto : originalProfile.interviewAnswers.motto}
+            />
           </div>
 
           {/* Lifestyle */}
           <div>
-            <Label className="block mb-3 text-slate-700">라이프스타일</Label>
+            <Label className="block mb-3 text-slate-700 font-semibold">라이프스타일</Label>
             <div className="flex flex-wrap gap-3 text-sm">
               <div className="flex items-center gap-2">
                 <span className="text-slate-600">흡연:</span>
@@ -165,10 +213,47 @@ export function AIProfileEnhanceScreen({ onComplete }: AIProfileEnhanceScreenPro
 
           {/* Ideal Type */}
           <div>
-            <Label className="block mb-3 text-slate-700">이상형</Label>
-            <p className="text-slate-900 leading-relaxed">
-              {currentVersion === "ai" ? aiEnhancedProfile.idealType : originalProfile.idealType}
-            </p>
+            <Label className="block mb-3 text-slate-700 font-semibold">이상형</Label>
+            <div className="space-y-3">
+              {(currentVersion === "ai" ? aiEnhancedProfile.idealType : originalProfile.idealType).datePreferences.length > 0 && (
+                <div>
+                  <p className="text-xs text-slate-500 mb-2">데이트 스타일</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(currentVersion === "ai" ? aiEnhancedProfile.idealType : originalProfile.idealType).datePreferences.map((pref) => (
+                      <Badge key={pref} variant="secondary" className="text-sm">
+                        {getDatePreferenceLabel(pref)}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(currentVersion === "ai" ? aiEnhancedProfile.idealType : originalProfile.idealType).importantValues.length > 0 && (
+                <div>
+                  <p className="text-xs text-slate-500 mb-2">중요하게 보는 가치</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(currentVersion === "ai" ? aiEnhancedProfile.idealType : originalProfile.idealType).importantValues.map((val) => (
+                      <Badge key={val} variant="secondary" className="text-sm">
+                        {val}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(currentVersion === "ai" ? aiEnhancedProfile.idealType : originalProfile.idealType).personalities.length > 0 && (
+                <div>
+                  <p className="text-xs text-slate-500 mb-2">선호하는 성격</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(currentVersion === "ai" ? aiEnhancedProfile.idealType : originalProfile.idealType).personalities.map((personality) => (
+                      <Badge key={personality} variant="secondary" className="text-sm">
+                        {personality}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -185,7 +270,7 @@ export function AIProfileEnhanceScreen({ onComplete }: AIProfileEnhanceScreenPro
           </Button>
 
           <Button
-            onClick={onComplete}
+            onClick={handleComplete}
             className="w-full h-14 bg-gradient-to-r from-pink-400 to-rose-400 text-white"
           >
             이 프로필로 계속하기
@@ -206,4 +291,27 @@ export function AIProfileEnhanceScreen({ onComplete }: AIProfileEnhanceScreenPro
 
 function Label({ children, className }: { children: React.ReactNode; className?: string }) {
   return <label className={className}>{children}</label>;
+}
+
+function InterviewAnswerDisplay({ question, answer }: { question: string; answer: string }) {
+  return (
+    <div className="pb-3 border-b border-slate-100 last:border-0">
+      <p className="text-sm font-medium text-pink-600 mb-2">{question}</p>
+      <p className="text-sm text-slate-700 leading-relaxed">{answer}</p>
+    </div>
+  );
+}
+
+function getDatePreferenceLabel(pref: string): string {
+  const labels: Record<string, string> = {
+    'active': '액티브한 데이트',
+    'ACTIVE': '액티브한 데이트',
+    'indoor': '인도어 데이트',
+    'INDOOR': '인도어 데이트',
+    'culture': '문화 데이트',
+    'CULTURE': '문화 데이트',
+    'nature': '자연 데이트',
+    'NATURE': '자연 데이트',
+  };
+  return labels[pref] || pref;
 }

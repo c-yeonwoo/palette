@@ -27,9 +27,7 @@ class ProfileMapper {
             ),
             locationInfo = LocationInfo(
                 sido = entity.sido,
-                sigungu = entity.sigungu,
-                hometownSido = entity.hometownSido,
-                hometownSigungu = entity.hometownSigungu
+                sigungu = entity.sigungu
             ),
             lifestyleInfo = LifestyleInfo(
                 smoking = entity.smoking?.toDomain(),
@@ -37,8 +35,18 @@ class ProfileMapper {
                 religion = entity.religion?.toDomain()
             ),
             introduction = Introduction(
-                text = entity.introductionText,
-                interests = entity.interests?.split(",")?.filter { it.isNotBlank() } ?: emptyList()
+                text = null,
+                interests = entity.interests?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
+                interviewAnswers = if (entity.introductionHobby != null || entity.introductionCharm != null ||
+                    entity.introductionPassion != null || entity.introductionHappiness != null || entity.introductionMotto != null) {
+                    InterviewAnswers(
+                        hobby = entity.introductionHobby,
+                        charm = entity.introductionCharm,
+                        passion = entity.introductionPassion,
+                        happiness = entity.introductionHappiness,
+                        motto = entity.introductionMotto
+                    )
+                } else null
             ),
             idealType = IdealType(
                 datePreferences = entity.idealDatePreferences?.split(",")
@@ -90,13 +98,15 @@ class ProfileMapper {
             major = profile.educationInfo.major,
             sido = profile.locationInfo.sido,
             sigungu = profile.locationInfo.sigungu,
-            hometownSido = profile.locationInfo.hometownSido,
-            hometownSigungu = profile.locationInfo.hometownSigungu,
             smoking = profile.lifestyleInfo.smoking?.toEntity(),
             drinking = profile.lifestyleInfo.drinking?.toEntity(),
             religion = profile.lifestyleInfo.religion?.toEntity(),
-            introductionText = profile.introduction.text,
             interests = profile.introduction.interests.joinToString(","),
+            introductionHobby = profile.introduction.interviewAnswers?.hobby,
+            introductionCharm = profile.introduction.interviewAnswers?.charm,
+            introductionPassion = profile.introduction.interviewAnswers?.passion,
+            introductionHappiness = profile.introduction.interviewAnswers?.happiness,
+            introductionMotto = profile.introduction.interviewAnswers?.motto,
             idealDatePreferences = profile.idealType.datePreferences.joinToString(",") { it.name },
             idealImportantValues = profile.idealType.importantValues.joinToString(",") { it.name },
             idealPersonalities = profile.idealType.personalities.joinToString(","),

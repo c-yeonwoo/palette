@@ -123,16 +123,12 @@ data class EducationInfoDto(
 
 data class LocationInfoDto(
     val sido: String?,
-    val sigungu: String?,
-    val hometownSido: String?,
-    val hometownSigungu: String?
+    val sigungu: String?
 ) {
     fun toDomain(): LocationInfo {
         return LocationInfo(
             sido = sido,
-            sigungu = sigungu,
-            hometownSido = hometownSido,
-            hometownSigungu = hometownSigungu
+            sigungu = sigungu
         )
     }
 
@@ -140,9 +136,7 @@ data class LocationInfoDto(
         fun from(locationInfo: LocationInfo): LocationInfoDto {
             return LocationInfoDto(
                 sido = locationInfo.sido,
-                sigungu = locationInfo.sigungu,
-                hometownSido = locationInfo.hometownSido,
-                hometownSigungu = locationInfo.hometownSigungu
+                sigungu = locationInfo.sigungu
             )
         }
     }
@@ -174,12 +168,14 @@ data class LifestyleInfoDto(
 
 data class IntroductionDto(
     val text: String?,
-    val interests: List<String>
+    val interests: List<String>?,
+    val interviewAnswers: InterviewAnswersDto?
 ) {
     fun toDomain(): Introduction {
         return Introduction(
             text = text,
-            interests = interests
+            interests = interests ?: emptyList(),
+            interviewAnswers = interviewAnswers?.toDomain()
         )
     }
 
@@ -187,7 +183,38 @@ data class IntroductionDto(
         fun from(introduction: Introduction): IntroductionDto {
             return IntroductionDto(
                 text = introduction.text,
-                interests = introduction.interests
+                interests = introduction.interests,
+                interviewAnswers = introduction.interviewAnswers?.let { InterviewAnswersDto.from(it) }
+            )
+        }
+    }
+}
+
+data class InterviewAnswersDto(
+    val hobby: String?,
+    val charm: String?,
+    val passion: String?,
+    val happiness: String?,
+    val motto: String?
+) {
+    fun toDomain(): InterviewAnswers {
+        return InterviewAnswers(
+            hobby = hobby,
+            charm = charm,
+            passion = passion,
+            happiness = happiness,
+            motto = motto
+        )
+    }
+
+    companion object {
+        fun from(interviewAnswers: InterviewAnswers): InterviewAnswersDto {
+            return InterviewAnswersDto(
+                hobby = interviewAnswers.hobby,
+                charm = interviewAnswers.charm,
+                passion = interviewAnswers.passion,
+                happiness = interviewAnswers.happiness,
+                motto = interviewAnswers.motto
             )
         }
     }

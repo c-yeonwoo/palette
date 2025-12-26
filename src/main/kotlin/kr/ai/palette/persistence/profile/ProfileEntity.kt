@@ -51,12 +51,6 @@ class ProfileEntity(
     @Column(name = "sigungu", length = 50)
     var sigungu: String?,
 
-    @Column(name = "hometown_sido", length = 50)
-    var hometownSido: String?,
-
-    @Column(name = "hometown_sigungu", length = 50)
-    var hometownSigungu: String?,
-
     // LifestyleInfo
     @Column(name = "smoking", length = 20)
     @Enumerated(EnumType.STRING)
@@ -71,11 +65,24 @@ class ProfileEntity(
     var religion: ReligionEntity?,
 
     // Introduction
-    @Column(name = "introduction_text", columnDefinition = "TEXT")
-    var introductionText: String?,
-
     @Column(name = "interests", columnDefinition = "TEXT")
     var interests: String?, // Comma-separated list
+
+    // Introduction - Interview Answers
+    @Column(name = "introduction_hobby", columnDefinition = "TEXT")
+    var introductionHobby: String?,
+
+    @Column(name = "introduction_charm", columnDefinition = "TEXT")
+    var introductionCharm: String?,
+
+    @Column(name = "introduction_passion", columnDefinition = "TEXT")
+    var introductionPassion: String?,
+
+    @Column(name = "introduction_happiness", columnDefinition = "TEXT")
+    var introductionHappiness: String?,
+
+    @Column(name = "introduction_motto", columnDefinition = "TEXT")
+    var introductionMotto: String?,
 
     // IdealType
     @Column(name = "ideal_date_preferences", columnDefinition = "TEXT")

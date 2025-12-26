@@ -2,9 +2,8 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
-import { Badge } from "./ui/badge";
 import { Textarea } from "./ui/textarea";
-import { Instagram, Sparkles, Lightbulb } from "lucide-react";
+import { Sparkles, Heart, Target, Smile, Lightbulb } from "lucide-react";
 
 interface AboutMeScreenProps {
   onNext: (data: any) => void;
@@ -12,45 +11,93 @@ interface AboutMeScreenProps {
     introduction?: {
       text?: string;
       interests?: string[];
+      interviewAnswers?: {
+        hobby?: string;
+        charm?: string;
+        passion?: string;
+        happiness?: string;
+        motto?: string;
+      };
+    };
+    lifestyleInfo?: {
+      smoking?: string;
+      drinking?: string;
+      religion?: string;
     };
   };
 }
 
-const interests = {
-  "운동/스포츠": ["헬스", "요가", "골프", "등산", "클라이밍", "러닝", "수영", "테니스"],
-  "문화/예술": ["영화", "전시", "공연", "사진", "그림", "악기", "뮤지컬"],
-  "여행": ["국내여행", "해외여행", "캠핑", "드라이브", "백패킹"],
-  "음식": ["맛집탐방", "요리", "카페", "와인", "베이킹", "커피"],
-  "게임/엔터": ["게임", "넷플릭스", "웹툰", "독서", "유튜브"],
-  "반려동물": ["강아지", "고양이", "기타"],
-  "자기계발": ["투자", "외국어", "자격증", "독서", "스터디"],
-};
+const interviewQuestions = [
+  {
+    id: "hobby",
+    icon: Sparkles,
+    iconColor: "text-blue-500",
+    title: "쉬는 날엔 주로 이렇게 시간을 보내요",
+    placeholder: "예) 주말엔 카페에서 책 읽거나, 친구들과 맛집 탐방하는 걸 좋아해요. 날씨 좋은 날엔 한강에서 자전거도 타요!",
+    minLength: 30,
+    maxLength: 200,
+  },
+  {
+    id: "charm",
+    icon: Heart,
+    iconColor: "text-pink-500",
+    title: "제 매력 포인트는 바로 이거!",
+    placeholder: "예) 긍정적이고 밝은 성격이라 주변 사람들에게 에너지를 준다는 말을 자주 들어요. 그리고 공감 능력이 좋은 편이에요.",
+    minLength: 30,
+    maxLength: 200,
+  },
+  {
+    id: "passion",
+    icon: Target,
+    iconColor: "text-purple-500",
+    title: "요즘 제가 푹 빠져있는 것",
+    placeholder: "예) 요즘 테니스를 배우고 있는데 너무 재밌어요! 주말마다 테니스장에 가서 연습하고 있어요.",
+    minLength: 30,
+    maxLength: 200,
+  },
+  {
+    id: "happiness",
+    icon: Smile,
+    iconColor: "text-amber-500",
+    title: "저는 이럴 때 행복해요",
+    placeholder: "예) 좋아하는 사람들과 맛있는 음식 먹으면서 이야기할 때가 가장 행복해요. 소소한 일상의 순간들을 소중히 여기는 편이에요.",
+    minLength: 30,
+    maxLength: 200,
+  },
+  {
+    id: "motto",
+    icon: Lightbulb,
+    iconColor: "text-green-500",
+    title: "제 인생의 좌우명은",
+    placeholder: "예) '오늘 하루를 최선을 다해 살자'가 제 좌우명이에요. 후회 없는 하루를 보내기 위해 노력해요.",
+    minLength: 30,
+    maxLength: 200,
+  },
+];
 
 export function AboutMeScreen({ onNext, initialData }: AboutMeScreenProps) {
-  const [bio, setBio] = useState(initialData?.introduction?.text || "");
-  const [selectedInterests, setSelectedInterests] = useState<string[]>(initialData?.introduction?.interests || []);
-  const [smoking, setSmoking] = useState("");
-  const [drinking, setDrinking] = useState("");
-  const [religion, setReligion] = useState("");
-  const [instagramId, setInstagramId] = useState("");
-  const [showInstagram, setShowInstagram] = useState(true);
+  const [answers, setAnswers] = useState({
+    hobby: initialData?.introduction?.interviewAnswers?.hobby || "",
+    charm: initialData?.introduction?.interviewAnswers?.charm || "",
+    passion: initialData?.introduction?.interviewAnswers?.passion || "",
+    happiness: initialData?.introduction?.interviewAnswers?.happiness || "",
+    motto: initialData?.introduction?.interviewAnswers?.motto || "",
+  });
 
-  const toggleInterest = (interest: string) => {
-    if (selectedInterests.includes(interest)) {
-      setSelectedInterests(selectedInterests.filter(i => i !== interest));
-    } else if (selectedInterests.length < 10) {
-      setSelectedInterests([...selectedInterests, interest]);
-    }
+  const [smoking, setSmoking] = useState(initialData?.lifestyleInfo?.smoking || "");
+  const [drinking, setDrinking] = useState(initialData?.lifestyleInfo?.drinking || "");
+  const [religion, setReligion] = useState(initialData?.lifestyleInfo?.religion || "");
+
+  const updateAnswer = (id: string, value: string) => {
+    setAnswers({ ...answers, [id]: value });
   };
 
-  const isValid = bio.length >= 50 && selectedInterests.length > 0 && smoking && drinking && religion;
-
-  const guideTexts = [
-    "내 성격을 한 문장으로 표현해보세요",
-    "주말에 주로 무엇을 하며 시간을 보내나요?",
-    "가장 좋아하는 것들은 무엇인가요?",
-    "연애관이나 결혼관에 대해 이야기해주세요",
-  ];
+  // Validation: All interview answers must meet minimum length, and lifestyle must be filled
+  const isValid =
+    Object.entries(answers).every(([_, value]) => value.length >= 30) &&
+    smoking &&
+    drinking &&
+    religion;
 
   return (
     <div className="min-h-screen bg-background">
@@ -59,131 +106,69 @@ export function AboutMeScreen({ onNext, initialData }: AboutMeScreenProps) {
         <h2 className="text-center">자기소개 작성</h2>
         <div className="space-y-2">
           <Progress value={60} className="h-2" />
-          <p className="text-sm text-muted-foreground text-center">3/5 단계 - 약 3분 소요</p>
+          <p className="text-sm text-muted-foreground text-center">3/5 단계 - 약 5분 소요</p>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
-        {/* Instagram Auto-fill */}
-        {showInstagram && (
-          <div className="bg-gradient-to-r from-pink-50 to-purple-50 border-2 border-pink-200 rounded-xl p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Instagram className="w-5 h-5 text-pink-500" />
-                <h3 className="text-pink-900">인스타그램으로 자동 작성</h3>
-                <Sparkles className="w-4 h-4 text-amber-400" />
-              </div>
-              <button
-                onClick={() => setShowInstagram(false)}
-                className="text-sm text-slate-500 hover:text-slate-700"
-              >
-                건너뛰기
-              </button>
-            </div>
-            <p className="text-sm text-pink-700">
-              AI가 인스타그램을 분석하여 매력적인 자기소개를 자동으로 작성해드려요
-            </p>
-            <div className="flex gap-3">
-              <div className="relative flex-1">
-                <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-pink-400" />
-                <input
-                  type="text"
-                  placeholder="@your_instagram_id"
-                  value={instagramId}
-                  onChange={(e) => setInstagramId(e.target.value)}
-                  className="w-full pl-11 h-12 rounded-lg border-2 border-pink-200 focus:border-pink-400 focus:ring-pink-400"
-                />
-              </div>
-              <Button className="h-12 bg-gradient-to-r from-pink-400 to-purple-400 text-white">
-                분석하기
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Bio */}
-        <div>
-          <Label className="mb-2 block">자기소개 * (50자 이상, 최대 500자)</Label>
-          <Textarea
-            placeholder="자유롭게 자신을 소개해주세요..."
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            className="min-h-[150px] bg-white border-slate-200 resize-none"
-            maxLength={500}
-          />
-          <div className="flex justify-between items-center mt-2">
-            <p className={`text-sm ${bio.length < 50 ? 'text-rose-600' : 'text-green-600'}`}>
-              {bio.length}/500자 {bio.length < 50 && `(최소 ${50 - bio.length}자 더 필요)`}
-            </p>
-          </div>
-        </div>
-
-        {/* Writing Guide */}
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-3">
+      <div className="max-w-2xl mx-auto px-6 py-8 space-y-8">
+        {/* Interview Questions Section */}
+        <div className="space-y-2 mb-6">
           <div className="flex items-center gap-2">
-            <Lightbulb className="w-5 h-5 text-amber-500" />
-            <h4 className="text-slate-900">작성 가이드</h4>
+            <Sparkles className="w-5 h-5 text-pink-500" />
+            <h3 className="text-lg font-semibold text-slate-900">인터뷰로 나를 소개해요</h3>
           </div>
-          <ul className="space-y-2">
-            {guideTexts.map((text, idx) => (
-              <li key={idx} className="flex items-start gap-2 text-sm text-slate-700">
-                <span className="text-pink-500 mt-0.5">•</span>
-                <span>{text}</span>
-              </li>
-            ))}
-          </ul>
+          <p className="text-sm text-slate-600">
+            5가지 질문에 답하며 나를 매력적으로 표현해보세요. 각 답변은 최소 30자 이상 작성해주세요.
+          </p>
         </div>
 
-        {/* Interests */}
-        <div>
-          <Label className="mb-3 block">
-            취미/관심사 * (최대 10개 선택)
-            <span className="text-sm text-slate-500 ml-2">
-              {selectedInterests.length}/10
-            </span>
-          </Label>
-          <div className="space-y-4">
-            {Object.entries(interests).map(([category, items]) => (
-              <div key={category}>
-                <h4 className="text-sm font-medium text-slate-700 mb-2">{category}</h4>
-                <div className="flex flex-wrap gap-2">
-                  {items.map((interest) => {
-                    const isSelected = selectedInterests.includes(interest);
-                    return (
-                      <Badge
-                        key={interest}
-                        onClick={() => toggleInterest(interest)}
-                        className={`cursor-pointer px-4 py-2 transition-all ${
-                          isSelected
-                            ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                            : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
-                        }`}
-                        variant={isSelected ? "default" : "outline"}
-                      >
-                        {interest}
-                      </Badge>
-                    );
-                  })}
-                </div>
+        {/* Interview Questions */}
+        {interviewQuestions.map((question) => {
+          const Icon = question.icon;
+          const answerLength = answers[question.id as keyof typeof answers]?.length || 0;
+          const isAnswerValid = answerLength >= question.minLength;
+
+          return (
+            <div key={question.id} className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Icon className={`w-5 h-5 ${question.iconColor}`} />
+                <Label className="text-base font-medium">{question.title}</Label>
               </div>
-            ))}
-          </div>
-        </div>
+              <Textarea
+                placeholder={question.placeholder}
+                value={answers[question.id as keyof typeof answers]}
+                onChange={(e) => updateAnswer(question.id, e.target.value)}
+                className="min-h-[100px] bg-white border-slate-200 resize-none text-sm"
+                maxLength={question.maxLength}
+              />
+              <div className="flex justify-between items-center">
+                <p
+                  className={`text-xs ${
+                    isAnswerValid ? "text-green-600" : "text-rose-600"
+                  }`}
+                >
+                  {answerLength}/{question.maxLength}자{" "}
+                  {!isAnswerValid && `(최소 ${question.minLength - answerLength}자 더 필요)`}
+                </p>
+              </div>
+            </div>
+          );
+        })}
 
-        {/* Lifestyle */}
-        <div className="space-y-5">
-          <h3 className="text-slate-900">라이프스타일</h3>
-          
+        {/* Lifestyle Section */}
+        <div className="space-y-5 pt-6 border-t border-slate-200">
+          <h3 className="text-slate-900 font-semibold">라이프스타일</h3>
+
           {/* Smoking */}
           <div>
-            <Label className="mb-2 block">흡연 *</Label>
-            <div className="grid grid-cols-3 gap-3">
+            <Label className="mb-2 block text-sm">흡연 *</Label>
+            <div className="grid grid-cols-3 gap-2">
               {["비흡연", "가끔", "자주"].map((option) => (
                 <button
                   key={option}
                   onClick={() => setSmoking(option)}
-                  className={`py-3 rounded-xl border-2 font-medium transition-all ${
+                  className={`py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
                     smoking === option
                       ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
                       : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
@@ -197,13 +182,13 @@ export function AboutMeScreen({ onNext, initialData }: AboutMeScreenProps) {
 
           {/* Drinking */}
           <div>
-            <Label className="mb-2 block">음주 *</Label>
-            <div className="grid grid-cols-3 gap-3">
+            <Label className="mb-2 block text-sm">음주 *</Label>
+            <div className="grid grid-cols-3 gap-2">
               {["안마심", "가끔", "자주"].map((option) => (
                 <button
                   key={option}
                   onClick={() => setDrinking(option)}
-                  className={`py-3 rounded-xl border-2 font-medium transition-all ${
+                  className={`py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
                     drinking === option
                       ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
                       : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
@@ -217,13 +202,13 @@ export function AboutMeScreen({ onNext, initialData }: AboutMeScreenProps) {
 
           {/* Religion */}
           <div>
-            <Label className="mb-2 block">종교 *</Label>
-            <div className="grid grid-cols-3 gap-3">
+            <Label className="mb-2 block text-sm">종교 *</Label>
+            <div className="grid grid-cols-3 gap-2">
               {["무교", "기독교", "천주교", "불교", "기타"].map((option) => (
                 <button
                   key={option}
                   onClick={() => setReligion(option)}
-                  className={`py-3 rounded-xl border-2 font-medium transition-all ${
+                  className={`py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
                     religion === option
                       ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
                       : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
@@ -238,12 +223,18 @@ export function AboutMeScreen({ onNext, initialData }: AboutMeScreenProps) {
 
         {/* Next Button */}
         <Button
-          onClick={() => onNext({
-            introduction: {
-              text: bio,
-              interests: selectedInterests,
-            },
-          })}
+          onClick={() =>
+            onNext({
+              introduction: {
+                interviewAnswers: answers,
+              },
+              lifestyleInfo: {
+                smoking,
+                drinking,
+                religion,
+              },
+            })
+          }
           disabled={!isValid}
           className="w-full h-14 bg-gradient-to-r from-pink-400 to-rose-400 text-white disabled:opacity-50"
         >
@@ -252,7 +243,7 @@ export function AboutMeScreen({ onNext, initialData }: AboutMeScreenProps) {
 
         {!isValid && (
           <p className="text-sm text-center text-rose-600">
-            모든 필수 항목을 입력해주세요
+            모든 인터뷰 질문에 답변하고 라이프스타일을 선택해주세요
           </p>
         )}
       </div>

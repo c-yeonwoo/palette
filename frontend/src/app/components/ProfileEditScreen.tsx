@@ -34,8 +34,6 @@ interface ProfileData {
   locationInfo: {
     sido: string | null;
     sigungu: string | null;
-    hometownSido: string | null;
-    hometownSigungu: string | null;
   };
   lifestyleInfo: {
     smoking: string | null;
@@ -45,6 +43,13 @@ interface ProfileData {
   introduction: {
     text: string | null;
     interests: string[];
+    interviewAnswers?: {
+      hobby: string | null;
+      charm: string | null;
+      passion: string | null;
+      happiness: string | null;
+      motto: string | null;
+    } | null;
   };
   idealType: {
     datePreferences: string[];
@@ -115,6 +120,15 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
   const [mainPhotoIndex, setMainPhotoIndex] = useState(0);
   const [video, setVideo] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"about" | "ideal">("about");
+  const [showAIVersion, setShowAIVersion] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [originalAnswers, setOriginalAnswers] = useState<{
+    hobby: string | null;
+    charm: string | null;
+    passion: string | null;
+    happiness: string | null;
+    motto: string | null;
+  } | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -542,36 +556,6 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="hometownSido">고향 시/도</Label>
-                <Input
-                  id="hometownSido"
-                  value={profile.locationInfo.hometownSido || ""}
-                  onChange={(e) =>
-                    setProfile({
-                      ...profile,
-                      locationInfo: { ...profile.locationInfo, hometownSido: e.target.value || null }
-                    })
-                  }
-                  placeholder="예: 부산"
-                />
-              </div>
-              <div>
-                <Label htmlFor="hometownSigungu">시/군/구</Label>
-                <Input
-                  id="hometownSigungu"
-                  value={profile.locationInfo.hometownSigungu || ""}
-                  onChange={(e) =>
-                    setProfile({
-                      ...profile,
-                      locationInfo: { ...profile.locationInfo, hometownSigungu: e.target.value || null }
-                    })
-                  }
-                  placeholder="예: 해운대구"
-                />
-              </div>
-            </div>
           </div>
         </section>
 
@@ -670,40 +654,223 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
 
         {/* Introduction */}
         <section className="space-y-4">
-          <h3 className="text-xl font-semibold">자기소개</h3>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="introductionText">소개글</Label>
-              <Textarea
-                id="introductionText"
-                value={profile.introduction.text || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    introduction: { ...profile.introduction, text: e.target.value || null }
-                  })
+          <div className="flex items-center justify-between">
+            <h3 className="text-xl font-semibold">자기소개</h3>
+            <Button
+              variant={showAIVersion ? "default" : "outline"}
+              size="sm"
+              onClick={() => {
+                if (!showAIVersion) {
+                  // Save original answers before enhancing
+                  setOriginalAnswers(profile.introduction.interviewAnswers || null);
+
+                  setIsGeneratingAI(true);
+                  setTimeout(() => {
+                    // Apply AI enhancements to the actual profile state
+                    const enhanced = {
+                      hobby: profile.introduction.interviewAnswers?.hobby
+                        ? profile.introduction.interviewAnswers.hobby + " 주변 사람들과 함께할 때 더욱 즐겁고 의미있는 시간을 보내려고 노력해요."
+                        : null,
+                      charm: profile.introduction.interviewAnswers?.charm
+                        ? profile.introduction.interviewAnswers.charm + " 이런 점들이 저를 특별하게 만들어주는 것 같아요."
+                        : null,
+                      passion: profile.introduction.interviewAnswers?.passion
+                        ? profile.introduction.interviewAnswers.passion + " 이 과정에서 배우고 성장하는 게 정말 즐거워요."
+                        : null,
+                      happiness: profile.introduction.interviewAnswers?.happiness
+                        ? profile.introduction.interviewAnswers.happiness + " 그런 순간들이 제게 가장 큰 행복이에요."
+                        : null,
+                      motto: profile.introduction.interviewAnswers?.motto
+                        ? profile.introduction.interviewAnswers.motto + " 이 마음가짐으로 매일을 살아가고 있어요."
+                        : null,
+                    };
+
+                    setProfile({
+                      ...profile,
+                      introduction: {
+                        ...profile.introduction,
+                        interviewAnswers: enhanced
+                      }
+                    });
+
+                    setIsGeneratingAI(false);
+                    setShowAIVersion(true);
+                  }, 1500);
+                } else {
+                  // Restore original answers
+                  if (originalAnswers) {
+                    setProfile({
+                      ...profile,
+                      introduction: {
+                        ...profile.introduction,
+                        interviewAnswers: originalAnswers
+                      }
+                    });
+                  }
+                  setShowAIVersion(false);
                 }
-                placeholder="자신을 소개해주세요"
-                rows={4}
-              />
-            </div>
+              }}
+              disabled={isGeneratingAI}
+              className="gap-2"
+            >
+              {isGeneratingAI ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  AI 생성 중...
+                </>
+              ) : showAIVersion ? (
+                <>원본 보기</>
+              ) : (
+                <>AI 개선 보기</>
+              )}
+            </Button>
+          </div>
+
+          <div className="space-y-4">
+            {/* Interview Questions */}
             <div>
-              <Label htmlFor="interests">관심사 (쉼표로 구분)</Label>
-              <Input
-                id="interests"
-                value={profile.introduction.interests.join(", ")}
+              <Label htmlFor="hobby">쉬는 날엔 주로 이렇게 시간을 보내요 *</Label>
+              <Textarea
+                id="hobby"
+                value={profile.introduction.interviewAnswers?.hobby || ""}
                 onChange={(e) =>
                   setProfile({
                     ...profile,
                     introduction: {
                       ...profile.introduction,
-                      interests: e.target.value.split(",").map((s) => s.trim()).filter((s) => s)
+                      interviewAnswers: {
+                        ...profile.introduction.interviewAnswers,
+                        hobby: e.target.value || null,
+                        charm: profile.introduction.interviewAnswers?.charm || null,
+                        passion: profile.introduction.interviewAnswers?.passion || null,
+                        happiness: profile.introduction.interviewAnswers?.happiness || null,
+                        motto: profile.introduction.interviewAnswers?.motto || null,
+                      }
                     }
                   })
                 }
-                placeholder="예: 영화, 독서, 요리"
+                placeholder="예) 주말엔 카페에서 책 읽거나, 친구들과 맛집 탐방하는 걸 좋아해요."
+                rows={3}
+                readOnly={showAIVersion}
+                className={showAIVersion ? "bg-muted" : ""}
               />
             </div>
+
+            <div>
+              <Label htmlFor="charm">제 매력 포인트는 바로 이거! *</Label>
+              <Textarea
+                id="charm"
+                value={profile.introduction.interviewAnswers?.charm || ""}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    introduction: {
+                      ...profile.introduction,
+                      interviewAnswers: {
+                        hobby: profile.introduction.interviewAnswers?.hobby || null,
+                        charm: e.target.value || null,
+                        passion: profile.introduction.interviewAnswers?.passion || null,
+                        happiness: profile.introduction.interviewAnswers?.happiness || null,
+                        motto: profile.introduction.interviewAnswers?.motto || null,
+                      }
+                    }
+                  })
+                }
+                placeholder="예) 긍정적이고 밝은 성격이라 주변 사람들에게 에너지를 준다는 말을 자주 들어요."
+                rows={3}
+                readOnly={showAIVersion}
+                className={showAIVersion ? "bg-muted" : ""}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="passion">요즘 제가 푹 빠져있는 것 *</Label>
+              <Textarea
+                id="passion"
+                value={profile.introduction.interviewAnswers?.passion || ""}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    introduction: {
+                      ...profile.introduction,
+                      interviewAnswers: {
+                        hobby: profile.introduction.interviewAnswers?.hobby || null,
+                        charm: profile.introduction.interviewAnswers?.charm || null,
+                        passion: e.target.value || null,
+                        happiness: profile.introduction.interviewAnswers?.happiness || null,
+                        motto: profile.introduction.interviewAnswers?.motto || null,
+                      }
+                    }
+                  })
+                }
+                placeholder="예) 요즘 테니스를 배우고 있는데 너무 재밌어요!"
+                rows={3}
+                readOnly={showAIVersion}
+                className={showAIVersion ? "bg-muted" : ""}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="happiness">저는 이럴 때 행복해요 *</Label>
+              <Textarea
+                id="happiness"
+                value={profile.introduction.interviewAnswers?.happiness || ""}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    introduction: {
+                      ...profile.introduction,
+                      interviewAnswers: {
+                        hobby: profile.introduction.interviewAnswers?.hobby || null,
+                        charm: profile.introduction.interviewAnswers?.charm || null,
+                        passion: profile.introduction.interviewAnswers?.passion || null,
+                        happiness: e.target.value || null,
+                        motto: profile.introduction.interviewAnswers?.motto || null,
+                      }
+                    }
+                  })
+                }
+                placeholder="예) 좋아하는 사람들과 맛있는 음식 먹으면서 이야기할 때가 가장 행복해요."
+                rows={3}
+                readOnly={showAIVersion}
+                className={showAIVersion ? "bg-muted" : ""}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="motto">제 인생의 좌우명은 *</Label>
+              <Textarea
+                id="motto"
+                value={profile.introduction.interviewAnswers?.motto || ""}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    introduction: {
+                      ...profile.introduction,
+                      interviewAnswers: {
+                        hobby: profile.introduction.interviewAnswers?.hobby || null,
+                        charm: profile.introduction.interviewAnswers?.charm || null,
+                        passion: profile.introduction.interviewAnswers?.passion || null,
+                        happiness: profile.introduction.interviewAnswers?.happiness || null,
+                        motto: e.target.value || null,
+                      }
+                    }
+                  })
+                }
+                placeholder="예) '오늘 하루를 최선을 다해 살자'가 제 좌우명이에요."
+                rows={3}
+                readOnly={showAIVersion}
+                className={showAIVersion ? "bg-muted" : ""}
+              />
+            </div>
+
+            {showAIVersion && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-sm text-amber-800">
+                  💡 AI 개선 버전이 적용되었습니다. 저장하면 이 내용으로 저장되며, "원본 보기"를 누르면 개선 전으로 돌아갑니다.
+                </p>
+              </div>
+            )}
           </div>
         </section>
           </>

@@ -53,7 +53,6 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
     school: initialData?.educationInfo?.school || "",
     major: initialData?.educationInfo?.major || "",
     region: initialData?.locationInfo?.region || "",
-    hometown: initialData?.locationInfo?.hometown || "",
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -357,17 +356,6 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
               ))}
             </select>
           </div>
-
-          {/* Hometown */}
-          <div>
-            <Label className="mb-2 block">출신 지역 (선택)</Label>
-            <Input
-              placeholder="예: 서울 강남구"
-              value={formData.hometown}
-              onChange={(e) => setFormData({ ...formData, hometown: e.target.value })}
-              className="h-12 bg-white border-slate-200"
-            />
-          </div>
         </div>
 
         {/* Next Button */}
@@ -395,8 +383,6 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
             locationInfo: {
               region: formData.region,
               district: "",
-              hometown: formData.hometown,
-              hometownDistrict: "",
             },
           })}
           disabled={!isValid}

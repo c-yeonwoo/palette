@@ -16,7 +16,7 @@ import { MainFeedScreen } from "./components/MainFeedScreen";
 import { ConnectorDashboard } from "./components/ConnectorDashboard";
 import { Toaster } from "./components/ui/sonner";
 import { Button } from "./components/ui/button";
-import { Home, UserCircle, MessageSquare, LayoutDashboard } from "lucide-react";
+import { Home, UserCircle, MessageSquare, HeartHandshake } from "lucide-react";
 import { toast } from "sonner";
 import { authService } from "../lib/auth/authService";
 import { tokenStorage } from "../lib/auth/tokenStorage";
@@ -71,8 +71,6 @@ export default function App() {
     locationInfo: {
       region: "",
       district: "",
-      hometown: "",
-      hometownDistrict: "",
     },
     photos: [] as string[],
     mainPhotoIndex: 0,
@@ -80,6 +78,18 @@ export default function App() {
     introduction: {
       text: "",
       interests: [] as string[],
+      interviewAnswers: {
+        hobby: "",
+        charm: "",
+        passion: "",
+        happiness: "",
+        motto: "",
+      },
+    },
+    lifestyleInfo: {
+      smoking: "",
+      drinking: "",
+      religion: "",
     },
     idealType: {
       ageMin: null as number | null,
@@ -219,6 +229,7 @@ export default function App() {
     setProfileData(prev => ({
       ...prev,
       introduction: data.introduction,
+      lifestyleInfo: data.lifestyleInfo || prev.lifestyleInfo,
     }));
     setCurrentScreen("idealType");
   };
@@ -266,6 +277,56 @@ export default function App() {
         '박사': 'DOCTORATE',
       };
 
+      const frequencyMap: { [key: string]: string } = {
+        '비흡연': 'NEVER',
+        '가끔': 'SOMETIMES',
+        '자주': 'OFTEN',
+        '안마심': 'NEVER',
+      };
+
+      const religionMap: { [key: string]: string } = {
+        '무교': 'NONE',
+        '기독교': 'CHRISTIANITY',
+        '천주교': 'CATHOLICISM',
+        '불교': 'BUDDHISM',
+        '기타': 'OTHER',
+      };
+
+      const datePreferenceMap: { [key: string]: string } = {
+        'active': 'ACTIVE',
+        'indoor': 'INDOOR',
+        'culture': 'CULTURE',
+        'nature': 'NATURE',
+      };
+
+      const importantValueMap: { [key: string]: string } = {
+        '성격/성향': 'PERSONALITY',
+        '외모': 'APPEARANCE',
+        '학력': 'EDUCATION',
+        '능력/커리어': 'CAREER',
+        '집안/가족': 'FAMILY',
+        '직업': 'JOB',
+        '경제력': 'WEALTH',
+        '가치관': 'VALUES',
+      };
+
+      const appearanceStyleMap: { [key: string]: string } = {
+        '강아지상': 'PUPPY',
+        '고양이상': 'CAT',
+        '토끼상': 'RABBIT',
+        '여우상': 'FOX',
+        '사슴상': 'DEER',
+        '두부상': 'TOFU',
+        '순두부상': 'SOFT_TOFU',
+        '아랍상': 'ARAB',
+        '일진상': 'BOSS',
+        '상견례입구컷상': 'MOTHER_IN_LAW_APPROVED',
+        '전교회장상': 'STUDENT_COUNCIL',
+        '체대상': 'ATHLETIC',
+        '너드상': 'NERD',
+        '공룡상': 'DINOSAUR',
+      };
+
       const apiData = {
         basicInfo: {
           height: profileData.basicInfo.height || null,
@@ -284,30 +345,29 @@ export default function App() {
         locationInfo: {
           sido: profileData.locationInfo.region || null,
           sigungu: profileData.locationInfo.district || null,
-          hometownSido: profileData.locationInfo.hometown || null,
-          hometownSigungu: profileData.locationInfo.hometownDistrict || null,
         },
         lifestyleInfo: {
-          smoking: null,
-          drinking: null,
-          religion: null,
+          smoking: profileData.lifestyleInfo.smoking ? frequencyMap[profileData.lifestyleInfo.smoking] || null : null,
+          drinking: profileData.lifestyleInfo.drinking ? frequencyMap[profileData.lifestyleInfo.drinking] || null : null,
+          religion: profileData.lifestyleInfo.religion ? religionMap[profileData.lifestyleInfo.religion] || null : null,
         },
         introduction: {
           text: profileData.introduction.text || null,
           interests: profileData.introduction.interests || [],
+          interviewAnswers: profileData.introduction.interviewAnswers || null,
         },
         idealType: {
-          ageRange: profileData.idealType.ageMin && profileData.idealType.ageMax
-            ? { min: profileData.idealType.ageMin, max: profileData.idealType.ageMax }
-            : null,
-          heightRange: profileData.idealType.heightMin && profileData.idealType.heightMax
-            ? { min: profileData.idealType.heightMin, max: profileData.idealType.heightMax }
-            : null,
-          bodyTypes: profileData.idealType.bodyTypes.map(bt => bodyTypeMap[bt] || bt),
+          datePreferences: (profileData.idealType.datePreferences || []).map(
+            pref => datePreferenceMap[pref] || pref
+          ),
+          importantValues: (profileData.idealType.importantValues || []).map(
+            val => importantValueMap[val] || val
+          ),
           personalities: profileData.idealType.personalities || [],
-          dateStyle: profileData.idealType.dateStyle || null,
-          purpose: profileData.idealType.purpose || null,
-          dealBreakers: profileData.idealType.dealBreakers || null,
+          appearanceStyles: (profileData.idealType.appearanceStyles || []).map(
+            style => appearanceStyleMap[style] || style
+          ),
+          dealBreakers: profileData.idealType.dealBreakers || [],
         },
         settings: {
           isAcceptingMatches: true,
@@ -496,7 +556,10 @@ export default function App() {
       )}
       
       {currentScreen === "aiProfileEnhance" && (
-        <AIProfileEnhanceScreen onComplete={handleAIProfileComplete} />
+        <AIProfileEnhanceScreen
+          onComplete={handleAIProfileComplete}
+          profileData={profileData}
+        />
       )}
       
       {currentScreen === "myProfile" && (
@@ -561,7 +624,7 @@ function BottomNavigation({
           onClick={() => onNavigate("myProfile")}
         />
         <NavButton
-          icon={LayoutDashboard}
+          icon={HeartHandshake}
           label="주선"
           active={currentScreen === "connectorDashboard"}
           onClick={() => onNavigate("connectorDashboard")}
