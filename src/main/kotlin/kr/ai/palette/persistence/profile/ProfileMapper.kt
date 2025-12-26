@@ -1,11 +1,16 @@
 package kr.ai.palette.persistence.profile
 
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.readValue
 import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.profile.*
 import org.springframework.stereotype.Component
+import java.time.Instant
 
 @Component
-class ProfileMapper {
+class ProfileMapper(
+    private val objectMapper: ObjectMapper
+) {
 
     fun toDomain(entity: ProfileEntity): Profile {
         return Profile(
@@ -13,7 +18,8 @@ class ProfileMapper {
             userId = UserId(entity.userId),
             basicInfo = BasicInfo(
                 height = entity.height,
-                bodyType = entity.bodyType?.toDomain()
+                bodyType = entity.bodyType?.toDomain(),
+                mbti = entity.mbti.toDomain()
             ),
             careerInfo = CareerInfo(
                 category = entity.careerCategory?.toDomain(),
@@ -66,6 +72,7 @@ class ProfileMapper {
             ),
             photos = emptyList(), // Photos are managed separately
             videos = emptyList(), // Videos are managed separately
+            personalityTests = parsePersonalityTests(entity.personalityTests),
             metadata = ProfileMetadata(
                 createdAt = entity.createdAt,
                 updatedAt = entity.updatedAt,
@@ -85,11 +92,16 @@ class ProfileMapper {
     }
 
     fun toEntity(profile: Profile): ProfileEntity {
+        val serializedTests = serializePersonalityTests(profile.personalityTests)
+        println(">>> toEntity: profile.personalityTests = ${profile.personalityTests}")
+        println(">>> toEntity: serializedTests = ${serializedTests}")
+
         return ProfileEntity(
             id = profile.id.value,
             userId = profile.userId.value,
             height = profile.basicInfo.height,
             bodyType = profile.basicInfo.bodyType?.toEntity(),
+            mbti = profile.basicInfo.mbti.toEntity(),
             careerCategory = profile.careerInfo.category?.toEntity(),
             company = profile.careerInfo.company,
             position = profile.careerInfo.position,
@@ -112,6 +124,7 @@ class ProfileMapper {
             idealPersonalities = profile.idealType.personalities.joinToString(","),
             idealAppearanceStyles = profile.idealType.appearanceStyles.joinToString(","),
             idealDealBreakers = profile.idealType.dealBreakers.joinToString(",") { it.name },
+            personalityTests = serializedTests,
             createdAt = profile.metadata.createdAt,
             updatedAt = profile.metadata.updatedAt,
             lastAccessedAt = profile.metadata.lastAccessedAt,
@@ -128,6 +141,9 @@ class ProfileMapper {
     private fun BodyTypeEntity.toDomain(): BodyType = BodyType.valueOf(this.name)
     private fun BodyType.toEntity(): BodyTypeEntity = BodyTypeEntity.valueOf(this.name)
 
+    private fun MBTIEntity.toDomain(): MBTI = MBTI.valueOf(this.name)
+    private fun MBTI.toEntity(): MBTIEntity = MBTIEntity.valueOf(this.name)
+
     private fun CareerCategoryEntity.toDomain(): CareerCategory = CareerCategory.valueOf(this.name)
     private fun CareerCategory.toEntity(): CareerCategoryEntity = CareerCategoryEntity.valueOf(this.name)
 
@@ -139,4 +155,56 @@ class ProfileMapper {
 
     private fun ReligionEntity.toDomain(): Religion = Religion.valueOf(this.name)
     private fun Religion.toEntity(): ReligionEntity = ReligionEntity.valueOf(this.name)
+
+    // JSON serialization for personality tests
+    private fun parsePersonalityTests(json: String?): List<PersonalityTestResult> {
+        if (json.isNullOrBlank()) return emptyList()
+        return try {
+            val testDtos: List<PersonalityTestDto> = objectMapper.readValue(json)
+            testDtos.map { it.toDomain() }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun serializePersonalityTests(tests: List<PersonalityTestResult>): String? {
+        println(">>> serializePersonalityTests: input tests = ${tests}, size = ${tests.size}")
+        if (tests.isEmpty()) {
+            println(">>> serializePersonalityTests: tests is empty, returning null")
+            return null
+        }
+        return try {
+            val testDtos = tests.map { PersonalityTestDto.from(it) }
+            println(">>> serializePersonalityTests: testDtos = ${testDtos}")
+            val json = objectMapper.writeValueAsString(testDtos)
+            println(">>> serializePersonalityTests: serialized JSON = ${json}")
+            json
+        } catch (e: Exception) {
+            println(">>> serializePersonalityTests: ERROR - ${e.message}")
+            e.printStackTrace()
+            null
+        }
+    }
+}
+
+// DTO for JSON serialization
+data class PersonalityTestDto(
+    val link: String,
+    val title: String
+) {
+    fun toDomain(): PersonalityTestResult {
+        return PersonalityTestResult(
+            link = link,
+            title = title
+        )
+    }
+
+    companion object {
+        fun from(test: PersonalityTestResult): PersonalityTestDto {
+            return PersonalityTestDto(
+                link = test.link,
+                title = test.title
+            )
+        }
+    }
 }

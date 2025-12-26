@@ -283,7 +283,8 @@ class DataInitializer(
             userId = testUserIds["minjun"]!!,
             basicInfo = BasicInfo(
                 height = 178,
-                bodyType = BodyType.ATHLETIC
+                bodyType = BodyType.ATHLETIC,
+                mbti = MBTI.ENFP
             ),
             careerInfo = CareerInfo(
                 category = CareerCategory.IT_DEVELOPMENT,
@@ -335,6 +336,12 @@ class DataInitializer(
                 trustScore = 0,
                 viewCount = 0
             ),
+            personalityTests = listOf(
+                PersonalityTestResult(
+                    link = "https://mbti.cidermics.com/result?userNo=U2FsdGVkX1%2Bw2hOXTG2IkwFvhHr7GuGlTQgJQjf021Q%3D",
+                    title = "절제가 쉽지 않지만 노력중인 멋쟁이"
+                )
+            ),
             settings = ProfileSettings.initial()
         ).recalculateMetrics()
         profileRepository.save(profile1)
@@ -345,7 +352,8 @@ class DataInitializer(
             userId = testUserIds["seoyeon"]!!,
             basicInfo = BasicInfo(
                 height = 165,
-                bodyType = BodyType.SLIM
+                bodyType = BodyType.SLIM,
+                mbti = MBTI.ISFJ
             ),
             careerInfo = CareerInfo(
                 category = CareerCategory.MEDIA,
@@ -397,6 +405,7 @@ class DataInitializer(
                 trustScore = 0,
                 viewCount = 0
             ),
+            personalityTests = emptyList(),
             settings = ProfileSettings.initial()
         ).recalculateMetrics()
         profileRepository.save(profile2)
@@ -407,7 +416,8 @@ class DataInitializer(
             userId = testUserIds["jihoon"]!!,
             basicInfo = BasicInfo(
                 height = 180,
-                bodyType = BodyType.MUSCULAR
+                bodyType = BodyType.MUSCULAR,
+                mbti = MBTI.ENTJ
             ),
             careerInfo = CareerInfo(
                 category = CareerCategory.FINANCE,
@@ -459,6 +469,7 @@ class DataInitializer(
                 trustScore = 0,
                 viewCount = 0
             ),
+            personalityTests = emptyList(),
             settings = ProfileSettings.initial()
         ).recalculateMetrics()
         profileRepository.save(profile3)
@@ -469,7 +480,8 @@ class DataInitializer(
             userId = testUserIds["yujin"]!!,
             basicInfo = BasicInfo(
                 height = 162,
-                bodyType = BodyType.AVERAGE
+                bodyType = BodyType.AVERAGE,
+                mbti = MBTI.INFP
             ),
             careerInfo = CareerInfo(
                 category = CareerCategory.EDUCATION,
@@ -521,6 +533,7 @@ class DataInitializer(
                 trustScore = 0,
                 viewCount = 0
             ),
+            personalityTests = emptyList(),
             settings = ProfileSettings.initial()
         ).recalculateMetrics()
         profileRepository.save(profile4)
@@ -531,7 +544,8 @@ class DataInitializer(
             userId = testUserIds["dohyun"]!!,
             basicInfo = BasicInfo(
                 height = 175,
-                bodyType = BodyType.AVERAGE
+                bodyType = BodyType.AVERAGE,
+                mbti = MBTI.INTJ
             ),
             careerInfo = CareerInfo(
                 category = CareerCategory.MEDICAL,
@@ -583,6 +597,7 @@ class DataInitializer(
                 trustScore = 0,
                 viewCount = 0
             ),
+            personalityTests = emptyList(),
             settings = ProfileSettings.initial()
         ).recalculateMetrics()
         profileRepository.save(profile5)

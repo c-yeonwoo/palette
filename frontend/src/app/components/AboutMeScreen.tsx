@@ -19,6 +19,9 @@ interface AboutMeScreenProps {
         motto?: string;
       };
     };
+    basicInfo?: {
+      mbti?: string;
+    };
     lifestyleInfo?: {
       smoking?: string;
       drinking?: string;

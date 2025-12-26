@@ -9,6 +9,7 @@ interface Profile {
   age: number;
   job: string;
   height: number;
+  mbti?: string;
   intro: string;
   photo: string;
   recommender: string;
@@ -102,7 +103,7 @@ export function ProfileDetailScreen({
                 {profile.name}, {profile.age}
               </h1>
               <p className="text-muted-foreground mt-1">
-                {profile.job} · {profile.height}cm
+                {profile.job} · {profile.height}cm{profile.mbti ? ` · ${profile.mbti}` : ''}
               </p>
             </div>
           </div>

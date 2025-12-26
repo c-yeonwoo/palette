@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Edit3, Loader2, Settings, LogOut } from "lucide-react";
+import { Edit3, Loader2, Settings, LogOut, ExternalLink, Sparkles } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { authService } from "../../lib/auth/authService";
 import { toast } from "sonner";
@@ -26,6 +26,7 @@ interface ProfileData {
   basicInfo: {
     height: number | null;
     bodyType: string | null;
+    mbti: string;
   };
   careerInfo: {
     category: string | null;
@@ -66,6 +67,10 @@ interface ProfileData {
     appearanceStyles: string[];
     dealBreakers: string[];
   };
+  personalityTests?: Array<{
+    link: string;
+    title: string;
+  }>;
   primaryPhotoUrl: string | null;
   metadata: {
     createdAt: string;
@@ -300,6 +305,9 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
                 {profile.basicInfo.bodyType && (
                   <InfoRow label="체형" value={getBodyTypeLabel(profile.basicInfo.bodyType)} />
                 )}
+                {profile.basicInfo.mbti && (
+                  <InfoRow label="MBTI" value={profile.basicInfo.mbti} />
+                )}
                 {profile.careerInfo.company && (
                   <InfoRow label="회사" value={`${profile.careerInfo.company} ${profile.careerInfo.position || ''}`} />
                 )}
@@ -389,6 +397,26 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
           <Section title="추천사">
             <EmptyContent message="아직 받은 추천사가 없습니다" />
           </Section>
+
+          {/* Personality Tests */}
+          {profile?.personalityTests && profile.personalityTests.length > 0 && (
+            <Section title="나는 이런 사람이에요">
+              <div className="flex flex-wrap gap-2">
+                {profile.personalityTests.map((test, index) => (
+                  <a
+                    key={index}
+                    href={test.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-full px-4 py-2 text-sm font-medium text-purple-900 hover:text-purple-700 hover:border-purple-300 transition-colors"
+                  >
+                    {test.title}
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                ))}
+              </div>
+            </Section>
+          )}
           </div>
         )}
 
@@ -610,3 +638,4 @@ function getDealBreakerLabel(dealBreaker: string): string {
   };
   return labels[dealBreaker] || dealBreaker;
 }
+

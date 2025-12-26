@@ -22,6 +22,10 @@ class ProfileEntity(
     @Enumerated(EnumType.STRING)
     var bodyType: BodyTypeEntity?,
 
+    @Column(name = "mbti", length = 4, nullable = false)
+    @Enumerated(EnumType.STRING)
+    var mbti: MBTIEntity,
+
     // CareerInfo
     @Column(name = "career_category", length = 30)
     @Enumerated(EnumType.STRING)
@@ -100,6 +104,10 @@ class ProfileEntity(
     @Column(name = "ideal_deal_breakers", columnDefinition = "TEXT")
     var idealDealBreakers: String?, // Comma-separated list: max 3
 
+    // PersonalityTests - stored as JSON
+    @Column(name = "personality_tests", columnDefinition = "TEXT")
+    var personalityTests: String?, // JSON array of personality test results
+
     // ProfileMetadata
     @Column(name = "created_at", nullable = false)
     var createdAt: Instant,
@@ -134,6 +142,13 @@ class ProfileEntity(
 // Enums for ProfileEntity
 enum class BodyTypeEntity {
     SLIM, AVERAGE, ATHLETIC, MUSCULAR, CURVY
+}
+
+enum class MBTIEntity {
+    ISTJ, ISFJ, INFJ, INTJ,
+    ISTP, ISFP, INFP, INTP,
+    ESTP, ESFP, ENFP, ENTP,
+    ESTJ, ESFJ, ENFJ, ENTJ
 }
 
 enum class CareerCategoryEntity {

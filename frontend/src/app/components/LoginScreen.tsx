@@ -40,7 +40,7 @@ export function LoginScreen({ onEmailLogin }: LoginScreenProps) {
           <div className="flex items-center justify-center gap-2">
             <Heart className="w-10 h-10 text-accent fill-accent" />
           </div>
-          <h1 className="text-white text-4xl">Pallete</h1>
+          <h1 className="text-white text-4xl">Palette</h1>
           <p className="text-white/90 text-lg">지인이 보증하는 만남</p>
         </div>
 

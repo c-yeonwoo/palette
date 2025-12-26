@@ -15,6 +15,7 @@ data class Profile(
     val idealType: IdealType,
     val photos: List<ProfilePhoto>,
     val videos: List<ProfileVideo>,
+    val personalityTests: List<PersonalityTestResult>,
     val metadata: ProfileMetadata,
     val metrics: ProfileMetrics,
     val settings: ProfileSettings
@@ -103,6 +104,27 @@ data class Profile(
         )
     }
 
+    fun updatePersonalityTests(tests: List<PersonalityTestResult>): Profile {
+        return copy(
+            personalityTests = tests,
+            metadata = metadata.update()
+        )
+    }
+
+    fun addPersonalityTest(test: PersonalityTestResult): Profile {
+        return copy(
+            personalityTests = personalityTests + test,
+            metadata = metadata.update()
+        )
+    }
+
+    fun removePersonalityTest(link: String): Profile {
+        return copy(
+            personalityTests = personalityTests.filterNot { it.link == link },
+            metadata = metadata.update()
+        )
+    }
+
     fun access(): Profile {
         return copy(metadata = metadata.access())
     }
@@ -179,7 +201,8 @@ data class Profile(
     companion object {
         fun create(
             userId: UserId,
-            basicInfo: BasicInfo = BasicInfo(null, null),
+            mbti: MBTI = MBTI.ENFP, // MBTI는 필수, 기본값은 ENFP
+            basicInfo: BasicInfo = BasicInfo(null, null, mbti),
             careerInfo: CareerInfo = CareerInfo(null, null, null),
             educationInfo: EducationInfo = EducationInfo(null, null, null),
             locationInfo: LocationInfo = LocationInfo(null, null),
@@ -200,6 +223,7 @@ data class Profile(
                 idealType = idealType,
                 photos = emptyList(),
                 videos = emptyList(),
+                personalityTests = emptyList(),
                 metadata = ProfileMetadata(
                     createdAt = now,
                     updatedAt = now,

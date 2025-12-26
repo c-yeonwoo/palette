@@ -25,6 +25,12 @@ const jobCategories = [
 
 const educationLevels = ["고졸", "전문대", "대졸", "석사", "박사"];
 const bodyTypes = ["슬림", "보통", "탄탄", "건장", "풍만"];
+const mbtiTypes = [
+  "ISTJ", "ISFJ", "INFJ", "INTJ",
+  "ISTP", "ISFP", "INFP", "INTP",
+  "ESTP", "ESFP", "ENFP", "ENTP",
+  "ESTJ", "ESFJ", "ENFJ", "ENTJ"
+];
 const regions = ["서울", "경기", "인천", "부산", "대구", "광주", "대전", "울산", "세종", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
 
 interface UserProfile {
@@ -46,6 +52,10 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
     gender: initialData?.basicInfo?.gender || "",
     height: initialData?.basicInfo?.height || 170,
     bodyType: initialData?.basicInfo?.bodyType || "",
+    mbtiE: initialData?.basicInfo?.mbti ? initialData.basicInfo.mbti[0] : "",
+    mbtiS: initialData?.basicInfo?.mbti ? initialData.basicInfo.mbti[1] : "",
+    mbtiT: initialData?.basicInfo?.mbti ? initialData.basicInfo.mbti[2] : "",
+    mbtiP: initialData?.basicInfo?.mbti ? initialData.basicInfo.mbti[3] : "",
     jobCategory: initialData?.careerInfo?.category || "",
     company: initialData?.careerInfo?.company || "",
     position: initialData?.careerInfo?.position || "",
@@ -108,7 +118,8 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
   };
 
   const isValid = formData.name && formData.birthYear && formData.birthMonth && formData.birthDay &&
-    formData.gender && formData.bodyType && formData.jobCategory && formData.education && formData.region;
+    formData.gender && formData.bodyType && formData.mbtiE && formData.mbtiS && formData.mbtiT && formData.mbtiP &&
+    formData.jobCategory && formData.education && formData.region;
 
   if (isLoading) {
     return (
@@ -258,6 +269,97 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
             </div>
           </div>
 
+          {/* MBTI */}
+          <div>
+            <Label className="mb-2 block">MBTI *</Label>
+            <div className="grid grid-cols-4 gap-3">
+              {/* E/I */}
+              <div className="space-y-2">
+                <p className="text-xs text-center text-muted-foreground font-medium">외향/내향</p>
+                <div className="grid grid-cols-2 gap-1">
+                  {["E", "I"].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setFormData({ ...formData, mbtiE: type })}
+                      className={`py-2 rounded-lg border-2 text-sm font-medium transition-all ${
+                        formData.mbtiE === type
+                          ? "bg-gradient-to-r from-purple-400 to-indigo-400 text-white border-purple-400"
+                          : "bg-white border-slate-200 text-slate-600 hover:border-purple-300"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* S/N */}
+              <div className="space-y-2">
+                <p className="text-xs text-center text-muted-foreground font-medium">감각/직관</p>
+                <div className="grid grid-cols-2 gap-1">
+                  {["S", "N"].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setFormData({ ...formData, mbtiS: type })}
+                      className={`py-2 rounded-lg border-2 text-sm font-medium transition-all ${
+                        formData.mbtiS === type
+                          ? "bg-gradient-to-r from-purple-400 to-indigo-400 text-white border-purple-400"
+                          : "bg-white border-slate-200 text-slate-600 hover:border-purple-300"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* T/F */}
+              <div className="space-y-2">
+                <p className="text-xs text-center text-muted-foreground font-medium">사고/감정</p>
+                <div className="grid grid-cols-2 gap-1">
+                  {["T", "F"].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setFormData({ ...formData, mbtiT: type })}
+                      className={`py-2 rounded-lg border-2 text-sm font-medium transition-all ${
+                        formData.mbtiT === type
+                          ? "bg-gradient-to-r from-purple-400 to-indigo-400 text-white border-purple-400"
+                          : "bg-white border-slate-200 text-slate-600 hover:border-purple-300"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* P/J */}
+              <div className="space-y-2">
+                <p className="text-xs text-center text-muted-foreground font-medium">인식/판단</p>
+                <div className="grid grid-cols-2 gap-1">
+                  {["P", "J"].map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setFormData({ ...formData, mbtiP: type })}
+                      className={`py-2 rounded-lg border-2 text-sm font-medium transition-all ${
+                        formData.mbtiP === type
+                          ? "bg-gradient-to-r from-purple-400 to-indigo-400 text-white border-purple-400"
+                          : "bg-white border-slate-200 text-slate-600 hover:border-purple-300"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {formData.mbtiE && formData.mbtiS && formData.mbtiT && formData.mbtiP && (
+              <p className="text-sm text-center text-purple-600 font-medium mt-2">
+                선택된 MBTI: {formData.mbtiE}{formData.mbtiS}{formData.mbtiT}{formData.mbtiP}
+              </p>
+            )}
+          </div>
+
           {/* Job Category */}
           <div>
             <Label className="mb-2 block">직업 분야 *</Label>
@@ -369,6 +471,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
               gender: formData.gender,
               height: formData.height,
               bodyType: formData.bodyType,
+              mbti: `${formData.mbtiE}${formData.mbtiS}${formData.mbtiT}${formData.mbtiP}`,
             },
             careerInfo: {
               category: formData.jobCategory,

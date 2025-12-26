@@ -4,9 +4,10 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Badge } from "./ui/badge";
-import { ArrowLeft, Loader2, Save, Plus, Video, Star, X } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Plus, Video, Star, X, ExternalLink, Eye, EyeOff } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
+import { PersonalityTestManager } from "./PersonalityTestManager";
 
 interface ProfileEditScreenProps {
   onBack: () => void;
@@ -20,6 +21,7 @@ interface ProfileData {
   basicInfo: {
     height: number | null;
     bodyType: string | null;
+    mbti: string;
   };
   careerInfo: {
     category: string | null;
@@ -58,11 +60,23 @@ interface ProfileData {
     appearanceStyles: string[];
     dealBreakers: string[];
   };
+  personalityTests?: Array<{
+    link: string;
+    title: string;
+  }>;
   settings: {
     isAcceptingMatches: boolean;
     hiddenAt: string | null;
   };
 }
+
+// MBTI 타입
+const mbtiTypes = [
+  "ISTJ", "ISFJ", "INFJ", "INTJ",
+  "ISTP", "ISFP", "INFP", "INTP",
+  "ESTP", "ESFP", "ENFP", "ENTP",
+  "ESTJ", "ESFJ", "ENFJ", "ENTJ"
+];
 
 // 선호하는 성격 옵션
 const personalities = [
@@ -159,6 +173,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
         lifestyleInfo: profile.lifestyleInfo,
         introduction: profile.introduction,
         idealType: profile.idealType,
+        personalityTests: profile.personalityTests || [],
         settings: profile.settings
       });
       toast.success('프로필이 저장되었습니다');
@@ -383,6 +398,125 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                   </Badge>
                 ))}
               </div>
+            </div>
+            <div>
+              <Label className="mb-2 block">MBTI *</Label>
+              <div className="grid grid-cols-4 gap-3">
+                {/* E/I */}
+                <div className="space-y-2">
+                  <p className="text-xs text-center text-muted-foreground font-medium">외향/내향</p>
+                  <div className="grid grid-cols-2 gap-1">
+                    {["E", "I"].map((type) => (
+                      <Badge
+                        key={type}
+                        onClick={() => {
+                          const currentMbti = profile.basicInfo.mbti;
+                          const newMbti = type + currentMbti.substring(1);
+                          setProfile({
+                            ...profile,
+                            basicInfo: { ...profile.basicInfo, mbti: newMbti }
+                          });
+                        }}
+                        className={`cursor-pointer px-2 py-2 transition-all text-center ${
+                          profile.basicInfo.mbti[0] === type
+                            ? "bg-gradient-to-r from-purple-400 to-indigo-400 text-white border-purple-400"
+                            : "bg-white border-slate-200 text-slate-600 hover:border-purple-300"
+                        }`}
+                        variant={profile.basicInfo.mbti[0] === type ? "default" : "outline"}
+                      >
+                        {type}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* S/N */}
+                <div className="space-y-2">
+                  <p className="text-xs text-center text-muted-foreground font-medium">감각/직관</p>
+                  <div className="grid grid-cols-2 gap-1">
+                    {["S", "N"].map((type) => (
+                      <Badge
+                        key={type}
+                        onClick={() => {
+                          const currentMbti = profile.basicInfo.mbti;
+                          const newMbti = currentMbti[0] + type + currentMbti.substring(2);
+                          setProfile({
+                            ...profile,
+                            basicInfo: { ...profile.basicInfo, mbti: newMbti }
+                          });
+                        }}
+                        className={`cursor-pointer px-2 py-2 transition-all text-center ${
+                          profile.basicInfo.mbti[1] === type
+                            ? "bg-gradient-to-r from-purple-400 to-indigo-400 text-white border-purple-400"
+                            : "bg-white border-slate-200 text-slate-600 hover:border-purple-300"
+                        }`}
+                        variant={profile.basicInfo.mbti[1] === type ? "default" : "outline"}
+                      >
+                        {type}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* T/F */}
+                <div className="space-y-2">
+                  <p className="text-xs text-center text-muted-foreground font-medium">사고/감정</p>
+                  <div className="grid grid-cols-2 gap-1">
+                    {["T", "F"].map((type) => (
+                      <Badge
+                        key={type}
+                        onClick={() => {
+                          const currentMbti = profile.basicInfo.mbti;
+                          const newMbti = currentMbti.substring(0, 2) + type + currentMbti[3];
+                          setProfile({
+                            ...profile,
+                            basicInfo: { ...profile.basicInfo, mbti: newMbti }
+                          });
+                        }}
+                        className={`cursor-pointer px-2 py-2 transition-all text-center ${
+                          profile.basicInfo.mbti[2] === type
+                            ? "bg-gradient-to-r from-purple-400 to-indigo-400 text-white border-purple-400"
+                            : "bg-white border-slate-200 text-slate-600 hover:border-purple-300"
+                        }`}
+                        variant={profile.basicInfo.mbti[2] === type ? "default" : "outline"}
+                      >
+                        {type}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                {/* P/J */}
+                <div className="space-y-2">
+                  <p className="text-xs text-center text-muted-foreground font-medium">인식/판단</p>
+                  <div className="grid grid-cols-2 gap-1">
+                    {["P", "J"].map((type) => (
+                      <Badge
+                        key={type}
+                        onClick={() => {
+                          const currentMbti = profile.basicInfo.mbti;
+                          const newMbti = currentMbti.substring(0, 3) + type;
+                          setProfile({
+                            ...profile,
+                            basicInfo: { ...profile.basicInfo, mbti: newMbti }
+                          });
+                        }}
+                        className={`cursor-pointer px-2 py-2 transition-all text-center ${
+                          profile.basicInfo.mbti[3] === type
+                            ? "bg-gradient-to-r from-purple-400 to-indigo-400 text-white border-purple-400"
+                            : "bg-white border-slate-200 text-slate-600 hover:border-purple-300"
+                        }`}
+                        variant={profile.basicInfo.mbti[3] === type ? "default" : "outline"}
+                      >
+                        {type}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <p className="text-sm text-center text-purple-600 font-medium mt-2">
+                선택된 MBTI: {profile.basicInfo.mbti}
+              </p>
             </div>
           </div>
         </section>
@@ -873,6 +1007,17 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
             )}
           </div>
         </section>
+
+        {/* Personality Tests */}
+        <PersonalityTestManager
+          tests={profile.personalityTests || []}
+          onChange={(tests) =>
+            setProfile({
+              ...profile,
+              personalityTests: tests
+            })
+          }
+        />
           </>
         )}
 

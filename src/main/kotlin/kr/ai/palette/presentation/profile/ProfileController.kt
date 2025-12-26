@@ -37,12 +37,8 @@ class ProfileController(
         @AuthenticationPrincipal authUser: AuthUser,
         @RequestBody request: UpdateProfileRequest
     ): ResponseEntity<ProfileResponse> {
-        println("========== UPDATE PROFILE REQUEST ==========")
-        println("User ID: ${authUser.userId}")
-        println("Request: $request")
-        println("Introduction: ${request.introduction}")
-        println("LifestyleInfo: ${request.lifestyleInfo}")
-        println("==========================================")
+        // Debug logging
+        println("UPDATE PROFILE - User: ${authUser.userId}, PersonalityTests: ${request.personalityTests?.size ?: 0}")
 
         var profile = profileRepository.findByUserId(authUser.userId)
             ?: Profile.create(authUser.userId)
@@ -78,6 +74,11 @@ class ProfileController(
 
         request.settings?.let { settingsDto ->
             profile = profile.updateSettings(settingsDto.toDomain())
+        }
+
+        request.personalityTests?.let { testsDto ->
+            val tests = testsDto.map { it.toDomain() }
+            profile = profile.updatePersonalityTests(tests)
         }
 
         // Recalculate metrics (completion rate)

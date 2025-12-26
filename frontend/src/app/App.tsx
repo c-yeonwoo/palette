@@ -46,6 +46,7 @@ export default function App() {
   const [missingRequiredFields, setMissingRequiredFields] = useState<string[]>([]);
   const [isConvertingToRegular, setIsConvertingToRegular] = useState(false);
   const [userGender, setUserGender] = useState<string | undefined>(undefined);
+  const [profileRefreshKey, setProfileRefreshKey] = useState(0);
 
   // Profile data collected during registration
   const [profileData, setProfileData] = useState({
@@ -404,6 +405,7 @@ export default function App() {
   };
 
   const handleProfileEditSave = () => {
+    setProfileRefreshKey(prev => prev + 1); // Force MyProfileScreen to remount
     setCurrentScreen("myProfile");
     toast.success("프로필이 저장되었습니다!");
   };
@@ -564,6 +566,7 @@ export default function App() {
       
       {currentScreen === "myProfile" && (
         <MyProfileScreen
+          key={profileRefreshKey}
           onBack={handleMyProfileBack}
           onEdit={handleMyProfileEdit}
           onConvertToRegular={handleConvertToRegular}

@@ -14,6 +14,7 @@ data class ProfileResponse(
     val lifestyleInfo: LifestyleInfoDto,
     val introduction: IntroductionDto,
     val idealType: IdealTypeDto,
+    val personalityTests: List<PersonalityTestResultDto>,
     val primaryPhotoUrl: String?,
     val metadata: ProfileMetadataDto,
     val metrics: ProfileMetricsDto,
@@ -31,6 +32,7 @@ data class ProfileResponse(
                 lifestyleInfo = LifestyleInfoDto.from(profile.lifestyleInfo),
                 introduction = IntroductionDto.from(profile.introduction),
                 idealType = IdealTypeDto.from(profile.idealType),
+                personalityTests = profile.personalityTests.map { PersonalityTestResultDto.from(it) },
                 primaryPhotoUrl = profile.photos.firstOrNull { it.isPrimary }?.url,
                 metadata = ProfileMetadataDto.from(profile.metadata),
                 metrics = ProfileMetricsDto.from(profile.metrics),
@@ -49,17 +51,20 @@ data class UpdateProfileRequest(
     val lifestyleInfo: LifestyleInfoDto?,
     val introduction: IntroductionDto?,
     val idealType: IdealTypeDto?,
+    val personalityTests: List<PersonalityTestResultDto>?,
     val settings: ProfileSettingsDto?
 )
 
 data class BasicInfoDto(
     val height: Int?,
-    val bodyType: String?
+    val bodyType: String?,
+    val mbti: String
 ) {
     fun toDomain(): BasicInfo {
         return BasicInfo(
             height = height,
-            bodyType = bodyType?.let { BodyType.valueOf(it) }
+            bodyType = bodyType?.let { BodyType.valueOf(it) },
+            mbti = MBTI.valueOf(mbti)
         )
     }
 
@@ -67,7 +72,8 @@ data class BasicInfoDto(
         fun from(basicInfo: BasicInfo): BasicInfoDto {
             return BasicInfoDto(
                 height = basicInfo.height,
-                bodyType = basicInfo.bodyType?.name
+                bodyType = basicInfo.bodyType?.name,
+                mbti = basicInfo.mbti.name
             )
         }
     }
@@ -306,6 +312,27 @@ data class ProfileSettingsDto(
             return ProfileSettingsDto(
                 isAcceptingMatches = settings.isAcceptingMatches,
                 hiddenAt = settings.hiddenAt
+            )
+        }
+    }
+}
+
+data class PersonalityTestResultDto(
+    val link: String,
+    val title: String
+) {
+    fun toDomain(): PersonalityTestResult {
+        return PersonalityTestResult(
+            link = link,
+            title = title
+        )
+    }
+
+    companion object {
+        fun from(test: PersonalityTestResult): PersonalityTestResultDto {
+            return PersonalityTestResultDto(
+                link = test.link,
+                title = test.title
             )
         }
     }
