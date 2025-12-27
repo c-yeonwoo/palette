@@ -26,13 +26,17 @@ interface MatchmakerData {
 }
 
 interface MatchRequest {
-  id: number;
-  requester: string;
-  requesterPhoto: string;
-  target: string;
-  targetPhoto: string;
-  timestamp: string;
-  status: "pending" | "approved" | "declined";
+  id: string;
+  requesterId: string;
+  requesterNickname: string | null;
+  targetUserId: string;
+  targetNickname: string | null;
+  matchmakerId: string;
+  matchmakerName: string | null;
+  message: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export function ConnectorDashboard() {
@@ -41,20 +45,25 @@ export function ConnectorDashboard() {
   const [requests, setRequests] = useState<MatchRequest[]>([]);
 
   useEffect(() => {
-    const fetchMatchmakerData = async () => {
-      try {
-        const data = await api.get<MatchmakerData>('/api/v1/matchmakers/me');
-        setMatchmakerData(data);
-      } catch (error) {
-        console.error('Failed to fetch matchmaker data:', error);
-        toast.error('주선자 정보를 불러오는데 실패했습니다');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMatchmakerData();
+    fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      const [matchmakerData, requestsResponse] = await Promise.all([
+        api.get<MatchmakerData>('/api/v1/matchmakers/me'),
+        api.get<{ requests: MatchRequest[]; totalCount: number }>('/api/v1/matchmaking/requests')
+      ]);
+      setMatchmakerData(matchmakerData);
+      setRequests(requestsResponse.requests);
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+      toast.error('데이터를 불러오는데 실패했습니다');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -78,22 +87,28 @@ export function ConnectorDashboard() {
   const totalConnections = matchmakerData.successfulMatches;
   const successRate = Math.round(matchmakerData.successRate * 100);
 
-  const handleApprove = (requestId: number) => {
-    setRequests(
-      requests.map((req) =>
-        req.id === requestId ? { ...req, status: "approved" as const } : req
-      )
-    );
-    toast.success("주선을 승인했습니다! 포인트가 적립됩니다.");
+  const handleApprove = async (requestId: string) => {
+    try {
+      await api.put(`/api/v1/matchmaking/requests/${requestId}/approve`, {});
+      toast.success("주선을 승인했습니다! 포인트가 적립됩니다.");
+      // Refresh data
+      await fetchData();
+    } catch (error) {
+      console.error('Failed to approve request:', error);
+      toast.error("주선 승인에 실패했습니다");
+    }
   };
 
-  const handleDecline = (requestId: number) => {
-    setRequests(
-      requests.map((req) =>
-        req.id === requestId ? { ...req, status: "declined" as const } : req
-      )
-    );
-    toast.info("주선을 거절했습니다.");
+  const handleDecline = async (requestId: string) => {
+    try {
+      await api.put(`/api/v1/matchmaking/requests/${requestId}/reject`, {});
+      toast.info("주선을 거절했습니다.");
+      // Refresh data
+      await fetchData();
+    } catch (error) {
+      console.error('Failed to reject request:', error);
+      toast.error("주선 거절에 실패했습니다");
+    }
   };
 
   return (
@@ -138,9 +153,9 @@ export function ConnectorDashboard() {
         {/* Pending Requests */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3>대기 중인 요청</h3>
+            <h3>나에게 들어온 주선요청</h3>
             <Badge variant="secondary">
-              {requests.filter((r) => r.status === "pending").length}건
+              {requests.filter((r) => r.status === "PENDING").length}건
             </Badge>
           </div>
 
@@ -155,7 +170,7 @@ export function ConnectorDashboard() {
             ))}
           </div>
 
-          {requests.filter((r) => r.status === "pending").length === 0 && (
+          {requests.filter((r) => r.status === "PENDING").length === 0 && (
             <Card className="p-12 text-center">
               <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">대기 중인 요청이 없습니다</p>
@@ -195,7 +210,7 @@ function RequestCard({
   onApprove: () => void;
   onDecline: () => void;
 }) {
-  if (request.status !== "pending") {
+  if (request.status !== "PENDING") {
     return null;
   }
 
@@ -205,34 +220,47 @@ function RequestCard({
         {/* Request Info */}
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-3 flex-1">
-            <img
-              src={request.requesterPhoto}
-              alt={request.requester}
-              className="w-12 h-12 rounded-full object-cover border-2 border-border"
-            />
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center border-2 border-border">
+              <span className="text-lg font-semibold text-primary">
+                {request.requesterNickname?.charAt(0) || "?"}
+              </span>
+            </div>
             <div>
               <p className="text-sm text-muted-foreground">요청자</p>
-              <p>{request.requester}</p>
+              <p className="font-medium">{request.requesterNickname || "알 수 없음"}</p>
             </div>
           </div>
 
           <div className="text-muted-foreground text-2xl">→</div>
 
           <div className="flex items-center gap-3 flex-1">
-            <img
-              src={request.targetPhoto}
-              alt={request.target}
-              className="w-12 h-12 rounded-full object-cover border-2 border-border"
-            />
+            <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center border-2 border-border">
+              <span className="text-lg font-semibold text-accent-foreground">
+                {request.targetNickname?.charAt(0) || "?"}
+              </span>
+            </div>
             <div>
               <p className="text-sm text-muted-foreground">대상자</p>
-              <p>{request.target}</p>
+              <p className="font-medium">{request.targetNickname || "알 수 없음"}</p>
             </div>
           </div>
         </div>
 
+        {/* Message */}
+        {request.message && (
+          <div className="bg-accent/10 rounded-lg p-3">
+            <p className="text-sm text-muted-foreground">{request.message}</p>
+          </div>
+        )}
+
         <div className="flex items-center justify-between pt-2 border-t border-border">
-          <p className="text-sm text-muted-foreground">{request.timestamp}</p>
+          <p className="text-sm text-muted-foreground">
+            {new Date(request.createdAt).toLocaleDateString('ko-KR', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}
+          </p>
         </div>
 
         {/* Action Buttons */}

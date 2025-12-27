@@ -86,9 +86,11 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [] }: Prof
   const [modalStep, setModalStep] = useState<1 | 2>(1);
   const [selectedMatchmaker, setSelectedMatchmaker] = useState<string | null>(null);
   const [requestMessage, setRequestMessage] = useState("");
+  const [alreadyRequested, setAlreadyRequested] = useState(false);
 
   useEffect(() => {
     fetchProfileData();
+    checkMatchmakingRequest();
   }, [userId]);
 
   const fetchProfileData = async () => {
@@ -105,6 +107,15 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [] }: Prof
       toast.error("프로필을 불러오는데 실패했습니다");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const checkMatchmakingRequest = async () => {
+    try {
+      const response = await api.get<{ exists: boolean }>(`/api/v1/matchmaking/check/${userId}`);
+      setAlreadyRequested(response.exists);
+    } catch (error) {
+      console.error("Failed to check matchmaking request:", error);
     }
   };
 
@@ -129,13 +140,26 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [] }: Prof
     setModalStep(2);
   };
 
-  const handleConfirmMatchRequest = () => {
-    // TODO: 실제 주선 요청 API 호출
-    toast.success(`${selectedMatchmaker}님께 주선을 요청했습니다`);
-    setShowMatchmakerModal(false);
-    setModalStep(1);
-    setSelectedMatchmaker(null);
-    setRequestMessage("");
+  const handleConfirmMatchRequest = async () => {
+    if (!selectedMatchmaker) return;
+
+    try {
+      await api.post("/api/v1/matchmaking/request", {
+        targetUserId: userId,
+        matchmakerName: selectedMatchmaker,
+        message: requestMessage || null
+      });
+
+      toast.success(`${selectedMatchmaker}님께 주선을 요청했습니다`);
+      setAlreadyRequested(true);
+      setShowMatchmakerModal(false);
+      setModalStep(1);
+      setSelectedMatchmaker(null);
+      setRequestMessage("");
+    } catch (error) {
+      console.error("Failed to create matchmaking request:", error);
+      toast.error("주선 요청에 실패했습니다");
+    }
   };
 
   const handleCloseModal = () => {
@@ -517,11 +541,13 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [] }: Prof
         <div className="max-w-2xl mx-auto">
           <Button
             size="lg"
-            className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="w-full h-14"
             onClick={handleMatchRequest}
+            disabled={alreadyRequested}
+            variant={alreadyRequested ? "secondary" : "default"}
           >
             <Send className="w-5 h-5 mr-2" />
-            주선 요청하기
+            {alreadyRequested ? "주선 요청 완료" : "주선 요청하기"}
           </Button>
         </div>
       </div>

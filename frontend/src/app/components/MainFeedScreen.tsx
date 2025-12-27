@@ -90,6 +90,7 @@ interface UserProfile {
 
 export function MainFeedScreen({ onProfileClick }: MainFeedScreenProps) {
   const [feedItems, setFeedItems] = useState<FeedProfileItem[]>([]);
+  const [pendingItems, setPendingItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
@@ -107,8 +108,12 @@ export function MainFeedScreen({ onProfileClick }: MainFeedScreenProps) {
 
       // Only fetch feed for REGULAR users
       if (userData.accountType === "REGULAR") {
-        const response = await api.get<FeedResponse>("/api/v1/feed");
-        setFeedItems(response.items);
+        const [feedResponse, pendingResponse] = await Promise.all([
+          api.get<FeedResponse>("/api/v1/feed"),
+          api.get<any>("/api/v1/matchmaking/requests/pending")
+        ]);
+        setFeedItems(feedResponse.items);
+        setPendingItems(pendingResponse.requests || []);
       }
     } catch (error) {
       console.error("Failed to fetch feed:", error);
@@ -131,16 +136,27 @@ export function MainFeedScreen({ onProfileClick }: MainFeedScreenProps) {
           <TabsList className="w-full h-14 bg-transparent rounded-none border-none p-0">
             <TabsTrigger
               value="friends"
-              className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary"
+              className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary text-sm"
             >
               내 지인의 지인
             </TabsTrigger>
             <TabsTrigger
-              value="trending"
-              className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary"
+              value="pending"
+              className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary text-sm"
             >
-              <TrendingUp className="w-4 h-4 mr-2" />
-              실시간 인기
+              기다리는중
+              {pendingItems.length > 0 && (
+                <span className="ml-1 bg-primary text-white rounded-full px-2 py-0.5 text-xs">
+                  {pendingItems.length}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger
+              value="trending"
+              className="flex-1 h-full rounded-none data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-primary text-sm"
+            >
+              <TrendingUp className="w-4 h-4 mr-1" />
+              인기
             </TabsTrigger>
           </TabsList>
         </div>
@@ -166,6 +182,57 @@ export function MainFeedScreen({ onProfileClick }: MainFeedScreenProps) {
                   item={item}
                   onClick={() => onProfileClick?.(item)}
                 />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="pending" className="mt-0 p-6">
+          {loading ? (
+            <LoadingState />
+          ) : userProfile?.accountType === "MATCHMAKER_ONLY" ? (
+            <EmptyState
+              title="주선자 전용 계정입니다"
+              description="주선 기능은 주선자 대시보드에서 이용하실 수 있습니다"
+            />
+          ) : pendingItems.length === 0 ? (
+            <EmptyState
+              title="주선 대기 중인 프로필이 없어요"
+              description="관심있는 프로필에 주선을 요청해보세요"
+            />
+          ) : (
+            <div className="space-y-4">
+              {pendingItems.map((request: any) => (
+                <div
+                  key={request.id}
+                  className="bg-card rounded-2xl overflow-hidden border border-border"
+                >
+                  <div className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <p className="font-medium text-lg">{request.targetNickname || "프로필"}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {request.matchmakerName}님께 주선 요청
+                        </p>
+                      </div>
+                      <div className="bg-yellow-100 dark:bg-yellow-900/30 px-3 py-1 rounded-full">
+                        <p className="text-xs font-medium text-yellow-800 dark:text-yellow-200">대기중</p>
+                      </div>
+                    </div>
+                    {request.message && (
+                      <div className="bg-accent/20 rounded-lg p-3 mt-2">
+                        <p className="text-sm text-muted-foreground">{request.message}</p>
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-3">
+                      {new Date(request.createdAt).toLocaleDateString('ko-KR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                </div>
               ))}
             </div>
           )}

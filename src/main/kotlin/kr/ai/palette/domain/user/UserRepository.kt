@@ -11,4 +11,5 @@ interface UserRepository {
     fun existsByNickname(nickname: String): Boolean
     fun existsByEmail(email: String): Boolean
     fun delete(id: UserId)
+    fun findAll(): List<User>
 }

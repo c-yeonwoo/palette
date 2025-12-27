@@ -66,4 +66,10 @@ class UserRepositoryImpl(
     override fun delete(id: UserId) {
         jpaRepository.deleteById(id.value)
     }
+
+    @Transactional(readOnly = true)
+    override fun findAll(): List<User> {
+        return jpaRepository.findAll()
+            .map { mapper.toDomain(it) }
+    }
 }
