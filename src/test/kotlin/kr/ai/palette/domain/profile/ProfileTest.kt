@@ -135,7 +135,7 @@ class ProfileTest : DescribeSpec({
                     userId = userId,
                     mbti = MBTI.ENFP,
                     basicInfo = BasicInfo(180, BodyType.ATHLETIC, MBTI.ENFP),
-                    careerInfo = CareerInfo(CareerCategory.IT_DEVELOPMENT, "회사", "직급"),
+                    careerInfo = CareerInfo(CareerCategory.IT_DEVELOPMENT, "회사", IncomeRange.INCOME_RANGE_3),
                     educationInfo = EducationInfo(EducationLevel.BACHELOR, "학교", "전공")
                 )
 

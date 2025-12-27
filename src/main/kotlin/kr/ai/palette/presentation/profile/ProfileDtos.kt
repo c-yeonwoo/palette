@@ -15,6 +15,7 @@ data class ProfileResponse(
     val introduction: IntroductionDto,
     val idealType: IdealTypeDto,
     val personalityTests: List<PersonalityTestResultDto>,
+    val photos: List<ProfilePhotoDto>,
     val primaryPhotoUrl: String?,
     val metadata: ProfileMetadataDto,
     val metrics: ProfileMetricsDto,
@@ -33,6 +34,7 @@ data class ProfileResponse(
                 introduction = IntroductionDto.from(profile.introduction),
                 idealType = IdealTypeDto.from(profile.idealType),
                 personalityTests = profile.personalityTests.map { PersonalityTestResultDto.from(it) },
+                photos = profile.photos.map { ProfilePhotoDto.from(it) },
                 primaryPhotoUrl = profile.photos.firstOrNull { it.isPrimary }?.url,
                 metadata = ProfileMetadataDto.from(profile.metadata),
                 metrics = ProfileMetricsDto.from(profile.metrics),
@@ -82,13 +84,13 @@ data class BasicInfoDto(
 data class CareerInfoDto(
     val category: String?,
     val company: String?,
-    val position: String?
+    val incomeRange: String?
 ) {
     fun toDomain(): CareerInfo {
         return CareerInfo(
             category = category?.let { CareerCategory.valueOf(it) },
             company = company,
-            position = position
+            incomeRange = incomeRange?.let { IncomeRange.valueOf(it) }
         )
     }
 
@@ -97,7 +99,7 @@ data class CareerInfoDto(
             return CareerInfoDto(
                 category = careerInfo.category?.name,
                 company = careerInfo.company,
-                position = careerInfo.position
+                incomeRange = careerInfo.incomeRange?.name
             )
         }
     }
@@ -333,6 +335,24 @@ data class PersonalityTestResultDto(
             return PersonalityTestResultDto(
                 link = test.link,
                 title = test.title
+            )
+        }
+    }
+}
+
+data class ProfilePhotoDto(
+    val id: String,
+    val url: String,
+    val displayOrder: Int,
+    val isPrimary: Boolean
+) {
+    companion object {
+        fun from(photo: ProfilePhoto): ProfilePhotoDto {
+            return ProfilePhotoDto(
+                id = photo.id.value.toString(),
+                url = photo.url,
+                displayOrder = photo.displayOrder,
+                isPrimary = photo.isPrimary
             )
         }
     }

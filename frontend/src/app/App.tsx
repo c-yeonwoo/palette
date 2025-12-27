@@ -14,6 +14,7 @@ import { MyProfileScreen } from "./components/MyProfileScreen";
 import { ProfileEditScreen } from "./components/ProfileEditScreen";
 import { MainFeedScreen } from "./components/MainFeedScreen";
 import { ConnectorDashboard } from "./components/ConnectorDashboard";
+import { PublicProfileScreen } from "./components/PublicProfileScreen";
 import { Toaster } from "./components/ui/sonner";
 import { Button } from "./components/ui/button";
 import { Home, UserCircle, MessageSquare, HeartHandshake } from "lucide-react";
@@ -37,7 +38,8 @@ type Screen =
   | "myProfile"
   | "profileEdit"
   | "mainFeed"
-  | "connectorDashboard";
+  | "connectorDashboard"
+  | "publicProfile";
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>("login");
@@ -108,6 +110,14 @@ export default function App() {
   // Check authentication state on mount
   useEffect(() => {
     const checkAuth = async () => {
+      // Check if this is a public profile URL
+      const profileMatch = window.location.pathname.match(/^\/profile\/(.+)$/);
+      if (profileMatch) {
+        setCurrentScreen("publicProfile");
+        setIsLoading(false);
+        return;
+      }
+
       // Check if this is OAuth2 redirect
       if (window.location.pathname === '/oauth2/redirect') {
         setCurrentScreen("oauth2Redirect");
@@ -584,6 +594,8 @@ export default function App() {
       {currentScreen === "mainFeed" && <MainFeedScreen />}
 
       {currentScreen === "connectorDashboard" && <ConnectorDashboard />}
+
+      {currentScreen === "publicProfile" && <PublicProfileScreen />}
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding */}
       {isLoggedIn && !["login", "emailLogin", "emailSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "aboutMe", "idealType", "aiProfileEnhance", "profileEdit"].includes(currentScreen) && (

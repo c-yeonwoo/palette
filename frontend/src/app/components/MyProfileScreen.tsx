@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Edit3, Loader2, Settings, LogOut, ExternalLink, Sparkles } from "lucide-react";
+import { Edit3, Loader2, Settings, LogOut, ExternalLink, Sparkles, CheckCircle2, Share2, Link } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { authService } from "../../lib/auth/authService";
 import { toast } from "sonner";
@@ -31,7 +31,7 @@ interface ProfileData {
   careerInfo: {
     category: string | null;
     company: string | null;
-    position: string | null;
+    incomeRange: string | null;
   };
   educationInfo: {
     level: string | null;
@@ -94,8 +94,10 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
   const [activeTab, setActiveTab] = useState<"about" | "ideal">("about");
   const menuRef = useRef<HTMLDivElement>(null);
+  const shareMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -137,6 +139,20 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
     }
   }, [showSettingsMenu]);
 
+  // Close share menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (shareMenuRef.current && !shareMenuRef.current.contains(event.target as Node)) {
+        setShowShareMenu(false);
+      }
+    };
+
+    if (showShareMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showShareMenu]);
+
   const handleLogout = async () => {
     try {
       await authService.logout();
@@ -147,6 +163,66 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
       console.error('Logout failed:', error);
       toast.error('로그아웃에 실패했습니다');
     }
+  };
+
+  const handleCopyLink = async () => {
+    if (!profile) return;
+
+    const shareUrl = `${window.location.origin}/profile/${profile.userId}`;
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success('프로필 링크가 복사되었습니다');
+      setShowShareMenu(false);
+    } catch (error) {
+      console.error('Copy failed:', error);
+      toast.error('링크 복사에 실패했습니다');
+    }
+  };
+
+  const handleKakaoShare = () => {
+    if (!profile || !userProfile) return;
+
+    const shareUrl = `${window.location.origin}/profile/${profile.userId}`;
+
+    // Check if Kakao SDK is loaded
+    if (typeof (window as any).Kakao === 'undefined') {
+      toast.error('카카오톡 공유 기능을 사용할 수 없습니다');
+      return;
+    }
+
+    const Kakao = (window as any).Kakao;
+
+    // Initialize Kakao SDK if not initialized
+    if (!Kakao.isInitialized()) {
+      // TODO: Replace with your actual Kakao JavaScript Key
+      Kakao.init('YOUR_KAKAO_JAVASCRIPT_KEY');
+    }
+
+    Kakao.Share.sendDefault({
+      objectType: 'feed',
+      content: {
+        title: `${userProfile.nickname}님의 프로필`,
+        description: `Palette에서 ${userProfile.nickname}님의 프로필을 확인해보세요`,
+        imageUrl: profile.primaryPhotoUrl || 'https://via.placeholder.com/300',
+        link: {
+          mobileWebUrl: shareUrl,
+          webUrl: shareUrl,
+        },
+      },
+      buttons: [
+        {
+          title: '프로필 보기',
+          link: {
+            mobileWebUrl: shareUrl,
+            webUrl: shareUrl,
+          },
+        },
+      ],
+    });
+
+    toast.success('카카오톡으로 공유되었습니다');
+    setShowShareMenu(false);
   };
 
   if (isLoading) {
@@ -214,27 +290,61 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
 
       {/* Tabs */}
       <div className="bg-card border-b border-border px-6">
-        <div className="flex gap-4">
-          <button
-            onClick={() => setActiveTab("about")}
-            className={`py-4 px-2 border-b-2 font-medium transition-colors ${
-              activeTab === "about"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            내소개
-          </button>
-          <button
-            onClick={() => setActiveTab("ideal")}
-            className={`py-4 px-2 border-b-2 font-medium transition-colors ${
-              activeTab === "ideal"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            이상형
-          </button>
+        <div className="flex items-center justify-between">
+          <div className="flex gap-4">
+            <button
+              onClick={() => setActiveTab("about")}
+              className={`py-4 px-2 border-b-2 font-medium transition-colors ${
+                activeTab === "about"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              내소개
+            </button>
+            <button
+              onClick={() => setActiveTab("ideal")}
+              className={`py-4 px-2 border-b-2 font-medium transition-colors ${
+                activeTab === "ideal"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              이상형
+            </button>
+          </div>
+          <div className="relative" ref={shareMenuRef}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowShareMenu(!showShareMenu)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <Share2 className="w-5 h-5" />
+            </Button>
+
+            {/* Share Menu Tooltip */}
+            {showShareMenu && (
+              <div className="absolute right-0 top-full mt-2 bg-card border border-border rounded-lg shadow-lg p-2 flex gap-2 z-10">
+                <button
+                  onClick={handleKakaoShare}
+                  className="p-2 hover:bg-accent rounded-lg transition-colors"
+                  title="카카오톡 공유"
+                >
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#FEE500">
+                    <path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.442 1.492 4.585 3.773 5.973-.142.53-.92 3.46-.945 3.68-.03.273.099.537.316.649.218.112.486.085.675-.073 0 0 2.216-1.478 3.288-2.186C9.67 18.764 10.814 19 12 19c5.523 0 10-3.477 10-7.5S17.523 3 12 3z" stroke="#000" strokeWidth="0.5"/>
+                  </svg>
+                </button>
+                <button
+                  onClick={handleCopyLink}
+                  className="p-2 hover:bg-accent rounded-lg transition-colors"
+                  title="링크 복사"
+                >
+                  <Link className="w-6 h-6 text-foreground" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -242,25 +352,68 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
       <div className="p-6 space-y-6">
         {/* Profile Header */}
         <div className="flex items-start gap-4">
-          <div>
-            {profile?.primaryPhotoUrl ? (
-              <img
-                src={profile.primaryPhotoUrl}
-                alt="프로필 사진"
-                className="w-20 h-20 rounded-full object-cover"
+          <div className="relative">
+            {/* Circular Progress Ring */}
+            <svg className="w-24 h-24 -rotate-90" viewBox="0 0 100 100">
+              {/* Background circle */}
+              <circle
+                cx="50"
+                cy="50"
+                r="45"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="4"
+                className="text-muted/20"
               />
-            ) : (
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-2xl">
-                {userProfile.nickname.charAt(0).toUpperCase()}
+              {/* Progress circle */}
+              <circle
+                cx="50"
+                cy="50"
+                r="45"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={`${2 * Math.PI * 45}`}
+                strokeDashoffset={`${2 * Math.PI * 45 * (1 - (profile?.metrics.completionRate || 0) / 100)}`}
+                className="text-primary transition-all duration-500"
+              />
+            </svg>
+
+            {/* Profile Photo */}
+            <div className="absolute inset-0 flex items-center justify-center p-2">
+              {profile?.primaryPhotoUrl ? (
+                <img
+                  src={profile.primaryPhotoUrl}
+                  alt="프로필 사진"
+                  className="w-20 h-20 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-2xl">
+                  {userProfile.nickname.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+
+            {/* Completion Badge */}
+            {profile?.metrics.completionRate === 100 && (
+              <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-1">
+                <CheckCircle2 className="w-5 h-5 text-white" />
               </div>
             )}
           </div>
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h3 className="text-xl font-bold">{userProfile.nickname}</h3>
               <Badge variant={userProfile.isProfileCompleted ? "default" : "secondary"}>
                 {userProfile.isProfileCompleted ? "프로필 완성" : "프로필 미완성"}
               </Badge>
+              {profile?.careerInfo.incomeRange &&
+               ["INCOME_RANGE_3", "INCOME_RANGE_4", "INCOME_RANGE_5"].includes(profile.careerInfo.incomeRange) && (
+                <Badge className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-0">
+                  고소득
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground">
               {userProfile.accountType === "REGULAR" ? "일반 회원" : "주선자"}
@@ -309,7 +462,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
                   <InfoRow label="MBTI" value={profile.basicInfo.mbti} />
                 )}
                 {profile.careerInfo.company && (
-                  <InfoRow label="회사" value={`${profile.careerInfo.company} ${profile.careerInfo.position || ''}`} />
+                  <InfoRow label="직장" value={profile.careerInfo.company} />
                 )}
                 {profile.educationInfo.school && (
                   <InfoRow label="학력" value={`${profile.educationInfo.school} ${profile.educationInfo.major || ''}`} />

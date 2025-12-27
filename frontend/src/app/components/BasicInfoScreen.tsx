@@ -23,6 +23,14 @@ const jobCategories = [
   "서비스/영업", "제조/생산", "공무원/공공기관", "전문직", "기타"
 ];
 
+const incomeRanges = [
+  { value: "INCOME_RANGE_1", label: "5,000만원 이하" },
+  { value: "INCOME_RANGE_2", label: "5,000~7,500만원" },
+  { value: "INCOME_RANGE_3", label: "7,500~9,000만원" },
+  { value: "INCOME_RANGE_4", label: "9,000~11,000만원" },
+  { value: "INCOME_RANGE_5", label: "11,000만원 이상" }
+];
+
 const educationLevels = ["고졸", "전문대", "대졸", "석사", "박사"];
 const bodyTypes = ["슬림", "보통", "탄탄", "건장", "풍만"];
 const mbtiTypes = [
@@ -58,7 +66,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
     mbtiP: initialData?.basicInfo?.mbti ? initialData.basicInfo.mbti[3] : "",
     jobCategory: initialData?.careerInfo?.category || "",
     company: initialData?.careerInfo?.company || "",
-    position: initialData?.careerInfo?.position || "",
+    incomeRange: initialData?.careerInfo?.incomeRange || "",
     education: initialData?.educationInfo?.level || "",
     school: initialData?.educationInfo?.school || "",
     major: initialData?.educationInfo?.major || "",
@@ -380,7 +388,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
           {/* Company & Position */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="mb-2 block">회사명 (선택)</Label>
+              <Label className="mb-2 block">직장명 (선택)</Label>
               <Input
                 placeholder="예: 구글"
                 value={formData.company}
@@ -390,13 +398,20 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
               />
             </div>
             <div>
-              <Label className="mb-2 block">직급 (선택)</Label>
-              <Input
-                placeholder="예: 대리"
-                value={formData.position}
-                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                className="h-12 bg-white border-slate-200"
-              />
+              <Label className="mb-2 block">소득 인증 (선택)</Label>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full h-12 border-2 border-dashed hover:border-pink-300 hover:bg-pink-50"
+                onClick={() => {
+                  toast.info('홈택스 연동 기능은 준비 중입니다');
+                }}
+              >
+                소득인증하기
+              </Button>
+              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                소득 인증은 선택사항입니다. 홈택스 연동을 통해 인증하면 고소득 뱃지가 프로필에 표시됩니다. (연소득 7,500만원 이상)
+              </p>
             </div>
           </div>
 
@@ -476,7 +491,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
             careerInfo: {
               category: formData.jobCategory,
               company: formData.company,
-              position: formData.position,
+              incomeRange: formData.incomeRange,
             },
             educationInfo: {
               level: formData.education,

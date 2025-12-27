@@ -26,7 +26,7 @@ interface ProfileData {
   careerInfo: {
     category: string | null;
     company: string | null;
-    position: string | null;
+    incomeRange: string | null;
   };
   educationInfo: {
     level: string | null;
@@ -77,6 +77,15 @@ const mbtiTypes = [
   "ESTP", "ESFP", "ENFP", "ENTP",
   "ESTJ", "ESFJ", "ENFJ", "ENTJ"
 ];
+
+// 연소득 구간
+const incomeRanges: Record<string, string> = {
+  INCOME_RANGE_1: "5,000만원 이하",
+  INCOME_RANGE_2: "5,000~7,500만원",
+  INCOME_RANGE_3: "7,500~9,000만원",
+  INCOME_RANGE_4: "9,000~11,000만원",
+  INCOME_RANGE_5: "11,000만원 이상"
+};
 
 // 선호하는 성격 옵션
 const personalities = [
@@ -352,22 +361,27 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
           <h3 className="text-xl font-semibold">기본 정보</h3>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="height">키 (cm)</Label>
-              <Input
-                id="height"
-                type="number"
-                value={profile.basicInfo.height || ""}
+              <Label>키 - {profile.basicInfo.height || 170}cm</Label>
+              <input
+                type="range"
+                min="140"
+                max="220"
+                value={profile.basicInfo.height || 170}
                 onChange={(e) =>
                   setProfile({
                     ...profile,
                     basicInfo: {
                       ...profile.basicInfo,
-                      height: e.target.value ? Number(e.target.value) : null
+                      height: parseInt(e.target.value)
                     }
                   })
                 }
-                placeholder="예: 170"
+                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-pink-500 mt-2"
               />
+              <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                <span>140cm</span>
+                <span>220cm</span>
+              </div>
             </div>
             <div>
               <Label className="mb-2 block">체형</Label>
@@ -561,7 +575,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
               </div>
             </div>
             <div>
-              <Label htmlFor="company">회사명</Label>
+              <Label htmlFor="company">직장명</Label>
               <Input
                 id="company"
                 value={profile.careerInfo.company || ""}
@@ -571,22 +585,24 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                     careerInfo: { ...profile.careerInfo, company: e.target.value || null }
                   })
                 }
-                placeholder="회사명을 입력하세요"
+                placeholder="직장명을 입력하세요"
               />
             </div>
             <div>
-              <Label htmlFor="position">직책</Label>
-              <Input
-                id="position"
-                value={profile.careerInfo.position || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    careerInfo: { ...profile.careerInfo, position: e.target.value || null }
-                  })
-                }
-                placeholder="직책을 입력하세요"
-              />
+              <Label>소득 인증 (선택)</Label>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full mt-2 border-2 border-dashed hover:border-pink-300 hover:bg-pink-50"
+                onClick={() => {
+                  toast.info('홈택스 연동 기능은 준비 중입니다');
+                }}
+              >
+                {profile.careerInfo.incomeRange ? '소득인증 완료' : '소득인증하기'}
+              </Button>
+              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                소득 인증은 선택사항입니다. 홈택스 연동을 통해 인증하면 고소득 뱃지가 프로필에 표시됩니다. (연소득 7,500만원 이상)
+              </p>
             </div>
           </div>
         </section>

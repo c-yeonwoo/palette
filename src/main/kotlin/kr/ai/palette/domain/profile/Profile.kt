@@ -148,7 +148,7 @@ data class Profile(
         totalFields += 3
         if (careerInfo.category != null) filledFields++
         if (careerInfo.company != null) filledFields++
-        if (careerInfo.position != null) filledFields++
+        if (careerInfo.incomeRange != null) filledFields++
 
         // Education Info (3 fields)
         totalFields += 3

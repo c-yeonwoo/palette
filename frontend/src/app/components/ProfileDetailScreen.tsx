@@ -17,6 +17,7 @@ interface Profile {
   photos?: string[];
   values?: Record<string, string | string[]>;
   recommenderNote?: string;
+  highIncome?: boolean; // INCOME_RANGE_3 이상 (7500만원 이상)
 }
 
 interface ProfileDetailScreenProps {
@@ -98,10 +99,17 @@ export function ProfileDetailScreen({
         {/* Basic Info */}
         <div className="space-y-3">
           <div className="flex items-start justify-between">
-            <div>
-              <h1>
-                {profile.name}, {profile.age}
-              </h1>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1>
+                  {profile.name}, {profile.age}
+                </h1>
+                {profile.highIncome && (
+                  <Badge className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-0 text-xs">
+                    고소득
+                  </Badge>
+                )}
+              </div>
               <p className="text-muted-foreground mt-1">
                 {profile.job} · {profile.height}cm{profile.mbti ? ` · ${profile.mbti}` : ''}
               </p>

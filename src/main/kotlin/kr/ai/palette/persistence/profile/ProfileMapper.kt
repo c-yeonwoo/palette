@@ -24,7 +24,7 @@ class ProfileMapper(
             careerInfo = CareerInfo(
                 category = entity.careerCategory?.toDomain(),
                 company = entity.company,
-                position = entity.position
+                incomeRange = entity.incomeRange?.toDomain()
             ),
             educationInfo = EducationInfo(
                 level = entity.educationLevel?.toDomain(),
@@ -104,7 +104,7 @@ class ProfileMapper(
             mbti = profile.basicInfo.mbti.toEntity(),
             careerCategory = profile.careerInfo.category?.toEntity(),
             company = profile.careerInfo.company,
-            position = profile.careerInfo.position,
+            incomeRange = profile.careerInfo.incomeRange?.toEntity(),
             educationLevel = profile.educationInfo.level?.toEntity(),
             school = profile.educationInfo.school,
             major = profile.educationInfo.major,
@@ -146,6 +146,9 @@ class ProfileMapper(
 
     private fun CareerCategoryEntity.toDomain(): CareerCategory = CareerCategory.valueOf(this.name)
     private fun CareerCategory.toEntity(): CareerCategoryEntity = CareerCategoryEntity.valueOf(this.name)
+
+    private fun IncomeRangeEntity.toDomain(): IncomeRange = IncomeRange.valueOf(this.name)
+    private fun IncomeRange.toEntity(): IncomeRangeEntity = IncomeRangeEntity.valueOf(this.name)
 
     private fun EducationLevelEntity.toDomain(): EducationLevel = EducationLevel.valueOf(this.name)
     private fun EducationLevel.toEntity(): EducationLevelEntity = EducationLevelEntity.valueOf(this.name)

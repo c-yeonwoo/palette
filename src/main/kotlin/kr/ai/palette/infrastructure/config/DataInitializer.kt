@@ -289,7 +289,7 @@ class DataInitializer(
             careerInfo = CareerInfo(
                 category = CareerCategory.IT_DEVELOPMENT,
                 company = "네이버",
-                position = "시니어 개발자"
+                incomeRange = IncomeRange.INCOME_RANGE_4 // 9000~11000만원
             ),
             educationInfo = EducationInfo(
                 level = EducationLevel.BACHELOR,
@@ -358,7 +358,7 @@ class DataInitializer(
             careerInfo = CareerInfo(
                 category = CareerCategory.MEDIA,
                 company = "카카오",
-                position = "마케팅 매니저"
+                incomeRange = IncomeRange.INCOME_RANGE_3 // 7500~9000만원
             ),
             educationInfo = EducationInfo(
                 level = EducationLevel.BACHELOR,
@@ -422,7 +422,7 @@ class DataInitializer(
             careerInfo = CareerInfo(
                 category = CareerCategory.FINANCE,
                 company = "삼성증권",
-                position = "자산관리사"
+                incomeRange = IncomeRange.INCOME_RANGE_5 // 11000만원 이상
             ),
             educationInfo = EducationInfo(
                 level = EducationLevel.MASTER,
@@ -486,7 +486,7 @@ class DataInitializer(
             careerInfo = CareerInfo(
                 category = CareerCategory.EDUCATION,
                 company = "서울시립초등학교",
-                position = "초등교사"
+                incomeRange = IncomeRange.INCOME_RANGE_2 // 5000~7500만원
             ),
             educationInfo = EducationInfo(
                 level = EducationLevel.BACHELOR,
@@ -550,7 +550,7 @@ class DataInitializer(
             careerInfo = CareerInfo(
                 category = CareerCategory.MEDICAL,
                 company = "서울대학교병원",
-                position = "내과 전문의"
+                incomeRange = IncomeRange.INCOME_RANGE_5 // 11000만원 이상
             ),
             educationInfo = EducationInfo(
                 level = EducationLevel.DOCTORATE,

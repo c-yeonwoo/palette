@@ -34,8 +34,9 @@ class ProfileEntity(
     @Column(name = "company", length = 100)
     var company: String?,
 
-    @Column(name = "position", length = 100)
-    var position: String?,
+    @Column(name = "income_range", length = 20)
+    @Enumerated(EnumType.STRING)
+    var incomeRange: IncomeRangeEntity?,
 
     // EducationInfo
     @Column(name = "education_level", length = 20)
@@ -154,6 +155,14 @@ enum class MBTIEntity {
 enum class CareerCategoryEntity {
     IT_DEVELOPMENT, FINANCE, EDUCATION, MEDICAL, MEDIA,
     SERVICE, MANUFACTURING, PUBLIC_OFFICIAL, PROFESSIONAL, OTHER
+}
+
+enum class IncomeRangeEntity {
+    INCOME_RANGE_1, // 5000만원 이하
+    INCOME_RANGE_2, // 5000~7500만원
+    INCOME_RANGE_3, // 7500~9000만원
+    INCOME_RANGE_4, // 9000~11000만원
+    INCOME_RANGE_5  // 11000만원 이상
 }
 
 enum class EducationLevelEntity {

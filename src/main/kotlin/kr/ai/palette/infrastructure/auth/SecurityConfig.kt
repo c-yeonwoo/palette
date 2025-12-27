@@ -41,7 +41,9 @@ class SecurityConfig(
                         "/api/v1/auth/**",
                         "/oauth2/**",
                         "/login/**",
-                        "/h2-console/**"
+                        "/h2-console/**",
+                        "/api/v1/profile/public/**",
+                        "/api/v1/users/*/public"
                     ).permitAll()
                     .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                     .anyRequest().authenticated()
