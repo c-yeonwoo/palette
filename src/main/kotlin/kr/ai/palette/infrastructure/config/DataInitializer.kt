@@ -4,6 +4,7 @@ import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.user.*
 import kr.ai.palette.domain.profile.*
 import kr.ai.palette.domain.matchmaker.*
+import kr.ai.palette.domain.friendship.*
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -11,12 +12,14 @@ import org.springframework.stereotype.Component
 import java.time.Instant
 import java.time.LocalDate
 import java.util.*
+import kotlin.random.Random
 
 @Component
 class DataInitializer(
     private val userRepository: UserRepository,
     private val profileRepository: ProfileRepository,
     private val matchmakerRepository: MatchmakerRepository,
+    private val friendshipRepository: FriendshipRepository,
     private val passwordEncoder: PasswordEncoder
 ) : ApplicationRunner {
 
@@ -24,6 +27,7 @@ class DataInitializer(
         createTestUsers()
         createTestProfiles()
         createTestMatchmakers()
+        createTestFriendships()
     }
 
     private val testUserIds = mutableMapOf<String, UserId>()
@@ -783,5 +787,63 @@ class DataInitializer(
 
         println("✅ Matchmaker mock data initialized successfully!")
         println("📊 Created 7 matchmakers (5 REGULAR + 2 MATCHMAKER_ONLY users)")
+    }
+
+    private fun createTestFriendships() {
+        val now = Instant.now()
+        val userIds = testUserIds.values.toList()
+
+        if (userIds.size < 2) {
+            println("⚠️ Not enough users to create friendships")
+            return
+        }
+
+        val createdFriendships = mutableListOf<Friendship>()
+
+        // 랜덤하게 친구 관계 생성 (각 유저당 2-4명의 친구)
+        userIds.forEach { userId ->
+            val targetFriendCount = Random.nextInt(2, 5) // 2~4명
+            val potentialFriends = userIds.filter { it != userId }
+
+            val friendsToAdd = potentialFriends
+                .shuffled()
+                .take(targetFriendCount)
+                .filter { friendId ->
+                    // 이미 친구 관계가 있는지 확인
+                    !friendshipRepository.existsBetweenUsers(userId, friendId)
+                }
+
+            friendsToAdd.forEach { friendId ->
+                // user1Id < user2Id 순서로 정렬하여 저장 (중복 방지)
+                val (user1Id, user2Id) = if (userId.value.toString() < friendId.value.toString()) {
+                    userId to friendId
+                } else {
+                    friendId to userId
+                }
+
+                val friendship = Friendship(
+                    id = FriendshipId.generate(),
+                    user1Id = user1Id,
+                    user2Id = user2Id,
+                    status = FriendshipStatus.ACCEPTED, // 바로 승인된 상태로 생성
+                    createdAt = now.minusSeconds(Random.nextLong(86400 * 30)), // 최근 30일 내
+                    acceptedAt = now.minusSeconds(Random.nextLong(86400 * 30))
+                )
+
+                friendshipRepository.save(friendship)
+                createdFriendships.add(friendship)
+            }
+        }
+
+        println("✅ Friendship mock data initialized successfully!")
+        println("👥 Created ${createdFriendships.size} friendships")
+
+        // 각 유저의 친구 수와 2촌 수 출력
+        userIds.forEach { userId ->
+            val friendIds = friendshipRepository.findFriendIdsByUserId(userId)
+            val secondDegreeIds = friendshipRepository.findSecondDegreeFriendIds(userId)
+            val userKey = testUserIds.entries.find { it.value == userId }?.key ?: "unknown"
+            println("  - $userKey: ${friendIds.size}명의 친구, ${secondDegreeIds.size}명의 2촌")
+        }
     }
 }

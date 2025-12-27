@@ -12,6 +12,7 @@ import { IdealTypeScreen } from "./components/IdealTypeScreen";
 import { AIProfileEnhanceScreen } from "./components/AIProfileEnhanceScreen";
 import { MyProfileScreen } from "./components/MyProfileScreen";
 import { ProfileEditScreen } from "./components/ProfileEditScreen";
+import { ProfileDetailScreen } from "./components/ProfileDetailScreen";
 import { MainFeedScreen } from "./components/MainFeedScreen";
 import { ConnectorDashboard } from "./components/ConnectorDashboard";
 import { PublicProfileScreen } from "./components/PublicProfileScreen";
@@ -37,6 +38,7 @@ type Screen =
   | "aiProfileEnhance"
   | "myProfile"
   | "profileEdit"
+  | "profileDetail"
   | "mainFeed"
   | "connectorDashboard"
   | "publicProfile";
@@ -49,6 +51,8 @@ export default function App() {
   const [isConvertingToRegular, setIsConvertingToRegular] = useState(false);
   const [userGender, setUserGender] = useState<string | undefined>(undefined);
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
+  const [selectedUserId, setSelectedUserId] = useState<string | undefined>(undefined);
+  const [selectedMutualFriends, setSelectedMutualFriends] = useState<string[]>([]);
 
   // Profile data collected during registration
   const [profileData, setProfileData] = useState({
@@ -474,6 +478,16 @@ export default function App() {
     setCurrentScreen("login");
   };
 
+  const handleProfileClick = (item: any) => {
+    setSelectedUserId(item.profile.userId);
+    setSelectedMutualFriends(item.mutualFriends || []);
+    setCurrentScreen("profileDetail");
+  };
+
+  const handleProfileDetailBack = () => {
+    setCurrentScreen("mainFeed");
+  };
+
   // Show loading spinner while checking authentication
   if (isLoading) {
     return (
@@ -591,14 +605,22 @@ export default function App() {
         />
       )}
       
-      {currentScreen === "mainFeed" && <MainFeedScreen />}
+      {currentScreen === "mainFeed" && <MainFeedScreen onProfileClick={handleProfileClick} />}
+
+      {currentScreen === "profileDetail" && selectedUserId && (
+        <ProfileDetailScreen
+          userId={selectedUserId}
+          onBack={handleProfileDetailBack}
+          mutualFriends={selectedMutualFriends}
+        />
+      )}
 
       {currentScreen === "connectorDashboard" && <ConnectorDashboard />}
 
       {currentScreen === "publicProfile" && <PublicProfileScreen />}
 
-      {/* Bottom Navigation - Only show when logged in and not on login/onboarding */}
-      {isLoggedIn && !["login", "emailLogin", "emailSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "aboutMe", "idealType", "aiProfileEnhance", "profileEdit"].includes(currentScreen) && (
+      {/* Bottom Navigation - Only show when logged in and not on login/onboarding/detail screens */}
+      {isLoggedIn && !["login", "emailLogin", "emailSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "aboutMe", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}
