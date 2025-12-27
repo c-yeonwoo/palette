@@ -137,10 +137,12 @@ data class Profile(
         var filledFields = 0
         var totalFields = 0
 
-        // Basic Info (2 fields)
-        totalFields += 2
+        // Basic Info (3 fields)
+        totalFields += 3
         if (basicInfo.height != null) filledFields++
         if (basicInfo.bodyType != null) filledFields++
+        // MBTI는 필수 필드이므로 항상 채워져 있음
+        filledFields++
 
         // Career Info (3 fields)
         totalFields += 3
@@ -181,9 +183,9 @@ data class Profile(
         if (idealType.importantValues.isNotEmpty()) filledFields++
         if (idealType.personalities.isNotEmpty()) filledFields++
 
-        // Photos (1 field - at least one photo)
+        // Photos (1 field - at least 3 photos)
         totalFields += 1
-        if (photos.isNotEmpty()) filledFields++
+        if (photos.size >= 3) filledFields++
 
         return if (totalFields > 0) {
             ((filledFields.toDouble() / totalFields.toDouble()) * 100).toInt()
