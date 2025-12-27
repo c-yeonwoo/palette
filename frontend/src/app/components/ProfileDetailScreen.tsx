@@ -82,6 +82,10 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [] }: Prof
   const [userInfo, setUserInfo] = useState<PublicUserResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"about" | "ideal">("about");
+  const [showMatchmakerModal, setShowMatchmakerModal] = useState(false);
+  const [modalStep, setModalStep] = useState<1 | 2>(1);
+  const [selectedMatchmaker, setSelectedMatchmaker] = useState<string | null>(null);
+  const [requestMessage, setRequestMessage] = useState("");
 
   useEffect(() => {
     fetchProfileData();
@@ -105,7 +109,40 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [] }: Prof
   };
 
   const handleMatchRequest = () => {
-    toast.info("주선 요청 기능은 준비 중입니다");
+    if (mutualFriends.length === 0) {
+      toast.error("공통 친구가 없어 주선을 요청할 수 없습니다");
+      return;
+    }
+    setShowMatchmakerModal(true);
+    setModalStep(1);
+  };
+
+  const handleMatchmakerSelect = (matchmaker: string) => {
+    setSelectedMatchmaker(matchmaker);
+  };
+
+  const handleNextStep = () => {
+    if (!selectedMatchmaker) {
+      toast.error("주선자를 선택해주세요");
+      return;
+    }
+    setModalStep(2);
+  };
+
+  const handleConfirmMatchRequest = () => {
+    // TODO: 실제 주선 요청 API 호출
+    toast.success(`${selectedMatchmaker}님께 주선을 요청했습니다`);
+    setShowMatchmakerModal(false);
+    setModalStep(1);
+    setSelectedMatchmaker(null);
+    setRequestMessage("");
+  };
+
+  const handleCloseModal = () => {
+    setShowMatchmakerModal(false);
+    setModalStep(1);
+    setSelectedMatchmaker(null);
+    setRequestMessage("");
   };
 
   const getMutualFriendsText = () => {
@@ -488,6 +525,151 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [] }: Prof
           </Button>
         </div>
       </div>
+
+      {/* Matchmaker Selection Modal */}
+      {showMatchmakerModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-2xl max-w-md w-full max-h-[80vh] overflow-hidden">
+            {/* Step 1: Select Matchmaker */}
+            {modalStep === 1 && (
+              <div className="animate-in fade-in slide-in-from-right duration-300">
+                {/* Modal Header */}
+                <div className="border-b border-border px-6 py-4">
+                  <h3 className="text-lg font-semibold text-center">주선 요청</h3>
+                  <p className="text-sm text-muted-foreground text-center mt-1">
+                    어떤 분께 주선을 요청하시겠습니까?
+                  </p>
+                </div>
+
+                {/* Matchmaker List */}
+                <div className="overflow-y-auto max-h-[50vh] p-4">
+                  <div className="space-y-2">
+                    {mutualFriends.map((friend, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleMatchmakerSelect(friend)}
+                        className={`w-full text-left px-4 py-4 rounded-xl border-2 transition-all ${
+                          selectedMatchmaker === friend
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50 hover:bg-accent/5"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                              <Users className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{friend}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {userInfo?.nickname}님과 공통 친구
+                              </p>
+                            </div>
+                          </div>
+                          {selectedMatchmaker === friend && (
+                            <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                              <svg
+                                className="w-4 h-4 text-white"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Modal Actions */}
+                <div className="border-t border-border px-6 py-4 flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={handleCloseModal}
+                  >
+                    취소
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={handleNextStep}
+                    disabled={!selectedMatchmaker}
+                  >
+                    다음
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Write Message */}
+            {modalStep === 2 && (
+              <div className="animate-in fade-in slide-in-from-right duration-300">
+                {/* Modal Header */}
+                <div className="border-b border-border px-6 py-4">
+                  <h3 className="text-lg font-semibold text-center">주선 요청</h3>
+                  <p className="text-sm text-muted-foreground text-center mt-1">
+                    {selectedMatchmaker}님께 전달할 메시지를 작성해주세요
+                  </p>
+                </div>
+
+                {/* Message Input */}
+                <div className="p-6">
+                  <div className="space-y-3">
+                    <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Users className="w-4 h-4 text-primary" />
+                        <p className="text-sm font-medium text-primary">선택된 주선자</p>
+                      </div>
+                      <p className="font-medium">{selectedMatchmaker}</p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        요청 메시지 <span className="text-muted-foreground">(선택사항)</span>
+                      </label>
+                      <textarea
+                        value={requestMessage}
+                        onChange={(e) => setRequestMessage(e.target.value)}
+                        placeholder="예: 안녕하세요! 프로필을 보고 관심이 생겨서 주선을 요청드립니다."
+                        className="w-full min-h-[120px] px-4 py-3 rounded-xl border border-border bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                        maxLength={200}
+                      />
+                      <p className="text-xs text-muted-foreground text-right">
+                        {requestMessage.length}/200
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Modal Actions */}
+                <div className="border-t border-border px-6 py-4 flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setModalStep(1)}
+                  >
+                    이전
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={handleConfirmMatchRequest}
+                  >
+                    요청하기
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
