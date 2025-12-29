@@ -340,16 +340,6 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [] }: Prof
         </div>
       </div>
 
-      {/* Mutual Friends Banner */}
-      {mutualFriends.length > 0 && (
-        <div className="bg-primary/5 border-b border-primary/10 px-6 py-3">
-          <div className="flex items-center gap-2 text-sm text-primary">
-            <Users className="w-4 h-4" />
-            <span className="font-medium">{getMutualFriendsText()}</span>
-          </div>
-        </div>
-      )}
-
       <div className="max-w-2xl mx-auto">
         {/* Photo Grid */}
         <div className="grid grid-cols-3 gap-1 p-1">
@@ -587,9 +577,6 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [] }: Prof
                             </div>
                             <div>
                               <p className="font-medium">{friend}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {userInfo?.nickname}님과 공통 친구
-                              </p>
                             </div>
                           </div>
                           {selectedMatchmaker === friend && (

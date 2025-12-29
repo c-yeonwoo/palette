@@ -45,7 +45,8 @@ class DataInitializer(
             privateInfo = PrivateInfo(
                 realName = "김민준",
                 email = "minjun.kim@test.com",
-                phoneNumber = "010-1234-5678"
+                phoneNumber = "010-1234-5678",
+                contactInfo = ContactInfo.create("010-1234-5678")
             ),
             publicInfo = PublicInfo(
                 nickname = "개발하는민준",
@@ -78,7 +79,8 @@ class DataInitializer(
             privateInfo = PrivateInfo(
                 realName = "이서연",
                 email = "seoyeon.lee@test.com",
-                phoneNumber = "010-2345-6789"
+                phoneNumber = "010-2345-6789",
+                contactInfo = ContactInfo.create("010-2345-6789")
             ),
             publicInfo = PublicInfo(
                 nickname = "마케팅서연",
@@ -111,7 +113,8 @@ class DataInitializer(
             privateInfo = PrivateInfo(
                 realName = "박지훈",
                 email = "jihoon.park@test.com",
-                phoneNumber = "010-3456-7890"
+                phoneNumber = "010-3456-7890",
+                contactInfo = ContactInfo.create("010-3456-7890")
             ),
             publicInfo = PublicInfo(
                 nickname = "금융맨지훈",
@@ -144,7 +147,8 @@ class DataInitializer(
             privateInfo = PrivateInfo(
                 realName = "최유진",
                 email = "yujin.choi@test.com",
-                phoneNumber = "010-4567-8901"
+                phoneNumber = "010-4567-8901",
+                contactInfo = ContactInfo.create("010-4567-8901")
             ),
             publicInfo = PublicInfo(
                 nickname = "선생님유진",
@@ -177,7 +181,8 @@ class DataInitializer(
             privateInfo = PrivateInfo(
                 realName = "정도현",
                 email = "dohyun.jung@test.com",
-                phoneNumber = "010-5678-9012"
+                phoneNumber = "010-5678-9012",
+                contactInfo = ContactInfo.create("010-5678-9012")
             ),
             publicInfo = PublicInfo(
                 nickname = "의사도현",
@@ -210,7 +215,8 @@ class DataInitializer(
             privateInfo = PrivateInfo(
                 realName = "강혜원",
                 email = "hyewon.kang@test.com",
-                phoneNumber = "010-6789-0123"
+                phoneNumber = "010-6789-0123",
+                contactInfo = ContactInfo.create("010-6789-0123")
             ),
             publicInfo = PublicInfo(
                 nickname = "큐피드혜원",
@@ -243,7 +249,8 @@ class DataInitializer(
             privateInfo = PrivateInfo(
                 realName = "윤상호",
                 email = "sangho.yoon@test.com",
-                phoneNumber = "010-7890-1234"
+                phoneNumber = "010-7890-1234",
+                contactInfo = ContactInfo.create("010-7890-1234")
             ),
             publicInfo = PublicInfo(
                 nickname = "중매쟁이상호",

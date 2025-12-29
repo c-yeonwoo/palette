@@ -10,7 +10,8 @@ import org.springframework.stereotype.Repository
 @Repository
 class ProfileRepositoryImpl(
     private val jpaRepository: ProfileJpaRepository,
-    private val mapper: ProfileMapper
+    private val mapper: ProfileMapper,
+    private val photoRepository: kr.ai.palette.domain.profile.ProfilePhotoRepository
 ) : ProfileRepository {
 
     override fun save(profile: Profile): Profile {
@@ -20,11 +21,19 @@ class ProfileRepositoryImpl(
     }
 
     override fun findById(id: ProfileId): Profile? {
-        return jpaRepository.findByIdOrNull(id.value)?.let { mapper.toDomain(it) }
+        val entity = jpaRepository.findByIdOrNull(id.value) ?: return null
+        val profile = mapper.toDomain(entity)
+        // Load photos separately
+        val photos = photoRepository.findByProfileId(id)
+        return profile.copy(photos = photos)
     }
 
     override fun findByUserId(userId: UserId): Profile? {
-        return jpaRepository.findByUserId(userId.value)?.let { mapper.toDomain(it) }
+        val entity = jpaRepository.findByUserId(userId.value) ?: return null
+        val profile = mapper.toDomain(entity)
+        // Load photos separately
+        val photos = photoRepository.findByProfileId(profile.id)
+        return profile.copy(photos = photos)
     }
 
     override fun existsByUserId(userId: UserId): Boolean {

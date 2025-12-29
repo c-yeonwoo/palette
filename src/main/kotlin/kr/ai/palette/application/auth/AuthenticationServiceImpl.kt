@@ -122,7 +122,8 @@ class AuthenticationServiceImpl(
             privateInfo = PrivateInfo(
                 realName = oauthUserInfo.name ?: "Unknown",
                 email = oauthUserInfo.email,
-                phoneNumber = null
+                phoneNumber = null,
+                contactInfo = null
             ),
             publicInfo = PublicInfo(
                 nickname = generateNickname(),

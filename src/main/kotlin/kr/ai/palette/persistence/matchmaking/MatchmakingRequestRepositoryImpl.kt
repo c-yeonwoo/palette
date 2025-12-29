@@ -4,6 +4,7 @@ import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.matchmaking.MatchmakingRequest
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestId
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestRepository
+import kr.ai.palette.domain.matchmaking.MatchmakingRequestStatus
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -40,5 +41,15 @@ class MatchmakingRequestRepositoryImpl(
 
     override fun findAll(): List<MatchmakingRequest> {
         return jpaRepository.findAll().map { mapper.toDomain(it) }
+    }
+
+    override fun findByTargetUserId(targetUserId: UserId): List<MatchmakingRequest> {
+        return jpaRepository.findByTargetUserId(targetUserId.value)
+            .map { mapper.toDomain(it) }
+    }
+
+    override fun findByRequesterIdAndStatus(requesterId: UserId, status: MatchmakingRequestStatus): List<MatchmakingRequest> {
+        return jpaRepository.findByRequesterIdAndStatus(requesterId.value, status.name)
+            .map { mapper.toDomain(it) }
     }
 }

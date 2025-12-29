@@ -14,11 +14,13 @@ import { MyProfileScreen } from "./components/MyProfileScreen";
 import { ProfileEditScreen } from "./components/ProfileEditScreen";
 import { ProfileDetailScreen } from "./components/ProfileDetailScreen";
 import { MainFeedScreen } from "./components/MainFeedScreen";
+import { IntroductionHistoryScreen } from "./components/IntroductionHistoryScreen";
 import { ConnectorDashboard } from "./components/ConnectorDashboard";
+import { MyPageScreen } from "./components/MyPageScreen";
 import { PublicProfileScreen } from "./components/PublicProfileScreen";
 import { Toaster } from "./components/ui/sonner";
 import { Button } from "./components/ui/button";
-import { Home, UserCircle, MessageSquare, HeartHandshake } from "lucide-react";
+import { Home, UserCircle, Clock, HeartHandshake, User } from "lucide-react";
 import { toast } from "sonner";
 import { authService } from "../lib/auth/authService";
 import { tokenStorage } from "../lib/auth/tokenStorage";
@@ -40,7 +42,9 @@ type Screen =
   | "profileEdit"
   | "profileDetail"
   | "mainFeed"
+  | "introductionHistory"
   | "connectorDashboard"
+  | "myPage"
   | "publicProfile";
 
 export default function App() {
@@ -411,11 +415,15 @@ export default function App() {
   };
 
   const handleMyProfileBack = () => {
-    setCurrentScreen("mainFeed");
+    setCurrentScreen("myPage");
   };
 
   const handleMyProfileEdit = () => {
     setCurrentScreen("profileEdit");
+  };
+
+  const handleConnectorDashboardBack = () => {
+    setCurrentScreen("myPage");
   };
 
   const handleProfileEditSave = () => {
@@ -607,6 +615,8 @@ export default function App() {
       
       {currentScreen === "mainFeed" && <MainFeedScreen onProfileClick={handleProfileClick} />}
 
+      {currentScreen === "introductionHistory" && <IntroductionHistoryScreen />}
+
       {currentScreen === "profileDetail" && selectedUserId && (
         <ProfileDetailScreen
           userId={selectedUserId}
@@ -615,7 +625,20 @@ export default function App() {
         />
       )}
 
-      {currentScreen === "connectorDashboard" && <ConnectorDashboard />}
+      {currentScreen === "connectorDashboard" && (
+        <ConnectorDashboard onBack={handleConnectorDashboardBack} />
+      )}
+
+      {currentScreen === "myPage" && (
+        <MyPageScreen
+          onNavigateToProfile={() => setCurrentScreen("myProfile")}
+          onNavigateToConnector={() => setCurrentScreen("connectorDashboard")}
+          onLogout={() => {
+            setIsLoggedIn(false);
+            setCurrentScreen("login");
+          }}
+        />
+      )}
 
       {currentScreen === "publicProfile" && <PublicProfileScreen />}
 
@@ -649,22 +672,16 @@ function BottomNavigation({
           onClick={() => onNavigate("mainFeed")}
         />
         <NavButton
-          icon={MessageSquare}
-          label="메시지"
-          active={false}
-          onClick={() => toast.info("메시지 기능은 준비 중입니다.")}
+          icon={Clock}
+          label="소개이력"
+          active={currentScreen === "introductionHistory"}
+          onClick={() => onNavigate("introductionHistory")}
         />
         <NavButton
-          icon={UserCircle}
-          label="프로필"
-          active={currentScreen === "myProfile"}
-          onClick={() => onNavigate("myProfile")}
-        />
-        <NavButton
-          icon={HeartHandshake}
-          label="주선"
-          active={currentScreen === "connectorDashboard"}
-          onClick={() => onNavigate("connectorDashboard")}
+          icon={User}
+          label="마이페이지"
+          active={currentScreen === "myPage" || currentScreen === "myProfile" || currentScreen === "connectorDashboard"}
+          onClick={() => onNavigate("myPage")}
         />
       </div>
     </div>

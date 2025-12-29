@@ -58,6 +58,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
     birthMonth: initialData?.basicInfo?.birthMonth || "",
     birthDay: initialData?.basicInfo?.birthDay || "",
     gender: initialData?.basicInfo?.gender || "",
+    phoneNumber: "",
     height: initialData?.basicInfo?.height || 170,
     bodyType: initialData?.basicInfo?.bodyType || "",
     mbtiE: initialData?.basicInfo?.mbti ? initialData.basicInfo.mbti[0] : "",
@@ -125,8 +126,10 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
     return "";
   };
 
+  const isPhoneValid = /^010-\d{4}-\d{4}$/.test(formData.phoneNumber);
+
   const isValid = formData.name && formData.birthYear && formData.birthMonth && formData.birthDay &&
-    formData.gender && formData.bodyType && formData.mbtiE && formData.mbtiS && formData.mbtiT && formData.mbtiP &&
+    formData.gender && isPhoneValid && formData.bodyType && formData.mbtiE && formData.mbtiS && formData.mbtiT && formData.mbtiP &&
     formData.jobCategory && formData.education && formData.region;
 
   if (isLoading) {
@@ -238,6 +241,31 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Phone Number */}
+          <div>
+            <Label className="mb-2 block">핸드폰 번호 *</Label>
+            <Input
+              type="tel"
+              placeholder="010-1234-5678"
+              value={formData.phoneNumber}
+              onChange={(e) => {
+                // Auto-format phone number
+                let value = e.target.value.replace(/[^\d]/g, '');
+                if (value.length > 3 && value.length <= 7) {
+                  value = value.slice(0, 3) + '-' + value.slice(3);
+                } else if (value.length > 7) {
+                  value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11);
+                }
+                setFormData({ ...formData, phoneNumber: value });
+              }}
+              className="h-12 bg-white border-slate-200"
+              maxLength={13}
+            />
+            {formData.phoneNumber && !isPhoneValid && (
+              <p className="text-xs text-red-500 mt-1">올바른 형식으로 입력해주세요 (010-1234-5678)</p>
+            )}
           </div>
 
           {/* Height */}
@@ -484,6 +512,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
               birthMonth: formData.birthMonth,
               birthDay: formData.birthDay,
               gender: formData.gender,
+              phoneNumber: formData.phoneNumber,
               height: formData.height,
               bodyType: formData.bodyType,
               mbti: `${formData.mbtiE}${formData.mbtiS}${formData.mbtiT}${formData.mbtiP}`,

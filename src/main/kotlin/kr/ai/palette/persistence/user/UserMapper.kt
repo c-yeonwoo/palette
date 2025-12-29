@@ -23,7 +23,14 @@ class UserMapper {
             privateInfo = PrivateInfo(
                 realName = entity.realName,
                 email = entity.email,
-                phoneNumber = entity.phoneNumber
+                phoneNumber = entity.phoneNumber,
+                contactInfo = if (entity.phoneNumber != null) {
+                    ContactInfo(
+                        phoneNumber = entity.phoneNumber!!,
+                        kakaoTalkId = entity.kakaoTalkId,
+                        preferredContactMethod = entity.preferredContactMethod?.toDomain()
+                    )
+                } else null
             ),
             publicInfo = PublicInfo(
                 nickname = entity.nickname,
@@ -56,6 +63,8 @@ class UserMapper {
             realName = domain.privateInfo.realName,
             email = domain.privateInfo.email,
             phoneNumber = domain.privateInfo.phoneNumber,
+            kakaoTalkId = domain.privateInfo.contactInfo?.kakaoTalkId,
+            preferredContactMethod = domain.privateInfo.contactInfo?.preferredContactMethod?.toEntity(),
             nickname = domain.publicInfo.nickname,
             birthDate = domain.publicInfo.birthDate,
             gender = domain.publicInfo.gender.toEntity(),
@@ -79,6 +88,8 @@ class UserMapper {
         entity.realName = domain.privateInfo.realName
         entity.email = domain.privateInfo.email
         entity.phoneNumber = domain.privateInfo.phoneNumber
+        entity.kakaoTalkId = domain.privateInfo.contactInfo?.kakaoTalkId
+        entity.preferredContactMethod = domain.privateInfo.contactInfo?.preferredContactMethod?.toEntity()
         entity.nickname = domain.publicInfo.nickname
         entity.birthDate = domain.publicInfo.birthDate
         entity.gender = domain.publicInfo.gender.toEntity()
@@ -117,4 +128,12 @@ private fun AccountTypeEntity.toDomain(): AccountType {
 
 private fun AccountType.toEntity(): AccountTypeEntity {
     return AccountTypeEntity.valueOf(this.name)
+}
+
+private fun ContactMethodEntity.toDomain(): ContactMethod {
+    return ContactMethod.valueOf(this.name)
+}
+
+private fun ContactMethod.toEntity(): ContactMethodEntity {
+    return ContactMethodEntity.valueOf(this.name)
 }

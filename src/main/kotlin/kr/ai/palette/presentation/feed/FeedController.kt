@@ -2,6 +2,7 @@ package kr.ai.palette.presentation.feed
 
 import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.friendship.FriendshipRepository
+import kr.ai.palette.domain.matchmaking.MatchmakingRequestRepository
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.UserRepository
 import kr.ai.palette.presentation.profile.ProfileResponse
@@ -14,7 +15,8 @@ import org.springframework.web.bind.annotation.*
 class FeedController(
     private val friendshipRepository: FriendshipRepository,
     private val profileRepository: ProfileRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val matchmakingRequestRepository: MatchmakingRequestRepository
 ) {
 
     @GetMapping
@@ -34,9 +36,20 @@ class FeedController(
         // 2촌 친구들의 ID 가져오기
         val secondDegreeFriendIds = friendshipRepository.findSecondDegreeFriendIds(currentUserId)
 
-        // 2촌 친구들의 프로필과 공통 친구 정보 가져오기 (반대 성별만)
+        // 이미 주선 요청한 프로필들의 targetUserId 가져오기
+        val requestedTargetUserIds = matchmakingRequestRepository.findAll()
+            .filter { it.requesterId == currentUserId }
+            .map { it.targetUserId }
+            .toSet()
+
+        // 2촌 친구들의 프로필과 공통 친구 정보 가져오기 (반대 성별만, 이미 요청한 프로필 제외)
         val profileItems = secondDegreeFriendIds.mapNotNull { userId ->
             val user = userRepository.findById(userId)
+
+            // 이미 요청한 프로필은 제외
+            if (requestedTargetUserIds.contains(userId)) {
+                return@mapNotNull null
+            }
 
             // 반대 성별만 필터링
             if (user != null && user.publicInfo.gender != currentUserGender) {

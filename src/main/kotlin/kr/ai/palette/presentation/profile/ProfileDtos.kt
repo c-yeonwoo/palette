@@ -57,6 +57,17 @@ data class UpdateProfileRequest(
     val settings: ProfileSettingsDto?
 )
 
+data class UpdateSettingsRequest(
+    val isAcceptingMatches: Boolean
+) {
+    fun toDomain(): ProfileSettings {
+        return ProfileSettings(
+            isAcceptingMatches = isAcceptingMatches,
+            hiddenAt = null
+        )
+    }
+}
+
 data class BasicInfoDto(
     val height: Int?,
     val bodyType: String?,

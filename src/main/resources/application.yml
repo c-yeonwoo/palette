@@ -29,12 +29,15 @@ spring:
       client:
         registration:
           kakao:
-            client-id: ${KAKAO_CLIENT_ID:your-kakao-client-id}
-            client-secret: ${KAKAO_CLIENT_SECRET:your-kakao-client-secret}
+            client-id: ${KAKAO_CLIENT_ID:72f38bb440e750bb938c0a7315402d47}
+            client-secret: ${KAKAO_CLIENT_SECRET:4Kep0DODGXItKYHMaAcoM8Q9ghL6e8sS}
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             authorization-grant-type: authorization_code
             client-authentication-method: client_secret_post
-            scope: []
+            scope:
+              - profile_nickname
+              - profile_image
+              - account_email
             client-name: Kakao
         provider:
           kakao:
@@ -53,6 +56,15 @@ jwt:
 app:
   oauth2:
     redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/redirect}
+
+# AWS S3 Configuration
+aws:
+  region: ${AWS_REGION:ap-northeast-2}
+  s3:
+    bucket-name: ${AWS_S3_BUCKET_NAME:palette-data-v1}
+  credentials:
+    access-key: ${AWS_ACCESS_KEY_ID}
+    secret-key: ${AWS_SECRET_ACCESS_KEY}
 
 # Logging
 logging:

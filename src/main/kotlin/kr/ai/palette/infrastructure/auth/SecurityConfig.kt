@@ -53,6 +53,20 @@ class SecurityConfig(
                     .userInfoEndpoint { it.userService(customOAuth2UserService) }
                     .successHandler(oAuth2AuthenticationSuccessHandler)
             }
+            .exceptionHandling { exceptions ->
+                exceptions
+                    .authenticationEntryPoint { request, response, authException ->
+                        // For API requests, return 401 instead of redirecting to login
+                        if (request.requestURI.startsWith("/api/")) {
+                            response.status = 401
+                            response.contentType = "application/json"
+                            response.writer.write("""{"error":"Unauthorized","message":"${authException.message}"}""")
+                        } else {
+                            // For non-API requests, redirect to OAuth2 login
+                            response.sendRedirect("/oauth2/authorization/kakao")
+                        }
+                    }
+            }
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
 
         return http.build()

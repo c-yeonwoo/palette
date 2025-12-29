@@ -220,7 +220,8 @@ class EmailAuthController(
             privateInfo = PrivateInfo(
                 realName = request.realName,
                 email = request.email,
-                phoneNumber = null
+                phoneNumber = null,
+                contactInfo = null
             ),
             publicInfo = PublicInfo(
                 nickname = request.nickname,

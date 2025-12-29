@@ -1,6 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
+import { Switch } from "./ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
 import { Edit3, Loader2, Settings, LogOut, ExternalLink, Sparkles, CheckCircle2, Share2, Link } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { authService } from "../../lib/auth/authService";
@@ -71,6 +80,12 @@ interface ProfileData {
     link: string;
     title: string;
   }>;
+  photos: Array<{
+    id: string;
+    url: string;
+    displayOrder: number;
+    isPrimary: boolean;
+  }>;
   primaryPhotoUrl: string | null;
   metadata: {
     createdAt: string;
@@ -96,6 +111,8 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [activeTab, setActiveTab] = useState<"about" | "ideal">("about");
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingToggleValue, setPendingToggleValue] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
@@ -162,6 +179,36 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
     } catch (error) {
       console.error('Logout failed:', error);
       toast.error('로그아웃에 실패했습니다');
+    }
+  };
+
+  const handleToggleAcceptingMatches = (checked: boolean) => {
+    setPendingToggleValue(checked);
+    setShowConfirmModal(true);
+  };
+
+  const confirmToggleAcceptingMatches = async () => {
+    try {
+      await api.patch('/api/v1/profile/settings', {
+        isAcceptingMatches: pendingToggleValue
+      });
+
+      // Update local state
+      if (profile) {
+        setProfile({
+          ...profile,
+          settings: {
+            ...profile.settings,
+            isAcceptingMatches: pendingToggleValue
+          }
+        });
+      }
+
+      toast.success(pendingToggleValue ? '주선받기가 활성화되었습니다' : '주선받기가 비활성화되었습니다');
+      setShowConfirmModal(false);
+    } catch (error) {
+      console.error('Failed to update settings:', error);
+      toast.error('설정 변경에 실패했습니다');
     }
   };
 
@@ -477,13 +524,24 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
           </Section>
 
           <Section title="사진">
-            {profile?.primaryPhotoUrl ? (
-              <div className="flex items-center justify-center">
-                <img
-                  src={profile.primaryPhotoUrl}
-                  alt="프로필 사진"
-                  className="w-48 h-48 rounded-lg object-cover"
-                />
+            {profile?.photos && profile.photos.length > 0 ? (
+              <div className="grid grid-cols-3 gap-3">
+                {profile.photos
+                  .sort((a, b) => a.displayOrder - b.displayOrder)
+                  .map((photo, index) => (
+                    <div key={photo.id} className="relative aspect-square">
+                      <img
+                        src={photo.url}
+                        alt={`프로필 사진 ${index + 1}`}
+                        className="w-full h-full rounded-lg object-cover"
+                      />
+                      {photo.isPrimary && (
+                        <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs font-semibold">
+                          대표
+                        </div>
+                      )}
+                    </div>
+                  ))}
               </div>
             ) : (
               <EmptyContent message="프로필 수정에서 사진을 추가할 수 있습니다" />
@@ -567,6 +625,21 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 ))}
+              </div>
+            </Section>
+          )}
+
+          {/* Settings Section - 주선받기 */}
+          {userProfile?.accountType === "REGULAR" && profile && (
+            <Section title="설정">
+              <div className="flex items-center justify-between py-2">
+                <div className="flex-1">
+                  <p className="text-sm font-medium">주선받기</p>
+                </div>
+                <Switch
+                  checked={profile.settings.isAcceptingMatches}
+                  onCheckedChange={handleToggleAcceptingMatches}
+                />
               </div>
             </Section>
           )}
@@ -660,6 +733,37 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
           </Button>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {pendingToggleValue ? '주선받기 활성화' : '주선받기 비활성화'}
+            </DialogTitle>
+            <DialogDescription>
+              {pendingToggleValue
+                ? '내 프로필이 노출됩니다. 단, 내 친구는 내 프로필을 볼 수 없습니다.'
+                : '내 프로필이 더 이상 노출되지 않습니다.'
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmModal(false)}
+            >
+              취소
+            </Button>
+            <Button
+              onClick={confirmToggleAcceptingMatches}
+              className="bg-gradient-to-r from-pink-400 to-rose-400"
+            >
+              확인
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

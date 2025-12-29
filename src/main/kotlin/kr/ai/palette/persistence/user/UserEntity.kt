@@ -34,6 +34,14 @@ class UserEntity(
     @Column(name = "phone_number", length = 20)
     var phoneNumber: String?,
 
+    // Contact Info
+    @Column(name = "kakao_talk_id", length = 100)
+    var kakaoTalkId: String?,
+
+    @Column(name = "preferred_contact_method", length = 20)
+    @Enumerated(EnumType.STRING)
+    var preferredContactMethod: ContactMethodEntity?,
+
     // Public Info
     @Column(name = "nickname", nullable = false, unique = true, length = 20)
     var nickname: String,
@@ -88,6 +96,8 @@ class UserEntity(
         realName = "",
         email = null,
         phoneNumber = null,
+        kakaoTalkId = null,
+        preferredContactMethod = null,
         nickname = "",
         birthDate = LocalDate.now(),
         gender = GenderEntity.MALE,
@@ -117,4 +127,9 @@ enum class GenderEntity {
 enum class AccountTypeEntity {
     REGULAR,
     MATCHMAKER_ONLY
+}
+
+enum class ContactMethodEntity {
+    KAKAOTALK,
+    PHONE
 }

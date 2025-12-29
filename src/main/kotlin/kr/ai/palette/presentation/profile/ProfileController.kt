@@ -96,6 +96,47 @@ class ProfileController(
         return ResponseEntity.ok(ProfileResponse.from(savedProfile))
     }
 
+    @PatchMapping("/settings")
+    @Transactional
+    fun updateProfileSettings(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @RequestBody request: UpdateSettingsRequest
+    ): ResponseEntity<ProfileResponse> {
+        var profile = profileRepository.findByUserId(authUser.userId)
+            ?: return ResponseEntity.notFound().build()
+
+        // Update settings
+        profile = profile.updateSettings(request.toDomain())
+
+        val savedProfile = profileRepository.save(profile)
+        return ResponseEntity.ok(ProfileResponse.from(savedProfile))
+    }
+
+    @PutMapping("/photos/reorder")
+    @Transactional
+    fun reorderPhotos(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @RequestBody request: ReorderPhotosRequest
+    ): ResponseEntity<Unit> {
+        var profile = profileRepository.findByUserId(authUser.userId)
+            ?: return ResponseEntity.notFound().build()
+
+        // Update display order for each photo
+        request.photos.forEachIndexed { newDisplayOrder, photoUpdate ->
+            val photoId = ProfilePhotoId(java.util.UUID.fromString(photoUpdate.id))
+            val photo = profilePhotoRepository.findById(photoId) ?: return@forEachIndexed
+
+            // Update display order
+            val updatedPhoto = photo.copy(
+                displayOrder = newDisplayOrder,
+                isPrimary = newDisplayOrder == 0 // First photo is always primary
+            )
+            profilePhotoRepository.save(updatedPhoto)
+        }
+
+        return ResponseEntity.ok().build()
+    }
+
     @PostMapping("/photo")
     @Transactional
     fun uploadProfilePhoto(
@@ -124,12 +165,10 @@ class ProfileController(
         // 파일 저장
         val photoUrl = fileStorageService.storeFile(file)
 
-        // 기존 primary 사진 삭제
-        val existingPrimaryPhoto = profilePhotoRepository.findPrimaryByProfileId(profile.id)
-        existingPrimaryPhoto?.let { oldPhoto ->
-            fileStorageService.deleteFile(oldPhoto.url)
-            profilePhotoRepository.delete(oldPhoto.id)
-        }
+        // 기존 사진들 조회하여 다음 displayOrder 결정
+        val existingPhotos = profilePhotoRepository.findByProfileId(profile.id)
+        val nextDisplayOrder = existingPhotos.size
+        val isFirstPhoto = existingPhotos.isEmpty()
 
         // 새 사진 생성 및 저장
         val newPhoto = ProfilePhoto(
@@ -137,8 +176,8 @@ class ProfileController(
             profileId = profile.id,
             s3Key = photoUrl,
             url = photoUrl,
-            displayOrder = 0,
-            isPrimary = true,
+            displayOrder = nextDisplayOrder,
+            isPrimary = isFirstPhoto, // 첫 번째 사진만 primary
             trustAnalysis = TrustAnalysis(
                 trustFactor = TrustFactor.UNKNOWN,
                 trustScore = 0
@@ -165,4 +204,13 @@ class ProfileController(
 data class PhotoUploadResponse(
     val photoUrl: String,
     val uploadedAt: Instant
+)
+
+data class ReorderPhotosRequest(
+    val photos: List<PhotoOrderUpdate>
+)
+
+data class PhotoOrderUpdate(
+    val id: String,
+    val displayOrder: Int
 )

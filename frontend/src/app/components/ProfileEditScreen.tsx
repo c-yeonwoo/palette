@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -6,6 +6,7 @@ import { Textarea } from "./ui/textarea";
 import { Badge } from "./ui/badge";
 import { ArrowLeft, Loader2, Save, Plus, Video, Star, X, ExternalLink, Eye, EyeOff } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
+import { tokenStorage } from "../../lib/auth/tokenStorage";
 import { toast } from "sonner";
 import { PersonalityTestManager } from "./PersonalityTestManager";
 
@@ -63,6 +64,12 @@ interface ProfileData {
   personalityTests?: Array<{
     link: string;
     title: string;
+  }>;
+  photos: Array<{
+    id: string;
+    url: string;
+    displayOrder: number;
+    isPrimary: boolean;
   }>;
   settings: {
     isAcceptingMatches: boolean;
@@ -143,6 +150,9 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
   const [mainPhotoIndex, setMainPhotoIndex] = useState(0);
   const [video, setVideo] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"about" | "ideal">("about");
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState<number | null>(null);
   const [showAIVersion, setShowAIVersion] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
   const [originalAnswers, setOriginalAnswers] = useState<{
@@ -158,6 +168,19 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
       try {
         const data = await api.get<ProfileData>('/api/v1/profile');
         setProfile(data);
+
+        // Load existing photos
+        if (data.photos && data.photos.length > 0) {
+          const photoUrls = Array(6).fill(null);
+          data.photos
+            .sort((a, b) => a.displayOrder - b.displayOrder)
+            .forEach((photo, index) => {
+              if (index < 6) {
+                photoUrls[index] = photo.url;
+              }
+            });
+          setPhotos(photoUrls);
+        }
       } catch (error) {
         console.error('Failed to fetch profile:', error);
         toast.error('프로필을 불러오는데 실패했습니다');
@@ -192,6 +215,123 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
       toast.error('프로필 저장에 실패했습니다');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handlePhotoClick = (index: number) => {
+    // Allow clicking even if photo exists (for re-upload)
+    setCurrentPhotoIndex(index);
+    fileInputRef.current?.click();
+  };
+
+  // Drag and drop handlers
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    if (!photos[index]) return; // Only allow dragging photos that exist
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) return;
+
+    const newPhotos = [...photos];
+    const draggedPhoto = newPhotos[draggedIndex];
+    newPhotos.splice(draggedIndex, 1);
+    newPhotos.splice(dropIndex, 0, draggedPhoto);
+
+    setPhotos(newPhotos);
+    setDraggedIndex(null);
+
+    // Update photo order in backend
+    updatePhotoOrder(newPhotos);
+  };
+
+  const updatePhotoOrder = async (newPhotos: (string | null)[]) => {
+    try {
+      // Get photo IDs from profile data
+      if (!profile?.photos) return;
+
+      const photoUpdates = newPhotos
+        .map((url, index) => {
+          if (!url) return null;
+          const photo = profile.photos.find(p => p.url === url);
+          return photo ? { id: photo.id, displayOrder: index } : null;
+        })
+        .filter(Boolean);
+
+      await api.put('/api/v1/profile/photos/reorder', { photos: photoUpdates });
+      toast.success('사진 순서가 변경되었습니다');
+
+      // Refresh profile to update isPrimary
+      const data = await api.get<ProfileData>('/api/v1/profile');
+      setProfile(data);
+    } catch (error) {
+      console.error('Failed to update photo order:', error);
+      toast.error('사진 순서 변경에 실패했습니다');
+    }
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || currentPhotoIndex === null) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('이미지 파일만 업로드 가능합니다');
+      return;
+    }
+
+    // Validate file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('파일 크기는 10MB 이하여야 합니다');
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Use fetch directly for multipart/form-data
+      const accessToken = tokenStorage.getAccessToken();
+      const response = await fetch(`http://localhost:8080/api/v1/profile/photo`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          // Don't set Content-Type for FormData - browser sets it automatically with boundary
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Update photos array with new photo URL
+      const newPhotos = [...photos];
+      newPhotos[currentPhotoIndex] = data.photoUrl;
+      setPhotos(newPhotos);
+
+      toast.success('사진이 업로드되었습니다');
+    } catch (error: any) {
+      console.error('Failed to upload photo:', error);
+      toast.error('사진 업로드에 실패했습니다');
+    } finally {
+      setIsUploading(false);
+      setCurrentPhotoIndex(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -279,29 +419,45 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
             <p className="text-xs text-muted-foreground mb-3">
               <Star className="w-3 h-3 inline text-amber-500" /> 표시를 눌러 메인 사진을 선택하세요
             </p>
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+
             <div className="grid grid-cols-3 gap-4">
               {photos.map((photo, index) => (
                 <div
                   key={index}
+                  draggable={!!photo}
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onClick={() => handlePhotoClick(index)}
                   className={`relative aspect-square bg-muted rounded-lg border-2 overflow-hidden cursor-pointer transition-all ${
-                    index === mainPhotoIndex
+                    index === 0
                       ? 'border-primary ring-2 ring-primary/20'
                       : photo
                       ? 'border-border hover:border-primary/50'
                       : 'border-dashed border-muted-foreground/30 hover:border-primary/50'
+                  } ${isUploading && currentPhotoIndex === index ? 'opacity-50' : ''} ${
+                    draggedIndex === index ? 'opacity-50' : ''
                   }`}
                 >
                   {photo ? (
                     <>
                       <img src={photo} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                      {index === 0 && (
+                        <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs font-semibold">
+                          대표
+                        </div>
+                      )}
                       <button
-                        onClick={() => setMainPhotoIndex(index)}
-                        className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-1 hover:bg-primary/90"
-                      >
-                        <Star className={`w-3 h-3 ${index === mainPhotoIndex ? 'fill-current' : ''}`} />
-                      </button>
-                      <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           const newPhotos = [...photos];
                           newPhotos[index] = null;
                           setPhotos(newPhotos);
@@ -313,7 +469,11 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                     </>
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <Plus className="w-5 h-5 text-muted-foreground" />
+                      {isUploading && currentPhotoIndex === index ? (
+                        <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
+                      ) : (
+                        <Plus className="w-5 h-5 text-muted-foreground" />
+                      )}
                     </div>
                   )}
                 </div>
