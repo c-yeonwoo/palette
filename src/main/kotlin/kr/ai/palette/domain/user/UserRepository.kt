@@ -10,6 +10,7 @@ interface UserRepository {
     fun findByOAuthInfo(provider: OAuthProvider, oauthId: String): User?
     fun existsByNickname(nickname: String): Boolean
     fun existsByEmail(email: String): Boolean
+    fun existsByPhoneNumber(phoneNumber: String): Boolean
     fun delete(id: UserId)
     fun findAll(): List<User>
 }

@@ -27,9 +27,20 @@ interface MatchmakerData {
   profilePhotoUrl: string | null;
 }
 
+interface ProfileData {
+  primaryPhotoUrl: string | null;
+  photos: Array<{
+    id: string;
+    url: string;
+    displayOrder: number;
+    isPrimary: boolean;
+  }>;
+}
+
 export function MatchmakerProfileScreen({ onBack, onConvertToRegular }: MatchmakerProfileScreenProps) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [matchmakerData, setMatchmakerData] = useState<MatchmakerData | null>(null);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -41,6 +52,14 @@ export function MatchmakerProfileScreen({ onBack, onConvertToRegular }: Matchmak
       try {
         const userData = await api.get<UserProfile>('/api/v1/auth/me');
         setUserProfile(userData);
+
+        // 프로필 사진을 가져오기 위해 프로필 데이터 조회
+        try {
+          const profileData = await api.get<ProfileData>('/api/v1/profile');
+          setProfile(profileData);
+        } catch (error) {
+          console.log('No profile found');
+        }
 
         try {
           const matchmaker = await api.get<MatchmakerData>('/api/v1/matchmakers/me');
@@ -215,9 +234,10 @@ export function MatchmakerProfileScreen({ onBack, onConvertToRegular }: Matchmak
         {/* Profile Header */}
         <div className="flex items-start gap-4">
           <div className="relative">
-            {matchmakerData?.profilePhotoUrl ? (
+            {/* 프로필 사진 우선, 없으면 주선자 프로필 사진 사용 */}
+            {profile?.primaryPhotoUrl || matchmakerData?.profilePhotoUrl ? (
               <img
-                src={matchmakerData.profilePhotoUrl}
+                src={profile?.primaryPhotoUrl || matchmakerData?.profilePhotoUrl || ''}
                 alt="프로필 사진"
                 className="w-20 h-20 rounded-full object-cover"
               />

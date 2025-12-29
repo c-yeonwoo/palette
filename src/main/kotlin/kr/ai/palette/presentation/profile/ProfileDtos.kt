@@ -71,13 +71,13 @@ data class UpdateSettingsRequest(
 data class BasicInfoDto(
     val height: Int?,
     val bodyType: String?,
-    val mbti: String
+    val mbti: String?
 ) {
     fun toDomain(): BasicInfo {
         return BasicInfo(
             height = height,
             bodyType = bodyType?.let { BodyType.valueOf(it) },
-            mbti = MBTI.valueOf(mbti)
+            mbti = mbti?.let { MBTI.valueOf(it) }
         )
     }
 
@@ -86,7 +86,7 @@ data class BasicInfoDto(
             return BasicInfoDto(
                 height = basicInfo.height,
                 bodyType = basicInfo.bodyType?.name,
-                mbti = basicInfo.mbti.name
+                mbti = basicInfo.mbti?.name
             )
         }
     }

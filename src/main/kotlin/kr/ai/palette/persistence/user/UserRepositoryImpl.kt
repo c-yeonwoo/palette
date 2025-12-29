@@ -63,6 +63,11 @@ class UserRepositoryImpl(
         return jpaRepository.existsByEmail(email)
     }
 
+    @Transactional(readOnly = true)
+    override fun existsByPhoneNumber(phoneNumber: String): Boolean {
+        return jpaRepository.existsByPhoneNumber(phoneNumber)
+    }
+
     override fun delete(id: UserId) {
         jpaRepository.deleteById(id.value)
     }

@@ -16,7 +16,8 @@ import java.util.*
 @RequestMapping("/api/v1/matchmakers")
 class MatchmakerController(
     private val matchmakerRepository: MatchmakerRepository,
-    private val fileStorageService: FileStorageService
+    private val fileStorageService: FileStorageService,
+    private val userRepository: kr.ai.palette.domain.user.UserRepository
 ) {
 
     @PostMapping
@@ -24,6 +25,15 @@ class MatchmakerController(
     fun createMatchmaker(
         @AuthenticationPrincipal authUser: AuthUser
     ): ResponseEntity<MatchmakerResponse> {
+        // 사용자 조회
+        val user = userRepository.findById(authUser.userId)
+            ?: return ResponseEntity.notFound().build()
+
+        // 핸드폰 인증 확인
+        if (!user.canBeMatchmaker()) {
+            return ResponseEntity.status(403).build()  // 403 Forbidden - 핸드폰 미인증
+        }
+
         // 이미 Matchmaker가 존재하는지 확인
         if (matchmakerRepository.existsByUserId(authUser.userId)) {
             return ResponseEntity.badRequest().build()

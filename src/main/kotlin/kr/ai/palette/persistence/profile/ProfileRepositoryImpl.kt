@@ -17,7 +17,10 @@ class ProfileRepositoryImpl(
     override fun save(profile: Profile): Profile {
         val entity = mapper.toEntity(profile)
         val savedEntity = jpaRepository.save(entity)
-        return mapper.toDomain(savedEntity)
+        val savedProfile = mapper.toDomain(savedEntity)
+        // Load photos separately
+        val photos = photoRepository.findByProfileId(savedProfile.id)
+        return savedProfile.copy(photos = photos)
     }
 
     override fun findById(id: ProfileId): Profile? {

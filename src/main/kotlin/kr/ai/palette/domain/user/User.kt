@@ -18,7 +18,8 @@ data class User(
     }
 
     fun canBeMatchmaker(): Boolean {
-        return !metadata.isDeleted()
+        // 주선자는 핸드폰 인증이 필수
+        return !metadata.isDeleted() && privateInfo.isPhoneVerified
     }
 
     fun completeProfile(): User {
@@ -40,5 +41,9 @@ data class User(
 
     fun delete(): User {
         return copy(metadata = metadata.delete())
+    }
+
+    fun verifyPhone(): User {
+        return copy(privateInfo = privateInfo.verifyPhone())
     }
 }

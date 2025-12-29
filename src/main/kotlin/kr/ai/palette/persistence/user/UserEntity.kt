@@ -34,6 +34,9 @@ class UserEntity(
     @Column(name = "phone_number", length = 20)
     var phoneNumber: String?,
 
+    @Column(name = "is_phone_verified", nullable = false)
+    var isPhoneVerified: Boolean = false,
+
     // Contact Info
     @Column(name = "kakao_talk_id", length = 100)
     var kakaoTalkId: String?,
@@ -96,6 +99,7 @@ class UserEntity(
         realName = "",
         email = null,
         phoneNumber = null,
+        isPhoneVerified = false,
         kakaoTalkId = null,
         preferredContactMethod = null,
         nickname = "",

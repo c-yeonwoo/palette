@@ -112,6 +112,19 @@ class AuthenticationServiceImpl(
     private fun createNewUser(oauthUserInfo: OAuthUserInfo): User {
         val now = Instant.now()
 
+        // 실명과 생년월일이 필수
+        val realName = oauthUserInfo.realName
+            ?: throw IllegalArgumentException("Real name is required for OAuth registration")
+        val birthDate = oauthUserInfo.birthDate
+            ?: throw IllegalArgumentException("Birth date is required for OAuth registration")
+
+        // 성별 변환 (카카오: male/female -> Gender enum)
+        val gender = when (oauthUserInfo.gender?.lowercase()) {
+            "male" -> Gender.MALE
+            "female" -> Gender.FEMALE
+            else -> throw IllegalArgumentException("Gender is required for OAuth registration")
+        }
+
         return User(
             id = UserId(UUID.randomUUID()),
             oauthInfo = OAuthInfo(
@@ -120,15 +133,15 @@ class AuthenticationServiceImpl(
             ),
             password = null,  // OAuth users don't have password
             privateInfo = PrivateInfo(
-                realName = oauthUserInfo.name ?: "Unknown",
+                realName = realName,
                 email = oauthUserInfo.email,
                 phoneNumber = null,
                 contactInfo = null
             ),
             publicInfo = PublicInfo(
                 nickname = generateNickname(),
-                birthDate = LocalDate.now().minusYears(20), // 임시 생년월일
-                gender = Gender.MALE // 임시 성별, 나중에 프로필 완성 시 변경
+                birthDate = birthDate,
+                gender = gender
             ),
             accountType = AccountType.REGULAR,
             isProfileCompleted = false,
@@ -164,9 +177,19 @@ class AuthenticationServiceImpl(
     private fun checkMissingRequiredFields(oauthUserInfo: OAuthUserInfo): List<String> {
         val missingFields = mutableListOf<String>()
 
-        // 실명이 없거나 "Unknown"인 경우
-        if (oauthUserInfo.name.isNullOrBlank() || oauthUserInfo.name == "Unknown") {
+        // 실명 체크 (필수)
+        if (oauthUserInfo.realName.isNullOrBlank()) {
             missingFields.add("realName")
+        }
+
+        // 생년월일 체크 (필수)
+        if (oauthUserInfo.birthDate == null) {
+            missingFields.add("birthDate")
+        }
+
+        // 성별 체크 (필수)
+        if (oauthUserInfo.gender.isNullOrBlank()) {
+            missingFields.add("gender")
         }
 
         // 이메일이 없는 경우 (선택사항이지만 받을 수 있으면 받기)

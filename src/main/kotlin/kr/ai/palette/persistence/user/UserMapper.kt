@@ -24,6 +24,7 @@ class UserMapper {
                 realName = entity.realName,
                 email = entity.email,
                 phoneNumber = entity.phoneNumber,
+                isPhoneVerified = entity.isPhoneVerified,
                 contactInfo = if (entity.phoneNumber != null) {
                     ContactInfo(
                         phoneNumber = entity.phoneNumber!!,
@@ -63,6 +64,7 @@ class UserMapper {
             realName = domain.privateInfo.realName,
             email = domain.privateInfo.email,
             phoneNumber = domain.privateInfo.phoneNumber,
+            isPhoneVerified = domain.privateInfo.isPhoneVerified,
             kakaoTalkId = domain.privateInfo.contactInfo?.kakaoTalkId,
             preferredContactMethod = domain.privateInfo.contactInfo?.preferredContactMethod?.toEntity(),
             nickname = domain.publicInfo.nickname,
@@ -88,6 +90,7 @@ class UserMapper {
         entity.realName = domain.privateInfo.realName
         entity.email = domain.privateInfo.email
         entity.phoneNumber = domain.privateInfo.phoneNumber
+        entity.isPhoneVerified = domain.privateInfo.isPhoneVerified
         entity.kakaoTalkId = domain.privateInfo.contactInfo?.kakaoTalkId
         entity.preferredContactMethod = domain.privateInfo.contactInfo?.preferredContactMethod?.toEntity()
         entity.nickname = domain.publicInfo.nickname

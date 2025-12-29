@@ -86,9 +86,9 @@ class ProfileController(
 
         val savedProfile = profileRepository.save(profile)
 
-        // Mark user profile as completed if not already
+        // Mark user profile as completed if not already (only for REGULAR users)
         val user = userRepository.findById(authUser.userId)
-        if (user != null && !user.isProfileCompleted) {
+        if (user != null && !user.isProfileCompleted && user.accountType == kr.ai.palette.domain.user.AccountType.REGULAR) {
             val updatedUser = user.completeProfile()
             userRepository.save(updatedUser)
         }

@@ -19,7 +19,7 @@ class ProfileMapper(
             basicInfo = BasicInfo(
                 height = entity.height,
                 bodyType = entity.bodyType?.toDomain(),
-                mbti = entity.mbti.toDomain()
+                mbti = entity.mbti?.toDomain()
             ),
             careerInfo = CareerInfo(
                 category = entity.careerCategory?.toDomain(),
@@ -101,7 +101,7 @@ class ProfileMapper(
             userId = profile.userId.value,
             height = profile.basicInfo.height,
             bodyType = profile.basicInfo.bodyType?.toEntity(),
-            mbti = profile.basicInfo.mbti.toEntity(),
+            mbti = profile.basicInfo.mbti?.toEntity(),
             careerCategory = profile.careerInfo.category?.toEntity(),
             company = profile.careerInfo.company,
             incomeRange = profile.careerInfo.incomeRange?.toEntity(),

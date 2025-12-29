@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { LoginScreen } from "./components/LoginScreen";
 import { EmailLoginScreen } from "./components/EmailLoginScreen";
 import { EmailSignupScreen } from "./components/EmailSignupScreen";
+import { MatchmakerSignupScreen } from "./components/MatchmakerSignupScreen";
+import { MatchmakerInfoScreen } from "./components/MatchmakerInfoScreen";
 import { OAuth2RedirectHandler } from "./components/OAuth2RedirectHandler";
 import { RequiredInfoScreen } from "./components/RequiredInfoScreen";
 import { AccountTypeSelectionScreen } from "./components/AccountTypeSelectionScreen";
@@ -30,6 +32,8 @@ type Screen =
   | "login"
   | "emailLogin"
   | "emailSignup"
+  | "matchmakerSignup"
+  | "matchmakerInfo"
   | "oauth2Redirect"
   | "requiredInfo"
   | "accountTypeSelection"
@@ -201,9 +205,8 @@ export default function App() {
       // 일반 회원: 프로필 작성으로 이동
       setCurrentScreen("basicInfo");
     } else {
-      // 주선자 전용: 메인 피드로 바로 이동
-      setCurrentScreen("mainFeed");
-      toast.success("주선자로 가입되었습니다!");
+      // 주선자 전용: 정보 입력 화면으로 이동
+      setCurrentScreen("matchmakerInfo");
     }
   };
 
@@ -486,6 +489,33 @@ export default function App() {
     setCurrentScreen("login");
   };
 
+  const handleMatchmakerSignupSuccess = async () => {
+    console.log('handleMatchmakerSignupSuccess called');
+    setIsLoggedIn(true);
+
+    try {
+      // 주선자는 프로필 작성 없이 바로 주선자 대시보드로 이동
+      setCurrentScreen("connectorDashboard");
+      toast.success("주선자 가입이 완료되었습니다!");
+    } catch (error) {
+      console.error('Error after matchmaker signup:', error);
+      setCurrentScreen("connectorDashboard");
+    }
+  };
+
+  const handleMatchmakerInfoComplete = async () => {
+    console.log('handleMatchmakerInfoComplete called');
+
+    try {
+      // 주선자 정보 입력 완료 후 주선자 대시보드로 이동
+      setCurrentScreen("connectorDashboard");
+      toast.success("주선자 등록이 완료되었습니다!");
+    } catch (error) {
+      console.error('Error after matchmaker info complete:', error);
+      setCurrentScreen("connectorDashboard");
+    }
+  };
+
   const handleProfileClick = (item: any) => {
     setSelectedUserId(item.profile.userId);
     setSelectedMutualFriends(item.mutualFriends || []);
@@ -510,7 +540,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background">
-      {currentScreen === "login" && <LoginScreen onEmailLogin={handleEmailLogin} />}
+      {currentScreen === "login" && (
+        <LoginScreen
+          onEmailLogin={handleEmailLogin}
+          onMatchmakerSignup={() => setCurrentScreen("matchmakerSignup")}
+        />
+      )}
 
       {currentScreen === "emailLogin" && (
         <EmailLoginScreen
@@ -524,6 +559,20 @@ export default function App() {
         <EmailSignupScreen
           onSuccess={handleEmailAuthSuccess}
           onBackToLogin={handleBackToLogin}
+        />
+      )}
+
+      {currentScreen === "matchmakerSignup" && (
+        <MatchmakerSignupScreen
+          onSuccess={handleMatchmakerSignupSuccess}
+          onBack={handleBackToLogin}
+        />
+      )}
+
+      {currentScreen === "matchmakerInfo" && (
+        <MatchmakerInfoScreen
+          onBack={() => setCurrentScreen("accountTypeSelection")}
+          onComplete={handleMatchmakerInfoComplete}
         />
       )}
 
@@ -633,6 +682,7 @@ export default function App() {
         <MyPageScreen
           onNavigateToProfile={() => setCurrentScreen("myProfile")}
           onNavigateToConnector={() => setCurrentScreen("connectorDashboard")}
+          onConvertToRegular={handleConvertToRegular}
           onLogout={() => {
             setIsLoggedIn(false);
             setCurrentScreen("login");
@@ -643,7 +693,7 @@ export default function App() {
       {currentScreen === "publicProfile" && <PublicProfileScreen />}
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding/detail screens */}
-      {isLoggedIn && !["login", "emailLogin", "emailSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "aboutMe", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "matchmakerInfo", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "aboutMe", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}

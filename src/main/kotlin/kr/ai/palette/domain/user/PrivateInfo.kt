@@ -4,6 +4,7 @@ data class PrivateInfo(
     val realName: String,
     val email: String?,
     val phoneNumber: String?,    // 기존 필드 (기존 사용자 호환성을 위해 nullable 유지)
+    val isPhoneVerified: Boolean = false, // 핸드폰 인증 여부
     val contactInfo: ContactInfo? // 새로운 연락처 정보 (nullable for existing users)
 ) {
     /**
@@ -29,5 +30,13 @@ data class PrivateInfo(
      */
     fun getKakaoTalkId(): String? {
         return contactInfo?.kakaoTalkId
+    }
+
+    /**
+     * 핸드폰 번호를 인증합니다.
+     */
+    fun verifyPhone(): PrivateInfo {
+        require(!phoneNumber.isNullOrBlank()) { "Phone number must be provided before verification" }
+        return copy(isPhoneVerified = true)
     }
 }

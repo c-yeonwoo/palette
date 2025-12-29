@@ -49,6 +49,7 @@ interface UserProfile {
   realName?: string;
   birthDate?: string; // YYYY-MM-DD format
   gender?: string;
+  phoneNumber?: string;
 }
 
 export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreenProps) {
@@ -105,6 +106,13 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
           setFormData(prev => ({
             ...prev,
             gender: genderMap[userData.gender!] || userData.gender!
+          }));
+        }
+
+        if (userData.phoneNumber) {
+          setFormData(prev => ({
+            ...prev,
+            phoneNumber: userData.phoneNumber!
           }));
         }
       } catch (error) {

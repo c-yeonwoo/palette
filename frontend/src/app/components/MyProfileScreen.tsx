@@ -473,26 +473,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
           </div>
         </div>
 
-        {/* Profile Completion Notice */}
-        {!userProfile.isProfileCompleted && (
-          <div className="bg-accent/10 border border-accent/20 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
-                <Edit3 className="w-4 h-4 text-accent" />
-              </div>
-              <div className="flex-1">
-                <h4 className="font-semibold mb-1">프로필을 완성해주세요</h4>
-                <p className="text-sm text-muted-foreground mb-3">
-                  프로필을 완성하면 매칭 서비스를 이용할 수 있습니다
-                </p>
-                <Button size="sm" className="w-full" onClick={onEdit}>
-                  프로필 완성하기
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* About Me Tab Content */}
         {activeTab === "about" && (
           <div className="space-y-4">

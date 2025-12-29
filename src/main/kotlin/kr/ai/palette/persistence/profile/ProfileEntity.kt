@@ -22,9 +22,9 @@ class ProfileEntity(
     @Enumerated(EnumType.STRING)
     var bodyType: BodyTypeEntity?,
 
-    @Column(name = "mbti", length = 4, nullable = false)
+    @Column(name = "mbti", length = 4)
     @Enumerated(EnumType.STRING)
-    var mbti: MBTIEntity,
+    var mbti: MBTIEntity?,
 
     // CareerInfo
     @Column(name = "career_category", length = 30)
