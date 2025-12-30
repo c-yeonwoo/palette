@@ -5,6 +5,7 @@ import { Label } from "./ui/label";
 import { ArrowLeft, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { authService } from "../../lib/auth/authService";
+import { sendVerificationCode, verifyCode } from "../../lib/api/phoneVerification";
 
 interface MatchmakerSignupScreenProps {
   onBack: () => void;
@@ -69,18 +70,17 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
     setIsVerificationLoading(true);
 
     try {
-      // TODO: 실제 인증번호 발송 API 연동
-      // await api.post('/api/v1/auth/phone/send-verification', { phoneNumber: formData.phoneNumber });
-
-      // 임시로 성공 처리
-      setTimeout(() => {
+      const response = await sendVerificationCode(formData.phoneNumber);
+      if (response.success) {
         setVerificationSent(true);
         toast.success("인증번호가 발송되었습니다");
-        setIsVerificationLoading(false);
-      }, 1000);
+      } else {
+        toast.error(response.message);
+      }
     } catch (error) {
       console.error("Failed to send verification:", error);
       toast.error("인증번호 발송에 실패했습니다");
+    } finally {
       setIsVerificationLoading(false);
     }
   };
@@ -155,6 +155,15 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
     setIsLoading(true);
 
     try {
+      // 먼저 인증번호 검증
+      const verifyResponse = await verifyCode(formData.phoneNumber, formData.verificationCode);
+      if (!verifyResponse.success) {
+        toast.error(verifyResponse.message);
+        setIsLoading(false);
+        return;
+      }
+
+      // 회원가입 진행
       const response = await fetch("http://localhost:8080/api/v1/auth/email/matchmaker/signup", {
         method: "POST",
         headers: {
@@ -168,7 +177,6 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
           phoneNumber: formData.phoneNumber,
           birthDate: formData.birthDate,
           gender: formData.gender,
-          verificationCode: formData.verificationCode,
         }),
       });
 

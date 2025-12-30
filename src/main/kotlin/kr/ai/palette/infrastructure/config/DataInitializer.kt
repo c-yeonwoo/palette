@@ -46,6 +46,7 @@ class DataInitializer(
                 realName = "김민준",
                 email = "minjun.kim@test.com",
                 phoneNumber = "010-1234-5678",
+                isPhoneVerified = false, // 핸드폰 미인증 상태
                 contactInfo = ContactInfo.create("010-1234-5678")
             ),
             publicInfo = PublicInfo(
@@ -80,6 +81,7 @@ class DataInitializer(
                 realName = "이서연",
                 email = "seoyeon.lee@test.com",
                 phoneNumber = "010-2345-6789",
+                isPhoneVerified = true, // 핸드폰 인증 완료
                 contactInfo = ContactInfo.create("010-2345-6789")
             ),
             publicInfo = PublicInfo(
@@ -114,6 +116,7 @@ class DataInitializer(
                 realName = "박지훈",
                 email = "jihoon.park@test.com",
                 phoneNumber = "010-3456-7890",
+                isPhoneVerified = false, // 핸드폰 미인증 상태
                 contactInfo = ContactInfo.create("010-3456-7890")
             ),
             publicInfo = PublicInfo(
@@ -148,6 +151,7 @@ class DataInitializer(
                 realName = "최유진",
                 email = "yujin.choi@test.com",
                 phoneNumber = "010-4567-8901",
+                isPhoneVerified = true, // 핸드폰 인증 완료
                 contactInfo = ContactInfo.create("010-4567-8901")
             ),
             publicInfo = PublicInfo(
@@ -182,6 +186,7 @@ class DataInitializer(
                 realName = "정도현",
                 email = "dohyun.jung@test.com",
                 phoneNumber = "010-5678-9012",
+                isPhoneVerified = true, // 핸드폰 인증 완료
                 contactInfo = ContactInfo.create("010-5678-9012")
             ),
             publicInfo = PublicInfo(
@@ -216,6 +221,7 @@ class DataInitializer(
                 realName = "강혜원",
                 email = "hyewon.kang@test.com",
                 phoneNumber = "010-6789-0123",
+                isPhoneVerified = true, // 핸드폰 인증 완료
                 contactInfo = ContactInfo.create("010-6789-0123")
             ),
             publicInfo = PublicInfo(
@@ -250,6 +256,7 @@ class DataInitializer(
                 realName = "윤상호",
                 email = "sangho.yoon@test.com",
                 phoneNumber = "010-7890-1234",
+                isPhoneVerified = true, // 핸드폰 인증 완료
                 contactInfo = ContactInfo.create("010-7890-1234")
             ),
             publicInfo = PublicInfo(

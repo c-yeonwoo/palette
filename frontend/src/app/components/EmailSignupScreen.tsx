@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { api } from "../../lib/api/apiClient";
 import { tokenStorage } from "../../lib/auth/tokenStorage";
 import { toast } from "sonner";
+import { sendVerificationCode, verifyCode } from "../../lib/api/phoneVerification";
+import { Loader2 } from "lucide-react";
 
 interface EmailSignupScreenProps {
   onSuccess: () => void;
@@ -19,16 +21,66 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
     confirmPassword: "",
     realName: "",
     nickname: "",
+    phoneNumber: "",
+    verificationCode: "",
     birthDate: "",
     gender: "MALE" as "MALE" | "FEMALE",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [isVerificationLoading, setIsVerificationLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const formatPhoneNumber = (value: string) => {
+    const numbers = value.replace(/\D/g, "");
+    if (numbers.length <= 3) {
+      return numbers;
+    } else if (numbers.length <= 7) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    } else {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
+    }
+  };
+
+  const handlePhoneNumberChange = (value: string) => {
+    const formatted = formatPhoneNumber(value);
+    setFormData({ ...formData, phoneNumber: formatted });
+  };
+
+  const handleSendVerification = async () => {
+    if (!formData.phoneNumber) {
+      toast.error("핸드폰 번호를 입력해주세요");
+      return;
+    }
+
+    const phoneRegex = /^010-\d{4}-\d{4}$/;
+    if (!phoneRegex.test(formData.phoneNumber)) {
+      toast.error("올바른 핸드폰 번호 형식이 아닙니다 (010-1234-5678)");
+      return;
+    }
+
+    setIsVerificationLoading(true);
+
+    try {
+      const response = await sendVerificationCode(formData.phoneNumber);
+      if (response.success) {
+        setVerificationSent(true);
+        toast.success("인증번호가 발송되었습니다");
+      } else {
+        toast.error(response.message);
+      }
+    } catch (error) {
+      console.error("Failed to send verification:", error);
+      toast.error("인증번호 발송에 실패했습니다");
+    } finally {
+      setIsVerificationLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,9 +98,29 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
       return;
     }
 
+    // 핸드폰 인증 확인
+    if (!verificationSent) {
+      toast.error("인증번호를 발송해주세요");
+      return;
+    }
+
+    if (!formData.verificationCode) {
+      toast.error("인증번호를 입력해주세요");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
+      // 먼저 인증번호 검증
+      const verifyResponse = await verifyCode(formData.phoneNumber, formData.verificationCode);
+      if (!verifyResponse.success) {
+        toast.error(verifyResponse.message);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 회원가입 진행
       const response = await api.post<{
         accessToken: string;
         refreshToken: string;
@@ -59,6 +131,7 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
         password: formData.password,
         realName: formData.realName,
         nickname: formData.nickname,
+        phoneNumber: formData.phoneNumber,
         birthDate: formData.birthDate,
         gender: formData.gender,
       }, { requiresAuth: false });
@@ -204,6 +277,59 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
                 <option value="FEMALE">여성</option>
               </select>
             </div>
+
+            {/* 핸드폰 번호 */}
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">핸드폰 번호 (본인인증 필수)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="phoneNumber"
+                  type="text"
+                  placeholder="010-1234-5678"
+                  value={formData.phoneNumber}
+                  onChange={(e) => handlePhoneNumberChange(e.target.value)}
+                  disabled={isSubmitting || verificationSent}
+                  maxLength={13}
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleSendVerification}
+                  disabled={isSubmitting || verificationSent || isVerificationLoading}
+                  className="whitespace-nowrap"
+                >
+                  {isVerificationLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : verificationSent ? (
+                    "발송완료"
+                  ) : (
+                    "인증번호"
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* 인증번호 입력 */}
+            {verificationSent && (
+              <div className="space-y-2">
+                <Label htmlFor="verificationCode">인증번호</Label>
+                <Input
+                  id="verificationCode"
+                  name="verificationCode"
+                  type="text"
+                  placeholder="6자리 인증번호"
+                  value={formData.verificationCode}
+                  onChange={(e) => setFormData({ ...formData, verificationCode: e.target.value.replace(/\D/g, "").slice(0, 6) })}
+                  disabled={isSubmitting}
+                  maxLength={6}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  인증번호가 오지 않으면 다시 발송해주세요
+                </p>
+              </div>
+            )}
 
             {/* 버튼 */}
             <div className="space-y-2 pt-4">

@@ -70,6 +70,14 @@ aws:
     access-key: ${AWS_ACCESS_KEY_ID}
     secret-key: ${AWS_SECRET_ACCESS_KEY}
 
+# NCP SENS SMS Configuration
+ncp:
+  sens:
+    access-key: ${NCP_SENS_ACCESS_KEY}
+    secret-key: ${NCP_SENS_SECRET_KEY}
+    service-id: ${NCP_SENS_SERVICE_ID}
+    from-number: ${NCP_SENS_FROM_NUMBER}
+
 # Logging
 logging:
   level:

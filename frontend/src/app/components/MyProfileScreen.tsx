@@ -10,11 +10,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { Edit3, Loader2, Settings, LogOut, ExternalLink, Sparkles, CheckCircle2, Share2, Link } from "lucide-react";
+import { Edit3, Loader2, Settings, LogOut, ExternalLink, Sparkles, CheckCircle2, Share2, Link, AlertCircle, Phone } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { authService } from "../../lib/auth/authService";
 import { toast } from "sonner";
 import { MatchmakerProfileScreen } from "./MatchmakerProfileScreen";
+import PhoneVerificationModal from "./PhoneVerificationModal";
 
 interface MyProfileScreenProps {
   onBack: () => void;
@@ -27,6 +28,7 @@ interface UserProfile {
   nickname: string;
   accountType: string;
   isProfileCompleted: boolean;
+  isPhoneVerified: boolean;
 }
 
 interface ProfileData {
@@ -113,6 +115,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
   const [activeTab, setActiveTab] = useState<"about" | "ideal">("about");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingToggleValue, setPendingToggleValue] = useState(false);
+  const [showPhoneVerificationModal, setShowPhoneVerificationModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
@@ -272,6 +275,19 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
     setShowShareMenu(false);
   };
 
+  const handlePhoneVerified = async (phoneNumber: string) => {
+    try {
+      // Refresh user data to get updated isPhoneVerified status
+      const userData = await api.get<UserProfile>('/api/v1/auth/me');
+      setUserProfile(userData);
+      setShowPhoneVerificationModal(false);
+      toast.success('핸드폰 인증이 완료되었습니다!');
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+      toast.error('사용자 정보를 새로고침하는데 실패했습니다');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -397,6 +413,29 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
 
       {/* Profile Content */}
       <div className="p-6 space-y-6">
+        {/* Phone Verification Banner */}
+        {userProfile && !userProfile.isPhoneVerified && (
+          <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 space-y-2">
+              <p className="text-sm font-medium text-amber-900">
+                핸드폰 인증 후에 서비스를 이용하실 수 있습니다
+              </p>
+              <p className="text-xs text-amber-700">
+                안전한 매칭을 위해 본인 인증이 필요합니다
+              </p>
+            </div>
+            <Button
+              onClick={() => setShowPhoneVerificationModal(true)}
+              size="sm"
+              className="bg-amber-600 hover:bg-amber-700 text-white whitespace-nowrap"
+            >
+              <Phone className="w-4 h-4 mr-1" />
+              인증하기
+            </Button>
+          </div>
+        )}
+
         {/* Profile Header */}
         <div className="flex items-start gap-4">
           <div className="relative">
@@ -744,6 +783,15 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Phone Verification Modal */}
+      <PhoneVerificationModal
+        isOpen={showPhoneVerificationModal}
+        onClose={() => setShowPhoneVerificationModal(false)}
+        onVerified={handlePhoneVerified}
+        userId={userProfile?.userId}
+        initialPhoneNumber={userProfile?.isPhoneVerified ? undefined : undefined}
+      />
     </div>
   );
 }

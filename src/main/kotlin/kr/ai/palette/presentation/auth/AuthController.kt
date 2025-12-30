@@ -53,7 +53,8 @@ class AuthController(
                 realName = user.privateInfo.realName,
                 birthDate = user.publicInfo.birthDate.toString(),
                 gender = user.publicInfo.gender.name,
-                phoneNumber = user.privateInfo.phoneNumber
+                phoneNumber = user.privateInfo.phoneNumber,
+                isPhoneVerified = user.privateInfo.isPhoneVerified
             )
         )
     }
@@ -236,7 +237,8 @@ data class UserResponse(
     val realName: String,
     val birthDate: String,
     val gender: String,
-    val phoneNumber: String?
+    val phoneNumber: String?,
+    val isPhoneVerified: Boolean
 )
 
 data class UpdateBasicInfoRequest(
@@ -254,6 +256,7 @@ data class EmailSignupRequest(
     val password: String,
     val realName: String,
     val nickname: String,
+    val phoneNumber: String,
     val birthDate: LocalDate,
     val gender: Gender
 )
@@ -301,9 +304,14 @@ class EmailAuthController(
             return ResponseEntity.badRequest().build()
         }
 
+        // 핸드폰 번호 중복 체크
+        if (userRepository.existsByPhoneNumber(request.phoneNumber)) {
+            return ResponseEntity.badRequest().build()
+        }
+
         val now = Instant.now()
 
-        // 사용자 생성
+        // 사용자 생성 (핸드폰 인증 완료 상태로)
         val user = User(
             id = UserId(UUID.randomUUID()),
             oauthInfo = null,  // 이메일 회원은 OAuth 정보 없음
@@ -311,8 +319,13 @@ class EmailAuthController(
             privateInfo = PrivateInfo(
                 realName = request.realName,
                 email = request.email,
-                phoneNumber = null,
-                contactInfo = null
+                phoneNumber = request.phoneNumber,
+                isPhoneVerified = true,  // 프론트에서 인증 완료 후 가입하므로 true
+                contactInfo = ContactInfo(
+                    phoneNumber = request.phoneNumber,
+                    kakaoTalkId = null,
+                    preferredContactMethod = null
+                )
             ),
             publicInfo = PublicInfo(
                 nickname = request.nickname,
