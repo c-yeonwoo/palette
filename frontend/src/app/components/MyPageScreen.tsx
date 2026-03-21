@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { ChevronRight, UserCircle, HeartHandshake, LogOut, Settings, Users, Camera, Edit2, Loader2 } from "lucide-react";
+import { ChevronRight, UserCircle, HeartHandshake, LogOut, Settings, Users, Camera, Edit2, Loader2, UserPlus } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { tokenStorage } from "../../lib/auth/tokenStorage";
 import { toast } from "sonner";
@@ -13,6 +13,8 @@ interface MyPageScreenProps {
   onNavigateToConnector: () => void;
   onLogout: () => void;
   onConvertToRegular: () => void;
+  onNavigateToPromptManagement?: () => void;
+  onNavigateToFriends?: () => void;
 }
 
 interface MatchmakerData {
@@ -27,7 +29,9 @@ export function MyPageScreen({
   onNavigateToProfile,
   onNavigateToConnector,
   onLogout,
-  onConvertToRegular
+  onConvertToRegular,
+  onNavigateToPromptManagement,
+  onNavigateToFriends
 }: MyPageScreenProps) {
   const [user, setUser] = useState<any>(null);
   const [matchmaker, setMatchmaker] = useState<MatchmakerData | null>(null);
@@ -263,6 +267,25 @@ export function MyPageScreen({
             </button>
           )}
 
+          {/* Friend Connect */}
+          {onNavigateToFriends && (
+            <button
+              onClick={onNavigateToFriends}
+              className="w-full bg-card hover:bg-accent/50 border border-border rounded-xl p-4 flex items-center justify-between transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+                  <UserPlus className="w-5 h-5 text-green-500" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium">친구 연결</p>
+                  <p className="text-sm text-muted-foreground">초대 코드 & 친구 검색</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </button>
+          )}
+
           {/* Connector Dashboard */}
           {user?.canAccessMatchmakerService && (
             <>
@@ -318,6 +341,24 @@ export function MyPageScreen({
         <div className="max-w-2xl mx-auto">
           <p className="text-sm font-medium text-muted-foreground mb-3 px-1">설정</p>
           <div className="space-y-2">
+            {/* Prompt Management - Dev Only */}
+            {onNavigateToPromptManagement && (
+              <button
+                onClick={onNavigateToPromptManagement}
+                className="w-full bg-card hover:bg-accent/50 border border-border rounded-xl p-4 flex items-center justify-between transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
+                    <Settings className="w-5 h-5 text-purple-500" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium">프롬프트 관리</p>
+                    <p className="text-sm text-muted-foreground">AI 프롬프트 템플릿 관리</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </button>
+            )}
             {/* Logout */}
             <button
               onClick={handleLogout}

@@ -21,7 +21,14 @@ class FeedController(
 
     @GetMapping
     fun getHomeFeed(
-        @AuthenticationPrincipal authUser: AuthUser
+        @AuthenticationPrincipal authUser: AuthUser,
+        @RequestParam(required = false) ageMin: Int?,
+        @RequestParam(required = false) ageMax: Int?,
+        @RequestParam(required = false) heightMin: Int?,
+        @RequestParam(required = false) heightMax: Int?,
+        @RequestParam(required = false) region: String?,
+        @RequestParam(required = false) jobCategory: String?,
+        @RequestParam(required = false) degree: Int?  // 1=1촌만, 2=2촌만, null=전체
     ): ResponseEntity<FeedResponse> {
         val currentUserId = authUser.userId
 
@@ -30,10 +37,10 @@ class FeedController(
             ?: return ResponseEntity.notFound().build()
         val currentUserGender = currentUser.publicInfo.gender
 
-        // 1촌 친구들의 ID 가져오기
+        // 1촌 친구들의 ID 가져오기 (주선자 역할, 피드 노출 제외)
         val firstDegreeFriendIds = friendshipRepository.findFriendIdsByUserId(currentUserId)
 
-        // 2촌 친구들의 ID 가져오기
+        // 2촌 친구들의 ID 가져오기 (피드 노출 대상)
         val secondDegreeFriendIds = friendshipRepository.findSecondDegreeFriendIds(currentUserId)
 
         // 이미 주선 요청한 프로필들의 targetUserId 가져오기
@@ -42,8 +49,8 @@ class FeedController(
             .map { it.targetUserId }
             .toSet()
 
-        // 2촌 친구들의 프로필과 공통 친구 정보 가져오기 (반대 성별만, 이미 요청한 프로필 제외)
-        val profileItems = secondDegreeFriendIds.mapNotNull { userId ->
+        // 2촌만 피드에 노출 (1촌은 이미 아는 사람이므로 제외)
+        val profileItems = secondDegreeFriendIds.distinct().mapNotNull { userId ->
             val user = userRepository.findById(userId)
 
             // 이미 요청한 프로필은 제외
@@ -54,7 +61,29 @@ class FeedController(
             // 반대 성별만 필터링
             if (user != null && user.publicInfo.gender != currentUserGender) {
                 profileRepository.findByUserId(userId)?.let { profile ->
-                    // 이 프로필과 나 사이의 공통 친구 찾기
+                    // 나이 필터
+                    val userAge = user.publicInfo.getAge()
+                    if (ageMin != null && userAge < ageMin) return@let null
+                    if (ageMax != null && userAge > ageMax) return@let null
+
+                    // 키 필터
+                    val h = profile.basicInfo.height
+                    if (heightMin != null && (h == null || h < heightMin)) return@let null
+                    if (heightMax != null && (h == null || h > heightMax)) return@let null
+
+                    // 지역 필터
+                    if (!region.isNullOrBlank()) {
+                        val profileRegion = profile.locationInfo?.sido
+                        if (profileRegion == null || !profileRegion.contains(region, ignoreCase = true)) return@let null
+                    }
+
+                    // 직업 카테고리 필터
+                    if (!jobCategory.isNullOrBlank()) {
+                        val profileJob = profile.careerInfo?.category
+                        if (profileJob == null || profileJob.name != jobCategory) return@let null
+                    }
+
+                    // 공통 친구(주선 가능한 1촌) 찾기
                     val mutualFriends = firstDegreeFriendIds.filter { firstDegreeFriendId ->
                         friendshipRepository.findFriendIdsByUserId(firstDegreeFriendId).contains(userId)
                     }
@@ -66,7 +95,9 @@ class FeedController(
 
                     FeedProfileItem(
                         profile = ProfileResponse.from(profile),
-                        mutualFriends = mutualFriendNames
+                        mutualFriends = mutualFriendNames,
+                        degree = 2,
+                        viewCost = 3000
                     )
                 }
             } else {
@@ -117,7 +148,9 @@ data class FeedResponse(
 
 data class FeedProfileItem(
     val profile: ProfileResponse,
-    val mutualFriends: List<String>  // 공통 친구들의 닉네임 리스트
+    val mutualFriends: List<String>,  // 공통 친구들의 닉네임 리스트
+    val degree: Int = 2,              // 1=1촌(free), 2=2촌(3,000원), 3=3촌(5,000원)
+    val viewCost: Int = 3000          // 0 for free
 )
 
 data class FriendsResponse(

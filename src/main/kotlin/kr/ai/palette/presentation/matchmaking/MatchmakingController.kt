@@ -21,12 +21,52 @@ class MatchmakingController(
     private val userRepository: UserRepository
 ) {
 
+    @GetMapping("/cooltime-status")
+    fun getCoolTimeStatus(
+        @AuthenticationPrincipal authUser: AuthUser
+    ): ResponseEntity<CoolTimeStatusResponse> {
+        val requesterId = authUser.userId
+        val coolTimeDays = 10L
+
+        val lastCompleted = matchmakingRequestRepository.findAll()
+            .filter { it.requesterId == requesterId && it.status == MatchmakingRequestStatus.COMPLETED }
+            .maxByOrNull { it.updatedAt }
+
+        if (lastCompleted == null) {
+            return ResponseEntity.ok(CoolTimeStatusResponse(inCoolTime = false, remainingDays = 0, coolTimeDays = coolTimeDays.toInt()))
+        }
+
+        val coolTimeEnd = lastCompleted.updatedAt.plusDays(coolTimeDays)
+        val now = java.time.LocalDateTime.now()
+
+        return if (now.isBefore(coolTimeEnd)) {
+            val remaining = java.time.temporal.ChronoUnit.DAYS.between(now, coolTimeEnd) + 1
+            ResponseEntity.ok(CoolTimeStatusResponse(inCoolTime = true, remainingDays = remaining.toInt(), coolTimeDays = coolTimeDays.toInt()))
+        } else {
+            ResponseEntity.ok(CoolTimeStatusResponse(inCoolTime = false, remainingDays = 0, coolTimeDays = coolTimeDays.toInt()))
+        }
+    }
+
     @PostMapping("/request")
     fun createMatchmakingRequest(
         @AuthenticationPrincipal authUser: AuthUser,
         @RequestBody request: CreateMatchmakingRequestDto
     ): ResponseEntity<MatchmakingRequestResponse> {
         val requesterId = authUser.userId
+
+        // Check cooltime (10 days after last successful match)
+        val coolTimeDays = 10L
+        val lastCompleted = matchmakingRequestRepository.findAll()
+            .filter { it.requesterId == requesterId && it.status == MatchmakingRequestStatus.COMPLETED }
+            .maxByOrNull { it.updatedAt }
+
+        if (lastCompleted != null) {
+            val coolTimeEnd = lastCompleted.updatedAt.plusDays(coolTimeDays)
+            if (java.time.LocalDateTime.now().isBefore(coolTimeEnd)) {
+                val remaining = java.time.temporal.ChronoUnit.DAYS.between(java.time.LocalDateTime.now(), coolTimeEnd) + 1
+                return ResponseEntity.status(429).build()
+            }
+        }
 
         // Check if already requested
         if (matchmakingRequestRepository.existsByRequesterIdAndTargetUserId(
@@ -322,4 +362,10 @@ data class ApprovalRequestDto(
 
 data class RejectionRequestDto(
     val message: String?
+)
+
+data class CoolTimeStatusResponse(
+    val inCoolTime: Boolean,
+    val remainingDays: Int,
+    val coolTimeDays: Int
 )

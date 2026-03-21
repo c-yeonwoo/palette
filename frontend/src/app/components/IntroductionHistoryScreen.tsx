@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Badge } from "./ui/badge";
-import { Heart, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Heart, Clock, CheckCircle2, XCircle, MessageSquare } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 
@@ -17,15 +17,54 @@ interface MatchRequest {
   matchmakerId: string;
   matchmakerName: string | null;
   message: string | null;
+  matchmakerMessage: string | null;
   status: string;
   createdAt: string;
   updatedAt: string;
 }
 
+interface RelationshipStatus {
+  requestId: string;
+  stage: string;
+  message: string | null;
+  encouragementMessage: string | null;
+  updatedAt: string;
+  photoFeedback: string | null;
+}
+
+const PHOTO_FEEDBACK_OPTIONS = [
+  { value: "VERY_SIMILAR", label: "사진과 매우 비슷해요", emoji: "😍" },
+  { value: "SIMILAR", label: "사진과 비슷해요", emoji: "😊" },
+  { value: "DIFFERENT", label: "사진과 조금 달라요", emoji: "🤔" },
+  { value: "VERY_DIFFERENT", label: "사진과 많이 달라요", emoji: "😅" },
+];
+
+const STAGE_STEPS = [
+  { key: "MATCHED", label: "매칭 성사", emoji: "🎉" },
+  { key: "CONTACTS_EXCHANGED", label: "연락 시작", emoji: "💬" },
+  { key: "MET", label: "만남 완료", emoji: "☕" },
+  { key: "DATING", label: "연애 중", emoji: "💕" },
+];
+
 export function IntroductionHistoryScreen() {
   const [pendingItems, setPendingItems] = useState<MatchRequest[]>([]);
-  const [completedItems, setCompletedItems] = useState<MatchRequest[]>([]);
+  const [completedItems, setCompletedItems] = useState<RelationshipStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [updatingStage, setUpdatingStage] = useState<string | null>(null);
+  const [submittingFeedback, setSubmittingFeedback] = useState<string | null>(null);
+
+  const submitPhotoFeedback = async (requestId: string, feedback: string) => {
+    setSubmittingFeedback(requestId);
+    try {
+      await api.post(`/api/v1/relationships/${requestId}/photo-feedback`, { feedback });
+      toast.success("피드백이 제출되었습니다!");
+      await fetchIntroductionHistory();
+    } catch {
+      toast.error("피드백 제출에 실패했습니다");
+    } finally {
+      setSubmittingFeedback(null);
+    }
+  };
 
   useEffect(() => {
     fetchIntroductionHistory();
@@ -35,34 +74,42 @@ export function IntroductionHistoryScreen() {
     try {
       setIsLoading(true);
 
-      // Fetch both requester's pending requests and target's pending requests
-      const [requesterPendingResponse, targetPendingResponse] = await Promise.all([
+      const [requesterPendingResponse, targetPendingResponse, relationshipsResponse] = await Promise.all([
         api.get<any>("/api/v1/matchmaking/requests/pending"),
-        api.get<any>("/api/v1/matchmaking/requests/target/pending")
+        api.get<any>("/api/v1/matchmaking/requests/target/pending"),
+        api.get<RelationshipStatus[]>("/api/v1/relationships").catch(() => [])
       ]);
 
-      // Combine and deduplicate
       const allPending = [
         ...(requesterPendingResponse.requests || []),
         ...(targetPendingResponse.requests || [])
       ];
 
-      // Remove duplicates by id
       const uniquePending = allPending.filter((item, index, self) =>
         index === self.findIndex((t) => t.id === item.id)
       );
 
       setPendingItems(uniquePending);
-
-      // For completed, we need to fetch all requests and filter by COMPLETED status
-      // For now, we'll use a placeholder - you might need a new API endpoint
-      setCompletedItems([]);
+      setCompletedItems(Array.isArray(relationshipsResponse) ? relationshipsResponse : []);
 
     } catch (error: any) {
       console.error("Failed to fetch introduction history:", error);
       toast.error("소개 이력을 불러오는데 실패했습니다");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const updateRelationshipStage = async (requestId: string, stage: string) => {
+    setUpdatingStage(requestId + stage);
+    try {
+      await api.put(`/api/v1/relationships/${requestId}/stage`, { stage });
+      toast.success("관계 단계가 업데이트되었습니다!");
+      await fetchIntroductionHistory();
+    } catch {
+      toast.error("업데이트에 실패했습니다");
+    } finally {
+      setUpdatingStage(null);
     }
   };
 
@@ -204,9 +251,19 @@ export function IntroductionHistoryScreen() {
                       </div>
 
                       {request.message && (
-                        <div className="bg-muted/50 rounded-lg p-3 mb-3">
-                          <p className="text-sm text-muted-foreground mb-1">요청자 메시지</p>
+                        <div className="bg-muted/50 rounded-lg p-3 mb-2">
+                          <p className="text-xs text-muted-foreground mb-1">요청자 메시지</p>
                           <p className="text-sm">{request.message}</p>
+                        </div>
+                      )}
+
+                      {request.matchmakerMessage && (
+                        <div className="bg-primary/5 rounded-lg p-3 mb-2 flex gap-2">
+                          <MessageSquare className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">주선자 응원 메시지</p>
+                            <p className="text-sm">{request.matchmakerMessage}</p>
+                          </div>
                         </div>
                       )}
 
@@ -247,35 +304,97 @@ export function IntroductionHistoryScreen() {
             </div>
           ) : (
             <div className="space-y-4">
-              {completedItems.map((request) => (
-                <div
-                  key={request.id}
-                  className="bg-card rounded-2xl overflow-hidden border border-border"
-                >
-                  <div className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <p className="font-medium text-lg">
-                          {request.targetNickname || request.targetRealName || "알 수 없음"}
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {request.matchmakerName}님의 주선
-                        </p>
+              {completedItems.map((rel) => {
+                const currentStageIdx = STAGE_STEPS.findIndex(s => s.key === rel.stage);
+                return (
+                  <div key={rel.requestId} className="bg-card rounded-2xl overflow-hidden border border-border">
+                    <div className="p-4 space-y-4">
+                      {/* Header */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-5 h-5 text-green-500" />
+                          <span className="font-medium">매칭 성사</span>
+                        </div>
+                        <span className="text-lg">{STAGE_STEPS[currentStageIdx]?.emoji}</span>
                       </div>
-                      <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200 flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span className="text-xs font-medium">매칭 완료</span>
-                      </div>
-                    </div>
 
-                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
-                      <p className="text-sm text-green-800 dark:text-green-200">
-                        💕 연락처가 교환되었습니다. 멋진 대화를 시작해보세요!
-                      </p>
+                      {/* Encouragement message from matchmaker */}
+                      {rel.encouragementMessage && (
+                        <div className="bg-primary/5 rounded-xl p-3 flex gap-2">
+                          <MessageSquare className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-0.5">주선자 응원 메시지</p>
+                            <p className="text-sm">{rel.encouragementMessage}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Stage progress */}
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-2">관계 단계</p>
+                        <div className="flex items-center gap-1">
+                          {STAGE_STEPS.map((step, idx) => (
+                            <div key={step.key} className="flex-1 text-center">
+                              <div className={`h-1 rounded-full mb-1 ${idx <= currentStageIdx ? "bg-primary" : "bg-muted"}`} />
+                              <span className={`text-[10px] ${idx === currentStageIdx ? "text-primary font-medium" : "text-muted-foreground"}`}>
+                                {step.emoji}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-xs text-center text-primary mt-1 font-medium">
+                          {STAGE_STEPS[currentStageIdx]?.label}
+                        </p>
+                      </div>
+
+                      {/* Photo feedback */}
+                      {(rel.stage === "MET" || rel.stage === "DATING") && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-2">사진 유사도 피드백</p>
+                          {rel.photoFeedback ? (
+                            <div className="bg-muted/30 rounded-xl px-3 py-2 text-sm text-center">
+                              {PHOTO_FEEDBACK_OPTIONS.find(o => o.value === rel.photoFeedback)?.emoji}{" "}
+                              {PHOTO_FEEDBACK_OPTIONS.find(o => o.value === rel.photoFeedback)?.label}
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-2 gap-2">
+                              {PHOTO_FEEDBACK_OPTIONS.map(opt => (
+                                <button
+                                  key={opt.value}
+                                  disabled={submittingFeedback === rel.requestId}
+                                  onClick={() => submitPhotoFeedback(rel.requestId, opt.value)}
+                                  className="flex items-center gap-1.5 bg-muted/30 hover:bg-muted/60 rounded-xl px-3 py-2 text-xs text-left transition-colors disabled:opacity-50"
+                                >
+                                  <span>{opt.emoji}</span>
+                                  <span>{opt.label}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Stage update buttons */}
+                      {currentStageIdx < STAGE_STEPS.length - 1 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="w-full gap-1"
+                          disabled={updatingStage !== null}
+                          onClick={() => updateRelationshipStage(rel.requestId, STAGE_STEPS[currentStageIdx + 1].key)}
+                        >
+                          {STAGE_STEPS[currentStageIdx + 1].emoji} {STAGE_STEPS[currentStageIdx + 1].label}로 업데이트
+                        </Button>
+                      )}
+                      {currentStageIdx === STAGE_STEPS.length - 1 && (
+                        <div className="text-center text-sm text-pink-500 font-medium">
+                          💕 행복한 연애 중이에요!
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </TabsContent>

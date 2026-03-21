@@ -109,6 +109,10 @@ class ProfileEntity(
     @Column(name = "personality_tests", columnDefinition = "TEXT")
     var personalityTests: String?, // JSON array of personality test results
 
+    // ColorType
+    @Column(name = "color_type", length = 30)
+    var colorType: String?,
+
     // ProfileMetadata
     @Column(name = "created_at", nullable = false)
     var createdAt: Instant,

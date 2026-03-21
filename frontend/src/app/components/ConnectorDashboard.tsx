@@ -52,9 +52,10 @@ interface MatchRequest {
 
 interface ConnectorDashboardProps {
   onBack?: () => void;
+  onNavigateToReward?: () => void;
 }
 
-export function ConnectorDashboard({ onBack }: ConnectorDashboardProps) {
+export function ConnectorDashboard({ onBack, onNavigateToReward }: ConnectorDashboardProps) {
   const [matchmakerData, setMatchmakerData] = useState<MatchmakerData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [requests, setRequests] = useState<MatchRequest[]>([]);
@@ -202,6 +203,25 @@ export function ConnectorDashboard({ onBack }: ConnectorDashboardProps) {
             <h2 className="text-base sm:text-2xl text-green-600">{successRate}%</h2>
           </Card>
         </div>
+
+        {/* Level & Reward shortcut */}
+        {onNavigateToReward && (
+          <button
+            onClick={onNavigateToReward}
+            className="w-full bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-xl p-4 flex items-center justify-between hover:from-yellow-500/20 hover:to-orange-500/20 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🏆</span>
+              <div className="text-left">
+                <p className="font-medium text-sm">주선자 등급 & 포인트</p>
+                <p className="text-xs text-muted-foreground">
+                  Lv.{matchmakerData?.level ?? 1} · 출금 가능 {matchmakerData?.availablePoints?.toLocaleString() ?? 0}P
+                </p>
+              </div>
+            </div>
+            <span className="text-muted-foreground text-sm">→</span>
+          </button>
+        )}
 
         {/* Requests Tabs */}
         <Tabs defaultValue="pending" className="w-full">

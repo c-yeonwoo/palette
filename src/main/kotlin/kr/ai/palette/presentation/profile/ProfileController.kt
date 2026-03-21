@@ -112,6 +112,24 @@ class ProfileController(
         return ResponseEntity.ok(ProfileResponse.from(savedProfile))
     }
 
+    @PatchMapping("/settings/visibility")
+    @Transactional
+    fun toggleVisibility(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @RequestBody request: ToggleVisibilityRequest
+    ): ResponseEntity<ProfileSettingsDto> {
+        val profile = profileRepository.findByUserId(authUser.userId)
+            ?: return ResponseEntity.notFound().build()
+
+        val newSettings = if (request.visible) {
+            ProfileSettings(isAcceptingMatches = profile.settings.isAcceptingMatches, hiddenAt = null)
+        } else {
+            ProfileSettings(isAcceptingMatches = false, hiddenAt = Instant.now())
+        }
+        val saved = profileRepository.save(profile.updateSettings(newSettings))
+        return ResponseEntity.ok(ProfileSettingsDto.from(saved.settings))
+    }
+
     @PutMapping("/photos/reorder")
     @Transactional
     fun reorderPhotos(

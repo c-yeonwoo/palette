@@ -42,4 +42,12 @@ class ProfileRepositoryImpl(
     override fun existsByUserId(userId: UserId): Boolean {
         return jpaRepository.existsByUserId(userId.value)
     }
+
+    override fun findAll(): List<Profile> {
+        return jpaRepository.findAll().map { entity ->
+            val profile = mapper.toDomain(entity)
+            val photos = photoRepository.findByProfileId(profile.id)
+            profile.copy(photos = photos)
+        }
+    }
 }

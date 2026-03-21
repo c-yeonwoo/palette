@@ -104,6 +104,12 @@ interface ProfileData {
     isAcceptingMatches: boolean;
     hiddenAt: string | null;
   };
+  colorType: {
+    type: string | null;
+    name: string | null;
+    hex: string | null;
+    description: string | null;
+  } | null;
 }
 
 export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfileScreenProps) {
@@ -218,11 +224,20 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
   const handleCopyLink = async () => {
     if (!profile) return;
 
-    const shareUrl = `${window.location.origin}/profile/${profile.userId}`;
-
     try {
+      // 단축 공유 링크 생성/조회
+      let shareUrl: string;
+      try {
+        const linkData = await api.post<{ code: string; shareUrl: string; viewCount: number }>(
+          '/api/v1/share/link',
+          { expiry: 'unlimited' }
+        );
+        shareUrl = linkData.shareUrl;
+      } catch {
+        shareUrl = `${window.location.origin}/profile/${profile.userId}`;
+      }
       await navigator.clipboard.writeText(shareUrl);
-      toast.success('프로필 링크가 복사되었습니다');
+      toast.success(`공유 링크가 복사됐어요! 📋\n${shareUrl}`);
       setShowShareMenu(false);
     } catch (error) {
       console.error('Copy failed:', error);
@@ -542,6 +557,26 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
             )}
           </Section>
 
+          {profile?.colorType?.type && (
+            <Section title="나의 색깔">
+              <div
+                className="rounded-2xl p-4 flex items-center gap-4"
+                style={{ backgroundColor: profile.colorType.hex + "22", borderLeft: `4px solid ${profile.colorType.hex}` }}
+              >
+                <div
+                  className="w-12 h-12 rounded-full flex-shrink-0 shadow-md"
+                  style={{ backgroundColor: profile.colorType.hex ?? undefined }}
+                />
+                <div>
+                  <p className="font-semibold text-base">{profile.colorType.name}</p>
+                  {profile.colorType.description && (
+                    <p className="text-sm text-muted-foreground mt-0.5 leading-snug">{profile.colorType.description}</p>
+                  )}
+                </div>
+              </div>
+            </Section>
+          )}
+
           <Section title="사진">
             {profile?.photos && profile.photos.length > 0 ? (
               <div className="grid grid-cols-3 gap-3">
@@ -648,12 +683,43 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
             </Section>
           )}
 
-          {/* Settings Section - 주선받기 */}
+          {/* Settings Section - 주선받기 + 프로필 노출 */}
           {userProfile?.accountType === "REGULAR" && profile && (
             <Section title="설정">
+              {/* 프로필 피드 노출 */}
               <div className="flex items-center justify-between py-2">
                 <div className="flex-1">
+                  <p className="text-sm font-medium">피드 노출</p>
+                  <p className="text-xs text-slate-500">
+                    {profile.settings.hiddenAt
+                      ? `${new Date(profile.settings.hiddenAt).toLocaleDateString('ko')}부터 숨김 상태`
+                      : "2촌 피드에 프로필이 노출돼요"}
+                  </p>
+                </div>
+                <Switch
+                  checked={!profile.settings.hiddenAt}
+                  onCheckedChange={async (visible) => {
+                    try {
+                      const result = await api.patch<{ isAcceptingMatches: boolean; hiddenAt: string | null }>(
+                        '/api/v1/profile/settings/visibility',
+                        { visible }
+                      );
+                      setProfile(prev => prev ? {
+                        ...prev,
+                        settings: { ...prev.settings, hiddenAt: result.hiddenAt }
+                      } : prev);
+                      toast.success(visible ? '피드에 프로필이 노출됩니다' : '프로필이 숨겨졌습니다');
+                    } catch {
+                      toast.error('설정 변경에 실패했습니다');
+                    }
+                  }}
+                />
+              </div>
+              {/* 주선받기 */}
+              <div className="flex items-center justify-between py-2 border-t border-slate-50">
+                <div className="flex-1">
                   <p className="text-sm font-medium">주선받기</p>
+                  <p className="text-xs text-slate-500">다른 사람의 주선 요청을 받아요</p>
                 </div>
                 <Switch
                   checked={profile.settings.isAcceptingMatches}

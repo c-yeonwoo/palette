@@ -73,6 +73,21 @@ class ProfileMapper(
             photos = emptyList(), // Photos are managed separately
             videos = emptyList(), // Videos are managed separately
             personalityTests = parsePersonalityTests(entity.personalityTests),
+            colorType = entity.colorType?.let { ct ->
+                val enumVal = runCatching { ColorTypeEnum.valueOf(ct) }.getOrNull()
+                val info = mapOf(
+                    ColorTypeEnum.WARM_ORANGE to Triple("따뜻한 오렌지", "#FF8C42", "활발하고 다정한 당신은 주변을 밝게 만드는 에너지가 있어요"),
+                    ColorTypeEnum.CALM_BLUE to Triple("차분한 블루", "#4A90D9", "신중하고 깊이있는 당신은 믿음직한 존재감을 가지고 있어요"),
+                    ColorTypeEnum.VIBRANT_RED to Triple("생동감있는 레드", "#E74C3C", "열정적이고 적극적인 당신은 삶을 가득 채우는 에너지가 넘쳐요"),
+                    ColorTypeEnum.SOFT_PINK to Triple("부드러운 핑크", "#F48FB1", "섬세하고 낭만적인 당신은 감성이 풍부하고 따뜻한 마음을 가졌어요"),
+                    ColorTypeEnum.FRESH_GREEN to Triple("신선한 그린", "#4CAF50", "자연스럽고 편안한 당신은 함께 있으면 마음이 편안해지는 사람이에요"),
+                    ColorTypeEnum.ELEGANT_PURPLE to Triple("고급스러운 퍼플", "#9B59B6", "지적이고 감각적인 당신은 독특한 매력과 깊은 내면을 가지고 있어요"),
+                    ColorTypeEnum.BRIGHT_YELLOW to Triple("밝은 옐로우", "#F1C40F", "긍정적이고 유쾌한 당신은 어디서든 분위기를 밝게 만드는 존재예요"),
+                    ColorTypeEnum.SOPHISTICATED_GRAY to Triple("세련된 그레이", "#7F8C8D", "이성적이고 프로페셔널한 당신은 어떤 상황에도 신뢰를 주는 사람이에요")
+                )
+                val triple = info[enumVal]
+                ColorType(type = enumVal, name = triple?.first, hex = triple?.second, description = triple?.third)
+            },
             metadata = ProfileMetadata(
                 createdAt = entity.createdAt,
                 updatedAt = entity.updatedAt,
@@ -125,6 +140,7 @@ class ProfileMapper(
             idealAppearanceStyles = profile.idealType.appearanceStyles.joinToString(","),
             idealDealBreakers = profile.idealType.dealBreakers.joinToString(",") { it.name },
             personalityTests = serializedTests,
+            colorType = profile.colorType?.type?.name,
             createdAt = profile.metadata.createdAt,
             updatedAt = profile.metadata.updatedAt,
             lastAccessedAt = profile.metadata.lastAccessedAt,

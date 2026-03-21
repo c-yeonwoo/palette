@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { ChevronLeft, Loader2, Send, Users, ExternalLink } from "lucide-react";
+import { ChevronLeft, Loader2, Send, Users, ExternalLink, Lock, CreditCard } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 
@@ -9,6 +9,8 @@ interface ProfileDetailScreenProps {
   userId: string;
   onBack: () => void;
   mutualFriends?: string[];  // 공통 친구 닉네임 리스트
+  degree?: number;           // 1=1촌, 2=2촌, 3=3촌
+  viewCost?: number;         // 열람 비용 (0=무료)
 }
 
 interface PublicUserResponse {
@@ -77,7 +79,7 @@ interface ProfileData {
   };
 }
 
-export function ProfileDetailScreen({ userId, onBack, mutualFriends = [] }: ProfileDetailScreenProps) {
+export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree = 2, viewCost = 3000 }: ProfileDetailScreenProps) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [userInfo, setUserInfo] = useState<PublicUserResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -88,10 +90,72 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [] }: Prof
   const [requestMessage, setRequestMessage] = useState("");
   const [alreadyRequested, setAlreadyRequested] = useState(false);
 
+  // Cooltime state
+  const [inCoolTime, setInCoolTime] = useState(false);
+  const [coolTimeRemainingDays, setCoolTimeRemainingDays] = useState(0);
+
+  // Payment gate state
+  const [isPaid, setIsPaid] = useState(viewCost === 0);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  // Vouch state
+  const [vouchCount, setVouchCount] = useState(0);
+  const [isVouchedByMe, setIsVouchedByMe] = useState(false);
+  const [isVouching, setIsVouching] = useState(false);
+  const [isFriend, setIsFriend] = useState(false);
+
   useEffect(() => {
-    fetchProfileData();
+    // If free (1촌), fetch directly; if paid, show gate first
+    if (viewCost === 0) {
+      fetchProfileData();
+    } else {
+      // Check if already paid
+      checkPaymentStatus();
+    }
     checkMatchmakingRequest();
+    checkCoolTime();
+    fetchVouchInfo();
+    // 1촌(mutualFriends가 있으면)이거나 직접 알면 보증 가능 여부 확인
+    setIsFriend(mutualFriends.length > 0 || viewCost === 0);
   }, [userId]);
+
+  const checkPaymentStatus = async () => {
+    try {
+      const data = await api.get<{ canView: boolean; isAlreadyPaid: boolean }>(
+        `/api/v1/payment/profile-view-cost?targetUserId=${userId}`
+      );
+      if (data.canView) {
+        setIsPaid(true);
+        fetchProfileData();
+      } else {
+        setIsLoading(false);
+        setShowPaymentModal(true);
+      }
+    } catch {
+      // If can't check, show gate
+      setIsLoading(false);
+      setShowPaymentModal(true);
+    }
+  };
+
+  const handlePay = async () => {
+    setIsProcessingPayment(true);
+    try {
+      await api.post("/api/v1/payment/profile-view", {
+        targetUserId: userId,
+        paymentMethod: "MOCK_CARD",
+      });
+      setIsPaid(true);
+      setShowPaymentModal(false);
+      toast.success("결제가 완료되었습니다!");
+      await fetchProfileData();
+    } catch {
+      toast.error("결제에 실패했습니다");
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
 
   const fetchProfileData = async () => {
     try {
@@ -116,6 +180,49 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [] }: Prof
       setAlreadyRequested(response.exists);
     } catch (error) {
       console.error("Failed to check matchmaking request:", error);
+    }
+  };
+
+  const checkCoolTime = async () => {
+    try {
+      const res = await api.get<{ inCoolTime: boolean; remainingDays: number }>("/api/v1/matchmaking/cooltime-status");
+      setInCoolTime(res.inCoolTime);
+      setCoolTimeRemainingDays(res.remainingDays);
+    } catch {
+      // ignore
+    }
+  };
+
+  const fetchVouchInfo = async () => {
+    try {
+      const res = await api.get<{ vouchCount: number; isVouchedByMe: boolean; voucherNicknames: string[] }>(
+        `/api/v1/vouch/${userId}`
+      );
+      setVouchCount(res.vouchCount);
+      setIsVouchedByMe(res.isVouchedByMe);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleVouch = async () => {
+    setIsVouching(true);
+    try {
+      if (isVouchedByMe) {
+        await api.delete(`/api/v1/vouch/${userId}`);
+        setVouchCount(v => v - 1);
+        setIsVouchedByMe(false);
+        toast.info("보증을 취소했습니다");
+      } else {
+        await api.post(`/api/v1/vouch/${userId}`);
+        setVouchCount(v => v + 1);
+        setIsVouchedByMe(true);
+        toast.success("사진 보증 완료! 이 분의 신뢰도가 높아졌어요 ✅");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "보증에 실패했습니다");
+    } finally {
+      setIsVouching(false);
     }
   };
 
@@ -179,6 +286,69 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [] }: Prof
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Payment gate modal
+  if (showPaymentModal && !isPaid) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-4 flex items-center gap-3">
+          <button onClick={onBack} className="p-2 hover:bg-accent rounded-full transition-colors">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <h1 className="text-lg font-semibold">프로필 열람</h1>
+        </div>
+
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+          <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+            <Lock className="w-10 h-10 text-primary" />
+          </div>
+
+          <h2 className="text-xl font-bold mb-2">
+            {degree === 2 ? "2촌" : "3촌"} 프로필 열람
+          </h2>
+          <p className="text-muted-foreground mb-1">
+            {degree === 2 ? "2촌 친구의 친구" : "3촌 지인"}입니다
+          </p>
+          {mutualFriends.length > 0 && (
+            <p className="text-sm text-primary mb-4">
+              공통 친구: {mutualFriends.join(", ")}
+            </p>
+          )}
+
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-xs mb-6">
+            <p className="text-sm text-muted-foreground mb-1">열람 비용</p>
+            <p className="text-3xl font-bold text-primary">
+              {viewCost.toLocaleString()}원
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              결제 후 프로필을 무제한 열람할 수 있습니다
+            </p>
+          </div>
+
+          <Button
+            className="w-full max-w-xs gap-2 h-12 text-base"
+            onClick={handlePay}
+            disabled={isProcessingPayment}
+          >
+            {isProcessingPayment ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <CreditCard className="w-4 h-4" />
+            )}
+            {isProcessingPayment ? "결제 중..." : `${viewCost.toLocaleString()}원 결제하기`}
+          </Button>
+          <p className="text-xs text-muted-foreground mt-3">
+            테스트 환경 - 실제 결제 없이 진행됩니다
+          </p>
+
+          <Button variant="ghost" className="mt-4 text-muted-foreground" onClick={onBack}>
+            돌아가기
+          </Button>
+        </div>
       </div>
     );
   }
@@ -528,16 +698,53 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [] }: Prof
 
       {/* Sticky Bottom Action */}
       <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border p-4 z-20">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto space-y-2">
+          {inCoolTime && (
+            <p className="text-xs text-center text-amber-600 flex items-center justify-center gap-1">
+              ⏳ 매칭 성사 후 쿨타임 중 · {coolTimeRemainingDays}일 후 새 요청 가능
+            </p>
+          )}
+          {/* Vouch section */}
+          <div className="bg-muted/30 rounded-xl p-3 mb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium flex items-center gap-1.5">
+                  ✅ 사진 보증
+                  {vouchCount > 0 && (
+                    <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold px-2 py-0.5 rounded-full">
+                      {vouchCount}명 보증
+                    </span>
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  이 분을 직접 알고 사진이 실물과 비슷하면 보증해주세요
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant={isVouchedByMe ? "secondary" : "outline"}
+                className={`text-xs ${isVouchedByMe ? "text-green-600 border-green-500" : ""}`}
+                onClick={handleVouch}
+                disabled={isVouching}
+              >
+                {isVouchedByMe ? "보증 취소" : "보증하기"}
+              </Button>
+            </div>
+          </div>
+
           <Button
             size="lg"
             className="w-full h-14"
             onClick={handleMatchRequest}
-            disabled={alreadyRequested}
-            variant={alreadyRequested ? "secondary" : "default"}
+            disabled={alreadyRequested || inCoolTime}
+            variant={alreadyRequested || inCoolTime ? "secondary" : "default"}
           >
             <Send className="w-5 h-5 mr-2" />
-            {alreadyRequested ? "주선 요청 완료" : "주선 요청하기"}
+            {alreadyRequested
+              ? "주선 요청 완료"
+              : inCoolTime
+              ? `쿨타임 중 (${coolTimeRemainingDays}일 남음)`
+              : "주선 요청하기"}
           </Button>
         </div>
       </div>

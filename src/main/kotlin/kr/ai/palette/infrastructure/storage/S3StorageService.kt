@@ -1,6 +1,7 @@
 package kr.ai.palette.infrastructure.storage
 
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -13,6 +14,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import java.util.*
 
 @Service
+@ConditionalOnProperty(name = ["aws.s3.enabled"], havingValue = "true")
 class S3StorageService(
     @Value("\${aws.region}") private val region: String,
     @Value("\${aws.s3.bucket-name}") private val bucketName: String,

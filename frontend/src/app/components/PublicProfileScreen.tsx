@@ -74,6 +74,7 @@ interface ProfileData {
 interface UserProfile {
   nickname: string;
   gender?: string;
+  viewCount?: number;
 }
 
 export function PublicProfileScreen() {
@@ -84,22 +85,29 @@ export function PublicProfileScreen() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      // Extract userId from URL path
-      const pathMatch = window.location.pathname.match(/^\/profile\/(.+)$/);
-      const userId = pathMatch ? pathMatch[1] : null;
-
-      if (!userId) {
-        setIsLoading(false);
-        return;
-      }
+      const shareMatch = window.location.pathname.match(/^\/share\/(.+)$/);
+      const profileMatch = window.location.pathname.match(/^\/profile\/(.+)$/);
 
       try {
-        const profileData = await api.get<ProfileData>(`/api/v1/profile/public/${userId}`);
-        setProfile(profileData);
-
-        // User 정보도 가져오기
-        const userData = await api.get<UserProfile>(`/api/v1/users/${userId}/public`);
-        setUserProfile(userData);
+        if (shareMatch) {
+          // Share link resolution
+          const code = shareMatch[1];
+          const data = await api.get<{ nickname: string; gender: string; profile: ProfileData; viewCount: number }>(
+            `/api/v1/share/${code}`,
+            { requiresAuth: false }
+          );
+          setProfile(data.profile);
+          setUserProfile({ nickname: data.nickname, gender: data.gender, viewCount: data.viewCount });
+        } else if (profileMatch) {
+          const userId = profileMatch[1];
+          const profileData = await api.get<ProfileData>(`/api/v1/profile/public/${userId}`, { requiresAuth: false });
+          setProfile(profileData);
+          const userData = await api.get<UserProfile>(`/api/v1/users/${userId}/public`, { requiresAuth: false });
+          setUserProfile(userData);
+        } else {
+          setIsLoading(false);
+          return;
+        }
       } catch (error) {
         console.error('Failed to fetch profile:', error);
         toast.error('프로필을 불러올 수 없습니다');

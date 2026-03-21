@@ -43,7 +43,10 @@ class SecurityConfig(
                         "/login/**",
                         "/h2-console/**",
                         "/api/v1/profile/public/**",
-                        "/api/v1/users/*/public"
+                        "/api/v1/users/*/public",
+                        "/api/v1/ai-interview/questions",
+                        "/api/v1/ai-interview/analyze",
+                        "/api/v1/share/*"
                     ).permitAll()
                     .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                     .anyRequest().authenticated()
@@ -75,7 +78,7 @@ class SecurityConfig(
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
-        configuration.allowedOrigins = listOf("http://localhost:3000", "http://localhost:8080")
+        configuration.allowedOrigins = listOf("http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:8080")
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
         configuration.allowedHeaders = listOf("*")
         configuration.allowCredentials = true

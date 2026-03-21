@@ -109,6 +109,40 @@ class MatchmakerController(
         )
     }
 
+    @PostMapping("/me/withdraw")
+    @Transactional
+    fun requestWithdrawal(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @RequestBody request: WithdrawRequest
+    ): ResponseEntity<Map<String, Any>> {
+        val matchmaker = matchmakerRepository.findByUserId(authUser.userId)
+            ?: return ResponseEntity.notFound().build()
+
+        if (request.amount <= 0) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "출금 금액은 0보다 커야 합니다"))
+        }
+
+        if (matchmaker.earnings.getAvailablePoints() < request.amount) {
+            return ResponseEntity.badRequest().body(
+                mapOf("error" to "출금 가능 포인트가 부족합니다 (가용: ${matchmaker.earnings.getAvailablePoints()}P)")
+            )
+        }
+
+        val updated = matchmaker.copy(
+            earnings = matchmaker.earnings.withdraw(request.amount)
+        )
+        matchmakerRepository.save(updated)
+
+        return ResponseEntity.ok(
+            mapOf(
+                "success" to true,
+                "withdrawnAmount" to request.amount,
+                "remainingAvailable" to updated.earnings.getAvailablePoints(),
+                "message" to "${request.amount}P 출금 신청이 완료되었습니다"
+            )
+        )
+    }
+
     @PostMapping("/me/photo")
     @Transactional
     fun uploadProfilePhoto(
@@ -177,4 +211,8 @@ data class MatchmakerResponse(
 data class PhotoUploadResponse(
     val photoUrl: String,
     val uploadedAt: Instant
+)
+
+data class WithdrawRequest(
+    val amount: Int
 )

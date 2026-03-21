@@ -16,6 +16,7 @@ data class Profile(
     val photos: List<ProfilePhoto>,
     val videos: List<ProfileVideo>,
     val personalityTests: List<PersonalityTestResult>,
+    val colorType: ColorType? = null,
     val metadata: ProfileMetadata,
     val metrics: ProfileMetrics,
     val settings: ProfileSettings
@@ -100,6 +101,13 @@ data class Profile(
     fun updateSettings(settings: ProfileSettings): Profile {
         return copy(
             settings = settings,
+            metadata = metadata.update()
+        )
+    }
+
+    fun updateColorType(colorType: ColorType): Profile {
+        return copy(
+            colorType = colorType,
             metadata = metadata.update()
         )
     }

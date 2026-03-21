@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { MapPin, Briefcase } from "lucide-react";
+import { MapPin, Briefcase, SlidersHorizontal, X } from "lucide-react";
+import { Button } from "./ui/button";
+import { FortuneBanner } from "./FortuneBanner";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 
@@ -69,6 +71,8 @@ interface Profile {
 interface FeedProfileItem {
   profile: Profile;
   mutualFriends: string[];  // 공통 친구들의 닉네임 리스트
+  degree?: number;          // 1촌=1, 2촌=2, 3촌=3
+  viewCost?: number;        // 0=무료, 3000=3천원, 5000=5천원
 }
 
 interface FeedResponse {
@@ -87,26 +91,67 @@ interface UserProfile {
   isProfileCompleted: boolean;
 }
 
+interface FilterState {
+  ageMin: string;
+  ageMax: string;
+  heightMin: string;
+  heightMax: string;
+  region: string;
+  jobCategory: string;
+  degree: string; // "" | "1" | "2"
+}
+
+const REGIONS = ["서울", "경기", "인천", "부산", "대구", "광주", "대전", "울산", "세종", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
+const JOB_CATEGORIES = [
+  { value: "", label: "전체" },
+  { value: "IT_DEVELOPMENT", label: "IT/개발" },
+  { value: "FINANCE", label: "금융/보험" },
+  { value: "EDUCATION", label: "교육" },
+  { value: "MEDICAL", label: "의료/보건" },
+  { value: "MEDIA", label: "미디어/엔터" },
+  { value: "SERVICE", label: "서비스/영업" },
+  { value: "MANUFACTURING", label: "제조/생산" },
+  { value: "PUBLIC_OFFICIAL", label: "공무원/공공기관" },
+  { value: "PROFESSIONAL", label: "전문직" },
+  { value: "OTHER", label: "기타" },
+];
+
 export function MainFeedScreen({ onProfileClick }: MainFeedScreenProps) {
   const [feedItems, setFeedItems] = useState<FeedProfileItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [showFilter, setShowFilter] = useState(false);
+  const [filters, setFilters] = useState<FilterState>({
+    ageMin: "", ageMax: "", heightMin: "", heightMax: "",
+    region: "", jobCategory: "", degree: ""
+  });
+  const [pendingFilters, setPendingFilters] = useState<FilterState>({ ...filters });
 
   useEffect(() => {
     fetchUserAndFeed();
   }, []);
 
-  const fetchUserAndFeed = async () => {
+  const buildQueryString = (f: FilterState): string => {
+    const params = new URLSearchParams();
+    if (f.ageMin) params.set("ageMin", f.ageMin);
+    if (f.ageMax) params.set("ageMax", f.ageMax);
+    if (f.heightMin) params.set("heightMin", f.heightMin);
+    if (f.heightMax) params.set("heightMax", f.heightMax);
+    if (f.region) params.set("region", f.region);
+    if (f.jobCategory) params.set("jobCategory", f.jobCategory);
+    if (f.degree) params.set("degree", f.degree);
+    const qs = params.toString();
+    return qs ? `?${qs}` : "";
+  };
+
+  const fetchUserAndFeed = async (f: FilterState = filters) => {
     try {
       setLoading(true);
-
-      // Fetch user profile first to check account type
       const userData = await api.get<UserProfile>('/api/v1/auth/me');
       setUserProfile(userData);
 
-      // Only fetch feed for REGULAR users
       if (userData.accountType === "REGULAR") {
-        const feedResponse = await api.get<FeedResponse>("/api/v1/feed");
+        const feedResponse = await api.get<FeedResponse>(`/api/v1/feed${buildQueryString(f)}`);
         setFeedItems(feedResponse.items);
       }
     } catch (error) {
@@ -117,15 +162,182 @@ export function MainFeedScreen({ onProfileClick }: MainFeedScreenProps) {
     }
   };
 
+  const applyFilters = () => {
+    setFilters(pendingFilters);
+    setShowFilter(false);
+    fetchUserAndFeed(pendingFilters);
+  };
+
+  const resetFilters = () => {
+    const empty = { ageMin: "", ageMax: "", heightMin: "", heightMax: "", region: "", jobCategory: "", degree: "" };
+    setPendingFilters(empty);
+    setFilters(empty);
+    setShowFilter(false);
+    fetchUserAndFeed(empty);
+  };
+
+  const hasActiveFilters = Object.values(filters).some(v => v !== "");
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="bg-card border-b border-border px-6 py-4">
-        <h2 className="text-center text-xl font-semibold">Palette</h2>
-        <p className="text-sm text-center text-muted-foreground mt-1">
-          내 지인의 지인
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold">Palette</h2>
+            <p className="text-xs text-muted-foreground">내 지인의 지인</p>
+          </div>
+          <button
+            onClick={() => { setPendingFilters({ ...filters }); setShowFilter(true); }}
+            className={`relative p-2 rounded-full transition-colors ${showFilter ? "bg-primary/10 text-primary" : "hover:bg-accent"}`}
+          >
+            <SlidersHorizontal className="w-5 h-5" />
+            {hasActiveFilters && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Active Filter chips */}
+      {hasActiveFilters && (
+        <div className="flex gap-2 px-4 py-2 overflow-x-auto bg-card border-b border-border">
+          {filters.ageMin || filters.ageMax ? (
+            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full whitespace-nowrap">
+              나이: {filters.ageMin || "?"}-{filters.ageMax || "?"}세
+            </span>
+          ) : null}
+          {filters.heightMin || filters.heightMax ? (
+            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full whitespace-nowrap">
+              키: {filters.heightMin || "?"}-{filters.heightMax || "?"}cm
+            </span>
+          ) : null}
+          {filters.region && (
+            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full whitespace-nowrap">{filters.region}</span>
+          )}
+          {filters.jobCategory && (
+            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full whitespace-nowrap">
+              {JOB_CATEGORIES.find(j => j.value === filters.jobCategory)?.label || filters.jobCategory}
+            </span>
+          )}
+          <button onClick={resetFilters} className="text-xs text-muted-foreground underline whitespace-nowrap">
+            초기화
+          </button>
+        </div>
+      )}
+
+      {/* Filter Panel Overlay */}
+      {showFilter && (
+        <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowFilter(false)}>
+          <div
+            className="absolute right-0 top-0 h-full w-full max-w-sm bg-background overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-background border-b border-border px-4 py-4 flex items-center justify-between">
+              <h3 className="font-semibold">필터</h3>
+              <button onClick={() => setShowFilter(false)}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="px-4 py-5 space-y-6">
+              {/* Age */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium">나이</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number" placeholder="최소" min={18} max={60}
+                    value={pendingFilters.ageMin}
+                    onChange={e => setPendingFilters(p => ({ ...p, ageMin: e.target.value }))}
+                    className="flex-1 border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                  />
+                  <span className="text-muted-foreground">~</span>
+                  <input
+                    type="number" placeholder="최대" min={18} max={60}
+                    value={pendingFilters.ageMax}
+                    onChange={e => setPendingFilters(p => ({ ...p, ageMax: e.target.value }))}
+                    className="flex-1 border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                  />
+                  <span className="text-sm text-muted-foreground">세</span>
+                </div>
+              </div>
+
+              {/* Height */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium">키</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number" placeholder="최소" min={140} max={200}
+                    value={pendingFilters.heightMin}
+                    onChange={e => setPendingFilters(p => ({ ...p, heightMin: e.target.value }))}
+                    className="flex-1 border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                  />
+                  <span className="text-muted-foreground">~</span>
+                  <input
+                    type="number" placeholder="최대" min={140} max={200}
+                    value={pendingFilters.heightMax}
+                    onChange={e => setPendingFilters(p => ({ ...p, heightMax: e.target.value }))}
+                    className="flex-1 border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                  />
+                  <span className="text-sm text-muted-foreground">cm</span>
+                </div>
+              </div>
+
+              {/* Region */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium">지역</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setPendingFilters(p => ({ ...p, region: "" }))}
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${!pendingFilters.region ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-accent"}`}
+                  >
+                    전체
+                  </button>
+                  {REGIONS.map(r => (
+                    <button
+                      key={r}
+                      onClick={() => setPendingFilters(p => ({ ...p, region: p.region === r ? "" : r }))}
+                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${pendingFilters.region === r ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-accent"}`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Job Category */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium">직업</p>
+                <div className="flex flex-wrap gap-2">
+                  {JOB_CATEGORIES.map(j => (
+                    <button
+                      key={j.value}
+                      onClick={() => setPendingFilters(p => ({ ...p, jobCategory: j.value }))}
+                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${pendingFilters.jobCategory === j.value ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-accent"}`}
+                    >
+                      {j.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 2촌만 노출되므로 촌수 필터 제거 */}
+            </div>
+
+            <div className="sticky bottom-0 bg-background border-t border-border px-4 py-4 flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={resetFilters}>초기화</Button>
+              <Button className="flex-1" onClick={applyFilters}>적용하기</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fortune Banner */}
+      {!loading && userProfile?.accountType === "REGULAR" && (
+        <div className="pt-4">
+          <FortuneBanner />
+        </div>
+      )}
 
       {/* Feed Content */}
       <div className="p-6">
@@ -138,8 +350,8 @@ export function MainFeedScreen({ onProfileClick }: MainFeedScreenProps) {
           />
         ) : feedItems.length === 0 ? (
           <EmptyState
-            title="아직 추천받은 프로필이 없어요"
-            description="지인에게 주선을 요청하거나, 프로필을 완성하면 매칭이 시작됩니다"
+            title="조건에 맞는 프로필이 없어요"
+            description={hasActiveFilters ? "필터 조건을 조정해보세요" : "지인에게 주선을 요청하거나, 프로필을 완성하면 매칭이 시작됩니다"}
           />
         ) : (
           <div className="space-y-4">
@@ -158,7 +370,7 @@ export function MainFeedScreen({ onProfileClick }: MainFeedScreenProps) {
 }
 
 function ProfileCard({ item, onClick }: { item: FeedProfileItem; onClick: () => void }) {
-  const { profile, mutualFriends } = item;
+  const { profile, mutualFriends, degree = 2, viewCost = 3000 } = item;
 
   const getBodyTypeDisplay = (bodyType: string | null) => {
     if (!bodyType) return null;
@@ -214,6 +426,12 @@ function ProfileCard({ item, onClick }: { item: FeedProfileItem; onClick: () => 
             사진 없음
           </div>
         )}
+        {/* Degree badge */}
+        <div className="absolute top-2 left-2">
+          <span className="text-xs font-semibold px-2 py-1 rounded-full bg-primary/90 text-white">
+            2촌 · {(viewCost / 1000).toFixed(0)}천원
+          </span>
+        </div>
       </div>
 
       {/* Info */}

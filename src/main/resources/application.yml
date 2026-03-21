@@ -67,16 +67,16 @@ aws:
   s3:
     bucket-name: ${AWS_S3_BUCKET_NAME:palette-data-v1}
   credentials:
-    access-key: ${AWS_ACCESS_KEY_ID}
-    secret-key: ${AWS_SECRET_ACCESS_KEY}
+    access-key: ${AWS_ACCESS_KEY_ID:dummy-access-key}
+    secret-key: ${AWS_SECRET_ACCESS_KEY:dummy-secret-key}
 
 # NCP SENS SMS Configuration
 ncp:
   sens:
-    access-key: ${NCP_SENS_ACCESS_KEY}
-    secret-key: ${NCP_SENS_SECRET_KEY}
-    service-id: ${NCP_SENS_SERVICE_ID}
-    from-number: ${NCP_SENS_FROM_NUMBER}
+    access-key: ${NCP_SENS_ACCESS_KEY:dummy-access-key}
+    secret-key: ${NCP_SENS_SECRET_KEY:dummy-secret-key}
+    service-id: ${NCP_SENS_SERVICE_ID:dummy-service-id}
+    from-number: ${NCP_SENS_FROM_NUMBER:01000000000}
 
 # Logging
 logging:

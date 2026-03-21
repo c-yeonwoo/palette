@@ -12,6 +12,8 @@ import { PhotoUploadScreen } from "./components/PhotoUploadScreen";
 import { AboutMeScreen } from "./components/AboutMeScreen";
 import { IdealTypeScreen } from "./components/IdealTypeScreen";
 import { AIProfileEnhanceScreen } from "./components/AIProfileEnhanceScreen";
+import { AIInterviewScreen } from "./components/AIInterviewScreen";
+import { ColorTypeResultScreen } from "./components/ColorTypeResultScreen";
 import { MyProfileScreen } from "./components/MyProfileScreen";
 import { ProfileEditScreen } from "./components/ProfileEditScreen";
 import { ProfileDetailScreen } from "./components/ProfileDetailScreen";
@@ -20,9 +22,14 @@ import { IntroductionHistoryScreen } from "./components/IntroductionHistoryScree
 import { ConnectorDashboard } from "./components/ConnectorDashboard";
 import { MyPageScreen } from "./components/MyPageScreen";
 import { PublicProfileScreen } from "./components/PublicProfileScreen";
+import { PromptManagementScreen } from "./components/PromptManagementScreen";
+import { FriendConnectScreen } from "./components/FriendConnectScreen";
+import { MatchmakerRewardScreen } from "./components/MatchmakerRewardScreen";
+import { NotificationScreen } from "./components/NotificationScreen";
+import { LeagueScreen } from "./components/LeagueScreen";
 import { Toaster } from "./components/ui/sonner";
 import { Button } from "./components/ui/button";
-import { Home, UserCircle, Clock, HeartHandshake, User } from "lucide-react";
+import { Home, UserCircle, Clock, HeartHandshake, User, Bell, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { authService } from "../lib/auth/authService";
 import { tokenStorage } from "../lib/auth/tokenStorage";
@@ -42,6 +49,8 @@ type Screen =
   | "aboutMe"
   | "idealType"
   | "aiProfileEnhance"
+  | "aiInterview"
+  | "colorTypeResult"
   | "myProfile"
   | "profileEdit"
   | "profileDetail"
@@ -49,7 +58,12 @@ type Screen =
   | "introductionHistory"
   | "connectorDashboard"
   | "myPage"
-  | "publicProfile";
+  | "publicProfile"
+  | "promptManagement"
+  | "friendConnect"
+  | "matchmakerReward"
+  | "notifications"
+  | "league";
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>("login");
@@ -61,6 +75,16 @@ export default function App() {
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>(undefined);
   const [selectedMutualFriends, setSelectedMutualFriends] = useState<string[]>([]);
+  const [selectedDegree, setSelectedDegree] = useState<number>(2);
+  const [selectedViewCost, setSelectedViewCost] = useState<number>(3000);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [colorTypeResult, setColorTypeResult] = useState<{
+    colorType: string;
+    colorName: string;
+    colorHex: string;
+    colorDescription: string;
+    generatedIntroduction: string;
+  } | null>(null);
 
   // Profile data collected during registration
   const [profileData, setProfileData] = useState({
@@ -122,9 +146,10 @@ export default function App() {
   // Check authentication state on mount
   useEffect(() => {
     const checkAuth = async () => {
-      // Check if this is a public profile URL
+      // Check if this is a public profile URL or share link
       const profileMatch = window.location.pathname.match(/^\/profile\/(.+)$/);
-      if (profileMatch) {
+      const shareMatch = window.location.pathname.match(/^\/share\/(.+)$/);
+      if (profileMatch || shareMatch) {
         setCurrentScreen("publicProfile");
         setIsLoading(false);
         return;
@@ -168,6 +193,19 @@ export default function App() {
 
     checkAuth();
   }, []);
+
+  // Poll unread notification count when logged in
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const fetchUnread = () => {
+      api.get<{ count: number }>("/api/v1/notifications/unread-count")
+        .then(r => setUnreadNotificationCount(r.count))
+        .catch(() => {});
+    };
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, [isLoggedIn]);
 
   const handleOAuth2Success = (isNewUser: boolean, missingFields?: string[]) => {
     setIsLoggedIn(true);
@@ -240,7 +278,27 @@ export default function App() {
       mainPhotoIndex: data.mainPhotoIndex,
       video: data.video,
     }));
-    setCurrentScreen("aboutMe");
+    setCurrentScreen("aiInterview");
+  };
+
+  const handleAIInterviewComplete = (result: any, answers: Record<string, string>) => {
+    setColorTypeResult(result);
+    // 인터뷰 답변을 introduction에 매핑
+    setProfileData(prev => ({
+      ...prev,
+      introduction: {
+        ...prev.introduction,
+        text: result.generatedIntroduction,
+        interviewAnswers: {
+          hobby: answers.weekend || "",
+          charm: answers.personality || "",
+          passion: answers.passion || "",
+          happiness: answers.happiness || "",
+          motto: answers.motto || "",
+        },
+      },
+    }));
+    setCurrentScreen("colorTypeResult");
   };
 
   const handlePhotoBack = () => {
@@ -253,6 +311,21 @@ export default function App() {
       introduction: data.introduction,
       lifestyleInfo: data.lifestyleInfo || prev.lifestyleInfo,
     }));
+    setCurrentScreen("idealType");
+  };
+
+  const handleColorTypeResultContinue = async () => {
+    // 컬러 타입을 백엔드에 저장
+    if (colorTypeResult) {
+      try {
+        await api.post("/api/v1/ai-interview/complete", {
+          colorType: colorTypeResult.colorType,
+          answers: {},
+        });
+      } catch (e) {
+        console.warn("컬러 타입 저장 실패 (무시하고 계속)", e);
+      }
+    }
     setCurrentScreen("idealType");
   };
 
@@ -519,6 +592,8 @@ export default function App() {
   const handleProfileClick = (item: any) => {
     setSelectedUserId(item.profile.userId);
     setSelectedMutualFriends(item.mutualFriends || []);
+    setSelectedDegree(item.degree ?? 2);
+    setSelectedViewCost(item.viewCost ?? 3000);
     setCurrentScreen("profileDetail");
   };
 
@@ -619,6 +694,24 @@ export default function App() {
         />
       )}
       
+      {currentScreen === "aiInterview" && (
+        <AIInterviewScreen
+          onComplete={handleAIInterviewComplete}
+          onBack={() => setCurrentScreen("photoUpload")}
+        />
+      )}
+
+      {currentScreen === "colorTypeResult" && colorTypeResult && (
+        <ColorTypeResultScreen
+          colorType={colorTypeResult.colorType}
+          colorName={colorTypeResult.colorName}
+          colorHex={colorTypeResult.colorHex}
+          colorDescription={colorTypeResult.colorDescription}
+          generatedIntroduction={colorTypeResult.generatedIntroduction}
+          onContinue={handleColorTypeResultContinue}
+        />
+      )}
+
       {currentScreen === "aboutMe" && (
         <AboutMeScreen
           onNext={handleAboutMeNext}
@@ -671,11 +764,16 @@ export default function App() {
           userId={selectedUserId}
           onBack={handleProfileDetailBack}
           mutualFriends={selectedMutualFriends}
+          degree={selectedDegree}
+          viewCost={selectedViewCost}
         />
       )}
 
       {currentScreen === "connectorDashboard" && (
-        <ConnectorDashboard onBack={handleConnectorDashboardBack} />
+        <ConnectorDashboard
+          onBack={handleConnectorDashboardBack}
+          onNavigateToReward={() => setCurrentScreen("matchmakerReward")}
+        />
       )}
 
       {currentScreen === "myPage" && (
@@ -683,6 +781,8 @@ export default function App() {
           onNavigateToProfile={() => setCurrentScreen("myProfile")}
           onNavigateToConnector={() => setCurrentScreen("connectorDashboard")}
           onConvertToRegular={handleConvertToRegular}
+          onNavigateToPromptManagement={() => setCurrentScreen("promptManagement")}
+          onNavigateToFriends={() => setCurrentScreen("friendConnect")}
           onLogout={() => {
             setIsLoggedIn(false);
             setCurrentScreen("login");
@@ -692,11 +792,30 @@ export default function App() {
 
       {currentScreen === "publicProfile" && <PublicProfileScreen />}
 
+      {currentScreen === "promptManagement" && <PromptManagementScreen />}
+
+      {currentScreen === "friendConnect" && (
+        <FriendConnectScreen onBack={() => setCurrentScreen("myPage")} />
+      )}
+
+      {currentScreen === "matchmakerReward" && (
+        <MatchmakerRewardScreen onBack={() => setCurrentScreen("connectorDashboard")} />
+      )}
+
+      {currentScreen === "notifications" && (
+        <NotificationScreen
+          onBack={() => setCurrentScreen("mainFeed")}
+        />
+      )}
+
+      {currentScreen === "league" && <LeagueScreen />}
+
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding/detail screens */}
-      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "matchmakerInfo", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "aboutMe", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "matchmakerInfo", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "aboutMe", "aiInterview", "colorTypeResult", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "notifications"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}
+          unreadNotifications={unreadNotificationCount}
         />
       )}
 
@@ -708,9 +827,11 @@ export default function App() {
 function BottomNavigation({
   currentScreen,
   onNavigate,
+  unreadNotifications = 0,
 }: {
   currentScreen: Screen;
   onNavigate: (screen: Screen) => void;
+  unreadNotifications?: number;
 }) {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-30">
@@ -728,6 +849,19 @@ function BottomNavigation({
           onClick={() => onNavigate("introductionHistory")}
         />
         <NavButton
+          icon={Trophy}
+          label="리그"
+          active={currentScreen === "league"}
+          onClick={() => onNavigate("league")}
+        />
+        <NavButton
+          icon={Bell}
+          label="알림"
+          active={currentScreen === "notifications"}
+          onClick={() => onNavigate("notifications")}
+          badge={unreadNotifications > 0 ? unreadNotifications : undefined}
+        />
+        <NavButton
           icon={User}
           label="마이페이지"
           active={currentScreen === "myPage" || currentScreen === "myProfile" || currentScreen === "connectorDashboard"}
@@ -743,11 +877,13 @@ function NavButton({
   label,
   active,
   onClick,
+  badge,
 }: {
   icon: React.ElementType;
   label: string;
   active: boolean;
   onClick: () => void;
+  badge?: number;
 }) {
   return (
     <button
@@ -756,7 +892,14 @@ function NavButton({
         active ? "text-primary" : "text-muted-foreground hover:text-foreground"
       }`}
     >
-      <Icon className="w-6 h-6" />
+      <div className="relative">
+        <Icon className="w-6 h-6" />
+        {badge !== undefined && badge > 0 && (
+          <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+            {badge > 9 ? "9+" : badge}
+          </span>
+        )}
+      </div>
       <span className="text-xs">{label}</span>
     </button>
   );

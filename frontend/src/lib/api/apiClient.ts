@@ -22,8 +22,8 @@ export async function apiRequest<T>(
 
   const headers = new Headers(fetchOptions.headers);
 
-  // Add Content-Type if not set
-  if (!headers.has('Content-Type')) {
+  // Add Content-Type if not set (skip for FormData - browser sets with boundary)
+  if (!headers.has('Content-Type') && !(fetchOptions.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
 
@@ -78,8 +78,25 @@ export async function apiRequest<T>(
     }
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(error || `HTTP ${response.status}: ${response.statusText}`);
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      try {
+        const errorBody = await response.json();
+        // Handle GlobalExceptionHandler ErrorResponse format
+        if (errorBody.message) {
+          errorMessage = errorBody.message;
+        } else if (typeof errorBody === 'string') {
+          errorMessage = errorBody;
+        }
+      } catch {
+        // Fallback to text
+        try {
+          const errorText = await response.text();
+          if (errorText) errorMessage = errorText;
+        } catch { /* ignore */ }
+      }
+      const err = new Error(errorMessage) as Error & { status: number; code?: string };
+      err.status = response.status;
+      throw err;
     }
 
     // Return empty object for 204 No Content
@@ -133,4 +150,12 @@ export const api = {
 
   delete: <T>(endpoint: string, options?: ApiRequestOptions) =>
     apiRequest<T>(endpoint, { ...options, method: 'DELETE' }),
+
+  postForm: <T>(endpoint: string, formData: FormData, options?: ApiRequestOptions) =>
+    apiRequest<T>(endpoint, {
+      ...options,
+      method: 'POST',
+      body: formData,
+      headers: {}, // Let browser set Content-Type with boundary
+    }),
 };

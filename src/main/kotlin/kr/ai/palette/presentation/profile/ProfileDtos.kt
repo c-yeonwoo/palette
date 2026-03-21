@@ -17,6 +17,7 @@ data class ProfileResponse(
     val personalityTests: List<PersonalityTestResultDto>,
     val photos: List<ProfilePhotoDto>,
     val primaryPhotoUrl: String?,
+    val colorType: ColorTypeDto?,
     val metadata: ProfileMetadataDto,
     val metrics: ProfileMetricsDto,
     val settings: ProfileSettingsDto
@@ -36,11 +37,28 @@ data class ProfileResponse(
                 personalityTests = profile.personalityTests.map { PersonalityTestResultDto.from(it) },
                 photos = profile.photos.map { ProfilePhotoDto.from(it) },
                 primaryPhotoUrl = profile.photos.firstOrNull { it.isPrimary }?.url,
+                colorType = profile.colorType?.let { ColorTypeDto.from(it) },
                 metadata = ProfileMetadataDto.from(profile.metadata),
                 metrics = ProfileMetricsDto.from(profile.metrics),
                 settings = ProfileSettingsDto.from(profile.settings)
             )
         }
+    }
+}
+
+data class ColorTypeDto(
+    val type: String?,
+    val name: String?,
+    val hex: String?,
+    val description: String?
+) {
+    companion object {
+        fun from(ct: ColorType) = ColorTypeDto(
+            type = ct.type?.name,
+            name = ct.name,
+            hex = ct.hex,
+            description = ct.description
+        )
     }
 }
 
@@ -329,6 +347,10 @@ data class ProfileSettingsDto(
         }
     }
 }
+
+data class ToggleVisibilityRequest(
+    val visible: Boolean
+)
 
 data class PersonalityTestResultDto(
     val link: String,

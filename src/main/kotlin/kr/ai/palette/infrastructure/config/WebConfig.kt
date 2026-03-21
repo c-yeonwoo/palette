@@ -8,8 +8,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 class WebConfig : WebMvcConfigurer {
 
     override fun addResourceHandlers(registry: ResourceHandlerRegistry) {
-        // 업로드된 파일을 정적 리소스로 서빙
+        // 업로드된 파일을 정적 리소스로 서빙 (로컬 스토리지)
+        val tmpDir = System.getProperty("java.io.tmpdir")
         registry.addResourceHandler("/uploads/**")
-            .addResourceLocations("file:uploads/")
+            .addResourceLocations("file:$tmpDir/palette-uploads/")
     }
 }
