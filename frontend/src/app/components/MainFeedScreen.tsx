@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MapPin, Briefcase, SlidersHorizontal, X } from "lucide-react";
+import { MapPin, SlidersHorizontal, X, Bell } from "lucide-react";
 import { Button } from "./ui/button";
 import { FortuneBanner } from "./FortuneBanner";
 import { api } from "../../lib/api/apiClient";
@@ -41,13 +41,6 @@ interface IntroductionDto {
   interviewAnswers: any;
 }
 
-interface ProfileMetadataDto {
-  createdAt: string;
-  updatedAt: string;
-  lastAccessedAt: string;
-  deletedAt: string | null;
-}
-
 interface ProfileMetricsDto {
   completionRate: number;
   trustScore: number;
@@ -64,15 +57,14 @@ interface Profile {
   introduction: IntroductionDto;
   photos: ProfilePhoto[];
   primaryPhotoUrl: string | null;
-  metadata: ProfileMetadataDto;
   metrics: ProfileMetricsDto;
 }
 
 interface FeedProfileItem {
   profile: Profile;
-  mutualFriends: string[];  // 공통 친구들의 닉네임 리스트
-  degree?: number;          // 1촌=1, 2촌=2, 3촌=3
-  viewCost?: number;        // 0=무료, 3000=3천원, 5000=5천원
+  mutualFriends: string[];
+  degree?: number;
+  viewCost?: number;
 }
 
 interface FeedResponse {
@@ -82,6 +74,8 @@ interface FeedResponse {
 
 interface MainFeedScreenProps {
   onProfileClick?: (item: FeedProfileItem) => void;
+  onNotificationClick?: () => void;
+  unreadNotifications?: number;
 }
 
 interface UserProfile {
@@ -98,7 +92,7 @@ interface FilterState {
   heightMax: string;
   region: string;
   jobCategory: string;
-  degree: string; // "" | "1" | "2"
+  degree: string;
 }
 
 const REGIONS = ["서울", "경기", "인천", "부산", "대구", "광주", "대전", "울산", "세종", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
@@ -116,7 +110,7 @@ const JOB_CATEGORIES = [
   { value: "OTHER", label: "기타" },
 ];
 
-export function MainFeedScreen({ onProfileClick }: MainFeedScreenProps) {
+export function MainFeedScreen({ onProfileClick, onNotificationClick, unreadNotifications = 0 }: MainFeedScreenProps) {
   const [feedItems, setFeedItems] = useState<FeedProfileItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -139,7 +133,6 @@ export function MainFeedScreen({ onProfileClick }: MainFeedScreenProps) {
     if (f.heightMax) params.set("heightMax", f.heightMax);
     if (f.region) params.set("region", f.region);
     if (f.jobCategory) params.set("jobCategory", f.jobCategory);
-    if (f.degree) params.set("degree", f.degree);
     const qs = params.toString();
     return qs ? `?${qs}` : "";
   };
@@ -149,7 +142,6 @@ export function MainFeedScreen({ onProfileClick }: MainFeedScreenProps) {
       setLoading(true);
       const userData = await api.get<UserProfile>('/api/v1/auth/me');
       setUserProfile(userData);
-
       if (userData.accountType === "REGULAR") {
         const feedResponse = await api.get<FeedResponse>(`/api/v1/feed${buildQueryString(f)}`);
         setFeedItems(feedResponse.items);
@@ -169,198 +161,168 @@ export function MainFeedScreen({ onProfileClick }: MainFeedScreenProps) {
   };
 
   const resetFilters = () => {
-    const empty = { ageMin: "", ageMax: "", heightMin: "", heightMax: "", region: "", jobCategory: "", degree: "" };
+    const empty: FilterState = { ageMin: "", ageMax: "", heightMin: "", heightMax: "", region: "", jobCategory: "", degree: "" };
     setPendingFilters(empty);
     setFilters(empty);
     setShowFilter(false);
     fetchUserAndFeed(empty);
   };
 
-  const hasActiveFilters = Object.values(filters).some(v => v !== "");
+  const hasActiveFilters = Object.entries(filters).some(([k, v]) => k !== "degree" && v !== "");
 
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <div className="bg-card border-b border-border px-6 py-4">
+      <div className="px-5 pt-6 pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold">Palette</h2>
-            <p className="text-xs text-muted-foreground">내 지인의 지인</p>
+            <p className="text-[11px] font-semibold text-muted-foreground tracking-[0.18em] uppercase mb-0.5">Palette</p>
+            <h1 className="text-[26px] font-bold tracking-tight leading-none">주변 지인</h1>
           </div>
-          <button
-            onClick={() => { setPendingFilters({ ...filters }); setShowFilter(true); }}
-            className={`relative p-2 rounded-full transition-colors ${showFilter ? "bg-primary/10 text-primary" : "hover:bg-accent"}`}
-          >
-            <SlidersHorizontal className="w-5 h-5" />
-            {hasActiveFilters && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onNotificationClick}
+              className="relative w-10 h-10 rounded-2xl flex items-center justify-center bg-card shadow-sm text-foreground"
+            >
+              <Bell className="w-4 h-4" />
+              {unreadNotifications > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
+              )}
+            </button>
+            <button
+              onClick={() => { setPendingFilters({ ...filters }); setShowFilter(true); }}
+              className={`relative w-10 h-10 rounded-2xl flex items-center justify-center transition-colors shadow-sm ${
+                showFilter || hasActiveFilters ? "bg-primary text-primary-foreground" : "bg-card text-foreground"
+              }`}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+            </button>
+          </div>
         </div>
+
+        {/* Active filter chips */}
+        {hasActiveFilters && (
+          <div className="flex gap-1.5 mt-3 overflow-x-auto pb-0.5">
+            {(filters.ageMin || filters.ageMax) && (
+              <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
+                {filters.ageMin || "?"}-{filters.ageMax || "?"}세
+              </span>
+            )}
+            {(filters.heightMin || filters.heightMax) && (
+              <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
+                {filters.heightMin || "?"}-{filters.heightMax || "?"}cm
+              </span>
+            )}
+            {filters.region && (
+              <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">{filters.region}</span>
+            )}
+            {filters.jobCategory && (
+              <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
+                {JOB_CATEGORIES.find(j => j.value === filters.jobCategory)?.label}
+              </span>
+            )}
+            <button onClick={resetFilters} className="text-xs text-muted-foreground px-2.5 py-1 rounded-full bg-muted whitespace-nowrap">
+              초기화
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Active Filter chips */}
-      {hasActiveFilters && (
-        <div className="flex gap-2 px-4 py-2 overflow-x-auto bg-card border-b border-border">
-          {filters.ageMin || filters.ageMax ? (
-            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full whitespace-nowrap">
-              나이: {filters.ageMin || "?"}-{filters.ageMax || "?"}세
-            </span>
-          ) : null}
-          {filters.heightMin || filters.heightMax ? (
-            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full whitespace-nowrap">
-              키: {filters.heightMin || "?"}-{filters.heightMax || "?"}cm
-            </span>
-          ) : null}
-          {filters.region && (
-            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full whitespace-nowrap">{filters.region}</span>
-          )}
-          {filters.jobCategory && (
-            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full whitespace-nowrap">
-              {JOB_CATEGORIES.find(j => j.value === filters.jobCategory)?.label || filters.jobCategory}
-            </span>
-          )}
-          <button onClick={resetFilters} className="text-xs text-muted-foreground underline whitespace-nowrap">
-            초기화
-          </button>
-        </div>
-      )}
-
-      {/* Filter Panel Overlay */}
+      {/* Filter Panel */}
       {showFilter && (
-        <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setShowFilter(false)}>
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowFilter(false)}>
           <div
             className="absolute right-0 top-0 h-full w-full max-w-sm bg-background overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
-            <div className="sticky top-0 bg-background border-b border-border px-4 py-4 flex items-center justify-between">
-              <h3 className="font-semibold">필터</h3>
-              <button onClick={() => setShowFilter(false)}>
-                <X className="w-5 h-5" />
+            <div className="sticky top-0 bg-background/90 backdrop-blur-xl border-b border-border px-5 py-4 flex items-center justify-between">
+              <h3 className="font-semibold text-base">필터</h3>
+              <button onClick={() => setShowFilter(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                <X className="w-4 h-4" />
               </button>
             </div>
-
-            <div className="px-4 py-5 space-y-6">
-              {/* Age */}
-              <div className="space-y-2">
-                <p className="text-sm font-medium">나이</p>
+            <div className="px-5 py-6 space-y-7">
+              <FilterSection title="나이">
                 <div className="flex items-center gap-2">
-                  <input
-                    type="number" placeholder="최소" min={18} max={60}
+                  <input type="number" placeholder="최소" min={18} max={60}
                     value={pendingFilters.ageMin}
                     onChange={e => setPendingFilters(p => ({ ...p, ageMin: e.target.value }))}
-                    className="flex-1 border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                    className="flex-1 bg-muted rounded-xl px-3 py-2.5 text-sm border-0 outline-none focus:ring-2 focus:ring-primary/30"
                   />
-                  <span className="text-muted-foreground">~</span>
-                  <input
-                    type="number" placeholder="최대" min={18} max={60}
+                  <span className="text-muted-foreground text-sm">–</span>
+                  <input type="number" placeholder="최대" min={18} max={60}
                     value={pendingFilters.ageMax}
                     onChange={e => setPendingFilters(p => ({ ...p, ageMax: e.target.value }))}
-                    className="flex-1 border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                    className="flex-1 bg-muted rounded-xl px-3 py-2.5 text-sm border-0 outline-none focus:ring-2 focus:ring-primary/30"
                   />
                   <span className="text-sm text-muted-foreground">세</span>
                 </div>
-              </div>
+              </FilterSection>
 
-              {/* Height */}
-              <div className="space-y-2">
-                <p className="text-sm font-medium">키</p>
+              <FilterSection title="키">
                 <div className="flex items-center gap-2">
-                  <input
-                    type="number" placeholder="최소" min={140} max={200}
+                  <input type="number" placeholder="최소" min={140} max={200}
                     value={pendingFilters.heightMin}
                     onChange={e => setPendingFilters(p => ({ ...p, heightMin: e.target.value }))}
-                    className="flex-1 border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                    className="flex-1 bg-muted rounded-xl px-3 py-2.5 text-sm border-0 outline-none focus:ring-2 focus:ring-primary/30"
                   />
-                  <span className="text-muted-foreground">~</span>
-                  <input
-                    type="number" placeholder="최대" min={140} max={200}
+                  <span className="text-muted-foreground text-sm">–</span>
+                  <input type="number" placeholder="최대" min={140} max={200}
                     value={pendingFilters.heightMax}
                     onChange={e => setPendingFilters(p => ({ ...p, heightMax: e.target.value }))}
-                    className="flex-1 border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                    className="flex-1 bg-muted rounded-xl px-3 py-2.5 text-sm border-0 outline-none focus:ring-2 focus:ring-primary/30"
                   />
                   <span className="text-sm text-muted-foreground">cm</span>
                 </div>
-              </div>
+              </FilterSection>
 
-              {/* Region */}
-              <div className="space-y-2">
-                <p className="text-sm font-medium">지역</p>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setPendingFilters(p => ({ ...p, region: "" }))}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${!pendingFilters.region ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-accent"}`}
-                  >
-                    전체
-                  </button>
+              <FilterSection title="지역">
+                <div className="flex flex-wrap gap-1.5">
+                  <ChipButton active={!pendingFilters.region} onClick={() => setPendingFilters(p => ({ ...p, region: "" }))}>전체</ChipButton>
                   {REGIONS.map(r => (
-                    <button
-                      key={r}
-                      onClick={() => setPendingFilters(p => ({ ...p, region: p.region === r ? "" : r }))}
-                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${pendingFilters.region === r ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-accent"}`}
-                    >
+                    <ChipButton key={r} active={pendingFilters.region === r} onClick={() => setPendingFilters(p => ({ ...p, region: p.region === r ? "" : r }))}>
                       {r}
-                    </button>
+                    </ChipButton>
                   ))}
                 </div>
-              </div>
+              </FilterSection>
 
-              {/* Job Category */}
-              <div className="space-y-2">
-                <p className="text-sm font-medium">직업</p>
-                <div className="flex flex-wrap gap-2">
+              <FilterSection title="직업">
+                <div className="flex flex-wrap gap-1.5">
                   {JOB_CATEGORIES.map(j => (
-                    <button
-                      key={j.value}
-                      onClick={() => setPendingFilters(p => ({ ...p, jobCategory: j.value }))}
-                      className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${pendingFilters.jobCategory === j.value ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-accent"}`}
-                    >
+                    <ChipButton key={j.value} active={pendingFilters.jobCategory === j.value} onClick={() => setPendingFilters(p => ({ ...p, jobCategory: j.value }))}>
                       {j.label}
-                    </button>
+                    </ChipButton>
                   ))}
                 </div>
-              </div>
-
-              {/* 2촌만 노출되므로 촌수 필터 제거 */}
+              </FilterSection>
             </div>
-
-            <div className="sticky bottom-0 bg-background border-t border-border px-4 py-4 flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={resetFilters}>초기화</Button>
-              <Button className="flex-1" onClick={applyFilters}>적용하기</Button>
+            <div className="sticky bottom-0 bg-background/90 backdrop-blur-xl border-t border-border px-5 py-4 flex gap-2.5">
+              <Button variant="outline" className="flex-1 rounded-xl h-11" onClick={resetFilters}>초기화</Button>
+              <Button className="flex-1 rounded-xl h-11" onClick={applyFilters}>적용하기</Button>
             </div>
           </div>
         </div>
       )}
 
       {/* Fortune Banner */}
-      {!loading && userProfile?.accountType === "REGULAR" && (
-        <div className="pt-4">
-          <FortuneBanner />
-        </div>
-      )}
+      {!loading && userProfile?.accountType === "REGULAR" && <FortuneBanner />}
 
-      {/* Feed Content */}
-      <div className="p-6">
+      {/* Feed */}
+      <div className="px-4">
         {loading ? (
           <LoadingState />
         ) : userProfile?.accountType === "MATCHMAKER_ONLY" ? (
-          <EmptyState
-            title="주선자 전용 계정입니다"
-            description="주선 기능은 주선자 대시보드에서 이용하실 수 있습니다"
-          />
+          <EmptyState title="주선자 전용 계정" description="주선 기능은 주선자 대시보드에서 이용하실 수 있습니다" />
         ) : feedItems.length === 0 ? (
           <EmptyState
-            title="조건에 맞는 프로필이 없어요"
-            description={hasActiveFilters ? "필터 조건을 조정해보세요" : "지인에게 주선을 요청하거나, 프로필을 완성하면 매칭이 시작됩니다"}
+            title="아직 주변 지인이 없어요"
+            description={hasActiveFilters ? "필터 조건을 조정해보세요" : "지인에게 주선을 요청하거나 프로필을 완성해보세요"}
           />
         ) : (
-          <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
             {feedItems.map((item) => (
-              <ProfileCard
-                key={item.profile.userId}
-                item={item}
-                onClick={() => onProfileClick?.(item)}
-              />
+              <ProfileCard key={item.profile.userId} item={item} onClick={() => onProfileClick?.(item)} />
             ))}
           </div>
         )}
@@ -370,126 +332,100 @@ export function MainFeedScreen({ onProfileClick }: MainFeedScreenProps) {
 }
 
 function ProfileCard({ item, onClick }: { item: FeedProfileItem; onClick: () => void }) {
-  const { profile, mutualFriends, degree = 2, viewCost = 3000 } = item;
+  const { profile, mutualFriends, viewCost = 3000 } = item;
 
-  const getBodyTypeDisplay = (bodyType: string | null) => {
-    if (!bodyType) return null;
-    const bodyTypeMap: Record<string, string> = {
-      SLIM: "슬림",
-      AVERAGE: "보통",
-      ATHLETIC: "탄탄",
-      MUSCULAR: "근육질",
-      CHUBBY: "통통",
-      CURVY: "풍만",
-    };
-    return bodyTypeMap[bodyType] || bodyType;
+  const jobMap: Record<string, string> = {
+    IT_DEVELOPMENT: "IT개발", FINANCE: "금융", EDUCATION: "교육", MEDICAL: "의료",
+    MEDIA: "미디어", SERVICE: "서비스", MANUFACTURING: "제조", PUBLIC_OFFICIAL: "공무원",
+    PROFESSIONAL: "전문직", OTHER: "기타",
   };
+  const job = profile.careerInfo.category ? jobMap[profile.careerInfo.category] ?? null : null;
+  const location = profile.locationInfo.sido;
 
-  const getJobCategoryDisplay = (category: string | null) => {
-    if (!category) return null;
-    const jobMap: Record<string, string> = {
-      IT_DEVELOPMENT: "IT/개발",
-      FINANCE: "금융/보험",
-      EDUCATION: "교육",
-      MEDICAL: "의료/보건",
-      MEDIA: "미디어/엔터",
-      SERVICE: "서비스/영업",
-      MANUFACTURING: "제조/생산",
-      PUBLIC_OFFICIAL: "공무원/공공기관",
-      PROFESSIONAL: "전문직",
-      OTHER: "기타",
-    };
-    return jobMap[category] || category;
-  };
-
-  const getMutualFriendsText = () => {
-    if (mutualFriends.length === 0) return "";
-    if (mutualFriends.length === 1) return `${mutualFriends[0]}의 지인`;
-    return `${mutualFriends[0]} 외 ${mutualFriends.length - 1}명의 지인`;
-  };
+  const mutualText = mutualFriends.length === 0 ? null
+    : mutualFriends.length === 1 ? `${mutualFriends[0]}의 지인`
+    : `${mutualFriends[0]} 외 ${mutualFriends.length - 1}명의 지인`;
 
   return (
-    <div
-      onClick={onClick}
-      className="bg-card rounded-2xl overflow-hidden border border-border hover:shadow-lg transition-shadow cursor-pointer"
-    >
-      {/* Photo */}
-      <div className="aspect-[4/5] bg-muted relative">
+    <div onClick={onClick} className="cursor-pointer">
+      {/* Photo card */}
+      <div className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-muted shadow-sm">
         {profile.primaryPhotoUrl ? (
-          <img
-            src={profile.primaryPhotoUrl}
-            alt="프로필"
-            className="w-full h-full object-cover"
-          />
+          <img src={profile.primaryPhotoUrl} alt="" className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            사진 없음
+          <div className="w-full h-full bg-gradient-to-br from-muted via-accent to-muted/60 flex items-center justify-center">
+            <span className="text-5xl opacity-20 select-none">👤</span>
           </div>
         )}
-        {/* Degree badge */}
-        <div className="absolute top-2 left-2">
-          <span className="text-xs font-semibold px-2 py-1 rounded-full bg-primary/90 text-white">
-            2촌 · {(viewCost / 1000).toFixed(0)}천원
+
+        {/* Bottom gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
+
+        {/* Cost pill */}
+        <div className="absolute top-2.5 right-2.5">
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-sm text-white/90">
+            {(viewCost / 1000).toFixed(0)}천원
           </span>
         </div>
-      </div>
 
-      {/* Info */}
-      <div className="p-4 space-y-3">
-        {/* Basic Info */}
-        <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-          {profile.basicInfo.height && <span>{profile.basicInfo.height}cm</span>}
-          {profile.basicInfo.bodyType && <span>· {getBodyTypeDisplay(profile.basicInfo.bodyType)}</span>}
-          {profile.basicInfo.mbti && <span>· {profile.basicInfo.mbti}</span>}
+        {/* Bottom info overlay */}
+        <div className="absolute bottom-0 left-0 right-0 px-3 pb-3">
+          {profile.basicInfo.height && (
+            <p className="text-white text-sm font-semibold leading-tight">
+              {profile.basicInfo.height}cm
+              {profile.basicInfo.mbti && (
+                <span className="font-normal opacity-75"> · {profile.basicInfo.mbti}</span>
+              )}
+            </p>
+          )}
+          {(job || location) && (
+            <p className="text-white/70 text-[11px] mt-0.5">
+              {[job, location].filter(Boolean).join(" · ")}
+            </p>
+          )}
         </div>
-
-        {/* Location */}
-        {(profile.locationInfo.sido || profile.locationInfo.sigungu) && (
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <MapPin className="w-4 h-4" />
-            <span>
-              {profile.locationInfo.sido} {profile.locationInfo.sigungu}
-            </span>
-          </div>
-        )}
-
-        {/* Job */}
-        {profile.careerInfo.category && (
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <Briefcase className="w-4 h-4" />
-            <span>
-              {profile.careerInfo.company || getJobCategoryDisplay(profile.careerInfo.category)}
-            </span>
-          </div>
-        )}
-
-        {/* Education */}
-        {profile.educationInfo.level && (
-          <div className="text-sm text-muted-foreground">
-            {profile.educationInfo.school || profile.educationInfo.level}
-          </div>
-        )}
-
-        {/* Introduction */}
-        {profile.introduction.text && (
-          <p className="text-sm text-muted-foreground line-clamp-2">{profile.introduction.text}</p>
-        )}
       </div>
+
+      {/* Mutual friend */}
+      {mutualText && (
+        <div className="flex items-center gap-1 mt-1.5 px-0.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
+          <p className="text-[11px] text-muted-foreground truncate">{mutualText}</p>
+        </div>
+      )}
     </div>
+  );
+}
+
+function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2.5">
+      <p className="text-sm font-semibold">{title}</p>
+      {children}
+    </div>
+  );
+}
+
+function ChipButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
+        active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
 function LoadingState() {
   return (
-    <div className="space-y-4">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="bg-card rounded-2xl overflow-hidden border border-border animate-pulse">
-          <div className="aspect-[4/5] bg-muted" />
-          <div className="p-4 space-y-3">
-            <div className="h-6 bg-muted rounded w-3/4" />
-            <div className="h-4 bg-muted rounded w-1/2" />
-            <div className="h-4 bg-muted rounded w-2/3" />
-          </div>
+    <div className="grid grid-cols-2 gap-3">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="animate-pulse">
+          <div className="rounded-2xl aspect-[3/4] bg-muted" />
+          <div className="h-3 bg-muted rounded-full mt-2 w-3/4 mx-0.5" />
         </div>
       ))}
     </div>
@@ -498,24 +434,12 @@ function LoadingState() {
 
 function EmptyState({ title, description }: { title: string; description: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
-        <svg
-          className="w-10 h-10 text-muted-foreground"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-          />
-        </svg>
+    <div className="flex flex-col items-center justify-center py-24 text-center col-span-2">
+      <div className="w-16 h-16 rounded-3xl bg-muted flex items-center justify-center mb-5">
+        <MapPin className="w-7 h-7 text-muted-foreground/60" />
       </div>
-      <h3 className="text-lg font-semibold mb-2">{title}</h3>
-      <p className="text-muted-foreground text-sm max-w-sm">{description}</p>
+      <h3 className="text-base font-semibold mb-1.5">{title}</h3>
+      <p className="text-sm text-muted-foreground max-w-[240px] leading-relaxed">{description}</p>
     </div>
   );
 }

@@ -81,11 +81,25 @@ class MatchmakerController(
     }
 
     @GetMapping("/me")
+    @Transactional
     fun getMyMatchmaker(
         @AuthenticationPrincipal authUser: AuthUser
     ): ResponseEntity<MatchmakerResponse> {
         val matchmaker = matchmakerRepository.findByUserId(authUser.userId)
-            ?: return ResponseEntity.notFound().build()
+            ?: run {
+                val now = Instant.now()
+                matchmakerRepository.save(
+                    Matchmaker(
+                        id = MatchmakerId(UUID.randomUUID()),
+                        userId = authUser.userId,
+                        stats = MatchmakerStats.initial(),
+                        level = MatchmakerLevel.initial(),
+                        earnings = MatchmakerEarnings.initial(),
+                        profilePhoto = null,
+                        metadata = MatchmakerMetadata(createdAt = now, updatedAt = now)
+                    )
+                )
+            }
 
         return ResponseEntity.ok(
             MatchmakerResponse(

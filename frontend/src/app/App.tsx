@@ -29,7 +29,7 @@ import { NotificationScreen } from "./components/NotificationScreen";
 import { LeagueScreen } from "./components/LeagueScreen";
 import { Toaster } from "./components/ui/sonner";
 import { Button } from "./components/ui/button";
-import { Home, UserCircle, Clock, HeartHandshake, User, Bell, Trophy } from "lucide-react";
+import { Home, User, Clock, Bell, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { authService } from "../lib/auth/authService";
 import { tokenStorage } from "../lib/auth/tokenStorage";
@@ -193,6 +193,24 @@ export default function App() {
 
     checkAuth();
   }, []);
+
+  // Apply user's color type as app primary color
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    api.get<any>('/api/v1/profile').then(p => {
+      const hex = p?.colorType?.hex;
+      if (!hex || !/^#[0-9A-Fa-f]{6}$/.test(hex)) return;
+      const r = parseInt(hex.slice(1, 3), 16) / 255;
+      const g = parseInt(hex.slice(3, 5), 16) / 255;
+      const b = parseInt(hex.slice(5, 7), 16) / 255;
+      const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+      const fg = luminance > 0.62 ? '#1A1916' : '#FFFFFF';
+      const root = document.documentElement;
+      root.style.setProperty('--primary', hex);
+      root.style.setProperty('--primary-foreground', fg);
+      root.style.setProperty('--ring', hex);
+    }).catch(() => {});
+  }, [isLoggedIn]);
 
   // Poll unread notification count when logged in
   useEffect(() => {
@@ -755,7 +773,13 @@ export default function App() {
         />
       )}
       
-      {currentScreen === "mainFeed" && <MainFeedScreen onProfileClick={handleProfileClick} />}
+      {currentScreen === "mainFeed" && (
+        <MainFeedScreen
+          onProfileClick={handleProfileClick}
+          onNotificationClick={() => setCurrentScreen("notifications")}
+          unreadNotifications={unreadNotificationCount}
+        />
+      )}
 
       {currentScreen === "introductionHistory" && <IntroductionHistoryScreen />}
 
@@ -833,74 +857,37 @@ function BottomNavigation({
   onNavigate: (screen: Screen) => void;
   unreadNotifications?: number;
 }) {
+  const tabs: { screen: Screen; icon: React.ElementType; label: string; badge?: number; matchScreens?: Screen[] }[] = [
+    { screen: "mainFeed", icon: Home, label: "홈" },
+    { screen: "introductionHistory", icon: Clock, label: "소개" },
+    { screen: "league", icon: Trophy, label: "리그" },
+    { screen: "myPage", icon: User, label: "나", matchScreens: ["myPage", "myProfile", "connectorDashboard"] },
+  ];
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-30">
-      <div className="max-w-2xl mx-auto flex items-center justify-around h-16">
-        <NavButton
-          icon={Home}
-          label="홈"
-          active={currentScreen === "mainFeed"}
-          onClick={() => onNavigate("mainFeed")}
-        />
-        <NavButton
-          icon={Clock}
-          label="소개이력"
-          active={currentScreen === "introductionHistory"}
-          onClick={() => onNavigate("introductionHistory")}
-        />
-        <NavButton
-          icon={Trophy}
-          label="리그"
-          active={currentScreen === "league"}
-          onClick={() => onNavigate("league")}
-        />
-        <NavButton
-          icon={Bell}
-          label="알림"
-          active={currentScreen === "notifications"}
-          onClick={() => onNavigate("notifications")}
-          badge={unreadNotifications > 0 ? unreadNotifications : undefined}
-        />
-        <NavButton
-          icon={User}
-          label="마이페이지"
-          active={currentScreen === "myPage" || currentScreen === "myProfile" || currentScreen === "connectorDashboard"}
-          onClick={() => onNavigate("myPage")}
-        />
+    <div className="fixed bottom-0 left-0 right-0 bg-card/90 backdrop-blur-xl border-t border-border/60 z-30 safe-area-inset-bottom">
+      <div className="max-w-2xl mx-auto flex items-center justify-around h-[60px] px-2">
+        {tabs.map(({ screen, icon: Icon, label, badge, matchScreens }) => {
+          const active = (matchScreens ?? [screen]).includes(currentScreen as Screen);
+          return (
+            <button
+              key={screen}
+              onClick={() => onNavigate(screen)}
+              className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 min-w-[52px] transition-all"
+            >
+              <div className={`relative w-9 h-9 rounded-2xl flex items-center justify-center transition-all duration-200 ${active ? "bg-primary/10" : ""}`}>
+                <Icon className={`w-[18px] h-[18px] transition-colors duration-200 ${active ? "text-primary" : "text-muted-foreground"}`} />
+                {badge !== undefined && badge > 0 && (
+                  <span className="absolute top-0.5 right-0.5 bg-primary text-primary-foreground text-[9px] font-bold min-w-[16px] h-4 px-0.5 rounded-full flex items-center justify-center">
+                    {badge > 9 ? "9+" : badge}
+                  </span>
+                )}
+              </div>
+              <span className={`text-[10px] font-medium transition-colors duration-200 ${active ? "text-primary" : "text-muted-foreground"}`}>{label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
-  );
-}
-
-function NavButton({
-  icon: Icon,
-  label,
-  active,
-  onClick,
-  badge,
-}: {
-  icon: React.ElementType;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  badge?: number;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex flex-col items-center justify-center gap-1 px-4 py-2 transition-colors ${
-        active ? "text-primary" : "text-muted-foreground hover:text-foreground"
-      }`}
-    >
-      <div className="relative">
-        <Icon className="w-6 h-6" />
-        {badge !== undefined && badge > 0 && (
-          <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-            {badge > 9 ? "9+" : badge}
-          </span>
-        )}
-      </div>
-      <span className="text-xs">{label}</span>
-    </button>
   );
 }
