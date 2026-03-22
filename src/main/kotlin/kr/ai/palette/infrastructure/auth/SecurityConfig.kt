@@ -46,7 +46,8 @@ class SecurityConfig(
                         "/api/v1/users/*/public",
                         "/api/v1/ai-interview/questions",
                         "/api/v1/ai-interview/analyze",
-                        "/api/v1/share/*"
+                        "/api/v1/share/*",
+                        "/api/v1/ai/compatibility"
                     ).permitAll()
                     .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                     .anyRequest().authenticated()
