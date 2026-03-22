@@ -3,6 +3,8 @@ package kr.ai.palette.presentation.vouch
 import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.friendship.FriendshipRepository
+import kr.ai.palette.domain.matchmaking.MatchmakingRequestRepository
+import kr.ai.palette.domain.matchmaking.MatchmakingRequestStatus
 import kr.ai.palette.domain.user.UserRepository
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -21,7 +23,8 @@ data class VouchResponse(
 @RequestMapping("/api/v1/vouch")
 class VouchController(
     private val userRepository: UserRepository,
-    private val friendshipRepository: FriendshipRepository
+    private val friendshipRepository: FriendshipRepository,
+    private val matchmakingRequestRepository: MatchmakingRequestRepository
 ) {
     companion object {
         // targetUserId -> Set<voucherId>
@@ -44,8 +47,10 @@ class VouchController(
             return ResponseEntity.badRequest().build()
         }
 
-        // 1촌 친구인지 확인
-        if (!friendshipRepository.existsBetweenUsers(myId, targetId)) {
+        // 1촌 친구이거나 매칭이 완료된 경우에만 보증 가능
+        val isDirectFriend = friendshipRepository.existsBetweenUsers(myId, targetId)
+        val hasCompletedMatch = hasCompletedMatchBetween(myId, targetId)
+        if (!isDirectFriend && !hasCompletedMatch) {
             return ResponseEntity.status(403).build()
         }
 
@@ -79,6 +84,13 @@ class VouchController(
         return ResponseEntity.ok(
             buildVouchResponse(targetUserId.toString(), authUser.userId.value.toString())
         )
+    }
+
+    private fun hasCompletedMatchBetween(userId1: UserId, userId2: UserId): Boolean {
+        val forward = matchmakingRequestRepository.findByRequesterIdAndTargetUserId(userId1, userId2)
+        val reverse = matchmakingRequestRepository.findByRequesterIdAndTargetUserId(userId2, userId1)
+        return forward?.status == MatchmakingRequestStatus.COMPLETED ||
+            reverse?.status == MatchmakingRequestStatus.COMPLETED
     }
 
     private fun buildVouchResponse(targetUserId: String, requesterId: String): VouchResponse {

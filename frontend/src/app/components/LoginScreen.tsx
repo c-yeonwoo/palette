@@ -34,7 +34,7 @@ export function LoginScreen({ onEmailLogin, onMatchmakerSignup }: LoginScreenPro
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: `url('https://images.unsplash.com/photo-1684338382115-6fd4d23a25d1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjaGVycnklMjBibG9zc29tJTIwcGluayUyMHNvZnR8ZW58MXx8fHwxNzY2Mjk3NzQyfDA&ixlib=rb-4.1.0&q=80&w=1080')`,
+          backgroundImage: `url('/log-bg.png')`,
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/60" />

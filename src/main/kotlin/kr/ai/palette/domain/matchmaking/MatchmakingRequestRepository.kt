@@ -11,4 +11,5 @@ interface MatchmakingRequestRepository {
     fun existsByRequesterIdAndTargetUserId(requesterId: UserId, targetUserId: UserId): Boolean
     fun findByRequesterIdAndTargetUserId(requesterId: UserId, targetUserId: UserId): MatchmakingRequest?
     fun findAll(): List<MatchmakingRequest>
+    fun findByStatus(status: MatchmakingRequestStatus): List<MatchmakingRequest>
 }

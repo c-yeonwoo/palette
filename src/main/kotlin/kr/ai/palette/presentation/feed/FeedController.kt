@@ -1,14 +1,18 @@
 package kr.ai.palette.presentation.feed
 
 import kr.ai.palette.domain.auth.AuthUser
+import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.friendship.FriendshipRepository
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestRepository
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.UserRepository
+import kr.ai.palette.persistence.feed.CardOpenEntity
+import kr.ai.palette.persistence.feed.CardOpenJpaRepository
 import kr.ai.palette.presentation.profile.ProfileResponse
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
+import java.util.UUID
 
 @RestController
 @RequestMapping("/api/v1/feed")
@@ -16,7 +20,8 @@ class FeedController(
     private val friendshipRepository: FriendshipRepository,
     private val profileRepository: ProfileRepository,
     private val userRepository: UserRepository,
-    private val matchmakingRequestRepository: MatchmakingRequestRepository
+    private val matchmakingRequestRepository: MatchmakingRequestRepository,
+    private val cardOpenJpaRepository: CardOpenJpaRepository
 ) {
 
     @GetMapping
@@ -37,26 +42,32 @@ class FeedController(
             ?: return ResponseEntity.notFound().build()
         val currentUserGender = currentUser.publicInfo.gender
 
+        // 이미 카드를 열어본 목록
+        val openedIds = cardOpenJpaRepository.findByViewerId(currentUserId.value)
+            .map { it.targetUserId.toString() }.toSet()
+
         // 1촌 친구들의 ID 가져오기 (주선자 역할, 피드 노출 제외)
         val firstDegreeFriendIds = friendshipRepository.findFriendIdsByUserId(currentUserId)
 
         // 2촌 친구들의 ID 가져오기 (피드 노출 대상)
         val secondDegreeFriendIds = friendshipRepository.findSecondDegreeFriendIds(currentUserId)
 
-        // 이미 주선 요청한 프로필들의 targetUserId 가져오기
-        val requestedTargetUserIds = matchmakingRequestRepository.findAll()
-            .filter { it.requesterId == currentUserId }
-            .map { it.targetUserId }
+        // 매칭 이력이 있는 사용자 전체 제외 (요청자/대상자 양방향, 모든 상태 포함)
+        val matchHistoryExcluded = matchmakingRequestRepository.findAll()
+            .filter { it.requesterId == currentUserId || it.targetUserId == currentUserId }
+            .flatMap { listOf(it.requesterId.value.toString(), it.targetUserId.value.toString()) }
             .toSet()
+
+        // 숨김 처리한 프로필 제외
+        val hiddenIds = FeedHideController.getHiddenIds(currentUserId)
 
         // 2촌만 피드에 노출 (1촌은 이미 아는 사람이므로 제외)
         val profileItems = secondDegreeFriendIds.distinct().mapNotNull { userId ->
             val user = userRepository.findById(userId)
 
-            // 이미 요청한 프로필은 제외
-            if (requestedTargetUserIds.contains(userId)) {
-                return@mapNotNull null
-            }
+            // 매칭 이력 또는 숨김 처리된 프로필 제외
+            if (matchHistoryExcluded.contains(userId.value.toString())) return@mapNotNull null
+            if (hiddenIds.contains(userId.value.toString())) return@mapNotNull null
 
             // 반대 성별만 필터링
             if (user != null && user.publicInfo.gender != currentUserGender) {
@@ -97,7 +108,8 @@ class FeedController(
                         profile = ProfileResponse.from(profile),
                         mutualFriends = mutualFriendNames,
                         degree = 2,
-                        viewCost = 3000
+                        viewCost = 3000,
+                        isOpened = openedIds.contains(userId.value.toString())
                     )
                 }
             } else {
@@ -111,6 +123,21 @@ class FeedController(
                 totalCount = profileItems.size
             )
         )
+    }
+
+    /**
+     * 카드 열람 기록 저장 (최초 1회만, 이미 열람한 경우 무시)
+     */
+    @PostMapping("/open/{targetUserId}")
+    fun openCard(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @PathVariable targetUserId: UUID
+    ): ResponseEntity<Void> {
+        val viewerId = authUser.userId.value
+        if (!cardOpenJpaRepository.existsByViewerIdAndTargetUserId(viewerId, targetUserId)) {
+            cardOpenJpaRepository.save(CardOpenEntity(viewerId = viewerId, targetUserId = targetUserId))
+        }
+        return ResponseEntity.ok().build()
     }
 
     @GetMapping("/friends")
@@ -150,7 +177,8 @@ data class FeedProfileItem(
     val profile: ProfileResponse,
     val mutualFriends: List<String>,  // 공통 친구들의 닉네임 리스트
     val degree: Int = 2,              // 1=1촌(free), 2=2촌(3,000원), 3=3촌(5,000원)
-    val viewCost: Int = 3000          // 0 for free
+    val viewCost: Int = 3000,         // 0 for free
+    val isOpened: Boolean = false     // 이미 카드를 열어본 여부
 )
 
 data class FriendsResponse(

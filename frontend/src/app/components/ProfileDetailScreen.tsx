@@ -104,6 +104,9 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   const [isVouchedByMe, setIsVouchedByMe] = useState(false);
   const [isVouching, setIsVouching] = useState(false);
   const [isFriend, setIsFriend] = useState(false);
+  // Hide state
+  const [isHidden, setIsHidden] = useState(false);
+  const [isHiding, setIsHiding] = useState(false);
 
   useEffect(() => {
     // If free (1촌), fetch directly; if paid, show gate first
@@ -223,6 +226,26 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
       toast.error(e?.message || "보증에 실패했습니다");
     } finally {
       setIsVouching(false);
+    }
+  };
+
+  const handleHide = async () => {
+    if (!userId) return;
+    setIsHiding(true);
+    try {
+      if (isHidden) {
+        await api.delete(`/api/v1/feed/hide/${userId}`);
+        setIsHidden(false);
+        toast.success("추천 목록에 다시 표시됩니다");
+      } else {
+        await api.post(`/api/v1/feed/hide/${userId}`, {});
+        setIsHidden(true);
+        toast.success("이 프로필을 추천받지 않습니다");
+      }
+    } catch {
+      toast.error("처리에 실패했습니다");
+    } finally {
+      setIsHiding(false);
     }
   };
 
@@ -704,6 +727,18 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
               ⏳ 매칭 성사 후 쿨타임 중 · {coolTimeRemainingDays}일 후 새 요청 가능
             </p>
           )}
+          {/* Hide section */}
+          <div className="flex justify-end mb-1">
+            <button
+              onClick={handleHide}
+              disabled={isHiding}
+              className="text-xs text-muted-foreground flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
+            >
+              <span>{isHidden ? "👁️" : "🚫"}</span>
+              {isHidden ? "추천 다시 받기" : "추천받지 않기"}
+            </button>
+          </div>
+
           {/* Vouch section */}
           <div className="bg-muted/30 rounded-xl p-3 mb-3">
             <div className="flex items-center justify-between">

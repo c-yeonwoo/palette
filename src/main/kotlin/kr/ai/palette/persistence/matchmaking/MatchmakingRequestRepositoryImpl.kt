@@ -52,4 +52,8 @@ class MatchmakingRequestRepositoryImpl(
         return jpaRepository.findByRequesterIdAndStatus(requesterId.value, status.name)
             .map { mapper.toDomain(it) }
     }
+
+    override fun findByStatus(status: MatchmakingRequestStatus): List<MatchmakingRequest> {
+        return jpaRepository.findByStatus(status.name).map { mapper.toDomain(it) }
+    }
 }

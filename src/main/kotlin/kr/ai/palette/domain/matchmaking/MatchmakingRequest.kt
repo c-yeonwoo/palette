@@ -23,7 +23,7 @@ data class MatchmakingRequest(
             requesterId: UserId,
             targetUserId: UserId,
             matchmakerId: UserId,
-            message: String?
+            requesterMessage: String?
         ): MatchmakingRequest {
             val now = LocalDateTime.now()
             return MatchmakingRequest(
@@ -31,7 +31,7 @@ data class MatchmakingRequest(
                 requesterId = requesterId,
                 targetUserId = targetUserId,
                 matchmakerId = matchmakerId,
-                requesterMessage = message,
+                requesterMessage = requesterMessage,
                 matchmakerDecision = null,
                 targetUserDecision = null,
                 status = MatchmakingRequestStatus.PENDING,
@@ -100,6 +100,12 @@ data class MatchmakingRequest(
             updatedAt = LocalDateTime.now()
         )
     }
+
+    fun isTerminal(): Boolean = status in setOf(
+        MatchmakingRequestStatus.COMPLETED,
+        MatchmakingRequestStatus.REJECTED_BY_MATCHMAKER,
+        MatchmakingRequestStatus.REJECTED_BY_TARGET
+    )
 }
 
 enum class MatchmakingRequestStatus {

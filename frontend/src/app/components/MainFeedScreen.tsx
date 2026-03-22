@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { MapPin, SlidersHorizontal, X, Bell } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { MapPin, SlidersHorizontal, X, Bell, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
 import { FortuneBanner } from "./FortuneBanner";
 import { api } from "../../lib/api/apiClient";
@@ -65,11 +65,31 @@ interface FeedProfileItem {
   mutualFriends: string[];
   degree?: number;
   viewCost?: number;
+  isOpened?: boolean;
 }
 
 interface FeedResponse {
   items: FeedProfileItem[];
   totalCount: number;
+}
+
+
+interface AiSignalRecommendation {
+  profile: Profile | null;
+  reason: string;
+  similarityScore: number;
+  isFree: boolean;
+  isUnlocked: boolean;
+  unlockPrice: number;
+  isOpened: boolean;
+  teaserAge: number | null;
+  teaserLocation: string | null;
+}
+
+interface AiSignalResponse {
+  recommendations: AiSignalRecommendation[];
+  generatedAt: string;
+  isStub: boolean;
 }
 
 interface MainFeedScreenProps {
@@ -112,6 +132,7 @@ const JOB_CATEGORIES = [
 
 export function MainFeedScreen({ onProfileClick, onNotificationClick, unreadNotifications = 0 }: MainFeedScreenProps) {
   const [feedItems, setFeedItems] = useState<FeedProfileItem[]>([]);
+  const [aiSignal, setAiSignal] = useState<AiSignalResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [showFilter, setShowFilter] = useState(false);
@@ -143,8 +164,12 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, unreadNoti
       const userData = await api.get<UserProfile>('/api/v1/auth/me');
       setUserProfile(userData);
       if (userData.accountType === "REGULAR") {
-        const feedResponse = await api.get<FeedResponse>(`/api/v1/feed${buildQueryString(f)}`);
+        const [feedResponse, aiSignalResponse] = await Promise.all([
+          api.get<FeedResponse>(`/api/v1/feed${buildQueryString(f)}`),
+          api.get<AiSignalResponse>("/api/v1/feed/ai-signal").catch(() => null),
+        ]);
         setFeedItems(feedResponse.items);
+        setAiSignal(aiSignalResponse);
       }
     } catch (error) {
       console.error("Failed to fetch feed:", error);
@@ -308,6 +333,15 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, unreadNoti
       {/* Fortune Banner */}
       {!loading && userProfile?.accountType === "REGULAR" && <FortuneBanner />}
 
+      {/* AI Signal Section */}
+      {!loading && aiSignal && aiSignal.recommendations.length > 0 && (
+        <AiSignalSection
+          recommendations={aiSignal.recommendations}
+          onProfileClick={onProfileClick}
+          onUnlocked={(updated) => setAiSignal({ ...aiSignal, recommendations: updated })}
+        />
+      )}
+
       {/* Feed */}
       <div className="px-4">
         {loading ? (
@@ -332,7 +366,10 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, unreadNoti
 }
 
 function ProfileCard({ item, onClick }: { item: FeedProfileItem; onClick: () => void }) {
-  const { profile, mutualFriends, viewCost = 3000 } = item;
+  const { profile, mutualFriends, viewCost = 3000, isOpened = false } = item;
+  const [revealed, setRevealed] = useState(isOpened);
+  const [peeling, setPeeling] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const jobMap: Record<string, string> = {
     IT_DEVELOPMENT: "IT개발", FINANCE: "금융", EDUCATION: "교육", MEDICAL: "의료",
@@ -346,10 +383,25 @@ function ProfileCard({ item, onClick }: { item: FeedProfileItem; onClick: () => 
     : mutualFriends.length === 1 ? `${mutualFriends[0]}의 지인`
     : `${mutualFriends[0]} 외 ${mutualFriends.length - 1}명의 지인`;
 
+  const handleClick = () => {
+    if (revealed) {
+      onClick();
+      return;
+    }
+    if (peeling) return;
+    setPeeling(true);
+    timerRef.current = setTimeout(() => {
+      setRevealed(true);
+      setPeeling(false);
+      api.post(`/api/v1/feed/open/${profile.userId}`, {}).catch(() => {});
+    }, 1300);
+  };
+
   return (
-    <div onClick={onClick} className="cursor-pointer">
+    <div onClick={handleClick} className="cursor-pointer select-none">
       {/* Photo card */}
       <div className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-muted shadow-sm">
+        {/* 실제 사진 (항상 렌더링, paint 아래에 있음) */}
         {profile.primaryPhotoUrl ? (
           <img src={profile.primaryPhotoUrl} alt="" className="w-full h-full object-cover" />
         ) : (
@@ -358,32 +410,58 @@ function ProfileCard({ item, onClick }: { item: FeedProfileItem; onClick: () => 
           </div>
         )}
 
-        {/* Bottom gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
+        {/* 공개 후 그라디언트 */}
+        {revealed && (
+          <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
+        )}
+
+        {/* 대각선 wipe: 왼쪽위→오른쪽아래로 닦이며 사라짐 */}
+        {!revealed && (
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: "url('/paint-overlay.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              clipPath: peeling
+                ? "polygon(100% 100%, 100% 100%, 100% 100%, 100% 100%)"
+                : "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
+              transition: peeling ? "clip-path 1.2s cubic-bezier(0.4, 0, 0.2, 1)" : "none",
+            }}
+          />
+        )}
 
         {/* Cost pill */}
         <div className="absolute top-2.5 right-2.5">
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-sm text-white/90">
-            {(viewCost / 1000).toFixed(0)}천원
-          </span>
+          {!revealed ? (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/20 backdrop-blur-sm text-primary-foreground/80">
+              {(viewCost / 1000).toFixed(0)}천원
+            </span>
+          ) : (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-sm text-white/90">
+              {(viewCost / 1000).toFixed(0)}천원
+            </span>
+          )}
         </div>
 
-        {/* Bottom info overlay */}
-        <div className="absolute bottom-0 left-0 right-0 px-3 pb-3">
-          {profile.basicInfo.height && (
-            <p className="text-white text-sm font-semibold leading-tight">
-              {profile.basicInfo.height}cm
-              {profile.basicInfo.mbti && (
-                <span className="font-normal opacity-75"> · {profile.basicInfo.mbti}</span>
-              )}
-            </p>
-          )}
-          {(job || location) && (
-            <p className="text-white/70 text-[11px] mt-0.5">
-              {[job, location].filter(Boolean).join(" · ")}
-            </p>
-          )}
-        </div>
+        {/* 공개 후 하단 정보 */}
+        {revealed && (
+          <div className="absolute bottom-0 left-0 right-0 px-3 pb-3">
+            {profile.basicInfo.height && (
+              <p className="text-white text-sm font-semibold leading-tight">
+                {profile.basicInfo.height}cm
+                {profile.basicInfo.mbti && (
+                  <span className="font-normal opacity-75"> · {profile.basicInfo.mbti}</span>
+                )}
+              </p>
+            )}
+            {(job || location) && (
+              <p className="text-white/70 text-[11px] mt-0.5">
+                {[job, location].filter(Boolean).join(" · ")}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Mutual friend */}
@@ -393,6 +471,198 @@ function ProfileCard({ item, onClick }: { item: FeedProfileItem; onClick: () => 
           <p className="text-[11px] text-muted-foreground truncate">{mutualText}</p>
         </div>
       )}
+    </div>
+  );
+}
+
+function AiSignalSection({
+  recommendations,
+  onProfileClick,
+  onUnlocked,
+}: {
+  recommendations: AiSignalRecommendation[];
+  onProfileClick?: (item: FeedProfileItem) => void;
+  onUnlocked?: (updated: AiSignalRecommendation[]) => void;
+}) {
+  const [unlocking, setUnlocking] = useState(false);
+
+  const jobMap: Record<string, string> = {
+    IT_DEVELOPMENT: "IT개발", FINANCE: "금융", EDUCATION: "교육", MEDICAL: "의료",
+    MEDIA: "미디어", SERVICE: "서비스", MANUFACTURING: "제조", PUBLIC_OFFICIAL: "공무원",
+    PROFESSIONAL: "전문직", OTHER: "기타",
+  };
+
+  const handleUnlock = async (rec: AiSignalRecommendation) => {
+    if (unlocking) return;
+    setUnlocking(true);
+    try {
+      await api.post("/api/v1/feed/ai-signal/unlock", {});
+      // 잠금 해제 후 전체 목록 다시 가져오기
+      const updated = await api.get<AiSignalResponse>("/api/v1/feed/ai-signal");
+      onUnlocked?.(updated.recommendations);
+      toast.success(`${rec.unlockPrice.toLocaleString()}원으로 AI 추천을 열었어요`);
+    } catch {
+      toast.error("열람에 실패했어요. 다시 시도해주세요.");
+    } finally {
+      setUnlocking(false);
+    }
+  };
+
+  return (
+    <div className="px-4 mb-5">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+          <Sparkles className="w-3.5 h-3.5 text-primary" />
+        </div>
+        <p className="text-sm font-semibold">오늘의 AI 시그널</p>
+        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">준비 중</span>
+        <span className="ml-auto text-[10px] text-muted-foreground">매일 1장 무료</span>
+      </div>
+      <div className="flex gap-3 overflow-x-auto pb-1">
+        {recommendations.map((rec, i) => {
+          if (rec.isUnlocked && rec.profile) {
+            // 열람 가능한 카드 → paint reveal 적용
+            return (
+              <AiSignalCard
+                key={i}
+                rec={rec}
+                jobMap={jobMap}
+                onProfileClick={onProfileClick}
+              />
+            );
+          }
+
+          // 잠긴 카드 (2번째, 미결제)
+          return (
+            <div key={i} className="flex-shrink-0 w-36">
+              <div className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-muted shadow-sm">
+                {/* 블러 배경 */}
+                <div className="w-full h-full bg-gradient-to-br from-primary/20 via-primary/10 to-muted flex items-center justify-center">
+                  <span className="text-5xl opacity-10 select-none">👤</span>
+                </div>
+                {/* 잠금 오버레이 */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3">
+                  <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-white" />
+                  </div>
+                  {/* 티저 정보 */}
+                  <div className="text-center">
+                    {rec.teaserAge && (
+                      <p className="text-white/90 text-xs font-semibold">{rec.teaserAge}세</p>
+                    )}
+                    {rec.teaserLocation && (
+                      <p className="text-white/70 text-[10px]">{rec.teaserLocation}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleUnlock(rec)}
+                    disabled={unlocking}
+                    className="mt-1 w-full py-1.5 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold shadow-lg active:scale-95 transition-transform disabled:opacity-60"
+                  >
+                    {unlocking ? "처리 중..." : `열기 ${rec.unlockPrice.toLocaleString()}원`}
+                  </button>
+                </div>
+                <div className="absolute top-2 left-2">
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/90 text-primary-foreground flex items-center gap-0.5">
+                    <Sparkles className="w-2.5 h-2.5" /> AI
+                  </span>
+                </div>
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1.5 px-0.5 truncate">{rec.reason}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AiSignalCard({
+  rec,
+  jobMap,
+  onProfileClick,
+}: {
+  rec: AiSignalRecommendation;
+  jobMap: Record<string, string>;
+  onProfileClick?: (item: FeedProfileItem) => void;
+}) {
+  const profile = rec.profile!;
+  const [revealed, setRevealed] = useState(rec.isOpened);
+  const [peeling, setPeeling] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const job = profile.careerInfo.category ? jobMap[profile.careerInfo.category] ?? null : null;
+  const location = profile.locationInfo.sido;
+
+  const handleClick = () => {
+    if (revealed) {
+      onProfileClick?.({ profile, mutualFriends: [], degree: 0, viewCost: 0 });
+      return;
+    }
+    if (peeling) return;
+    setPeeling(true);
+    timerRef.current = setTimeout(() => {
+      setRevealed(true);
+      setPeeling(false);
+      api.post(`/api/v1/feed/open/${profile.userId}`, {}).catch(() => {});
+    }, 1300);
+  };
+
+
+  return (
+    <div onClick={handleClick} className="flex-shrink-0 w-36 cursor-pointer select-none">
+      <div className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-muted shadow-sm">
+        {profile.primaryPhotoUrl ? (
+          <img src={profile.primaryPhotoUrl} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-muted via-accent to-muted/60 flex items-center justify-center">
+            <span className="text-4xl opacity-20 select-none">👤</span>
+          </div>
+        )}
+        {revealed && <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />}
+
+        {/* 대각선 wipe: 왼쪽위→오른쪽아래로 닦이며 사라짐 */}
+        {!revealed && (
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: "url('/paint-overlay.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              clipPath: peeling
+                ? "polygon(100% 100%, 100% 100%, 100% 100%, 100% 100%)"
+                : "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
+              transition: peeling ? "clip-path 1.2s cubic-bezier(0.4, 0, 0.2, 1)" : "none",
+            }}
+          />
+        )}
+
+        {/* AI badge */}
+        <div className="absolute top-2 left-2 z-10">
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/90 text-primary-foreground flex items-center gap-0.5">
+            <Sparkles className="w-2.5 h-2.5" /> AI
+          </span>
+        </div>
+        {rec.isFree && (
+          <div className="absolute top-2 right-2 z-10">
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-500/90 text-white">FREE</span>
+          </div>
+        )}
+
+
+        {/* 공개 후 하단 정보 */}
+        {revealed && (
+          <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2.5">
+            {profile.basicInfo.height && (
+              <p className="text-white text-xs font-semibold">{profile.basicInfo.height}cm</p>
+            )}
+            {(job || location) && (
+              <p className="text-white/70 text-[10px]">{[job, location].filter(Boolean).join(" · ")}</p>
+            )}
+          </div>
+        )}
+      </div>
+      <p className="text-[10px] text-muted-foreground mt-1.5 px-0.5 truncate">{rec.reason}</p>
     </div>
   );
 }

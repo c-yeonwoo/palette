@@ -84,7 +84,7 @@ class MatchmakingController(
             requesterId = requesterId,
             targetUserId = UserId(UUID.fromString(request.targetUserId)),
             matchmakerId = matchmaker.id,
-            message = request.message
+            requesterMessage = request.message
         )
 
         val saved = matchmakingRequestRepository.save(matchmakingRequest)
