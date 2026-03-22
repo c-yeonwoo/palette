@@ -1,11 +1,13 @@
 package kr.ai.palette.presentation.friendship
 
+import kr.ai.palette.application.notification.NotificationService
 import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.friendship.Friendship
 import kr.ai.palette.domain.friendship.FriendshipId
 import kr.ai.palette.domain.friendship.FriendshipRepository
 import kr.ai.palette.domain.friendship.FriendshipStatus
+import kr.ai.palette.domain.notification.NotificationType
 import kr.ai.palette.domain.user.UserRepository
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -47,7 +49,8 @@ private data class InviteCodeData(
 @RequestMapping("/api/v1/friends")
 class FriendshipController(
     private val friendshipRepository: FriendshipRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val notificationService: NotificationService
 ) {
 
     companion object {
@@ -194,6 +197,16 @@ class FriendshipController(
         )
         val saved = friendshipRepository.save(friendship)
 
+        // 피요청자에게 알림
+        val requesterName = userRepository.findById(myUserId)?.publicInfo?.nickname ?: "누군가"
+        notificationService.create(
+            userId = targetId.value.toString(),
+            type = NotificationType.FRIEND_REQUEST,
+            title = "새 친구 요청",
+            body = "${requesterName}님이 친구 요청을 보냈습니다",
+            metadata = mapOf("friendshipId" to saved.id.value.toString())
+        )
+
         return ResponseEntity.ok(
             mapOf(
                 "success" to true,
@@ -225,6 +238,16 @@ class FriendshipController(
 
         val accepted = friendship.accept(Instant.now())
         friendshipRepository.save(accepted)
+
+        // 원래 요청자에게 수락 알림
+        val accepterName = userRepository.findById(myUserId)?.publicInfo?.nickname ?: "상대방"
+        notificationService.create(
+            userId = friendship.user1Id.value.toString(),
+            type = NotificationType.FRIEND_ACCEPTED,
+            title = "친구 요청이 수락되었습니다 🤝",
+            body = "${accepterName}님이 친구 요청을 수락했습니다",
+            metadata = mapOf("friendshipId" to friendship.id.value.toString())
+        )
 
         return ResponseEntity.ok(mapOf("success" to true, "message" to "친구 요청을 수락했습니다"))
     }

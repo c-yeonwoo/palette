@@ -261,16 +261,23 @@ export function AiHubScreen({
           </div>
         )}
 
-        {/* 더 많은 AI 기능 Coming Soon */}
+        {/* AI 큐피드 가이드 */}
         <div className="px-4">
           <div className="rounded-2xl bg-card border border-border/60 p-4 space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Coming Soon</p>
-            {["나의 연애 유형 분석", "AI 대화 시작 도우미", "이상형 유사도 분석"].map((item) => (
-              <div key={item} className="flex items-center gap-3 opacity-40">
-                <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-3.5 h-3.5 text-primary" />
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Palette AI 가이드</p>
+            {[
+              { icon: "🎨", title: "컬러 타입", desc: "AI 인터뷰로 결정된 내 성격 색상이 매칭 기준이 돼요" },
+              { icon: "✨", title: "AI 시그널", desc: "매일 1장 무료 — 컬러 유사도 기반 추천 프로필" },
+              { icon: "🔮", title: "오늘의 운세", desc: "컬러 타입별 맞춤 연애 운세를 매일 확인해보세요" },
+            ].map((item) => (
+              <div key={item.title} className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center flex-shrink-0 text-base">
+                  {item.icon}
                 </div>
-                <p className="text-sm">{item}</p>
+                <div>
+                  <p className="text-sm font-medium">{item.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                </div>
               </div>
             ))}
           </div>

@@ -38,4 +38,8 @@ interface FriendshipJpaRepository : JpaRepository<FriendshipEntity, UUID> {
         )
     """)
     fun existsBetweenUsers(@Param("user1Id") user1Id: UUID, @Param("user2Id") user2Id: UUID): Boolean
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM FriendshipEntity f WHERE f.user1Id = :userId OR f.user2Id = :userId")
+    fun deleteByUserId(@Param("userId") userId: UUID)
 }

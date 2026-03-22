@@ -7,7 +7,9 @@ import kr.ai.palette.domain.matchmaking.MatchmakingRequest
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestId
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestRepository
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestStatus
+import kr.ai.palette.domain.notification.PaletteEvent
 import kr.ai.palette.domain.user.UserRepository
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
@@ -18,7 +20,8 @@ import java.util.*
 class MatchmakingController(
     private val matchmakingRequestRepository: MatchmakingRequestRepository,
     private val matchmakingService: MatchmakingService,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val eventPublisher: ApplicationEventPublisher
 ) {
 
     @GetMapping("/cooltime-status")
@@ -88,6 +91,21 @@ class MatchmakingController(
         )
 
         val saved = matchmakingRequestRepository.save(matchmakingRequest)
+
+        // 주선자에게 새 요청 알림 이벤트 발행
+        val requesterName = userRepository.findById(requesterId)?.privateInfo?.realName
+            ?: userRepository.findById(requesterId)?.publicInfo?.nickname ?: "요청자"
+        val targetName = userRepository.findById(UserId(UUID.fromString(request.targetUserId)))
+            ?.publicInfo?.nickname ?: "상대방"
+        eventPublisher.publishEvent(
+            PaletteEvent.MatchmakingRequested(
+                requestId = saved.id.value.toString(),
+                matchmakerId = matchmaker.id.value.toString(),
+                requesterName = requesterName,
+                targetName = targetName
+            )
+        )
+
         return ResponseEntity.ok(MatchmakingRequestResponse.from(saved))
     }
 

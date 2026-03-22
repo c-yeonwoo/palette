@@ -10,4 +10,5 @@ interface PromptExecutionJpaRepository : JpaRepository<PromptExecutionEntity, St
     fun findByUserId(userId: String): List<PromptExecutionEntity>
     fun findByPromptIdAndUserId(promptId: String, userId: String): List<PromptExecutionEntity>
     fun findByStatus(status: ExecutionStatus): List<PromptExecutionEntity>
+    fun deleteByUserId(userId: String)
 }

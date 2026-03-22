@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Trophy, Crown, Medal, Clock, Users } from "lucide-react";
+import { Trophy, Crown, Medal, Clock, Users, HeartHandshake } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 
 interface SeasonInfo {
@@ -39,15 +39,19 @@ const TIER_INFO = [
   { name: "다이아 큐피드", emoji: "👑", min: 21, color: "#B9F2FF", bg: "bg-cyan-50 dark:bg-cyan-950/20", border: "border-cyan-200 dark:border-cyan-800/50" },
 ];
 
-export function LeagueScreen() {
+export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmaker?: () => void }) {
   const [league, setLeague] = useState<LeagueData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isMatchmaker, setIsMatchmaker] = useState(false);
 
   useEffect(() => {
-    api.get<LeagueData>("/api/v1/league")
-      .then(setLeague)
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      api.get<LeagueData>("/api/v1/league").catch(() => null),
+      api.get<any>("/api/v1/auth/me").catch(() => null),
+    ]).then(([leagueData, user]) => {
+      if (leagueData) setLeague(leagueData);
+      if (user) setIsMatchmaker(!!user.canAccessMatchmakerService);
+    }).finally(() => setLoading(false));
   }, []);
 
   if (loading) {
@@ -58,7 +62,14 @@ export function LeagueScreen() {
     );
   }
 
-  if (!league) return null;
+  if (!league) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-3 text-muted-foreground">
+        <Trophy className="w-12 h-12 opacity-20" />
+        <p className="text-sm">리그 정보를 불러올 수 없어요</p>
+      </div>
+    );
+  }
 
   const nextTier = TIER_INFO.find(t => t.min > league.mySuccessCount);
   const progressToNext = nextTier
@@ -72,6 +83,27 @@ export function LeagueScreen() {
         <h2 className="text-center text-xl font-bold">큐피드 리그 🏆</h2>
         <p className="text-center text-sm text-muted-foreground mt-1">{league.season.seasonName}</p>
       </div>
+
+      {/* 비주선자 CTA */}
+      {!isMatchmaker && (
+        <div className="px-4 mb-2">
+          <div className="rounded-2xl bg-gradient-to-r from-primary/10 to-pink-500/10 border border-primary/20 p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+              <HeartHandshake className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold">주선자로 활동해보세요</p>
+              <p className="text-xs text-muted-foreground mt-0.5">매칭 성공 시 최대 50% 커미션 + 리그 참가</p>
+            </div>
+            <button
+              onClick={onNavigateToMatchmaker}
+              className="text-[11px] font-bold text-primary bg-primary/10 rounded-xl px-3 py-1.5 flex-shrink-0"
+            >
+              시작하기
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="px-4 space-y-4 mt-2">
         {/* Season countdown */}

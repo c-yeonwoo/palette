@@ -1,5 +1,6 @@
 package kr.ai.palette.presentation.auth
 
+import kr.ai.palette.application.user.UserWithdrawalService
 import kr.ai.palette.domain.auth.AuthToken
 import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.auth.AuthenticationService
@@ -20,7 +21,8 @@ class AuthController(
     private val authenticationService: AuthenticationService,
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
-    private val matchmakerRepository: kr.ai.palette.domain.matchmaker.MatchmakerRepository
+    private val matchmakerRepository: kr.ai.palette.domain.matchmaker.MatchmakerRepository,
+    private val userWithdrawalService: UserWithdrawalService,
 ) {
 
     @PostMapping("/refresh")
@@ -63,6 +65,13 @@ class AuthController(
     fun logout(@AuthenticationPrincipal authUser: AuthUser): ResponseEntity<Unit> {
         authenticationService.logout(authUser.userId)
         return ResponseEntity.ok().build()
+    }
+
+    @DeleteMapping("/me")
+    fun withdraw(@AuthenticationPrincipal authUser: AuthUser): ResponseEntity<Unit> {
+        authenticationService.logout(authUser.userId)
+        userWithdrawalService.withdraw(authUser.userId)
+        return ResponseEntity.noContent().build()
     }
 
     @PatchMapping("/convert-to-regular")

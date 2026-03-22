@@ -22,7 +22,6 @@ import { IntroductionHistoryScreen } from "./components/IntroductionHistoryScree
 import { ConnectorDashboard } from "./components/ConnectorDashboard";
 import { MyPageScreen } from "./components/MyPageScreen";
 import { PublicProfileScreen } from "./components/PublicProfileScreen";
-import { PromptManagementScreen } from "./components/PromptManagementScreen";
 import { FriendConnectScreen } from "./components/FriendConnectScreen";
 import { MatchmakerRewardScreen } from "./components/MatchmakerRewardScreen";
 import { NotificationScreen } from "./components/NotificationScreen";
@@ -60,7 +59,6 @@ type Screen =
   | "connectorDashboard"
   | "myPage"
   | "publicProfile"
-  | "promptManagement"
   | "friendConnect"
   | "matchmakerReward"
   | "notifications"
@@ -779,6 +777,7 @@ export default function App() {
         <MainFeedScreen
           onProfileClick={handleProfileClick}
           onNotificationClick={() => setCurrentScreen("notifications")}
+          onNavigateToFriends={() => setCurrentScreen("friendConnect")}
           unreadNotifications={unreadNotificationCount}
         />
       )}
@@ -807,7 +806,6 @@ export default function App() {
           onNavigateToProfile={() => setCurrentScreen("myProfile")}
           onNavigateToConnector={() => setCurrentScreen("connectorDashboard")}
           onConvertToRegular={handleConvertToRegular}
-          onNavigateToPromptManagement={() => setCurrentScreen("promptManagement")}
           onNavigateToFriends={() => setCurrentScreen("friendConnect")}
           onLogout={() => {
             setIsLoggedIn(false);
@@ -817,8 +815,6 @@ export default function App() {
       )}
 
       {currentScreen === "publicProfile" && <PublicProfileScreen />}
-
-      {currentScreen === "promptManagement" && <PromptManagementScreen />}
 
       {currentScreen === "friendConnect" && (
         <FriendConnectScreen onBack={() => setCurrentScreen("myPage")} />
@@ -834,11 +830,16 @@ export default function App() {
         />
       )}
 
-      {currentScreen === "league" && <LeagueScreen />}
+      {currentScreen === "league" && (
+        <LeagueScreen onNavigateToMatchmaker={() => setCurrentScreen("connectorDashboard")} />
+      )}
 
       {currentScreen === "aiHub" && (
         <AiHubScreen onProfileClick={(userId) => {
           setSelectedUserId(userId);
+          setSelectedMutualFriends([]);
+          setSelectedDegree(2);
+          setSelectedViewCost(0);
           setCurrentScreen("profileDetail");
         }} />
       )}
@@ -869,7 +870,7 @@ function BottomNavigation({
   const tabs: { screen: Screen; icon: React.ElementType; label: string; badge?: number; matchScreens?: Screen[] }[] = [
     { screen: "mainFeed", icon: Home, label: "홈" },
     { screen: "aiHub", icon: Sparkles, label: "AI" },
-    { screen: "introductionHistory", icon: Clock, label: "소개" },
+    { screen: "introductionHistory", icon: Clock, label: "소개", badge: unreadNotifications },
     { screen: "league", icon: Trophy, label: "리그" },
     { screen: "myPage", icon: User, label: "나", matchScreens: ["myPage", "myProfile", "connectorDashboard"] },
   ];

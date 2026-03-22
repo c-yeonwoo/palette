@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { ChevronLeft, Loader2, Send, Users, ExternalLink, Lock, CreditCard } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
+import { ChevronLeft, Loader2, Send, Users, ExternalLink, Lock, CreditCard, EyeOff } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 
@@ -155,6 +156,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   // Hide state
   const [isHidden, setIsHidden] = useState(false);
   const [isHiding, setIsHiding] = useState(false);
+  const [showHideConfirm, setShowHideConfirm] = useState(false);
 
   useEffect(() => {
     // If free (1촌), fetch directly; if paid, show gate first
@@ -277,19 +279,13 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     }
   };
 
-  const handleHide = async () => {
-    if (!userId) return;
+  const handleHideConfirm = async () => {
     setIsHiding(true);
     try {
-      if (isHidden) {
-        await api.delete(`/api/v1/feed/hide/${userId}`);
-        setIsHidden(false);
-        toast.success("추천 목록에 다시 표시됩니다");
-      } else {
-        await api.post(`/api/v1/feed/hide/${userId}`, {});
-        setIsHidden(true);
-        toast.success("이 프로필을 추천받지 않습니다");
-      }
+      await api.post(`/api/v1/feed/hide/${userId}`, {});
+      setIsHidden(true);
+      setShowHideConfirm(false);
+      onBack();
     } catch {
       toast.error("처리에 실패했습니다");
     } finally {
@@ -571,25 +567,36 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-card/95 backdrop-blur-sm border-b border-border">
-        <div className="px-4 py-4 flex items-center justify-between">
+        <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center">
             <Button variant="ghost" size="icon" onClick={onBack} className="mr-2">
               <ChevronLeft className="w-5 h-5" />
             </Button>
-            <h2 className="text-lg font-semibold">{userInfo.nickname}님의 프로필</h2>
+            <h2 className="text-base font-semibold">{userInfo.nickname}님의 프로필</h2>
           </div>
+          <button
+            onClick={() => setShowHideConfirm(true)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground px-3 py-1.5 rounded-full hover:bg-muted transition-colors"
+          >
+            <EyeOff className="w-3.5 h-3.5" />
+            추천받지 않기
+          </button>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto">
         {/* Photo Carousel */}
-        {sortedPhotos.length > 0 ? (
-          <PhotoCarousel photos={sortedPhotos} />
-        ) : (
-          <div className="aspect-[3/4] bg-muted flex items-center justify-center mx-1 rounded-2xl">
-            <span className="text-sm text-muted-foreground">사진 없음</span>
-          </div>
-        )}
+        <div className="px-4 pt-3">
+          {sortedPhotos.length > 0 ? (
+            <div className="rounded-2xl overflow-hidden max-h-[420px]">
+              <PhotoCarousel photos={sortedPhotos} />
+            </div>
+          ) : (
+            <div className="aspect-[3/4] max-h-[420px] bg-muted flex items-center justify-center rounded-2xl">
+              <span className="text-sm text-muted-foreground">사진 없음</span>
+            </div>
+          )}
+        </div>
 
         {/* Tabs */}
         <div className="border-b border-border px-6 mt-6">
@@ -770,62 +777,49 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
               ⏳ 매칭 성사 후 쿨타임 중 · {coolTimeRemainingDays}일 후 새 요청 가능
             </p>
           )}
-          {/* Hide section */}
-          <div className="flex justify-end mb-1">
-            <button
-              onClick={handleHide}
-              disabled={isHiding}
-              className="text-xs text-muted-foreground flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
-            >
-              <span>{isHidden ? "👁️" : "🚫"}</span>
-              {isHidden ? "추천 다시 받기" : "추천받지 않기"}
-            </button>
-          </div>
-
-          {/* Vouch section */}
-          <div className="bg-muted/30 rounded-xl p-3 mb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium flex items-center gap-1.5">
-                  ✅ 사진 보증
-                  {vouchCount > 0 && (
-                    <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold px-2 py-0.5 rounded-full">
-                      {vouchCount}명 보증
-                    </span>
-                  )}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  이 분을 직접 알고 사진이 실물과 비슷하면 보증해주세요
-                </p>
-              </div>
-              <Button
-                size="sm"
-                variant={isVouchedByMe ? "secondary" : "outline"}
-                className={`text-xs ${isVouchedByMe ? "text-green-600 border-green-500" : ""}`}
-                onClick={handleVouch}
-                disabled={isVouching}
-              >
-                {isVouchedByMe ? "보증 취소" : "보증하기"}
-              </Button>
+          {mutualFriends.length === 0 ? (
+            <div className="rounded-2xl bg-muted/60 border border-border p-4 text-center space-y-1.5">
+              <p className="text-sm font-medium text-muted-foreground">주선 요청을 하려면</p>
+              <p className="text-xs text-muted-foreground">공통 친구가 필요해요. 친구를 연결하면 지인을 통한 주선이 가능해요.</p>
             </div>
-          </div>
-
-          <Button
-            size="lg"
-            className="w-full h-14"
-            onClick={handleMatchRequest}
-            disabled={alreadyRequested || inCoolTime}
-            variant={alreadyRequested || inCoolTime ? "secondary" : "default"}
-          >
-            <Send className="w-5 h-5 mr-2" />
-            {alreadyRequested
-              ? "주선 요청 완료"
-              : inCoolTime
-              ? `쿨타임 중 (${coolTimeRemainingDays}일 남음)`
-              : "주선 요청하기"}
-          </Button>
+          ) : (
+            <Button
+              size="lg"
+              className="w-full h-14"
+              onClick={handleMatchRequest}
+              disabled={alreadyRequested || inCoolTime}
+              variant={alreadyRequested || inCoolTime ? "secondary" : "default"}
+            >
+              <Send className="w-5 h-5 mr-2" />
+              {alreadyRequested
+                ? "주선 요청 완료"
+                : inCoolTime
+                ? `쿨타임 중 (${coolTimeRemainingDays}일 남음)`
+                : "주선 요청하기"}
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Hide Confirm Dialog */}
+      <Dialog open={showHideConfirm} onOpenChange={setShowHideConfirm}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>추천받지 않겠습니까?</DialogTitle>
+            <DialogDescription>
+              피드에 앞으로 노출되지 않고, 상대방도 나를 볼 수 없습니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2 flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowHideConfirm(false)} disabled={isHiding}>
+              취소
+            </Button>
+            <Button variant="destructive" className="flex-1" onClick={handleHideConfirm} disabled={isHiding}>
+              {isHiding ? <Loader2 className="w-4 h-4 animate-spin" /> : "확인"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Matchmaker Selection Modal */}
       {showMatchmakerModal && (

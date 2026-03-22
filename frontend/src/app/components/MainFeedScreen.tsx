@@ -95,6 +95,7 @@ interface AiSignalResponse {
 interface MainFeedScreenProps {
   onProfileClick?: (item: FeedProfileItem) => void;
   onNotificationClick?: () => void;
+  onNavigateToFriends?: () => void;
   unreadNotifications?: number;
 }
 
@@ -130,7 +131,7 @@ const JOB_CATEGORIES = [
   { value: "OTHER", label: "기타" },
 ];
 
-export function MainFeedScreen({ onProfileClick, onNotificationClick, unreadNotifications = 0 }: MainFeedScreenProps) {
+export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigateToFriends, unreadNotifications = 0 }: MainFeedScreenProps) {
   const [feedItems, setFeedItems] = useState<FeedProfileItem[]>([]);
   const [aiSignal, setAiSignal] = useState<AiSignalResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -337,10 +338,11 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, unreadNoti
         ) : userProfile?.accountType === "MATCHMAKER_ONLY" ? (
           <EmptyState title="주선자 전용 계정" description="주선 기능은 주선자 대시보드에서 이용하실 수 있습니다" />
         ) : feedItems.length === 0 ? (
-          <EmptyState
-            title="아직 주변 지인이 없어요"
-            description={hasActiveFilters ? "필터 조건을 조정해보세요" : "지인에게 주선을 요청하거나 프로필을 완성해보세요"}
-          />
+          hasActiveFilters ? (
+            <EmptyState title="조건에 맞는 지인이 없어요" description="필터 조건을 조정해보세요" />
+          ) : (
+            <NoFriendsNudge onNavigateToFriends={onNavigateToFriends} />
+          )
         ) : (
           <div className="grid grid-cols-2 gap-3">
             {feedItems.map((item) => (
@@ -688,6 +690,44 @@ function EmptyState({ title, description }: { title: string; description: string
       </div>
       <h3 className="text-base font-semibold mb-1.5">{title}</h3>
       <p className="text-sm text-muted-foreground max-w-[240px] leading-relaxed">{description}</p>
+    </div>
+  );
+}
+
+function NoFriendsNudge({ onNavigateToFriends }: { onNavigateToFriends?: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+      {/* Illustration */}
+      <div className="relative mb-8">
+        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-pink-400/20 flex items-center justify-center">
+          <span className="text-4xl">🫂</span>
+        </div>
+        <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">
+          <span className="text-sm">✨</span>
+        </div>
+      </div>
+
+      <h3 className="text-lg font-bold mb-2">아직 연결된 지인이 없어요</h3>
+      <p className="text-sm text-muted-foreground leading-relaxed max-w-[260px] mb-2">
+        친구를 추가하면 주변 지인을 소개받을 수 있어요
+      </p>
+      <p className="text-xs text-muted-foreground/70 max-w-[240px] mb-8">
+        Palette는 지인 네트워크 기반이라 친구가 많을수록 더 많은 분을 만날 수 있어요
+      </p>
+
+      {onNavigateToFriends && (
+        <button
+          onClick={onNavigateToFriends}
+          className="flex items-center gap-2 bg-primary text-primary-foreground font-semibold px-6 py-3 rounded-2xl shadow-md active:scale-95 transition-transform"
+        >
+          <span className="text-base">👥</span>
+          친구 추가하기
+        </button>
+      )}
+
+      <p className="text-xs text-muted-foreground/60 mt-4">
+        초대 코드 공유 또는 연락처로 친구를 찾을 수 있어요
+      </p>
     </div>
   );
 }

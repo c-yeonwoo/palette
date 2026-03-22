@@ -10,4 +10,8 @@ interface MatchmakingRequestJpaRepository : JpaRepository<MatchmakingRequestEnti
     fun existsByRequesterIdAndTargetUserId(requesterId: UUID, targetUserId: UUID): Boolean
     fun findByRequesterIdAndTargetUserId(requesterId: UUID, targetUserId: UUID): MatchmakingRequestEntity?
     fun findByStatus(status: String): List<MatchmakingRequestEntity>
+
+    fun deleteByRequesterId(requesterId: UUID)
+    fun deleteByTargetUserId(targetUserId: UUID)
+    fun deleteByMatchmakerId(matchmakerId: UUID)
 }
