@@ -27,9 +27,10 @@ import { FriendConnectScreen } from "./components/FriendConnectScreen";
 import { MatchmakerRewardScreen } from "./components/MatchmakerRewardScreen";
 import { NotificationScreen } from "./components/NotificationScreen";
 import { LeagueScreen } from "./components/LeagueScreen";
+import { AiHubScreen } from "./components/AiHubScreen";
 import { Toaster } from "./components/ui/sonner";
 import { Button } from "./components/ui/button";
-import { Home, User, Clock, Bell, Trophy } from "lucide-react";
+import { Home, User, Clock, Bell, Trophy, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { authService } from "../lib/auth/authService";
 import { tokenStorage } from "../lib/auth/tokenStorage";
@@ -63,7 +64,8 @@ type Screen =
   | "friendConnect"
   | "matchmakerReward"
   | "notifications"
-  | "league";
+  | "league"
+  | "aiHub";
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>("login");
@@ -834,6 +836,13 @@ export default function App() {
 
       {currentScreen === "league" && <LeagueScreen />}
 
+      {currentScreen === "aiHub" && (
+        <AiHubScreen onProfileClick={(userId) => {
+          setSelectedUserId(userId);
+          setCurrentScreen("profileDetail");
+        }} />
+      )}
+
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding/detail screens */}
       {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "matchmakerInfo", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "aboutMe", "aiInterview", "colorTypeResult", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "notifications"].includes(currentScreen) && (
         <BottomNavigation
@@ -859,6 +868,7 @@ function BottomNavigation({
 }) {
   const tabs: { screen: Screen; icon: React.ElementType; label: string; badge?: number; matchScreens?: Screen[] }[] = [
     { screen: "mainFeed", icon: Home, label: "홈" },
+    { screen: "aiHub", icon: Sparkles, label: "AI" },
     { screen: "introductionHistory", icon: Clock, label: "소개" },
     { screen: "league", icon: Trophy, label: "리그" },
     { screen: "myPage", icon: User, label: "나", matchScreens: ["myPage", "myProfile", "connectorDashboard"] },

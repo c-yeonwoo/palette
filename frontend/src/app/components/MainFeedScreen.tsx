@@ -330,18 +330,6 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, unreadNoti
         </div>
       )}
 
-      {/* Fortune Banner */}
-      {!loading && userProfile?.accountType === "REGULAR" && <FortuneBanner />}
-
-      {/* AI Signal Section */}
-      {!loading && aiSignal && aiSignal.recommendations.length > 0 && (
-        <AiSignalSection
-          recommendations={aiSignal.recommendations}
-          onProfileClick={onProfileClick}
-          onUnlocked={(updated) => setAiSignal({ ...aiSignal, recommendations: updated })}
-        />
-      )}
-
       {/* Feed */}
       <div className="px-4">
         {loading ? (
@@ -394,7 +382,7 @@ function ProfileCard({ item, onClick }: { item: FeedProfileItem; onClick: () => 
       setRevealed(true);
       setPeeling(false);
       api.post(`/api/v1/feed/open/${profile.userId}`, {}).catch(() => {});
-    }, 1300);
+    }, 1200);
   };
 
   return (
@@ -415,20 +403,15 @@ function ProfileCard({ item, onClick }: { item: FeedProfileItem; onClick: () => 
           <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
         )}
 
-        {/* 대각선 wipe: 왼쪽위→오른쪽아래로 닦이며 사라짐 */}
+        {/* Diagonal Wipe Transition */}
         {!revealed && (
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: "url('/paint-overlay.png')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              clipPath: peeling
-                ? "polygon(100% 100%, 100% 100%, 100% 100%, 100% 100%)"
-                : "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
-              transition: peeling ? "clip-path 1.2s cubic-bezier(0.4, 0, 0.2, 1)" : "none",
-            }}
-          />
+          <div className="absolute inset-0" style={{
+            backgroundImage: "url('/paint-overlay.png')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 0% 0%)",
+            animation: peeling ? "diagonal-wipe 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards" : "none",
+          }} />
         )}
 
         {/* Cost pill */}
@@ -605,7 +588,7 @@ function AiSignalCard({
       setRevealed(true);
       setPeeling(false);
       api.post(`/api/v1/feed/open/${profile.userId}`, {}).catch(() => {});
-    }, 1300);
+    }, 1200);
   };
 
 
@@ -621,20 +604,15 @@ function AiSignalCard({
         )}
         {revealed && <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />}
 
-        {/* 대각선 wipe: 왼쪽위→오른쪽아래로 닦이며 사라짐 */}
+        {/* Diagonal Wipe Transition */}
         {!revealed && (
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: "url('/paint-overlay.png')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              clipPath: peeling
-                ? "polygon(100% 100%, 100% 100%, 100% 100%, 100% 100%)"
-                : "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
-              transition: peeling ? "clip-path 1.2s cubic-bezier(0.4, 0, 0.2, 1)" : "none",
-            }}
-          />
+          <div className="absolute inset-0" style={{
+            backgroundImage: "url('/paint-overlay.png')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 0% 0%)",
+            animation: peeling ? "diagonal-wipe 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards" : "none",
+          }} />
         )}
 
         {/* AI badge */}

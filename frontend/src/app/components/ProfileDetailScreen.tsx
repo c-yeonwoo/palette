@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { ChevronLeft, Loader2, Send, Users, ExternalLink, Lock, CreditCard } from "lucide-react";
@@ -77,6 +77,54 @@ interface ProfileData {
   metrics: {
     trustScore: number;
   };
+}
+
+function PhotoCarousel({ photos }: { photos: Array<{ id: string; url: string }> }) {
+  const [idx, setIdx] = useState(0);
+  const startX = useRef<number | null>(null);
+
+  const prev = () => setIdx(i => Math.max(0, i - 1));
+  const next = () => setIdx(i => Math.min(photos.length - 1, i + 1));
+
+  return (
+    <div className="relative select-none">
+      <div
+        className="aspect-[3/4] overflow-hidden bg-muted"
+        onTouchStart={e => { startX.current = e.touches[0].clientX; }}
+        onTouchEnd={e => {
+          if (startX.current === null) return;
+          const dx = e.changedTouches[0].clientX - startX.current;
+          if (dx < -40) next();
+          else if (dx > 40) prev();
+          startX.current = null;
+        }}
+      >
+        <img src={photos[idx].url} alt="" className="w-full h-full object-cover" />
+      </div>
+
+      {/* prev/next tap zones */}
+      {idx > 0 && (
+        <button onClick={prev} className="absolute left-0 top-0 h-full w-1/3" aria-label="이전 사진" />
+      )}
+      {idx < photos.length - 1 && (
+        <button onClick={next} className="absolute right-0 top-0 h-full w-1/3" aria-label="다음 사진" />
+      )}
+
+      {/* dots */}
+      {photos.length > 1 && (
+        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+          {photos.map((_, i) => (
+            <div key={i} className={`rounded-full transition-all ${i === idx ? "w-4 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/50"}`} />
+          ))}
+        </div>
+      )}
+
+      {/* counter */}
+      <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-sm rounded-full px-2 py-0.5">
+        <span className="text-white text-[10px] font-medium">{idx + 1} / {photos.length}</span>
+      </div>
+    </div>
+  );
 }
 
 export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree = 2, viewCost = 3000 }: ProfileDetailScreenProps) {
@@ -534,19 +582,14 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
       </div>
 
       <div className="max-w-2xl mx-auto">
-        {/* Photo Grid */}
-        <div className="grid grid-cols-3 gap-1 p-1">
-          {sortedPhotos.slice(0, 6).map((photo, index) => (
-            <div key={photo.id} className="aspect-[3/4] bg-muted relative overflow-hidden">
-              <img src={photo.url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
-            </div>
-          ))}
-          {sortedPhotos.length < 6 && Array.from({ length: 6 - sortedPhotos.length }).map((_, i) => (
-            <div key={`empty-${i}`} className="aspect-[3/4] bg-muted flex items-center justify-center">
-              <span className="text-xs text-muted-foreground">사진 없음</span>
-            </div>
-          ))}
-        </div>
+        {/* Photo Carousel */}
+        {sortedPhotos.length > 0 ? (
+          <PhotoCarousel photos={sortedPhotos} />
+        ) : (
+          <div className="aspect-[3/4] bg-muted flex items-center justify-center mx-1 rounded-2xl">
+            <span className="text-sm text-muted-foreground">사진 없음</span>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="border-b border-border px-6 mt-6">
