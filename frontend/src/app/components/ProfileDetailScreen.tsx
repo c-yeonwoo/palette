@@ -75,6 +75,12 @@ interface ProfileData {
     isPrimary: boolean;
   }>;
   primaryPhotoUrl: string | null;
+  colorType: {
+    type: string | null;
+    name: string | null;
+    hex: string | null;
+    description: string | null;
+  } | null;
   metrics: {
     trustScore: number;
   };
@@ -90,7 +96,7 @@ function PhotoCarousel({ photos }: { photos: Array<{ id: string; url: string }> 
   return (
     <div className="relative select-none">
       <div
-        className="aspect-[3/4] overflow-hidden bg-muted"
+        className="relative h-[480px] bg-black overflow-hidden flex items-center justify-center"
         onTouchStart={e => { startX.current = e.touches[0].clientX; }}
         onTouchEnd={e => {
           if (startX.current === null) return;
@@ -100,7 +106,10 @@ function PhotoCarousel({ photos }: { photos: Array<{ id: string; url: string }> 
           startX.current = null;
         }}
       >
-        <img src={photos[idx].url} alt="" className="w-full h-full object-cover" />
+        {/* 블러 배경 */}
+        <img src={photos[idx].url} alt="" className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-40 pointer-events-none" aria-hidden />
+        {/* 실제 사진 — 가운데 정렬 */}
+        <img src={photos[idx].url} alt="" className="relative max-w-full max-h-full object-contain" />
       </div>
 
       {/* prev/next tap zones */}
@@ -432,7 +441,10 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   // Section components (same as MyProfileScreen)
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div className="space-y-3">
-      <h3 className="text-lg font-semibold">{title}</h3>
+      <h3
+        className="text-lg font-semibold"
+        style={accentColor ? { color: accentColor } : {}}
+      >{title}</h3>
       {children}
     </div>
   );
@@ -452,7 +464,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     return (
       <div className="flex flex-wrap gap-2">
         {items.map((item, index) => (
-          <Badge key={index} variant="secondary" className="bg-primary/10 text-primary">
+          <Badge key={index} variant="secondary">
             {item}
           </Badge>
         ))}
@@ -463,7 +475,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   const InterviewAnswer = ({ question, answer }: { question: string; answer: string }) => {
     return (
       <div className="space-y-2 pb-3 border-b border-border/50 last:border-0">
-        <p className="text-sm font-medium text-primary">{question}</p>
+        <p className="text-sm font-medium" style={accentColor ? { color: accentColor } : { color: "hsl(var(--primary))" }}>{question}</p>
         <p className="text-sm leading-relaxed text-muted-foreground">{answer}</p>
       </div>
     );
@@ -562,11 +574,27 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   };
 
   const sortedPhotos = [...profile.photos].sort((a, b) => a.displayOrder - b.displayOrder);
+  const accentColor = profile.colorType?.hex ?? null;
+
+  const getContrastColor = (hex: string): string => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.55 ? '#111111' : '#FFFFFF';
+  };
+  const buttonTextColor = accentColor ? getContrastColor(accentColor) : undefined;
 
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-card/95 backdrop-blur-sm border-b border-border">
+      <div
+        className="sticky top-0 z-20 backdrop-blur-sm border-b border-border"
+        style={accentColor
+          ? { backgroundColor: `${accentColor}18`, borderBottomColor: `${accentColor}40` }
+          : { backgroundColor: "hsl(var(--card) / 0.95)" }
+        }
+      >
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center">
             <Button variant="ghost" size="icon" onClick={onBack} className="mr-2">
@@ -588,7 +616,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
         {/* Photo Carousel */}
         <div className="px-4 pt-3">
           {sortedPhotos.length > 0 ? (
-            <div className="rounded-2xl overflow-hidden max-h-[420px]">
+            <div className="rounded-2xl overflow-hidden">
               <PhotoCarousel photos={sortedPhotos} />
             </div>
           ) : (
@@ -598,29 +626,58 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
           )}
         </div>
 
+        {/* Color Badge */}
+        {profile.colorType?.hex && profile.colorType?.name && (
+          <div className="px-4 pt-3">
+            <div
+              className="flex items-center gap-2.5 rounded-xl px-4 py-3"
+              style={{ backgroundColor: `${profile.colorType.hex}18`, border: `1px solid ${profile.colorType.hex}40` }}
+            >
+              <div
+                className="w-5 h-5 rounded-full shrink-0 shadow-sm"
+                style={{ backgroundColor: profile.colorType.hex }}
+              />
+              <div className="min-w-0">
+                <span className="text-sm font-semibold" style={{ color: profile.colorType.hex }}>
+                  {profile.colorType.name}
+                </span>
+                {profile.colorType.description && (
+                  <span className="text-xs text-muted-foreground ml-2">{profile.colorType.description}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="border-b border-border px-6 mt-6">
           <div className="flex gap-6">
             <button
               onClick={() => setActiveTab("about")}
               className={`pb-3 px-1 font-medium transition-colors relative ${
-                activeTab === "about" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                activeTab === "about" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               내소개
               {activeTab === "about" && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+                <div
+                  className="absolute bottom-0 left-0 right-0 h-0.5"
+                  style={{ backgroundColor: accentColor ?? "hsl(var(--primary))" }}
+                />
               )}
             </button>
             <button
               onClick={() => setActiveTab("ideal")}
               className={`pb-3 px-1 font-medium transition-colors relative ${
-                activeTab === "ideal" ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                activeTab === "ideal" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               이상형
               {activeTab === "ideal" && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+                <div
+                  className="absolute bottom-0 left-0 right-0 h-0.5"
+                  style={{ backgroundColor: accentColor ?? "hsl(var(--primary))" }}
+                />
               )}
             </button>
           </div>
@@ -675,7 +732,13 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
               {/* Introduction */}
               <Section title="자기소개">
                 {profile?.introduction.interviewAnswers ? (
-                  <div className="bg-card rounded-lg border border-border p-4">
+                  <div
+                    className="bg-card rounded-lg p-4"
+                    style={accentColor
+                      ? { border: `1px solid ${accentColor}40` }
+                      : { border: "1px solid hsl(var(--border))" }
+                    }
+                  >
                     <div className="space-y-4">
                       {profile.introduction.interviewAnswers.hobby && (
                         <InterviewAnswer
@@ -789,6 +852,10 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
               onClick={handleMatchRequest}
               disabled={alreadyRequested || inCoolTime}
               variant={alreadyRequested || inCoolTime ? "secondary" : "default"}
+              style={(!alreadyRequested && !inCoolTime && accentColor)
+                ? { backgroundColor: accentColor, borderColor: accentColor, color: buttonTextColor }
+                : {}
+              }
             >
               <Send className="w-5 h-5 mr-2" />
               {alreadyRequested

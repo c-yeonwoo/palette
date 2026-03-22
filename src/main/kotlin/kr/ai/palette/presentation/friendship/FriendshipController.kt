@@ -9,12 +9,14 @@ import kr.ai.palette.domain.friendship.FriendshipRepository
 import kr.ai.palette.domain.friendship.FriendshipStatus
 import kr.ai.palette.domain.notification.NotificationType
 import kr.ai.palette.domain.user.UserRepository
+import kr.ai.palette.persistence.friendship.InviteCodeEntity
+import kr.ai.palette.persistence.friendship.InviteCodeJpaRepository
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import java.time.Instant
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 
 data class InviteCodeResponse(val code: String, val expiresAt: String)
 data class JoinByCodeRequest(val code: String)
@@ -38,25 +40,16 @@ data class SearchUserResponse(
     val hasPendingRequest: Boolean
 )
 
-private data class InviteCodeData(
-    val userId: UserId,
-    val code: String,
-    val createdAt: Instant,
-    val expiresAt: Instant
-)
-
 @RestController
 @RequestMapping("/api/v1/friends")
 class FriendshipController(
     private val friendshipRepository: FriendshipRepository,
     private val userRepository: UserRepository,
-    private val notificationService: NotificationService
+    private val notificationService: NotificationService,
+    private val inviteCodeJpaRepository: InviteCodeJpaRepository,
 ) {
 
     companion object {
-        // In-memory invite code store (production: use Redis or DB)
-        private val inviteCodes = ConcurrentHashMap<String, InviteCodeData>()
-
         private fun generateCode(): String {
             val chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
             return (1..6).map { chars.random() }.joinToString("")
@@ -67,66 +60,69 @@ class FriendshipController(
      * 초대 코드 생성
      */
     @PostMapping("/invite-code")
+    @Transactional
     fun generateInviteCode(
         @AuthenticationPrincipal authUser: AuthUser
     ): ResponseEntity<InviteCodeResponse> {
-        val userId = authUser.userId
-        // Remove existing code for this user
-        inviteCodes.entries.removeIf { it.value.userId == userId }
+        val userId = authUser.userId.value
+        // 기존 코드 삭제 (유저당 1개)
+        inviteCodeJpaRepository.deleteByUserId(userId)
 
         val code = generateCode()
-        val now = Instant.now()
-        val expiresAt = now.plusSeconds(86400) // 24 hours
-        inviteCodes[code] = InviteCodeData(userId, code, now, expiresAt)
-
-        return ResponseEntity.ok(
-            InviteCodeResponse(code = code, expiresAt = expiresAt.toString())
+        val expiresAt = Instant.now().plusSeconds(86400) // 24시간
+        inviteCodeJpaRepository.save(
+            InviteCodeEntity(userId = userId, code = code, expiresAt = expiresAt)
         )
+
+        return ResponseEntity.ok(InviteCodeResponse(code = code, expiresAt = expiresAt.toString()))
     }
 
     /**
      * 초대 코드로 친구 연결
      */
     @PostMapping("/join")
+    @Transactional
     fun joinByInviteCode(
         @AuthenticationPrincipal authUser: AuthUser,
         @RequestBody request: JoinByCodeRequest
     ): ResponseEntity<Map<String, Any>> {
         val myUserId = authUser.userId
-        val codeData = inviteCodes[request.code.uppercase()]
+        val codeEntity = inviteCodeJpaRepository.findByCode(request.code.trim().uppercase())
             ?: return ResponseEntity.badRequest().body(mapOf("error" to "유효하지 않은 초대 코드입니다"))
 
-        if (codeData.expiresAt.isBefore(Instant.now())) {
-            inviteCodes.remove(request.code.uppercase())
+        if (codeEntity.expiresAt.isBefore(Instant.now())) {
+            inviteCodeJpaRepository.delete(codeEntity)
             return ResponseEntity.badRequest().body(mapOf("error" to "만료된 초대 코드입니다"))
         }
 
-        if (codeData.userId == myUserId) {
+        val inviterUserId = UserId(codeEntity.userId)
+
+        if (inviterUserId == myUserId) {
             return ResponseEntity.badRequest().body(mapOf("error" to "자신의 초대 코드는 사용할 수 없습니다"))
         }
 
-        if (friendshipRepository.existsBetweenUsers(myUserId, codeData.userId)) {
+        if (friendshipRepository.existsBetweenUsers(myUserId, inviterUserId)) {
             return ResponseEntity.badRequest().body(mapOf("error" to "이미 친구 관계입니다"))
         }
 
         val now = Instant.now()
         val friendship = Friendship(
             id = FriendshipId.generate(),
-            user1Id = codeData.userId,
+            user1Id = inviterUserId,
             user2Id = myUserId,
             status = FriendshipStatus.ACCEPTED,
             createdAt = now,
             acceptedAt = now
         )
         friendshipRepository.save(friendship)
-        inviteCodes.remove(request.code.uppercase())
+        inviteCodeJpaRepository.delete(codeEntity) // 1회용 코드 삭제
 
-        val inviterUser = userRepository.findById(codeData.userId)
+        val inviterUser = userRepository.findById(inviterUserId)
         return ResponseEntity.ok(
             mapOf(
                 "success" to true,
                 "message" to "${inviterUser?.publicInfo?.nickname ?: "상대방"}님과 친구가 되었습니다!",
-                "friendUserId" to codeData.userId.value.toString()
+                "friendUserId" to inviterUserId.value.toString()
             )
         )
     }

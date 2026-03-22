@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component
 import java.time.Instant
 import java.time.LocalDate
 import java.util.*
-import kotlin.random.Random
 
 @Component
 class DataInitializer(
@@ -24,6 +23,8 @@ class DataInitializer(
 ) : ApplicationRunner {
 
     override fun run(args: ApplicationArguments) {
+        // 이미 시드 데이터가 있으면 중복 삽입 방지
+        if (userRepository.existsByNickname("개발하는민준")) return
         createTestUsers()
         createTestProfiles()
         createTestMatchmakers()
@@ -360,6 +361,12 @@ class DataInitializer(
                     title = "절제가 쉽지 않지만 노력중인 멋쟁이"
                 )
             ),
+            colorType = ColorType(
+                type = ColorTypeEnum.WARM_ORANGE,
+                name = "따뜻한 오렌지",
+                hex = "#FF8C42",
+                description = "활발하고 다정한 당신은 주변을 밝게 만드는 에너지가 있어요"
+            ),
             settings = ProfileSettings.initial()
         ).recalculateMetrics()
         profileRepository.save(profile1)
@@ -424,6 +431,12 @@ class DataInitializer(
                 viewCount = 0
             ),
             personalityTests = emptyList(),
+            colorType = ColorType(
+                type = ColorTypeEnum.SOFT_PINK,
+                name = "부드러운 핑크",
+                hex = "#F48FB1",
+                description = "섬세하고 낭만적인 당신은 감성이 풍부하고 따뜻한 마음을 가졌어요"
+            ),
             settings = ProfileSettings.initial()
         ).recalculateMetrics()
         profileRepository.save(profile2)
@@ -488,6 +501,12 @@ class DataInitializer(
                 viewCount = 0
             ),
             personalityTests = emptyList(),
+            colorType = ColorType(
+                type = ColorTypeEnum.CALM_BLUE,
+                name = "차분한 블루",
+                hex = "#4A90D9",
+                description = "신중하고 깊이있는 당신은 믿음직한 존재감을 가지고 있어요"
+            ),
             settings = ProfileSettings.initial()
         ).recalculateMetrics()
         profileRepository.save(profile3)
@@ -552,6 +571,12 @@ class DataInitializer(
                 viewCount = 0
             ),
             personalityTests = emptyList(),
+            colorType = ColorType(
+                type = ColorTypeEnum.FRESH_GREEN,
+                name = "신선한 그린",
+                hex = "#4CAF50",
+                description = "자연스럽고 편안한 당신은 함께 있으면 마음이 편안해지는 사람이에요"
+            ),
             settings = ProfileSettings.initial()
         ).recalculateMetrics()
         profileRepository.save(profile4)
@@ -616,6 +641,12 @@ class DataInitializer(
                 viewCount = 0
             ),
             personalityTests = emptyList(),
+            colorType = ColorType(
+                type = ColorTypeEnum.ELEGANT_PURPLE,
+                name = "고급스러운 퍼플",
+                hex = "#9B59B6",
+                description = "지적이고 감각적인 당신은 독특한 매력과 깊은 내면을 가지고 있어요"
+            ),
             settings = ProfileSettings.initial()
         ).recalculateMetrics()
         profileRepository.save(profile5)
@@ -805,59 +836,51 @@ class DataInitializer(
 
     private fun createTestFriendships() {
         val now = Instant.now()
-        val userIds = testUserIds.values.toList()
 
-        if (userIds.size < 2) {
-            println("⚠️ Not enough users to create friendships")
-            return
-        }
+        // 명시적 체인 구조로 2촌 관계 보장:
+        // minjun(M) — 1촌: hyewon(F), jihoon(M)
+        //   hyewon(F) — 친구: minjun, seoyeon(F), dohyun(M)  → seoyeon이 minjun의 2촌(F)
+        //   jihoon(M) — 친구: minjun, yujin(F)                → yujin이 minjun의 2촌(F)
+        // sangho(M)  — 1촌: seoyeon(F), dohyun(M)
+        // → minjun의 피드에 seoyeon(F), yujin(F) 표시됨
+        val pairs = listOf(
+            "minjun" to "hyewon",
+            "minjun" to "jihoon",
+            "hyewon" to "seoyeon",
+            "hyewon" to "dohyun",
+            "jihoon" to "yujin",
+            "sangho" to "seoyeon",
+            "sangho" to "dohyun",
+        )
 
-        val createdFriendships = mutableListOf<Friendship>()
+        var count = 0
+        pairs.forEach { (keyA, keyB) ->
+            val idA = testUserIds[keyA] ?: return@forEach
+            val idB = testUserIds[keyB] ?: return@forEach
 
-        // 랜덤하게 친구 관계 생성 (각 유저당 2-4명의 친구)
-        userIds.forEach { userId ->
-            val targetFriendCount = Random.nextInt(2, 5) // 2~4명
-            val potentialFriends = userIds.filter { it != userId }
+            if (friendshipRepository.existsBetweenUsers(idA, idB)) return@forEach
 
-            val friendsToAdd = potentialFriends
-                .shuffled()
-                .take(targetFriendCount)
-                .filter { friendId ->
-                    // 이미 친구 관계가 있는지 확인
-                    !friendshipRepository.existsBetweenUsers(userId, friendId)
-                }
-
-            friendsToAdd.forEach { friendId ->
-                // user1Id < user2Id 순서로 정렬하여 저장 (중복 방지)
-                val (user1Id, user2Id) = if (userId.value.toString() < friendId.value.toString()) {
-                    userId to friendId
-                } else {
-                    friendId to userId
-                }
-
-                val friendship = Friendship(
+            friendshipRepository.save(
+                Friendship(
                     id = FriendshipId.generate(),
-                    user1Id = user1Id,
-                    user2Id = user2Id,
-                    status = FriendshipStatus.ACCEPTED, // 바로 승인된 상태로 생성
-                    createdAt = now.minusSeconds(Random.nextLong(86400 * 30)), // 최근 30일 내
-                    acceptedAt = now.minusSeconds(Random.nextLong(86400 * 30))
+                    user1Id = idA,
+                    user2Id = idB,
+                    status = FriendshipStatus.ACCEPTED,
+                    createdAt = now,
+                    acceptedAt = now,
                 )
-
-                friendshipRepository.save(friendship)
-                createdFriendships.add(friendship)
-            }
+            )
+            count++
         }
 
         println("✅ Friendship mock data initialized successfully!")
-        println("👥 Created ${createdFriendships.size} friendships")
+        println("👥 Created $count friendships")
 
         // 각 유저의 친구 수와 2촌 수 출력
-        userIds.forEach { userId ->
+        testUserIds.forEach { (key, userId) ->
             val friendIds = friendshipRepository.findFriendIdsByUserId(userId)
             val secondDegreeIds = friendshipRepository.findSecondDegreeFriendIds(userId)
-            val userKey = testUserIds.entries.find { it.value == userId }?.key ?: "unknown"
-            println("  - $userKey: ${friendIds.size}명의 친구, ${secondDegreeIds.size}명의 2촌")
+            println("  - $key: ${friendIds.size}명의 친구, ${secondDegreeIds.size}명의 2촌")
         }
     }
 }

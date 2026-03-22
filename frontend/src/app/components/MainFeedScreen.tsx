@@ -199,7 +199,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <div className="px-5 pt-6 pb-4">
+      <div className="max-w-2xl mx-auto px-5 pt-6 pb-4">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[11px] font-semibold text-muted-foreground tracking-[0.18em] uppercase mb-0.5">Palette</p>
@@ -332,7 +332,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
       )}
 
       {/* Feed */}
-      <div className="px-4">
+      <div className="max-w-2xl mx-auto px-4">
         {loading ? (
           <LoadingState />
         ) : userProfile?.accountType === "MATCHMAKER_ONLY" ? (
@@ -344,7 +344,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
             <NoFriendsNudge onNavigateToFriends={onNavigateToFriends} />
           )
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {feedItems.map((item) => (
               <ProfileCard key={item.profile.userId} item={item} onClick={() => onProfileClick?.(item)} />
             ))}

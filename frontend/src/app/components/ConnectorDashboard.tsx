@@ -158,7 +158,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward }: ConnectorDash
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-card border-b border-border px-6 py-4">
+      <div className="bg-card border-b border-border px-4 py-4">
         <div className="max-w-2xl mx-auto relative flex items-center justify-center">
           {onBack && (
             <button
@@ -173,7 +173,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward }: ConnectorDash
       </div>
 
       {/* Stats Cards */}
-      <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+      <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
         <div className="grid grid-cols-3 gap-2 sm:gap-4">
           {/* Total Points */}
           <Card className="p-3 sm:p-6 bg-gradient-to-br from-accent/20 to-accent/5 border-accent/30">

@@ -80,13 +80,15 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="bg-gradient-to-b from-primary/10 to-background pt-6 pb-4 px-6">
-        <h2 className="text-center text-xl font-bold">큐피드 리그 🏆</h2>
-        <p className="text-center text-sm text-muted-foreground mt-1">{league.season.seasonName}</p>
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-center text-xl font-bold">큐피드 리그 🏆</h2>
+          <p className="text-center text-sm text-muted-foreground mt-1">{league.season.seasonName}</p>
+        </div>
       </div>
 
       {/* 비주선자 CTA */}
       {!isMatchmaker && (
-        <div className="px-4 mb-2">
+        <div className="max-w-2xl mx-auto px-4 mb-2">
           <div className="rounded-2xl bg-gradient-to-r from-primary/10 to-pink-500/10 border border-primary/20 p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
               <HeartHandshake className="w-5 h-5 text-primary" />
@@ -105,7 +107,7 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
         </div>
       )}
 
-      <div className="px-4 space-y-4 mt-2">
+      <div className="max-w-2xl mx-auto px-4 space-y-4 mt-2">
         {/* Season countdown */}
         <div className="bg-card rounded-2xl border border-border p-4 flex items-center gap-4">
           <div className="flex-1">

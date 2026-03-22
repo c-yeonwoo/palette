@@ -157,7 +157,7 @@ export function IntroductionHistoryScreen() {
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-card/95 backdrop-blur-sm border-b border-border/40">
-        <div className="px-4 pt-safe-top">
+        <div className="max-w-2xl mx-auto px-4 pt-safe-top">
           <div className="flex items-center justify-between h-14">
             <h1 className="text-base font-bold">소개</h1>
             {actionNeeded > 0 && (
@@ -170,7 +170,7 @@ export function IntroductionHistoryScreen() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-border/40 px-4 bg-background sticky top-14 z-10">
+      <div className="max-w-2xl mx-auto flex border-b border-border/40 px-4 bg-background sticky top-14 z-10">
         {(["pending", "completed"] as TabType[]).map(tab => (
           <button
             key={tab}
