@@ -1,43 +1,38 @@
 package kr.ai.palette.presentation.feed
 
 import kr.ai.palette.domain.auth.AuthUser
-import kr.ai.palette.domain.common.UserId
+import kr.ai.palette.persistence.feed.FeedHideEntity
+import kr.ai.palette.persistence.feed.FeedHideJpaRepository
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
-import java.util.concurrent.ConcurrentHashMap
 
 @RestController
 @RequestMapping("/api/v1/feed/hide")
-class FeedHideController {
-
-    companion object {
-        // userId.toString() → set of hidden targetUserId strings
-        private val store = ConcurrentHashMap<String, MutableSet<String>>()
-
-        fun isHidden(userId: UserId, targetUserId: UserId): Boolean =
-            store[userId.value.toString()]?.contains(targetUserId.value.toString()) == true
-
-        fun getHiddenIds(userId: UserId): Set<String> =
-            store[userId.value.toString()] ?: emptySet()
-    }
+class FeedHideController(
+    private val feedHideRepository: FeedHideJpaRepository,
+) {
 
     @PostMapping("/{targetUserId}")
     fun hide(
         @AuthenticationPrincipal authUser: AuthUser,
         @PathVariable targetUserId: String
     ): ResponseEntity<Unit> {
-        store.getOrPut(authUser.userId.value.toString()) { ConcurrentHashMap.newKeySet() }
-            .add(targetUserId)
+        val myIdStr = authUser.userId.value.toString()
+        if (!feedHideRepository.existsByUserIdAndTargetUserId(myIdStr, targetUserId)) {
+            feedHideRepository.save(FeedHideEntity(userId = myIdStr, targetUserId = targetUserId))
+        }
         return ResponseEntity.ok().build()
     }
 
+    @Transactional
     @DeleteMapping("/{targetUserId}")
     fun unhide(
         @AuthenticationPrincipal authUser: AuthUser,
         @PathVariable targetUserId: String
     ): ResponseEntity<Unit> {
-        store[authUser.userId.value.toString()]?.remove(targetUserId)
+        feedHideRepository.deleteByUserIdAndTargetUserId(authUser.userId.value.toString(), targetUserId)
         return ResponseEntity.ok().build()
     }
 
@@ -45,7 +40,8 @@ class FeedHideController {
     fun list(
         @AuthenticationPrincipal authUser: AuthUser
     ): ResponseEntity<HiddenProfilesResponse> {
-        val ids = store[authUser.userId.value.toString()]?.toList() ?: emptyList()
+        val ids = feedHideRepository.findAllByUserId(authUser.userId.value.toString())
+            .map { it.targetUserId }
         return ResponseEntity.ok(HiddenProfilesResponse(ids))
     }
 }

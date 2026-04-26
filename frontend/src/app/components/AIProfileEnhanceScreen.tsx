@@ -1,317 +1,246 @@
 import { useState } from "react";
 import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
-import { Sparkles, RefreshCw, Check, ArrowRight } from "lucide-react";
+import { Sparkles, RefreshCw, ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
+import { api } from "../../lib/api/apiClient";
+import { toast } from "sonner";
+
+interface ProfileGenerationResult {
+  colorType: string;
+  colorName: string;
+  colorHex: string;
+  colorDescription: string;
+  generatedIntroduction: string;
+}
 
 interface AIProfileEnhanceScreenProps {
-  onComplete: () => void;
+  onComplete: (result: ProfileGenerationResult) => void;
+  introMethod: "INTERVIEW" | "MANUAL";
   profileData: {
     introduction: {
-      interviewAnswers: {
-        hobby: string;
-        charm: string;
-        passion: string;
-        happiness: string;
-        motto: string;
-      };
-    };
-    lifestyleInfo: {
-      smoking: string;
-      drinking: string;
-      religion: string;
+      interviewAnswers?: Record<string, string>;
     };
     idealType: {
-      datePreferences: string[];
-      importantValues: string[];
-      personalities: string[];
-      appearanceStyles: string[];
-      dealBreakers: string[];
+      personalities?: string[];
+      datePreferences?: string[];
+      importantValues?: string[];
+      dealBreakers?: string[];
     };
   };
 }
 
-export function AIProfileEnhanceScreen({ onComplete, profileData }: AIProfileEnhanceScreenProps) {
+const COLOR_GRADIENT: Record<string, string> = {
+  WARM_ORANGE: "from-orange-400 to-amber-400",
+  CALM_BLUE: "from-blue-400 to-cyan-400",
+  VIBRANT_RED: "from-red-400 to-rose-500",
+  SOFT_PINK: "from-pink-300 to-rose-300",
+  FRESH_GREEN: "from-green-400 to-emerald-400",
+  ELEGANT_PURPLE: "from-purple-400 to-violet-500",
+  BRIGHT_YELLOW: "from-yellow-300 to-amber-300",
+  SOPHISTICATED_GRAY: "from-slate-400 to-gray-500",
+};
+
+const COLOR_EMOJI: Record<string, string> = {
+  WARM_ORANGE: "🍊",
+  CALM_BLUE: "🌊",
+  VIBRANT_RED: "🔥",
+  SOFT_PINK: "🌸",
+  FRESH_GREEN: "🌿",
+  ELEGANT_PURPLE: "💜",
+  BRIGHT_YELLOW: "☀️",
+  SOPHISTICATED_GRAY: "🩶",
+};
+
+const INTERVIEW_LABELS: Record<string, string> = {
+  job: "직업",
+  weekend: "주말 활동",
+  personality: "성격",
+  passion: "요즘 관심사",
+  happiness: "행복한 순간",
+  date: "이상적인 데이트",
+  loveValue: "연애에서 중요한 것",
+  attractedTo: "끌리는 타입",
+  dealBreaker: "절대 안 되는 것",
+  motto: "좌우명",
+};
+
+const MANUAL_LABELS: Record<string, string> = {
+  hobby: "쉬는 날엔",
+  charm: "나의 매력",
+  passion: "요즘 빠져있는 것",
+  happiness: "행복한 순간",
+  motto: "인생 좌우명",
+};
+
+export function AIProfileEnhanceScreen({
+  onComplete,
+  introMethod,
+  profileData,
+}: AIProfileEnhanceScreenProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [currentVersion, setCurrentVersion] = useState<"original" | "ai">("ai");
+  const [result, setResult] = useState<ProfileGenerationResult | null>(null);
+  const [showDetail, setShowDetail] = useState(false);
 
-  // 실제 사용자 입력 데이터
-  const originalProfile = {
-    interviewAnswers: profileData.introduction.interviewAnswers,
-    lifestyle: {
-      smoking: profileData.lifestyleInfo.smoking,
-      drinking: profileData.lifestyleInfo.drinking,
-      religion: profileData.lifestyleInfo.religion,
-    },
-    idealType: {
-      datePreferences: profileData.idealType.datePreferences,
-      importantValues: profileData.idealType.importantValues,
-      personalities: profileData.idealType.personalities,
-      appearanceStyles: profileData.idealType.appearanceStyles,
-      dealBreakers: profileData.idealType.dealBreakers,
-    },
-  };
+  const answers = profileData.introduction.interviewAnswers ?? {};
+  const idealType = profileData.idealType;
 
-  // AI 개선 버전 (mock - 추후 LLM 연동)
-  const aiEnhancedProfile = {
-    interviewAnswers: {
-      hobby: profileData.introduction.interviewAnswers.hobby + " 주변 사람들과 함께할 때 더욱 즐겁고 의미있는 시간을 보내려고 노력해요.",
-      charm: profileData.introduction.interviewAnswers.charm + " 이런 점들이 저를 특별하게 만들어주는 것 같아요.",
-      passion: profileData.introduction.interviewAnswers.passion + " 이 과정에서 배우고 성장하는 게 정말 즐거워요.",
-      happiness: profileData.introduction.interviewAnswers.happiness + " 그런 순간들이 제게 가장 큰 행복이에요.",
-      motto: profileData.introduction.interviewAnswers.motto + " 이 마음가짐으로 매일을 살아가고 있어요.",
-    },
-    lifestyle: originalProfile.lifestyle,
-    idealType: originalProfile.idealType,
-    aiSuggestions: [
-      "인터뷰 답변에 더 구체적이고 매력적인 표현을 추가했어요",
-      "일상의 소소한 행복을 잘 표현했어요",
-      "진솔하고 따뜻한 느낌을 강화했어요",
-      "당신의 개성과 가치관이 잘 드러나도록 개선했어요",
-    ],
-  };
+  const labels = introMethod === "INTERVIEW" ? INTERVIEW_LABELS : MANUAL_LABELS;
 
-  const handleRegenerate = () => {
+  const handleGenerate = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
+    try {
+      const requestBody = {
+        introMethod,
+        ...(introMethod === "INTERVIEW"
+          ? { interviewAnswers: answers }
+          : { manualAnswers: answers }),
+        idealType: {
+          personalities: idealType.personalities ?? [],
+          datePreferences: idealType.datePreferences ?? [],
+          importantValues: idealType.importantValues ?? [],
+          dealBreakers: idealType.dealBreakers ?? [],
+        },
+      };
+
+      const data = await api.post<ProfileGenerationResult>(
+        "/api/v1/ai-profile/generate",
+        requestBody
+      );
+      setResult(data);
+    } catch {
+      toast.error("생성에 실패했어요. 다시 시도해주세요.");
+    } finally {
       setIsGenerating(false);
-    }, 2000);
-  };
-
-  const handleComplete = () => {
-    const versionText = currentVersion === "ai" ? "AI 개선된 버전" : "원본 버전";
-    const confirmed = window.confirm(
-      `${versionText}으로 프로필을 작성하시겠습니까?\n\n선택하신 내용으로 프로필이 생성됩니다.`
-    );
-
-    if (confirmed) {
-      onComplete();
     }
   };
 
+  const handleComplete = () => {
+    if (!result) return;
+    onComplete(result);
+  };
+
+  const gradient = result ? (COLOR_GRADIENT[result.colorType] ?? "from-slate-400 to-gray-500") : "";
+  const emoji = result ? (COLOR_EMOJI[result.colorType] ?? "✨") : "";
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="bg-card border-b border-border px-6 py-4">
-        <h2 className="text-center">AI 프로필 개선</h2>
+        <h2 className="text-center">AI 프로필 완성</h2>
+        <p className="text-center text-sm text-muted-foreground mt-1">마지막 단계예요</p>
       </div>
 
-      {/* Content */}
-      <div className="max-w-3xl mx-auto px-6 py-8 space-y-6">
-        {/* AI Info Banner */}
-        <div className="bg-gradient-to-r from-pink-50 to-amber-50 border-2 border-pink-200 rounded-2xl p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-6 h-6 text-amber-500" />
-            <h3 className="text-pink-900">AI가 당신의 매력을 더했어요!</h3>
-          </div>
-          <p className="text-sm text-pink-700">
-            입력하신 정보를 바탕으로 더 매력적이고 진솔한 프로필을 작성했습니다.
-            {aiEnhancedProfile.aiSuggestions.length > 0 && " 아래 내용을 확인해보세요."}
-          </p>
+      <div className="max-w-md mx-auto px-5 py-6 space-y-5">
+
+        {/* 입력 내용 요약 */}
+        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+          <button
+            className="w-full flex items-center justify-between px-5 py-4"
+            onClick={() => setShowDetail(!showDetail)}
+          >
+            <span className="font-medium text-sm">입력한 내용 확인</span>
+            {showDetail ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          </button>
+
+          {showDetail && (
+            <div className="px-5 pb-4 space-y-3 border-t border-border pt-3">
+              {Object.entries(answers).filter(([, v]) => v).map(([key, value]) => (
+                <div key={key}>
+                  <p className="text-xs text-muted-foreground">{labels[key] ?? key}</p>
+                  <p className="text-sm text-foreground mt-0.5">{value}</p>
+                </div>
+              ))}
+              {(idealType.personalities?.length ?? 0) > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground">선호 성격</p>
+                  <p className="text-sm text-foreground mt-0.5">{idealType.personalities!.join(", ")}</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* AI Suggestions */}
-        {aiEnhancedProfile.aiSuggestions.length > 0 && (
-          <div className="bg-white border border-amber-200 rounded-xl p-5 space-y-3">
-            <h4 className="text-amber-900 flex items-center gap-2">
-              <Check className="w-5 h-5" />
-              개선 포인트
-            </h4>
-            <ul className="space-y-2">
-              {aiEnhancedProfile.aiSuggestions.map((suggestion, idx) => (
-                <li key={idx} className="flex items-start gap-2 text-sm text-slate-700">
-                  <span className="text-amber-500 mt-0.5">•</span>
-                  <span>{suggestion}</span>
-                </li>
-              ))}
-            </ul>
+        {/* 결과 없을 때: 생성 버튼 */}
+        {!result && (
+          <div className="bg-gradient-to-br from-pink-50 to-purple-50 border border-pink-200 rounded-2xl p-6 text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center mx-auto">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-slate-800">AI 소개글 생성</h3>
+              <p className="text-sm text-slate-500 mt-1">
+                입력한 내용을 바탕으로 소개글과<br />나만의 색깔 타입을 찾아드려요
+              </p>
+            </div>
+            <Button
+              onClick={handleGenerate}
+              disabled={isGenerating}
+              className="w-full h-12 bg-gradient-to-r from-pink-400 to-purple-500 text-white"
+            >
+              {isGenerating ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  AI가 분석 중이에요...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  AI 소개글 & 색깔 타입 생성하기
+                </>
+              )}
+            </Button>
           </div>
         )}
 
-        {/* Version Toggle */}
-        <div className="flex gap-3 bg-slate-100 p-2 rounded-xl">
-          <button
-            onClick={() => setCurrentVersion("ai")}
-            className={`flex-1 py-3 rounded-lg font-medium transition-all ${
-              currentVersion === "ai"
-                ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-lg"
-                : "bg-transparent text-slate-600"
-            }`}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <Sparkles className="w-4 h-4" />
-              AI 개선 버전
-            </div>
-          </button>
-          <button
-            onClick={() => setCurrentVersion("original")}
-            className={`flex-1 py-3 rounded-lg font-medium transition-all ${
-              currentVersion === "original"
-                ? "bg-white text-slate-900 shadow-md"
-                : "bg-transparent text-slate-600"
-            }`}
-          >
-            원본
-          </button>
-        </div>
-
-        {/* Profile Preview */}
-        <div className="bg-card border border-border rounded-2xl p-6 space-y-6">
-          {/* Interview Answers */}
+        {/* 결과 */}
+        {result && (
           <div className="space-y-4">
-            <Label className="block mb-3 text-slate-700 font-semibold">자기소개</Label>
-
-            <InterviewAnswerDisplay
-              question="쉬는 날엔 주로 이렇게 시간을 보내요"
-              answer={currentVersion === "ai" ? aiEnhancedProfile.interviewAnswers.hobby : originalProfile.interviewAnswers.hobby}
-            />
-
-            <InterviewAnswerDisplay
-              question="제 매력 포인트는 바로 이거!"
-              answer={currentVersion === "ai" ? aiEnhancedProfile.interviewAnswers.charm : originalProfile.interviewAnswers.charm}
-            />
-
-            <InterviewAnswerDisplay
-              question="요즘 제가 푹 빠져있는 것"
-              answer={currentVersion === "ai" ? aiEnhancedProfile.interviewAnswers.passion : originalProfile.interviewAnswers.passion}
-            />
-
-            <InterviewAnswerDisplay
-              question="저는 이럴 때 행복해요"
-              answer={currentVersion === "ai" ? aiEnhancedProfile.interviewAnswers.happiness : originalProfile.interviewAnswers.happiness}
-            />
-
-            <InterviewAnswerDisplay
-              question="제 인생의 좌우명은"
-              answer={currentVersion === "ai" ? aiEnhancedProfile.interviewAnswers.motto : originalProfile.interviewAnswers.motto}
-            />
-          </div>
-
-          {/* Lifestyle */}
-          <div>
-            <Label className="block mb-3 text-slate-700 font-semibold">라이프스타일</Label>
-            <div className="flex flex-wrap gap-3 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-slate-600">흡연:</span>
-                <Badge variant="outline" className="border-slate-300">
-                  {(currentVersion === "ai" ? aiEnhancedProfile.lifestyle : originalProfile.lifestyle).smoking}
-                </Badge>
+            {/* 색깔 타입 카드 */}
+            <div className={`rounded-2xl bg-gradient-to-br ${gradient} p-6 text-white`}>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-3xl">{emoji}</span>
+                <div>
+                  <p className="text-sm opacity-80">나의 색깔 타입</p>
+                  <h3 className="text-xl font-bold">{result.colorName}</h3>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-slate-600">음주:</span>
-                <Badge variant="outline" className="border-slate-300">
-                  {(currentVersion === "ai" ? aiEnhancedProfile.lifestyle : originalProfile.lifestyle).drinking}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-slate-600">종교:</span>
-                <Badge variant="outline" className="border-slate-300">
-                  {(currentVersion === "ai" ? aiEnhancedProfile.lifestyle : originalProfile.lifestyle).religion}
-                </Badge>
-              </div>
+              <p className="text-sm opacity-90 leading-relaxed">{result.colorDescription}</p>
             </div>
-          </div>
 
-          {/* Ideal Type */}
-          <div>
-            <Label className="block mb-3 text-slate-700 font-semibold">이상형</Label>
+            {/* 생성된 소개글 */}
+            <div className="bg-card border border-border rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-4 h-4 text-pink-500" />
+                <p className="text-sm font-medium">AI가 완성한 소개글</p>
+              </div>
+              <p className="text-sm text-foreground leading-relaxed">{result.generatedIntroduction}</p>
+            </div>
+
+            {/* 재생성 + 완료 */}
             <div className="space-y-3">
-              {(currentVersion === "ai" ? aiEnhancedProfile.idealType : originalProfile.idealType).datePreferences.length > 0 && (
-                <div>
-                  <p className="text-xs text-slate-500 mb-2">데이트 스타일</p>
-                  <div className="flex flex-wrap gap-2">
-                    {(currentVersion === "ai" ? aiEnhancedProfile.idealType : originalProfile.idealType).datePreferences.map((pref) => (
-                      <Badge key={pref} variant="secondary" className="text-sm">
-                        {getDatePreferenceLabel(pref)}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <Button
+                onClick={handleGenerate}
+                disabled={isGenerating}
+                variant="outline"
+                className="w-full h-11 border-pink-200 text-pink-600 hover:bg-pink-50"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isGenerating ? "animate-spin" : ""}`} />
+                {isGenerating ? "재생성 중..." : "다시 생성하기"}
+              </Button>
 
-              {(currentVersion === "ai" ? aiEnhancedProfile.idealType : originalProfile.idealType).importantValues.length > 0 && (
-                <div>
-                  <p className="text-xs text-slate-500 mb-2">중요하게 보는 가치</p>
-                  <div className="flex flex-wrap gap-2">
-                    {(currentVersion === "ai" ? aiEnhancedProfile.idealType : originalProfile.idealType).importantValues.map((val) => (
-                      <Badge key={val} variant="secondary" className="text-sm">
-                        {val}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {(currentVersion === "ai" ? aiEnhancedProfile.idealType : originalProfile.idealType).personalities.length > 0 && (
-                <div>
-                  <p className="text-xs text-slate-500 mb-2">선호하는 성격</p>
-                  <div className="flex flex-wrap gap-2">
-                    {(currentVersion === "ai" ? aiEnhancedProfile.idealType : originalProfile.idealType).personalities.map((personality) => (
-                      <Badge key={personality} variant="secondary" className="text-sm">
-                        {personality}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <Button
+                onClick={handleComplete}
+                className="w-full h-12 bg-gradient-to-r from-pink-400 to-rose-400 text-white"
+              >
+                이 소개글로 완료하기
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
             </div>
+
+            <p className="text-center text-xs text-muted-foreground">
+              나중에 프로필 편집에서 직접 수정할 수 있어요
+            </p>
           </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="space-y-3">
-          <Button
-            onClick={handleRegenerate}
-            variant="outline"
-            disabled={isGenerating}
-            className="w-full h-14 border-2 border-pink-300 text-pink-700 hover:bg-pink-50"
-          >
-            <RefreshCw className={`w-5 h-5 mr-2 ${isGenerating ? "animate-spin" : ""}`} />
-            {isGenerating ? "재생성 중..." : "AI 재생성"}
-          </Button>
-
-          <Button
-            onClick={handleComplete}
-            className="w-full h-14 bg-gradient-to-r from-pink-400 to-rose-400 text-white"
-          >
-            이 프로필로 계속하기
-            <ArrowRight className="w-5 h-5 ml-2" />
-          </Button>
-        </div>
-
-        {/* Privacy Notice */}
-        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
-          <p className="text-sm text-orange-800">
-            💡 언제든지 나중에 프로필을 직접 수정할 수 있어요
-          </p>
-        </div>
+        )}
       </div>
     </div>
   );
-}
-
-function Label({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <label className={className}>{children}</label>;
-}
-
-function InterviewAnswerDisplay({ question, answer }: { question: string; answer: string }) {
-  return (
-    <div className="pb-3 border-b border-slate-100 last:border-0">
-      <p className="text-sm font-medium text-pink-600 mb-2">{question}</p>
-      <p className="text-sm text-slate-700 leading-relaxed">{answer}</p>
-    </div>
-  );
-}
-
-function getDatePreferenceLabel(pref: string): string {
-  const labels: Record<string, string> = {
-    'active': '액티브한 데이트',
-    'ACTIVE': '액티브한 데이트',
-    'indoor': '인도어 데이트',
-    'INDOOR': '인도어 데이트',
-    'culture': '문화 데이트',
-    'CULTURE': '문화 데이트',
-    'nature': '자연 데이트',
-    'NATURE': '자연 데이트',
-  };
-  return labels[pref] || pref;
 }

@@ -5,6 +5,7 @@ import kr.ai.palette.domain.friendship.FriendshipRepository
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.UserRepository
 import kr.ai.palette.persistence.feed.CardOpenJpaRepository
+import kr.ai.palette.persistence.feed.FeedHideJpaRepository
 import kr.ai.palette.presentation.profile.ProfileResponse
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -29,7 +30,8 @@ class AiSignalController(
     private val profileRepository: ProfileRepository,
     private val userRepository: UserRepository,
     private val friendshipRepository: FriendshipRepository,
-    private val cardOpenJpaRepository: CardOpenJpaRepository
+    private val cardOpenJpaRepository: CardOpenJpaRepository,
+    private val feedHideRepository: FeedHideJpaRepository,
 ) {
     companion object {
         // key: "{userId}:{date}" → 당일 2번째 카드 unlock 여부
@@ -52,7 +54,8 @@ class AiSignalController(
             .map { it.value.toString() }.toSet()
         val secondDegree = friendshipRepository.findSecondDegreeFriendIds(currentUserId)
             .map { it.value.toString() }.toSet()
-        val hiddenIds = FeedHideController.getHiddenIds(currentUserId)
+        val hiddenIds = feedHideRepository.findAllByUserId(currentUserId.value.toString())
+            .map { it.targetUserId }.toSet()
         val excluded = firstDegree + secondDegree + hiddenIds + currentUserId.value.toString()
 
         val candidates = profileRepository.findAll().filter { profile ->

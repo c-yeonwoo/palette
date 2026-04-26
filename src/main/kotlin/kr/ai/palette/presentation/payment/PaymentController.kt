@@ -3,24 +3,28 @@ package kr.ai.palette.presentation.payment
 import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.friendship.FriendshipRepository
+import kr.ai.palette.infrastructure.payment.PaymentGateway
+import kr.ai.palette.infrastructure.payment.PaymentGatewayResult
+import kr.ai.palette.persistence.payment.PaidViewEntity
+import kr.ai.palette.persistence.payment.PaidViewJpaRepository
+import kr.ai.palette.persistence.payment.PaymentTransactionEntity
+import kr.ai.palette.persistence.payment.PaymentTransactionJpaRepository
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
-import java.time.Instant
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 
 data class ProfileViewCostResponse(
     val targetUserId: String,
-    val degree: Int,        // 1촌=1, 2촌=2, 3촌=3, 0=not in network
-    val cost: Int,          // 0 for free, 3000 for 2촌, 5000 for 3촌
+    val degree: Int,
+    val cost: Int,
     val isAlreadyPaid: Boolean,
-    val canView: Boolean    // true if free OR already paid
+    val canView: Boolean
 )
 
 data class PayProfileViewRequest(
     val targetUserId: String,
-    val paymentMethod: String = "MOCK_CARD"   // Mock: always succeeds
+    val paymentMethod: String = "CARD"
 )
 
 data class PaymentResult(
@@ -41,15 +45,13 @@ data class TransactionRecord(
 @RestController
 @RequestMapping("/api/v1/payment")
 class PaymentController(
-    private val friendshipRepository: FriendshipRepository
+    private val friendshipRepository: FriendshipRepository,
+    private val paymentGateway: PaymentGateway,
+    private val paidViewRepository: PaidViewJpaRepository,
+    private val transactionRepository: PaymentTransactionJpaRepository,
 ) {
 
     companion object {
-        // userId -> Set of targetUserIds they've already paid to view
-        private val paidViews = ConcurrentHashMap<String, MutableSet<String>>()
-        // userId -> list of transactions
-        private val transactions = ConcurrentHashMap<String, MutableList<TransactionRecord>>()
-
         fun costForDegree(degree: Int): Int = when (degree) {
             1 -> 0
             2 -> 3000
@@ -59,19 +61,11 @@ class PaymentController(
     }
 
     private fun getDegree(myUserId: UserId, targetUserId: UserId): Int {
-        if (friendshipRepository.findFriendIdsByUserId(myUserId).contains(targetUserId)) {
-            return 1
-        }
-        val secondDegree = friendshipRepository.findSecondDegreeFriendIds(myUserId)
-        if (secondDegree.contains(targetUserId)) {
-            return 2
-        }
+        if (friendshipRepository.findFriendIdsByUserId(myUserId).contains(targetUserId)) return 1
+        if (friendshipRepository.findSecondDegreeFriendIds(myUserId).contains(targetUserId)) return 2
         return 3
     }
 
-    /**
-     * 프로필 열람 비용 조회
-     */
     @GetMapping("/profile-view-cost")
     fun getProfileViewCost(
         @AuthenticationPrincipal authUser: AuthUser,
@@ -79,37 +73,32 @@ class PaymentController(
     ): ResponseEntity<ProfileViewCostResponse> {
         val myId = authUser.userId
         val targetId = UserId(targetUserId)
-        val targetStr = targetUserId.toString()
 
         val degree = getDegree(myId, targetId)
         val cost = costForDegree(degree)
-        val isAlreadyPaid = paidViews[myId.value.toString()]?.contains(targetStr) == true
-        val canView = cost == 0 || isAlreadyPaid
+        val isAlreadyPaid = paidViewRepository.existsByBuyerUserIdAndTargetUserId(
+            myId.value.toString(), targetUserId.toString()
+        )
 
         return ResponseEntity.ok(
             ProfileViewCostResponse(
-                targetUserId = targetStr,
+                targetUserId = targetUserId.toString(),
                 degree = degree,
                 cost = cost,
                 isAlreadyPaid = isAlreadyPaid,
-                canView = canView
+                canView = cost == 0 || isAlreadyPaid
             )
         )
     }
 
-    /**
-     * 프로필 열람 결제 (Mock: 항상 성공)
-     */
     @PostMapping("/profile-view")
     fun payForProfileView(
         @AuthenticationPrincipal authUser: AuthUser,
         @RequestBody request: PayProfileViewRequest
     ): ResponseEntity<PaymentResult> {
-        val myId = authUser.userId
-        val myIdStr = myId.value.toString()
-
+        val myIdStr = authUser.userId.value.toString()
         val targetId = UserId(UUID.fromString(request.targetUserId))
-        val degree = getDegree(myId, targetId)
+        val degree = getDegree(authUser.userId, targetId)
         val cost = costForDegree(degree)
 
         if (cost == 0) {
@@ -123,8 +112,7 @@ class PaymentController(
             )
         }
 
-        // Check already paid
-        if (paidViews[myIdStr]?.contains(request.targetUserId) == true) {
+        if (paidViewRepository.existsByBuyerUserIdAndTargetUserId(myIdStr, request.targetUserId)) {
             return ResponseEntity.ok(
                 PaymentResult(
                     success = true,
@@ -135,40 +123,53 @@ class PaymentController(
             )
         }
 
-        // Mock payment processing (always succeeds)
-        val txId = UUID.randomUUID().toString()
-
-        // Record payment
-        paidViews.getOrPut(myIdStr) { mutableSetOf() }.add(request.targetUserId)
-        transactions.getOrPut(myIdStr) { mutableListOf() }.add(
-            TransactionRecord(
-                id = txId,
-                targetUserId = request.targetUserId,
-                amount = cost,
-                paymentMethod = request.paymentMethod,
-                createdAt = Instant.now().toString()
+        return when (val result = paymentGateway.processProfileViewPayment(myIdStr, request.targetUserId, cost)) {
+            is PaymentGatewayResult.Success -> {
+                paidViewRepository.save(PaidViewEntity(buyerUserId = myIdStr, targetUserId = request.targetUserId))
+                transactionRepository.save(
+                    PaymentTransactionEntity(
+                        id = result.transactionId,
+                        buyerUserId = myIdStr,
+                        targetUserId = request.targetUserId,
+                        amount = cost,
+                        paymentMethod = request.paymentMethod,
+                    )
+                )
+                ResponseEntity.ok(
+                    PaymentResult(
+                        success = true,
+                        transactionId = result.transactionId,
+                        amount = cost,
+                        message = "${cost / 1000},000원 결제가 완료되었습니다"
+                    )
+                )
+            }
+            is PaymentGatewayResult.Failure -> ResponseEntity.ok(
+                PaymentResult(
+                    success = false,
+                    transactionId = "",
+                    amount = 0,
+                    message = result.reason
+                )
             )
-        )
-
-        return ResponseEntity.ok(
-            PaymentResult(
-                success = true,
-                transactionId = txId,
-                amount = cost,
-                message = "${cost / 1000},000원 결제가 완료되었습니다"
-            )
-        )
+        }
     }
 
-    /**
-     * 내 결제 내역
-     */
     @GetMapping("/my-transactions")
     fun getMyTransactions(
         @AuthenticationPrincipal authUser: AuthUser
     ): ResponseEntity<List<TransactionRecord>> {
-        val myId = authUser.userId.value.toString()
-        val txList = transactions[myId] ?: emptyList<TransactionRecord>()
-        return ResponseEntity.ok(txList.reversed())
+        val records = transactionRepository
+            .findByBuyerUserIdOrderByCreatedAtDesc(authUser.userId.value.toString())
+            .map {
+                TransactionRecord(
+                    id = it.id,
+                    targetUserId = it.targetUserId,
+                    amount = it.amount,
+                    paymentMethod = it.paymentMethod,
+                    createdAt = it.createdAt.toString()
+                )
+            }
+        return ResponseEntity.ok(records)
     }
 }

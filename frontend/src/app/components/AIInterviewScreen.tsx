@@ -14,16 +14,8 @@ interface InterviewQuestion {
   chips?: string[];
 }
 
-interface AnalyzeResult {
-  colorType: string;
-  colorName: string;
-  colorHex: string;
-  colorDescription: string;
-  generatedIntroduction: string;
-}
-
 interface AIInterviewScreenProps {
-  onComplete: (result: AnalyzeResult, answers: Record<string, string>) => void;
+  onComplete: (answers: Record<string, string>) => void;
   onBack: () => void;
 }
 
@@ -115,39 +107,20 @@ export function AIInterviewScreen({ onComplete, onBack }: AIInterviewScreenProps
         setCurrentStep(nextStep);
       }, 600);
     } else {
-      // All questions answered → analyze
+      // All questions answered → pass answers forward
       setIsAnalyzing(true);
       setTimeout(() => {
         setMessages((prev) => [
           ...prev,
           {
             type: "ai",
-            content: "완성했어요! 🎉 답변을 분석해서 당신만의 색깔을 찾고 있어요...",
+            content: "모든 답변이 완성됐어요! 🎉\n\n이제 마지막 단계에서 AI가 당신만의 소개글과 색깔 타입을 찾아드릴게요.",
           },
         ]);
-      }, 600);
-
-      try {
-        const result = await api.post<AnalyzeResult>("/api/v1/ai-interview/analyze", {
-          answers: newAnswers,
-        });
         setTimeout(() => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              type: "ai",
-              content: `분석 완료! ✨ 당신은 "${result.colorName}"이에요!\n\n${result.colorDescription}`,
-            },
-          ]);
-          setTimeout(() => {
-            onComplete(result, newAnswers);
-          }, 1500);
+          onComplete(newAnswers);
         }, 1500);
-      } catch {
-        toast.error("분석에 실패했어요. 다시 시도해주세요.");
-        setIsAnalyzing(false);
-        setCurrentStep(questions.length - 1);
-      }
+      }, 600);
     }
   };
 

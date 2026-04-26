@@ -8,6 +8,7 @@ import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.UserRepository
 import kr.ai.palette.persistence.feed.CardOpenEntity
 import kr.ai.palette.persistence.feed.CardOpenJpaRepository
+import kr.ai.palette.persistence.feed.FeedHideJpaRepository
 import kr.ai.palette.presentation.profile.ProfileResponse
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -21,7 +22,8 @@ class FeedController(
     private val profileRepository: ProfileRepository,
     private val userRepository: UserRepository,
     private val matchmakingRequestRepository: MatchmakingRequestRepository,
-    private val cardOpenJpaRepository: CardOpenJpaRepository
+    private val cardOpenJpaRepository: CardOpenJpaRepository,
+    private val feedHideRepository: FeedHideJpaRepository,
 ) {
 
     @GetMapping
@@ -59,7 +61,8 @@ class FeedController(
             .toSet()
 
         // 숨김 처리한 프로필 제외
-        val hiddenIds = FeedHideController.getHiddenIds(currentUserId)
+        val hiddenIds = feedHideRepository.findAllByUserId(currentUserId.value.toString())
+            .map { it.targetUserId }.toSet()
 
         // 2촌만 피드에 노출 (1촌은 이미 아는 사람이므로 제외)
         val profileItems = secondDegreeFriendIds.distinct().mapNotNull { userId ->

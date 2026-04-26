@@ -9,7 +9,6 @@ import kr.ai.palette.persistence.notification.NotificationJpaRepository
 import kr.ai.palette.persistence.profile.ProfileJpaRepository
 import kr.ai.palette.persistence.profile.ProfilePhotoJpaRepository
 import kr.ai.palette.persistence.profile.ProfileVideoJpaRepository
-import kr.ai.palette.persistence.prompt.PromptExecutionJpaRepository
 import kr.ai.palette.persistence.user.UserJpaRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -25,7 +24,6 @@ class UserWithdrawalService(
     private val friendshipJpaRepository: FriendshipJpaRepository,
     private val notificationJpaRepository: NotificationJpaRepository,
     private val cardOpenJpaRepository: CardOpenJpaRepository,
-    private val promptExecutionJpaRepository: PromptExecutionJpaRepository,
 ) {
 
     @Transactional
@@ -59,10 +57,7 @@ class UserWithdrawalService(
         cardOpenJpaRepository.deleteByViewerId(id)
         cardOpenJpaRepository.deleteByTargetUserId(id)
 
-        // 7. 프롬프트 실행 기록
-        promptExecutionJpaRepository.deleteByUserId(id.toString())
-
-        // 8. 유저 (마지막)
+        // 7. 유저 (마지막)
         userJpaRepository.deleteById(id)
     }
 }

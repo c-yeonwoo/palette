@@ -1,5 +1,6 @@
 package kr.ai.palette.infrastructure.auth
 
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -18,7 +19,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 class SecurityConfig(
     private val customOAuth2UserService: CustomOAuth2UserService,
     private val oAuth2AuthenticationSuccessHandler: OAuth2AuthenticationSuccessHandler,
-    private val jwtAuthenticationFilter: JwtAuthenticationFilter
+    private val jwtAuthenticationFilter: JwtAuthenticationFilter,
+    @Value("\${cors.allowed-origins:http://localhost:3000,http://localhost:8080}")
+    private val corsAllowedOrigins: String,
 ) {
 
     @Bean
@@ -45,7 +48,7 @@ class SecurityConfig(
                         "/api/v1/profile/public/**",
                         "/api/v1/users/*/public",
                         "/api/v1/ai-interview/questions",
-                        "/api/v1/ai-interview/analyze",
+                        "/api/v1/ai-profile/generate",
                         "/api/v1/share/*",
                         "/api/v1/ai/compatibility"
                     ).permitAll()
@@ -79,7 +82,7 @@ class SecurityConfig(
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
-        configuration.allowedOrigins = listOf("http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:8080")
+        configuration.allowedOrigins = corsAllowedOrigins.split(",").map { it.trim() }
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
         configuration.allowedHeaders = listOf("*")
         configuration.allowCredentials = true

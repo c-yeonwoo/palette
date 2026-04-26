@@ -13,7 +13,7 @@ import { AboutMeScreen } from "./components/AboutMeScreen";
 import { IdealTypeScreen } from "./components/IdealTypeScreen";
 import { AIProfileEnhanceScreen } from "./components/AIProfileEnhanceScreen";
 import { AIInterviewScreen } from "./components/AIInterviewScreen";
-import { ColorTypeResultScreen } from "./components/ColorTypeResultScreen";
+import { IntroMethodSelectionScreen } from "./components/IntroMethodSelectionScreen";
 import { MyProfileScreen } from "./components/MyProfileScreen";
 import { ProfileEditScreen } from "./components/ProfileEditScreen";
 import { ProfileDetailScreen } from "./components/ProfileDetailScreen";
@@ -46,11 +46,11 @@ type Screen =
   | "accountTypeSelection"
   | "basicInfo"
   | "photoUpload"
+  | "introMethodSelection"
   | "aboutMe"
   | "idealType"
   | "aiProfileEnhance"
   | "aiInterview"
-  | "colorTypeResult"
   | "myProfile"
   | "profileEdit"
   | "profileDetail"
@@ -78,13 +78,7 @@ export default function App() {
   const [selectedDegree, setSelectedDegree] = useState<number>(2);
   const [selectedViewCost, setSelectedViewCost] = useState<number>(3000);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
-  const [colorTypeResult, setColorTypeResult] = useState<{
-    colorType: string;
-    colorName: string;
-    colorHex: string;
-    colorDescription: string;
-    generatedIntroduction: string;
-  } | null>(null);
+  const [introMethod, setIntroMethod] = useState<"INTERVIEW" | "MANUAL">("INTERVIEW");
 
   // Profile data collected during registration
   const [profileData, setProfileData] = useState({
@@ -296,27 +290,28 @@ export default function App() {
       mainPhotoIndex: data.mainPhotoIndex,
       video: data.video,
     }));
-    setCurrentScreen("aiInterview");
+    setCurrentScreen("introMethodSelection");
   };
 
-  const handleAIInterviewComplete = (result: any, answers: Record<string, string>) => {
-    setColorTypeResult(result);
-    // 인터뷰 답변을 introduction에 매핑
+  const handleAIInterviewComplete = (answers: Record<string, string>) => {
     setProfileData(prev => ({
       ...prev,
       introduction: {
         ...prev.introduction,
-        text: result.generatedIntroduction,
-        interviewAnswers: {
-          hobby: answers.weekend || "",
-          charm: answers.personality || "",
-          passion: answers.passion || "",
-          happiness: answers.happiness || "",
-          motto: answers.motto || "",
-        },
+        interviewAnswers: answers,
       },
     }));
-    setCurrentScreen("colorTypeResult");
+    setCurrentScreen("idealType");
+  };
+
+  const handleIntroMethodAIInterview = () => {
+    setIntroMethod("INTERVIEW");
+    setCurrentScreen("aiInterview");
+  };
+
+  const handleIntroMethodManual = () => {
+    setIntroMethod("MANUAL");
+    setCurrentScreen("aboutMe");
   };
 
   const handlePhotoBack = () => {
@@ -326,26 +321,15 @@ export default function App() {
   const handleAboutMeNext = (data: any) => {
     setProfileData(prev => ({
       ...prev,
-      introduction: data.introduction,
+      introduction: {
+        ...prev.introduction,
+        interviewAnswers: data.introduction?.interviewAnswers ?? {},
+      },
       lifestyleInfo: data.lifestyleInfo || prev.lifestyleInfo,
     }));
     setCurrentScreen("idealType");
   };
 
-  const handleColorTypeResultContinue = async () => {
-    // 컬러 타입을 백엔드에 저장
-    if (colorTypeResult) {
-      try {
-        await api.post("/api/v1/ai-interview/complete", {
-          colorType: colorTypeResult.colorType,
-          answers: {},
-        });
-      } catch (e) {
-        console.warn("컬러 타입 저장 실패 (무시하고 계속)", e);
-      }
-    }
-    setCurrentScreen("idealType");
-  };
 
   const handleIdealTypeNext = (data: any) => {
     setProfileData(prev => ({
@@ -355,8 +339,15 @@ export default function App() {
     setCurrentScreen("aiProfileEnhance");
   };
 
-  const handleAIProfileComplete = async () => {
+  const handleAIProfileComplete = async (result: { colorType: string; colorName: string; colorHex: string; colorDescription: string; generatedIntroduction: string }) => {
     try {
+      // colorType 저장
+      try {
+        await api.post("/api/v1/ai-interview/complete", { colorType: result.colorType });
+      } catch (e) {
+        console.warn("컬러 타입 저장 실패 (무시하고 계속)", e);
+      }
+
       // 프로필 생성 또는 업데이트
       console.log('Creating/updating profile with data:', profileData);
 
@@ -465,7 +456,7 @@ export default function App() {
           religion: profileData.lifestyleInfo.religion ? religionMap[profileData.lifestyleInfo.religion] || null : null,
         },
         introduction: {
-          text: profileData.introduction.text || null,
+          text: result.generatedIntroduction || profileData.introduction.text || null,
           interests: profileData.introduction.interests || [],
           interviewAnswers: profileData.introduction.interviewAnswers || null,
         },
@@ -712,29 +703,27 @@ export default function App() {
         />
       )}
       
-      {currentScreen === "aiInterview" && (
-        <AIInterviewScreen
-          onComplete={handleAIInterviewComplete}
+      {currentScreen === "introMethodSelection" && (
+        <IntroMethodSelectionScreen
+          onSelectAIInterview={handleIntroMethodAIInterview}
+          onSelectManual={handleIntroMethodManual}
           onBack={() => setCurrentScreen("photoUpload")}
         />
       )}
 
-      {currentScreen === "colorTypeResult" && colorTypeResult && (
-        <ColorTypeResultScreen
-          colorType={colorTypeResult.colorType}
-          colorName={colorTypeResult.colorName}
-          colorHex={colorTypeResult.colorHex}
-          colorDescription={colorTypeResult.colorDescription}
-          generatedIntroduction={colorTypeResult.generatedIntroduction}
-          onContinue={handleColorTypeResultContinue}
+      {currentScreen === "aiInterview" && (
+        <AIInterviewScreen
+          onComplete={handleAIInterviewComplete}
+          onBack={() => setCurrentScreen("introMethodSelection")}
         />
       )}
 
-      {currentScreen === "aboutMe" && (
+{currentScreen === "aboutMe" && (
         <AboutMeScreen
           onNext={handleAboutMeNext}
           initialData={{
             introduction: profileData.introduction,
+            lifestyleInfo: profileData.lifestyleInfo,
           }}
         />
       )}
@@ -752,6 +741,7 @@ export default function App() {
       {currentScreen === "aiProfileEnhance" && (
         <AIProfileEnhanceScreen
           onComplete={handleAIProfileComplete}
+          introMethod={introMethod}
           profileData={profileData}
         />
       )}
@@ -845,7 +835,7 @@ export default function App() {
       )}
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding/detail screens */}
-      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "matchmakerInfo", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "aboutMe", "aiInterview", "colorTypeResult", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "notifications"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "matchmakerInfo", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "notifications"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}

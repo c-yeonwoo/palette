@@ -1,6 +1,7 @@
 package kr.ai.palette.infrastructure.sms
 
 import org.slf4j.LoggerFactory
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
@@ -12,9 +13,10 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * NCP SENS SMS 발송 서비스 구현체
+ * NCP SENS SMS 발송 서비스 구현체 (prod)
  */
 @Service
+@ConditionalOnProperty(name = ["sms.provider"], havingValue = "ncp")
 @EnableConfigurationProperties(NcpSensConfig::class)
 class NcpSensService(
     private val config: NcpSensConfig,
