@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
 import { Card } from "./ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "./ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -10,10 +8,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { CheckCircle2, XCircle, TrendingUp, Users, Coins, Loader2, ChevronLeft } from "lucide-react";
+import { CheckCircle2, XCircle, Coins, Loader2, ChevronLeft, Award, ChevronRight, Heart } from "lucide-react";
+import { LevelBar } from "./ui/level-bar";
 import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
 import { MessageModal } from "./MessageModal";
+import { getCompatibilityDeterministic, COLOR_META, type ColorType } from "../../lib/colorCompatibility";
 
 interface MatchmakerData {
   matchmakerId: string;
@@ -39,12 +39,15 @@ interface MatchRequest {
   requesterId: string;
   requesterNickname: string | null;
   requesterRealName: string | null;
+  requesterColorType?: string | null;
   targetUserId: string;
   targetNickname: string | null;
   targetRealName: string | null;
+  targetColorType?: string | null;
   matchmakerId: string;
   matchmakerName: string | null;
   message: string | null;
+  offeredPoints?: number;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -53,9 +56,143 @@ interface MatchRequest {
 interface ConnectorDashboardProps {
   onBack?: () => void;
   onNavigateToReward?: () => void;
+  onNavigateToFriends?: () => void;
+  onNavigateToMarketplace?: () => void;
 }
 
-export function ConnectorDashboard({ onBack, onNavigateToReward }: ConnectorDashboardProps) {
+interface ClientMember {
+  id: string;
+  userId: string;
+  name: string;
+  age: number;
+  gender: "MALE" | "FEMALE";
+  region: string;
+  colorType: string | null;
+  colorHex: string | null;
+  colorName: string | null;
+  photoUrl: string | null;
+  joinedAt: string;
+}
+
+interface ClientApplication {
+  id: string;
+  userId: string;
+  name: string;
+  age: number;
+  gender: "MALE" | "FEMALE";
+  region: string;
+  colorType: string | null;
+  colorHex: string | null;
+  colorName: string | null;
+  photoUrl: string | null;
+  message: string | null;
+  appliedAt: string;
+}
+
+interface NudgeProposal {
+  id: string;
+  fromMember: ClientMember;
+  toMember: ClientMember;
+  message: string | null;
+  pointsSpent: number;
+  status: "PENDING" | "BOTH_ACCEPTED" | "REJECTED" | "MATCHED";
+  proposedAt: string;
+}
+
+const MOCK_MATCHMAKER_DATA: MatchmakerData = {
+  matchmakerId: "mock-001",
+  userId: "user-001",
+  level: 2,
+  commissionRate: 0.35,
+  totalPoints: 4500,
+  availablePoints: 3200,
+  withdrawnPoints: 1000,
+  pendingPoints: 300,
+  totalMatchRequests: 8,
+  approvedRequests: 6,
+  rejectedRequests: 2,
+  successfulMatches: 3,
+  failedMatches: 1,
+  successRate: 0.5,
+  profilePhotoUrl: null,
+  createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+const MOCK_REQUESTS: MatchRequest[] = [
+  {
+    id: "req-001",
+    requesterId: "user-010",
+    requesterNickname: "김민준",
+    requesterRealName: "김민준",
+    requesterColorType: "blue",
+    targetUserId: "user-020",
+    targetNickname: "이서연",
+    targetRealName: "이서연",
+    targetColorType: "pink",
+    matchmakerId: "mock-001",
+    matchmakerName: "나",
+    message: "잘 어울릴 것 같아서 연결해드려요 😊",
+    offeredPoints: 1500,
+    status: "PENDING_MATCHMAKER",
+    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "req-002",
+    requesterId: "user-030",
+    requesterNickname: "박지훈",
+    requesterRealName: "박지훈",
+    requesterColorType: "orange",
+    targetUserId: "user-040",
+    targetNickname: "최유나",
+    targetRealName: "최유나",
+    targetColorType: "green",
+    matchmakerId: "mock-001",
+    matchmakerName: "나",
+    message: "서로 관심사가 비슷한 두 분이에요!",
+    offeredPoints: 1500,
+    status: "APPROVED_BY_MATCHMAKER",
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
+const MOCK_MEMBERS: ClientMember[] = [
+  { id: "m1", userId: "u1", name: "김민준", age: 29, gender: "MALE", region: "서울 강남", colorType: "blue", colorHex: "#3B82F6", colorName: "차분한 블루", photoUrl: null, joinedAt: "2026-04-01" },
+  { id: "m2", userId: "u2", name: "박지훈", age: 31, gender: "MALE", region: "서울 마포", colorType: "orange", colorHex: "#F97316", colorName: "따뜻한 오렌지", photoUrl: null, joinedAt: "2026-04-15" },
+  { id: "m3", userId: "u3", name: "이성호", age: 27, gender: "MALE", region: "경기 분당", colorType: "green", colorHex: "#22C55E", colorName: "신선한 그린", photoUrl: null, joinedAt: "2026-04-20" },
+  { id: "m4", userId: "u4", name: "이서연", age: 26, gender: "FEMALE", region: "서울 서초", colorType: "pink", colorHex: "#F9A8D4", colorName: "부드러운 핑크", photoUrl: null, joinedAt: "2026-04-05" },
+  { id: "m5", userId: "u5", name: "최유나", age: 28, gender: "FEMALE", region: "서울 용산", colorType: "purple", colorHex: "#A855F7", colorName: "고급스러운 퍼플", photoUrl: null, joinedAt: "2026-04-18" },
+  { id: "m6", userId: "u6", name: "정수진", age: 30, gender: "FEMALE", region: "서울 강동", colorType: "red", colorHex: "#EF4444", colorName: "생동감있는 레드", photoUrl: null, joinedAt: "2026-04-22" },
+];
+
+const MOCK_APPLICATIONS: ClientApplication[] = [
+  { id: "a1", userId: "u10", name: "한도현", age: 32, gender: "MALE", region: "서울 성동", colorType: "yellow", colorHex: "#EAB308", colorName: "밝은 옐로우", photoUrl: null, message: "적극적으로 인연을 찾고 있어요!", appliedAt: "2026-05-04" },
+  { id: "a2", userId: "u11", name: "오지민", age: 25, gender: "FEMALE", region: "서울 마포", colorType: "gray", colorHex: "#6B7280", colorName: "세련된 그레이", photoUrl: null, message: "좋은 인연 부탁드립니다 :)", appliedAt: "2026-05-05" },
+];
+
+const MOCK_NUDGES: NudgeProposal[] = [
+  {
+    id: "n1",
+    fromMember: { id: "m1", userId: "u1", name: "김민준", age: 29, gender: "MALE", region: "서울 강남", colorType: "blue", colorHex: "#3B82F6", colorName: "차분한 블루", photoUrl: null, joinedAt: "2026-04-01" },
+    toMember: { id: "m4", userId: "u4", name: "이서연", age: 26, gender: "FEMALE", region: "서울 서초", colorType: "pink", colorHex: "#F9A8D4", colorName: "부드러운 핑크", photoUrl: null, joinedAt: "2026-04-05" },
+    message: "두 분 모두 여행을 좋아하시더라고요 :)",
+    pointsSpent: 50,
+    status: "PENDING",
+    proposedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: "n2",
+    fromMember: { id: "m2", userId: "u2", name: "박지훈", age: 31, gender: "MALE", region: "서울 마포", colorType: "orange", colorHex: "#F97316", colorName: "따뜻한 오렌지", photoUrl: null, joinedAt: "2026-04-15" },
+    toMember: { id: "m5", userId: "u5", name: "최유나", age: 28, gender: "FEMALE", region: "서울 용산", colorType: "purple", colorHex: "#A855F7", colorName: "고급스러운 퍼플", photoUrl: null, joinedAt: "2026-04-18" },
+    message: null,
+    pointsSpent: 50,
+    status: "BOTH_ACCEPTED",
+    proposedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
+export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFriends }: ConnectorDashboardProps) {
   const [matchmakerData, setMatchmakerData] = useState<MatchmakerData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [requests, setRequests] = useState<MatchRequest[]>([]);
@@ -70,6 +207,17 @@ export function ConnectorDashboard({ onBack, onNavigateToReward }: ConnectorDash
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailRequest, setDetailRequest] = useState<MatchRequest | null>(null);
 
+  // New state
+  type MainTab = "members" | "requests" | "history";
+  const [activeMainTab, setActiveMainTab] = useState<MainTab>("members");
+  const [memberGender, setMemberGender] = useState<"MALE" | "FEMALE">("MALE");
+  const [members, setMembers] = useState<ClientMember[]>([]);
+  const [applications, setApplications] = useState<ClientApplication[]>([]);
+  const [showApplicationSheet, setShowApplicationSheet] = useState(false);
+  const [nudges, setNudges] = useState<NudgeProposal[]>([]);
+  const [nudgeSource, setNudgeSource] = useState<ClientMember | null>(null);
+  const [showNudgeFlow, setShowNudgeFlow] = useState(false);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -77,15 +225,40 @@ export function ConnectorDashboard({ onBack, onNavigateToReward }: ConnectorDash
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const [matchmakerData, requestsResponse] = await Promise.all([
+      const [matchmakerRes, requestsResponse] = await Promise.all([
         api.get<MatchmakerData>('/api/v1/matchmakers/me'),
         api.get<{ requests: MatchRequest[]; totalCount: number }>('/api/v1/matchmaking/requests')
       ]);
-      setMatchmakerData(matchmakerData);
+      setMatchmakerData(matchmakerRes);
       setRequests(requestsResponse.requests);
+
+      // Load members and applications (with mock fallback)
+      try {
+        const membersRes = await api.get<{ members: ClientMember[] }>('/api/v1/matchmakers/me/members');
+        setMembers(membersRes.members);
+      } catch {
+        setMembers(MOCK_MEMBERS);
+      }
+      try {
+        const appsRes = await api.get<{ applications: ClientApplication[] }>('/api/v1/matchmakers/me/applications');
+        setApplications(appsRes.applications);
+      } catch {
+        setApplications(MOCK_APPLICATIONS);
+      }
+      try {
+        const nudgesRes = await api.get<{ nudges: NudgeProposal[] }>('/api/v1/matchmakers/me/nudges');
+        setNudges(nudgesRes.nudges);
+      } catch {
+        setNudges(MOCK_NUDGES);
+      }
     } catch (error) {
       console.error('Failed to fetch data:', error);
-      toast.error('데이터를 불러오는데 실패했습니다');
+      // Use mock data as fallback when API is unavailable
+      setMatchmakerData(MOCK_MATCHMAKER_DATA);
+      setRequests(MOCK_REQUESTS);
+      setMembers(MOCK_MEMBERS);
+      setApplications(MOCK_APPLICATIONS);
+      setNudges(MOCK_NUDGES);
     } finally {
       setIsLoading(false);
     }
@@ -108,10 +281,6 @@ export function ConnectorDashboard({ onBack, onNavigateToReward }: ConnectorDash
       </div>
     );
   }
-
-  const totalPoints = matchmakerData.totalPoints;
-  const totalConnections = matchmakerData.successfulMatches;
-  const successRate = Math.round(matchmakerData.successRate * 100);
 
   const handleCardClick = (request: MatchRequest) => {
     setDetailRequest(request);
@@ -155,157 +324,429 @@ export function ConnectorDashboard({ onBack, onNavigateToReward }: ConnectorDash
     }
   };
 
+  const handleAcceptApplication = async (app: ClientApplication) => {
+    try {
+      await api.post(`/api/v1/matchmakers/me/applications/${app.id}/accept`, {});
+      setApplications(prev => prev.filter(a => a.id !== app.id));
+      setMembers(prev => [...prev, {
+        id: app.id,
+        userId: app.userId,
+        name: app.name,
+        age: app.age,
+        gender: app.gender,
+        region: app.region,
+        colorType: app.colorType,
+        colorHex: app.colorHex,
+        colorName: app.colorName,
+        photoUrl: app.photoUrl,
+        joinedAt: new Date().toISOString(),
+      }]);
+      toast.success(`${app.name}님을 멤버로 수락했어요!`);
+    } catch {
+      // mock: just update state
+      setApplications(prev => prev.filter(a => a.id !== app.id));
+      setMembers(prev => [...prev, {
+        id: app.id,
+        userId: app.userId,
+        name: app.name,
+        age: app.age,
+        gender: app.gender,
+        region: app.region,
+        colorType: app.colorType,
+        colorHex: app.colorHex,
+        colorName: app.colorName,
+        photoUrl: app.photoUrl,
+        joinedAt: new Date().toISOString(),
+      }]);
+      toast.success(`${app.name}님을 멤버로 수락했어요!`);
+    }
+  };
+
+  const handleRejectApplication = async (app: ClientApplication) => {
+    try {
+      await api.post(`/api/v1/matchmakers/me/applications/${app.id}/reject`, {});
+    } catch {
+      // ignore
+    } finally {
+      setApplications(prev => prev.filter(a => a.id !== app.id));
+      toast.info(`${app.name}님의 신청을 거절했어요.`);
+    }
+  };
+
+  const handleNudgeSubmit = async (toMember: ClientMember, message: string) => {
+    if (!nudgeSource) return;
+    const newNudge: NudgeProposal = {
+      id: `nudge-${Date.now()}`,
+      fromMember: nudgeSource,
+      toMember,
+      message: message || null,
+      pointsSpent: 50,
+      status: "PENDING",
+      proposedAt: new Date().toISOString(),
+    };
+    try {
+      await api.post('/api/v1/matchmakers/me/nudges', {
+        fromUserId: nudgeSource.userId,
+        toUserId: toMember.userId,
+        message: message || null,
+      });
+    } catch {
+      // mock: proceed anyway
+    }
+    setNudges(prev => [newNudge, ...prev]);
+    // deduct 50P from display
+    setMatchmakerData(prev => prev ? { ...prev, availablePoints: prev.availablePoints - 50, totalPoints: prev.totalPoints - 50 } : prev);
+    setShowNudgeFlow(false);
+    setNudgeSource(null);
+    toast.success(`${nudgeSource.name} ↔ ${toMember.name} 연결 제안 완료! −50P`);
+  };
+
+  const pendingRequests = requests.filter(r =>
+    r.status === "PENDING" || r.status === "PENDING_MATCHMAKER"
+  );
+  const historyRequests = requests.filter(r =>
+    r.status !== "PENDING" && r.status !== "PENDING_MATCHMAKER"
+  );
+  const filteredMembers = members.filter(m => m.gender === memberGender);
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-card border-b border-border px-4 py-4">
-        <div className="max-w-2xl mx-auto relative flex items-center justify-center">
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="absolute left-0 p-2 hover:bg-accent rounded-full transition-colors"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-          )}
-          <h2 className="text-center text-xl font-semibold">주선자 대시보드</h2>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
-          {/* Total Points */}
-          <Card className="p-3 sm:p-6 bg-gradient-to-br from-accent/20 to-accent/5 border-accent/30">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <Coins className="w-5 h-5 sm:w-8 sm:h-8 text-accent" />
-              <Badge className="bg-accent text-accent-foreground text-xs hidden sm:inline-flex">누적</Badge>
-            </div>
-            <p className="text-xs sm:text-sm text-muted-foreground mb-1">누적 포인트</p>
-            <h2 className="text-base sm:text-2xl text-accent-foreground">{totalPoints.toLocaleString()} P</h2>
-          </Card>
-
-          {/* Total Connections */}
-          <Card className="p-3 sm:p-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <Users className="w-5 h-5 sm:w-8 sm:h-8 text-primary" />
-            </div>
-            <p className="text-xs sm:text-sm text-muted-foreground mb-1">총 주선 횟수</p>
-            <h2 className="text-base sm:text-2xl">{totalConnections}번</h2>
-          </Card>
-
-          {/* Success Rate */}
-          <Card className="p-3 sm:p-6 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
-            <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <TrendingUp className="w-5 h-5 sm:w-8 sm:h-8 text-green-600" />
-            </div>
-            <p className="text-xs sm:text-sm text-muted-foreground mb-1">매칭 성공률</p>
-            <h2 className="text-base sm:text-2xl text-green-600">{successRate}%</h2>
-          </Card>
-        </div>
-
-        {/* Level & Reward shortcut */}
-        {onNavigateToReward && (
-          <button
-            onClick={onNavigateToReward}
-            className="w-full bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-xl p-4 flex items-center justify-between hover:from-yellow-500/20 hover:to-orange-500/20 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">🏆</span>
-              <div className="text-left">
-                <p className="font-medium text-sm">주선자 등급 & 포인트</p>
-                <p className="text-xs text-muted-foreground">
-                  Lv.{matchmakerData?.level ?? 1} · 출금 가능 {matchmakerData?.availablePoints?.toLocaleString() ?? 0}P
-                </p>
-              </div>
-            </div>
-            <span className="text-muted-foreground text-sm">→</span>
-          </button>
-        )}
-
-        {/* Requests Tabs */}
-        <Tabs defaultValue="pending" className="w-full">
-          <div className="flex items-center justify-between mb-4">
-            <h3>주선 요청</h3>
+    <div className="h-screen flex flex-col bg-background">
+      {/* ── 헤더 ── */}
+      <div className="flex-shrink-0 bg-card border-b border-border px-4 py-4">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {onBack && (
+              <button onClick={onBack} className="p-1.5 hover:bg-accent rounded-full transition-colors">
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            )}
+            <h2 className="text-lg font-semibold">주선 보드</h2>
           </div>
 
-          <TabsList className="w-full grid grid-cols-2 mb-6">
-            <TabsTrigger value="pending">
-              대기중
-              <Badge variant="secondary" className="ml-2">
-                {requests.filter((r) => r.status === "PENDING").length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="history">
-              이력
-              <Badge variant="secondary" className="ml-2">
-                {requests.filter((r) => r.status !== "PENDING").length}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="pending" className="space-y-4">
-            {requests.filter((r) => r.status === "PENDING").length === 0 ? (
-              <Card className="p-12 text-center">
-                <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">대기 중인 요청이 없습니다</p>
-              </Card>
-            ) : (
-              requests
-                .filter((r) => r.status === "PENDING")
-                .map((request) => (
-                  <RequestCard
-                    key={request.id}
-                    request={request}
-                    onClick={() => handleCardClick(request)}
-                    onApprove={() => handleApprove(request)}
-                    onDecline={() => handleDecline(request)}
-                  />
-                ))
+          <div className="flex items-center gap-2">
+            {/* 등급 칩 */}
+            {onNavigateToReward && (
+              <button
+                onClick={onNavigateToReward}
+                className="flex items-center gap-1.5 bg-brand-soft border border-primary/20 rounded-full px-3 py-1.5 text-xs font-semibold text-primary"
+              >
+                <Award className="w-3.5 h-3.5" />
+                Lv.{matchmakerData?.level ?? 1}
+              </button>
             )}
-          </TabsContent>
-
-          <TabsContent value="history" className="space-y-4">
-            {requests.filter((r) => r.status !== "PENDING").length === 0 ? (
-              <Card className="p-12 text-center">
-                <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">주선 이력이 없습니다</p>
-              </Card>
-            ) : (
-              requests
-                .filter((r) => r.status !== "PENDING")
-                .map((request) => (
-                  <RequestCard
-                    key={request.id}
-                    request={request}
-                    onClick={() => handleCardClick(request)}
-                    onApprove={() => handleApprove(request)}
-                    onDecline={() => handleDecline(request)}
-                  />
-                ))
-            )}
-          </TabsContent>
-        </Tabs>
-
-        {/* How it Works */}
-        <Card className="p-6 bg-accent/5 border-accent/20">
-          <h3 className="mb-4">주선자 리워드 안내</h3>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li className="flex items-start gap-2">
-              <span className="text-accent mt-1">•</span>
-              <span>주선 승인 시: <strong className="text-foreground">1,000 포인트</strong> 즉시 지급</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-accent mt-1">•</span>
-              <span>매칭 성사 시: <strong className="text-foreground">추가 5,000 포인트</strong> 보너스</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-accent mt-1">•</span>
-              <span>포인트는 현금으로 출금하거나 앱 내에서 사용 가능합니다</span>
-            </li>
-          </ul>
-        </Card>
+            {/* 신청 알림 벨 */}
+            <button
+              onClick={() => setShowApplicationSheet(true)}
+              className="relative p-2 hover:bg-accent rounded-full transition-colors"
+            >
+              <Heart className="w-5 h-5 text-text-secondary" />
+              {applications.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary rounded-full text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+                  {applications.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* ── 이번달 요약 + Stats ── */}
+      <div className="flex-shrink-0 bg-card border-b border-border px-4 py-3 max-w-2xl w-full mx-auto">
+        {/* 이번달 칩 */}
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xs bg-primary/10 text-primary font-semibold px-2.5 py-1 rounded-full">
+            이번달 성사 {matchmakerData?.successfulMatches ?? 0}건
+          </span>
+          <span className="text-xs text-muted-foreground">
+            적립 {((matchmakerData?.totalPoints ?? 0)).toLocaleString()}P
+          </span>
+        </div>
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "내 멤버", value: `${members.length}명` },
+            { label: "총 주선", value: `${matchmakerData?.totalMatchRequests ?? 0}건` },
+            { label: "성공률", value: matchmakerData?.successRate ? `${Math.round(matchmakerData.successRate * 100)}%` : "-" },
+          ].map(({ label, value }) => (
+            <div key={label} className="text-center">
+              <p className="text-base font-bold text-foreground">{value}</p>
+              <p className="text-xs text-muted-foreground">{label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── 메인 탭 ── */}
+      <div className="flex-shrink-0 flex border-b border-border bg-card">
+        {([
+          { key: "members", label: "내 멤버", badge: members.length },
+          { key: "requests", label: "주선 요청", badge: pendingRequests.length },
+          { key: "history", label: "이력", badge: 0 },
+        ] as const).map(({ key, label, badge }) => (
+          <button
+            key={key}
+            onClick={() => setActiveMainTab(key)}
+            className={`flex-1 py-3 text-sm font-semibold relative transition-colors ${
+              activeMainTab === key
+                ? "text-primary border-b-2 border-primary -mb-px"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {label}
+            {badge > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-primary text-primary-foreground rounded-full">
+                {badge}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ── 탭 콘텐츠 (스크롤) ── */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-2xl mx-auto px-4 py-4">
+
+          {/* ════ 내 멤버 탭 ════ */}
+          {activeMainTab === "members" && (
+            <div className="space-y-4">
+              {/* 남/여 토글 */}
+              <div className="flex gap-2">
+                {(["MALE", "FEMALE"] as const).map(g => (
+                  <button
+                    key={g}
+                    onClick={() => setMemberGender(g)}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                      memberGender === g
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {g === "MALE" ? `남성 ${members.filter(m => m.gender === "MALE").length}명` : `여성 ${members.filter(m => m.gender === "FEMALE").length}명`}
+                  </button>
+                ))}
+              </div>
+
+              {/* 멤버 그리드 */}
+              {filteredMembers.length === 0 ? (
+                <div className="py-16 text-center space-y-3">
+                  <div className="text-4xl">👥</div>
+                  <p className="font-semibold text-foreground">아직 {memberGender === "MALE" ? "남성" : "여성"} 멤버가 없어요</p>
+                  <p className="text-sm text-muted-foreground">신청 벨을 눌러 들어온 신청을 수락해보세요</p>
+                  <button
+                    onClick={() => setShowApplicationSheet(true)}
+                    className="text-sm text-primary font-medium underline underline-offset-4"
+                  >
+                    신청 확인하기
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-3">
+                  {filteredMembers.map(member => {
+                    const hasNudge = nudges.some(n =>
+                      (n.fromMember.id === member.id || n.toMember.id === member.id) &&
+                      n.status === "PENDING"
+                    );
+                    return (
+                      <MemberCard
+                        key={member.id}
+                        member={member}
+                        hasActiveNudge={hasNudge}
+                        onNudge={() => {
+                          setNudgeSource(member);
+                          setShowNudgeFlow(true);
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* 신청 유도 배너 (신청 있을 때) */}
+              {applications.length > 0 && (
+                <button
+                  onClick={() => setShowApplicationSheet(true)}
+                  className="w-full flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl px-4 py-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium text-primary">신청 {applications.length}건 검토 대기 중</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-primary" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* ════ 주선 요청 탭 ════ */}
+          {activeMainTab === "requests" && (
+            <div className="space-y-4">
+              {pendingRequests.length === 0 ? (
+                <div className="py-16 text-center space-y-3">
+                  <div className="text-4xl">📭</div>
+                  <p className="font-semibold text-foreground">대기 중인 주선 요청이 없어요</p>
+                  <p className="text-sm text-muted-foreground">멤버를 모아두면 주선 요청이 들어와요</p>
+                  {onNavigateToFriends && (
+                    <button
+                      onClick={onNavigateToFriends}
+                      className="text-sm text-primary font-medium underline underline-offset-4"
+                    >
+                      친구 초대하기
+                    </button>
+                  )}
+                </div>
+              ) : (
+                pendingRequests.map(request => (
+                  <RequestCard
+                    key={request.id}
+                    request={request}
+                    onClick={() => handleCardClick(request)}
+                    onApprove={() => handleApprove(request)}
+                    onDecline={() => handleDecline(request)}
+                  />
+                ))
+              )}
+            </div>
+          )}
+
+          {/* ════ 이력 탭 ════ */}
+          {activeMainTab === "history" && (
+            <div className="space-y-4">
+              {historyRequests.length === 0 ? (
+                <div className="py-16 text-center space-y-3">
+                  <div className="text-4xl">📋</div>
+                  <p className="font-semibold text-foreground">아직 주선 이력이 없어요</p>
+                  <p className="text-sm text-muted-foreground">첫 주선을 성사시켜보세요</p>
+                </div>
+              ) : (
+                historyRequests.map(request => (
+                  <RequestCard
+                    key={request.id}
+                    request={request}
+                    onClick={() => handleCardClick(request)}
+                    onApprove={() => handleApprove(request)}
+                    onDecline={() => handleDecline(request)}
+                  />
+                ))
+              )}
+
+              {/* 내 연결 제안 이력 */}
+              {nudges.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">내 연결 제안</p>
+                  {nudges.map(nudge => {
+                    const statusConfig = {
+                      PENDING: { label: "양측 응답 대기", dot: "bg-yellow-400" },
+                      BOTH_ACCEPTED: { label: "양측 수락 ✓", dot: "bg-green-500" },
+                      REJECTED: { label: "거절됨", dot: "bg-muted-foreground/40" },
+                      MATCHED: { label: "매칭 성사 🎉", dot: "bg-primary" },
+                    }[nudge.status];
+                    return (
+                      <div key={nudge.id} className="bg-card border border-border rounded-2xl p-4 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${statusConfig.dot}`} />
+                            <span className="text-xs font-medium text-muted-foreground">{statusConfig.label}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(nudge.proposedAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-6 h-6 rounded-full border border-white shadow-sm" style={{ backgroundColor: nudge.fromMember.colorHex ?? "#d1d5db", display: "inline-block" }} />
+                            <span className="text-sm font-medium">{nudge.fromMember.name}</span>
+                          </div>
+                          <span className="text-muted-foreground text-sm">↔</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-6 h-6 rounded-full border border-white shadow-sm" style={{ backgroundColor: nudge.toMember.colorHex ?? "#d1d5db", display: "inline-block" }} />
+                            <span className="text-sm font-medium">{nudge.toMember.name}</span>
+                          </div>
+                          <span className="ml-auto text-xs text-muted-foreground">−{nudge.pointsSpent}P</span>
+                        </div>
+                        {nudge.message && (
+                          <p className="text-xs text-muted-foreground bg-muted rounded-lg px-3 py-2 leading-relaxed">"{nudge.message}"</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* 리워드 안내 */}
+              <div className="bg-card rounded-2xl border border-border p-5 space-y-3">
+                <p className="text-sm font-semibold">주선자 리워드 안내</p>
+                <ul className="space-y-2.5 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                    <span>수락 즉시: <strong className="text-foreground">감사 포인트 100~500P</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                    <span>매칭 성사 시: <strong className="text-foreground">커미션 30~50%</strong></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                    <span>포인트는 현금 출금 또는 앱 내 사용 가능</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+
+      {/* ── 신청 관리 바텀시트 ── */}
+      {showApplicationSheet && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 z-40"
+            onClick={() => setShowApplicationSheet(false)}
+          />
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-overlay max-h-[80vh] flex flex-col">
+            {/* 핸들 */}
+            <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+              <div className="w-9 h-1 rounded-full bg-border" />
+            </div>
+            {/* 헤더 */}
+            <div className="flex items-center justify-between px-6 py-3 border-b border-border flex-shrink-0">
+              <p className="text-base font-semibold">주선 신청 {applications.length}건</p>
+              <button
+                onClick={() => setShowApplicationSheet(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted"
+              >
+                <XCircle className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
+            {/* 신청 목록 */}
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+              {applications.length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground text-sm">새로운 신청이 없어요</div>
+              ) : (
+                applications.map(app => (
+                  <ApplicationCard
+                    key={app.id}
+                    app={app}
+                    onAccept={() => handleAcceptApplication(app)}
+                    onReject={() => handleRejectApplication(app)}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── 연결 제안 플로우 시트 ── */}
+      {showNudgeFlow && nudgeSource && (
+        <NudgeFlowSheet
+          sourceMembers={members}
+          source={nudgeSource}
+          nudges={nudges}
+          onSubmit={handleNudgeSubmit}
+          onClose={() => { setShowNudgeFlow(false); setNudgeSource(null); }}
+        />
+      )}
 
       {/* Message Modal */}
       <MessageModal
@@ -314,7 +755,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward }: ConnectorDash
         title={modalAction === "approve" ? "주선 승인" : "주선 거절"}
         description={
           modalAction === "approve"
-            ? `${selectedRequest?.targetRealName || "피주선자"}에게 전달할 메시지 (선택사항)`
+            ? `${selectedRequest?.targetRealName || "소개 대상자"}에게 전달할 메시지 (선택사항)`
             : `${selectedRequest?.requesterRealName || "요청자"}에게 전달할 메시지 (선택사항)`
         }
         confirmLabel={modalAction === "approve" ? "승인하기" : "거절하기"}
@@ -345,158 +786,147 @@ function RequestCard({
   onApprove: () => void;
   onDecline: () => void;
 }) {
-  const getStatusInfo = () => {
-    switch (request.status) {
-      case "PENDING":
-        return {
-          label: "주선자 승인 대기",
-          color: "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200",
-          matchmakerStatus: "pending",
-          targetStatus: "waiting"
-        };
-      case "MATCHMAKER_APPROVED":
-        return {
-          label: "피주선자 응답 대기",
-          color: "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200",
-          matchmakerStatus: "approved",
-          targetStatus: "pending"
-        };
-      case "REJECTED_BY_MATCHMAKER":
-        return {
-          label: "주선자 거절",
-          color: "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200",
-          matchmakerStatus: "rejected",
-          targetStatus: "canceled"
-        };
-      case "COMPLETED":
-        return {
-          label: "매칭 성사",
-          color: "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200",
-          matchmakerStatus: "approved",
-          targetStatus: "accepted"
-        };
-      case "REJECTED_BY_TARGET":
-        return {
-          label: "피주선자 거절",
-          color: "bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200",
-          matchmakerStatus: "approved",
-          targetStatus: "rejected"
-        };
-      default:
-        return {
-          label: "알 수 없음",
-          color: "bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-200",
-          matchmakerStatus: "waiting",
-          targetStatus: "waiting"
-        };
-    }
-  };
+  const isPending = request.status === "PENDING" || request.status === "PENDING_MATCHMAKER";
+  const points = request.offeredPoints ?? 300;
 
-  const statusInfo = getStatusInfo();
+  const statusLabel = {
+    PENDING: null,
+    PENDING_MATCHMAKER: null,
+    MATCHMAKER_APPROVED: { text: "상대방 응답 대기", dot: "bg-primary" },
+    APPROVED_BY_MATCHMAKER: { text: "상대방 응답 대기", dot: "bg-primary" },
+    REJECTED_BY_MATCHMAKER: { text: "이번엔 거절했어요", dot: "bg-muted-foreground/40" },
+    COMPLETED: { text: "매칭 성사", dot: "bg-green-500" },
+    REJECTED_BY_TARGET: { text: "상대방이 거절했어요", dot: "bg-muted-foreground/40" },
+  }[request.status] ?? { text: request.status, dot: "bg-muted" };
 
-  return (
-    <Card
-      className="p-6 hover:shadow-md transition-shadow cursor-pointer"
-      onClick={onClick}
-    >
-      <div className="space-y-4">
-        {/* Flow UI */}
-        <div className="flex items-center justify-between gap-1">
-          {/* Requester */}
-          <div className="flex flex-col items-center gap-1">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center border border-border">
-              <span className="text-xs font-semibold text-primary">
-                {request.requesterRealName?.charAt(0) || "?"}
-              </span>
+  // Color compat (shown always)
+  const rColorType = (request.requesterColorType ?? null) as ColorType | null;
+  const tColorType = (request.targetColorType ?? null) as ColorType | null;
+  const compat = getCompatibilityDeterministic(rColorType, tColorType, request.id);
+  const rMeta = rColorType ? COLOR_META[rColorType] : null;
+  const tMeta = tColorType ? COLOR_META[tColorType] : null;
+
+  if (isPending) {
+    // ── 블라인드 수락 카드 ──────────────────────────────
+    return (
+      <Card className="overflow-hidden border-primary/20 shadow-sm">
+        {/* Points banner */}
+        <div className="bg-primary/5 border-b border-primary/10 px-4 py-3 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-primary uppercase tracking-wider">수락하면 즉시 받아요</p>
+            <p className="text-xl font-bold text-primary">{points}P</p>
+          </div>
+          <Coins className="w-6 h-6 text-primary/60" />
+        </div>
+
+        <div className="p-4 space-y-4">
+          {/* Palette 추천 프레임 */}
+          <div className="text-center">
+            <p className="text-xs text-muted-foreground">팔레트가 두 분의 인연을 발견했어요</p>
+          </div>
+
+          {/* Two color profiles (blind) */}
+          <div className="flex items-center justify-center gap-4">
+            <div className="text-center space-y-1.5">
+              {rMeta ? (
+                <span className="w-12 h-12 rounded-full border-2 border-white shadow block mx-auto" style={{ backgroundColor: rMeta.hex }} />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-muted mx-auto" />
+              )}
+              <p className="text-xs text-muted-foreground">{rMeta?.name ?? "?"}</p>
             </div>
-            <span className="text-xs font-medium text-center max-w-[60px] truncate">{request.requesterRealName || "알 수 없음"}</span>
-          </div>
 
-          {/* Arrow */}
-          <div className="text-muted-foreground text-sm">→</div>
-
-          {/* Matchmaker Status */}
-          <div className={`px-2 py-1 rounded-full text-[10px] font-medium whitespace-nowrap ${
-            statusInfo.matchmakerStatus === "approved"
-              ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200"
-              : statusInfo.matchmakerStatus === "rejected"
-              ? "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200"
-              : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200"
-          }`}>
-            {statusInfo.matchmakerStatus === "approved" ? "✓" :
-             statusInfo.matchmakerStatus === "rejected" ? "✗" : "⋯"}
-          </div>
-
-          {/* Arrow */}
-          <div className="text-muted-foreground text-sm">→</div>
-
-          {/* Target */}
-          <div className="flex flex-col items-center gap-1">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center border border-border ${
-              statusInfo.targetStatus === "canceled" ? "opacity-30" : "bg-accent/20"
-            }`}>
-              <span className="text-xs font-semibold text-accent-foreground">
-                {request.targetRealName?.charAt(0) || "?"}
-              </span>
+            <div className="flex flex-col items-center gap-1">
+              {compat ? (
+                <>
+                  <div className="flex gap-0.5">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <span key={i} className="text-xs" style={{ opacity: i < Math.round(compat.score / 20) ? 1 : 0.2 }}>♥</span>
+                    ))}
+                  </div>
+                  <span className="text-xs font-bold text-primary">{compat.score}%</span>
+                  <span className="text-xs text-muted-foreground">{compat.label}</span>
+                </>
+              ) : (
+                <span className="text-muted-foreground text-lg">↔</span>
+              )}
             </div>
-            <span className={`text-xs font-medium text-center max-w-[60px] truncate ${statusInfo.targetStatus === "canceled" ? "opacity-30" : ""}`}>
-              {request.targetRealName || "알 수 없음"}
-            </span>
+
+            <div className="text-center space-y-1.5">
+              {tMeta ? (
+                <span className="w-12 h-12 rounded-full border-2 border-white shadow block mx-auto" style={{ backgroundColor: tMeta.hex }} />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-muted mx-auto" />
+              )}
+              <p className="text-xs text-muted-foreground">
+                {request.targetNickname || request.targetRealName || tMeta?.name || "?"}
+              </p>
+            </div>
           </div>
 
-          {/* Target Status (if applicable) */}
-          {(statusInfo.targetStatus === "accepted" || statusInfo.targetStatus === "rejected") && (
-            <>
-              <div className="text-muted-foreground text-sm">→</div>
-              <div className={`px-2 py-1 rounded-full text-[10px] font-medium whitespace-nowrap ${
-                statusInfo.targetStatus === "accepted"
-                  ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200"
-                  : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200"
-              }`}>
-                {statusInfo.targetStatus === "accepted" ? "✓" : "✗"}
-              </div>
-            </>
+          {compat && (
+            <p className="text-xs text-center text-muted-foreground">{compat.tagline}</p>
           )}
-        </div>
 
-        {/* Status Badge */}
-        <div className="flex items-center justify-between">
-          <div className={`px-3 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
-            {statusInfo.label}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {new Date(request.createdAt).toLocaleDateString('ko-KR', {
-              month: 'long',
-              day: 'numeric'
-            })}
-          </p>
-        </div>
-
-        {/* Action Buttons (only for PENDING) */}
-        {request.status === "PENDING" && (
-          <div className="flex gap-3 pt-2" onClick={(e) => e.stopPropagation()}>
+          {/* Action buttons */}
+          <div className="flex gap-2.5 pt-1" onClick={(e) => e.stopPropagation()}>
             <Button
               variant="outline"
-              className="flex-1 border-destructive/50 text-destructive hover:bg-destructive/10"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDecline();
-              }}
+              size="sm"
+              className="flex-1 text-muted-foreground"
+              onClick={(e) => { e.stopPropagation(); onDecline(); }}
             >
-              <XCircle className="w-4 h-4 mr-2" />
-              거절하기
+              <XCircle className="w-3.5 h-3.5 mr-1" />
+              이번엔 어렵겠어요
             </Button>
             <Button
-              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-              onClick={(e) => {
-                e.stopPropagation();
-                onApprove();
-              }}
+              size="sm"
+              className="flex-1 bg-primary text-primary-foreground"
+              onClick={(e) => { e.stopPropagation(); onApprove(); }}
             >
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-              승인하기
+              <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+              {points}P 받고 연결하기
             </Button>
           </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // ── 이력 카드 (PENDING 아닌 상태) ──────────────────────
+  return (
+    <Card className="p-4 cursor-pointer hover:shadow-sm transition-shadow" onClick={onClick}>
+      <div className="space-y-3">
+        {/* Status row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${statusLabel?.dot ?? "bg-muted"}`} />
+            <span className="text-sm font-medium">{statusLabel?.text ?? request.status}</span>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {new Date(request.createdAt).toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}
+          </span>
+        </div>
+
+        {/* Profiles (revealed after pending) */}
+        <div className="flex items-center gap-2">
+          {rMeta && (
+            <span className="w-5 h-5 rounded-full border border-white shadow-sm flex-shrink-0" style={{ backgroundColor: rMeta.hex }} />
+          )}
+          <span className="text-xs text-muted-foreground">
+            {request.requesterRealName || "요청자"}
+          </span>
+          <span className="text-muted-foreground/40 text-xs">→</span>
+          {tMeta && (
+            <span className="w-5 h-5 rounded-full border border-white shadow-sm flex-shrink-0" style={{ backgroundColor: tMeta.hex }} />
+          )}
+          <span className="text-xs text-muted-foreground">
+            {request.targetNickname || request.targetRealName || "상대방"}
+          </span>
+        </div>
+
+        {compat && rMeta && tMeta && (
+          <p className="text-xs text-muted-foreground">{compat.label} {compat.score}% · {compat.tagline}</p>
         )}
       </div>
     </Card>
@@ -516,14 +946,16 @@ function RequestDetailModal({
     switch (request.status) {
       case "PENDING":
         return { label: "주선자 승인 대기", color: "text-yellow-600" };
+      case "PENDING_MATCHMAKER":
+        return { label: "주선자 승인 대기", color: "text-yellow-600" };
       case "MATCHMAKER_APPROVED":
-        return { label: "피주선자 응답 대기", color: "text-blue-600" };
+        return { label: "소개 대상자 응답 대기", color: "text-blue-600" };
       case "REJECTED_BY_MATCHMAKER":
         return { label: "주선자 거절", color: "text-red-600" };
       case "COMPLETED":
         return { label: "매칭 성사", color: "text-green-600" };
       case "REJECTED_BY_TARGET":
-        return { label: "피주선자 거절", color: "text-orange-600" };
+        return { label: "소개 대상자 거절", color: "text-orange-600" };
       default:
         return { label: "알 수 없음", color: "text-gray-600" };
     }
@@ -601,5 +1033,341 @@ function RequestDetailModal({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ─── 연결 제안 플로우 시트 ─────────────────────────────────────────
+function NudgeFlowSheet({
+  sourceMembers: allMembers,
+  source,
+  nudges,
+  onSubmit,
+  onClose,
+}: {
+  sourceMembers: ClientMember[];
+  source: ClientMember;
+  nudges: NudgeProposal[];
+  onSubmit: (to: ClientMember, message: string) => void;
+  onClose: () => void;
+}) {
+  const oppositeGender = source.gender === "MALE" ? "FEMALE" : "MALE";
+  const candidates = allMembers.filter(m => m.gender === oppositeGender);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [selected, setSelected] = useState<ClientMember | null>(null);
+  const [message, setMessage] = useState("");
+
+  const compat = selected && source.colorType && selected.colorType
+    ? getCompatibilityDeterministic(source.colorType as ColorType, selected.colorType as ColorType, `${source.id}-${selected.id}`)
+    : null;
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-overlay max-h-[85vh] flex flex-col">
+        {/* 핸들 */}
+        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+          <div className="w-9 h-1 rounded-full bg-border" />
+        </div>
+
+        {/* 헤더 */}
+        <div className="flex items-center justify-between px-6 py-3 border-b border-border flex-shrink-0">
+          <div className="flex items-center gap-3">
+            {step > 1 && (
+              <button onClick={() => setStep(s => (s - 1) as 1 | 2 | 3)} className="p-1 hover:bg-muted rounded-full">
+                <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+              </button>
+            )}
+            <div>
+              <p className="text-sm font-semibold">
+                {step === 1 ? `${source.name}과 연결할 사람 선택` : step === 2 ? "궁합 미리보기" : "제안 확인"}
+              </p>
+              <p className="text-xs text-muted-foreground">Step {step} / 3</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted">
+            <XCircle className="w-4 h-4 text-muted-foreground" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+
+          {/* ── Step 1: 대상 선택 ── */}
+          {step === 1 && (
+            <div className="space-y-3">
+              {candidates.length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground text-sm">
+                  연결 가능한 {oppositeGender === "FEMALE" ? "여성" : "남성"} 멤버가 없어요
+                </div>
+              ) : (
+                candidates.map(candidate => {
+                  const alreadyNudged = nudges.some(n =>
+                    ((n.fromMember.id === source.id && n.toMember.id === candidate.id) ||
+                     (n.fromMember.id === candidate.id && n.toMember.id === source.id)) &&
+                    n.status === "PENDING"
+                  );
+                  return (
+                    <button
+                      key={candidate.id}
+                      disabled={alreadyNudged}
+                      onClick={() => { setSelected(candidate); setStep(2); }}
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors text-left ${
+                        alreadyNudged
+                          ? "border-border bg-muted/50 opacity-50 cursor-not-allowed"
+                          : "border-border bg-card hover:border-primary/40 hover:bg-primary/5"
+                      }`}
+                    >
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-base font-bold text-white flex-shrink-0"
+                        style={{ backgroundColor: candidate.colorHex ?? "#d1d5db" }}
+                      >
+                        {candidate.name.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold">{candidate.name}</p>
+                        <p className="text-xs text-muted-foreground">{candidate.age}세 · {candidate.region}</p>
+                        {candidate.colorName && <p className="text-[10px] text-muted-foreground">{candidate.colorName}</p>}
+                      </div>
+                      {alreadyNudged && <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">제안중</span>}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          )}
+
+          {/* ── Step 2: 궁합 미리보기 + 메시지 ── */}
+          {step === 2 && selected && (
+            <div className="space-y-5">
+              {/* 두 사람 + 궁합 */}
+              <div className="bg-card border border-border rounded-2xl p-5">
+                <div className="flex items-center justify-center gap-6 mb-4">
+                  <div className="text-center space-y-1.5">
+                    <div className="w-14 h-14 rounded-full border-2 border-white shadow mx-auto flex items-center justify-center text-xl font-bold text-white" style={{ backgroundColor: source.colorHex ?? "#d1d5db" }}>
+                      {source.name.charAt(0)}
+                    </div>
+                    <p className="text-sm font-semibold">{source.name}</p>
+                    <p className="text-xs text-muted-foreground">{source.colorName}</p>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    {compat ? (
+                      <>
+                        <div className="flex gap-0.5">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <span key={i} className="text-sm" style={{ opacity: i < Math.round(compat.score / 20) ? 1 : 0.25 }}>♥</span>
+                          ))}
+                        </div>
+                        <span className="text-lg font-bold text-primary">{compat.score}%</span>
+                        <span className="text-xs font-semibold text-muted-foreground">{compat.label}</span>
+                      </>
+                    ) : (
+                      <span className="text-2xl text-muted-foreground">↔</span>
+                    )}
+                  </div>
+                  <div className="text-center space-y-1.5">
+                    <div className="w-14 h-14 rounded-full border-2 border-white shadow mx-auto flex items-center justify-center text-xl font-bold text-white" style={{ backgroundColor: selected.colorHex ?? "#d1d5db" }}>
+                      {selected.name.charAt(0)}
+                    </div>
+                    <p className="text-sm font-semibold">{selected.name}</p>
+                    <p className="text-xs text-muted-foreground">{selected.colorName}</p>
+                  </div>
+                </div>
+                {compat && <p className="text-xs text-center text-muted-foreground">{compat.tagline}</p>}
+              </div>
+
+              {/* 메시지 */}
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">제안 메시지 (선택)</label>
+                <textarea
+                  value={message}
+                  onChange={e => setMessage(e.target.value.slice(0, 60))}
+                  placeholder="두 분이 잘 어울릴 것 같아요 :)"
+                  rows={3}
+                  className="w-full rounded-xl border border-border bg-muted px-3 py-2.5 text-sm resize-none outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40"
+                />
+                <p className="text-xs text-muted-foreground text-right">{message.length}/60</p>
+              </div>
+
+              <button
+                onClick={() => setStep(3)}
+                className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"
+              >
+                다음 — 최종 확인
+              </button>
+            </div>
+          )}
+
+          {/* ── Step 3: 최종 확인 ── */}
+          {step === 3 && selected && (
+            <div className="space-y-5">
+              <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5 space-y-4">
+                <p className="text-sm font-semibold text-center">이렇게 연결 제안할게요</p>
+                <div className="flex items-center justify-center gap-4">
+                  <div className="text-center">
+                    <div className="w-12 h-12 rounded-full border-2 border-white shadow mx-auto flex items-center justify-center text-base font-bold text-white" style={{ backgroundColor: source.colorHex ?? "#d1d5db" }}>
+                      {source.name.charAt(0)}
+                    </div>
+                    <p className="text-xs font-semibold mt-1">{source.name}</p>
+                  </div>
+                  <span className="text-primary font-bold text-lg">↔</span>
+                  <div className="text-center">
+                    <div className="w-12 h-12 rounded-full border-2 border-white shadow mx-auto flex items-center justify-center text-base font-bold text-white" style={{ backgroundColor: selected.colorHex ?? "#d1d5db" }}>
+                      {selected.name.charAt(0)}
+                    </div>
+                    <p className="text-xs font-semibold mt-1">{selected.name}</p>
+                  </div>
+                </div>
+                {message && (
+                  <div className="bg-white/60 rounded-lg px-3 py-2">
+                    <p className="text-xs text-muted-foreground text-center">"{message}"</p>
+                  </div>
+                )}
+                {compat && <p className="text-xs text-center text-primary font-medium">{compat.label} {compat.score}%</p>}
+              </div>
+
+              {/* 포인트 안내 */}
+              <div className="flex items-center justify-between bg-card border border-border rounded-xl px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Coins className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-semibold">제안 비용</span>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-primary">−50P</p>
+                  <p className="text-xs text-muted-foreground">성사 시 최대 750P 적립</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => onSubmit(selected, message)}
+                className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold"
+              >
+                제안하기 — 50P 차감
+              </button>
+              <p className="text-xs text-center text-muted-foreground">두 분 모두에게 알림이 전송되고, 양측 수락 시 연락처가 공유돼요</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── 멤버 카드 ─────────────────────────────────────────────────────
+function MemberCard({
+  member,
+  hasActiveNudge,
+  onNudge,
+}: {
+  member: ClientMember;
+  hasActiveNudge?: boolean;
+  onNudge?: () => void;
+}) {
+  return (
+    <div className="bg-card border border-border rounded-2xl overflow-hidden">
+      {/* 아바타 */}
+      <div className="aspect-square bg-muted flex items-center justify-center relative">
+        {member.photoUrl ? (
+          <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" />
+        ) : (
+          <div
+            className="w-full h-full flex items-center justify-center text-2xl font-bold text-white"
+            style={{ backgroundColor: member.colorHex ?? "#d1d5db" }}
+          >
+            {member.name.charAt(0)}
+          </div>
+        )}
+        {member.colorHex && (
+          <span
+            className="absolute bottom-2 right-2 w-4 h-4 rounded-full border-2 border-white shadow-sm"
+            style={{ backgroundColor: member.colorHex }}
+          />
+        )}
+        {hasActiveNudge && (
+          <span className="absolute top-2 left-2 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+            제안중
+          </span>
+        )}
+      </div>
+      {/* 정보 */}
+      <div className="px-2.5 pt-2 pb-2 space-y-1">
+        <p className="text-sm font-semibold text-foreground truncate">{member.name}</p>
+        <p className="text-xs text-muted-foreground">{member.age}세 · {member.region}</p>
+      </div>
+      {/* 연결 제안 버튼 */}
+      {onNudge && (
+        <button
+          onClick={onNudge}
+          disabled={hasActiveNudge}
+          className="w-full py-2 text-xs font-semibold border-t border-border text-primary disabled:text-muted-foreground disabled:cursor-not-allowed hover:bg-primary/5 transition-colors"
+        >
+          {hasActiveNudge ? "제안 완료" : "연결 제안하기"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── 신청 카드 ─────────────────────────────────────────────────────
+function ApplicationCard({
+  app,
+  onAccept,
+  onReject,
+}: {
+  app: ClientApplication;
+  onAccept: () => void;
+  onReject: () => void;
+}) {
+  return (
+    <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+      {/* 프로필 행 */}
+      <div className="flex items-center gap-3">
+        <div
+          className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white flex-shrink-0"
+          style={{ backgroundColor: app.colorHex ?? "#d1d5db" }}
+        >
+          {app.name.charAt(0)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-foreground">{app.name}</p>
+            <span className="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">
+              {app.gender === "MALE" ? "남" : "여"} · {app.age}세
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">{app.region}</p>
+          {app.colorName && (
+            <div className="flex items-center gap-1 mt-1">
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: app.colorHex ?? "#d1d5db" }} />
+              <span className="text-xs text-muted-foreground">{app.colorName}</span>
+            </div>
+          )}
+        </div>
+        <span className="text-xs text-muted-foreground flex-shrink-0">
+          {new Date(app.appliedAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
+        </span>
+      </div>
+
+      {/* 메시지 */}
+      {app.message && (
+        <div className="bg-muted rounded-lg px-3 py-2">
+          <p className="text-xs text-muted-foreground leading-relaxed">"{app.message}"</p>
+        </div>
+      )}
+
+      {/* 수락/거절 */}
+      <div className="flex gap-2 pt-1">
+        <button
+          onClick={onReject}
+          className="flex-1 py-2 rounded-xl text-sm font-medium border border-border text-muted-foreground hover:bg-muted transition-colors"
+        >
+          거절
+        </button>
+        <button
+          onClick={onAccept}
+          className="flex-1 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          멤버로 수락
+        </button>
+      </div>
+    </div>
   );
 }

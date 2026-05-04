@@ -32,7 +32,7 @@ const incomeRanges = [
 ];
 
 const educationLevels = ["고졸", "전문대", "대졸", "석사", "박사"];
-const bodyTypes = ["슬림", "보통", "탄탄", "건장", "풍만"];
+const bodyTypes = ["슬림", "보통", "탄탄", "건장", "통통"];
 const mbtiTypes = [
   "ISTJ", "ISFJ", "INFJ", "INTJ",
   "ISTP", "ISFP", "INFP", "INTP",
@@ -53,6 +53,7 @@ interface UserProfile {
 }
 
 export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreenProps) {
+  const [step, setStep] = useState<1 | 2>(1);
   const [formData, setFormData] = useState({
     name: initialData?.basicInfo?.name || "",
     birthYear: initialData?.basicInfo?.birthYear || "",
@@ -75,6 +76,11 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
     region: initialData?.locationInfo?.region || "",
   });
   const [isLoading, setIsLoading] = useState(true);
+
+  const currentYear = new Date().getFullYear();
+  const birthYears = Array.from({ length: currentYear - 1959 }, (_, i) => String(currentYear - i));
+  const birthMonths = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"));
+  const birthDays = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, "0"));
 
   // Load user data on mount
   useEffect(() => {
@@ -136,9 +142,11 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
 
   const isPhoneValid = /^010-\d{4}-\d{4}$/.test(formData.phoneNumber);
 
-  const isValid = formData.name && formData.birthYear && formData.birthMonth && formData.birthDay &&
-    formData.gender && isPhoneValid && formData.bodyType && formData.mbtiE && formData.mbtiS && formData.mbtiT && formData.mbtiP &&
-    formData.jobCategory && formData.education && formData.region;
+  const isStep1Valid = !!(formData.name && formData.birthYear && formData.birthMonth && formData.birthDay &&
+    formData.gender && formData.bodyType && formData.mbtiE && formData.mbtiS && formData.mbtiT && formData.mbtiP &&
+    formData.jobCategory && formData.education && formData.region);
+
+  const isValid = isStep1Valid;
 
   if (isLoading) {
     return (
@@ -156,44 +164,48 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
       {/* Header with Progress */}
       <div className="bg-card border-b border-border px-6 py-4 space-y-3">
         <div className="relative">
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="absolute left-0 top-1/2 -translate-y-1/2 p-2 hover:bg-muted rounded-lg transition-colors"
-              aria-label="뒤로 가기"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-          )}
-          <h2 className="text-center">기본 정보 입력</h2>
+          <button
+            onClick={() => {
+              if (step === 2) setStep(1);
+              else if (onBack) onBack();
+            }}
+            className="absolute left-0 top-1/2 -translate-y-1/2 p-2 hover:bg-muted rounded-lg transition-colors"
+            aria-label="뒤로 가기"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h2 className="text-center">{step === 1 ? "기본 정보 입력" : "추가 정보 (선택)"}</h2>
         </div>
         <div className="space-y-2">
           <Progress value={20} className="h-2" />
-          <p className="text-sm text-muted-foreground text-center">1/5 단계 - 약 2분 소요</p>
+          <p className="text-sm text-muted-foreground text-center">
+            1/5 단계 ({step === 1 ? "필수 정보" : "선택 정보"}) - 약 2분 소요
+          </p>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
         {/* Welcome Message */}
-        <div className="bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200 rounded-xl p-6">
-          <h3 className="text-rose-900 mb-2">환영합니다! 👋</h3>
-          <p className="text-sm text-rose-700">
+        <div className="bg-secondary border border-border rounded-xl p-6">
+          <h3 className="text-foreground mb-2">환영합니다! 👋</h3>
+          <p className="text-sm text-muted-foreground">
             당신에 대해 조금 더 알려주세요. 진솔한 정보가 더 좋은 인연을 만듭니다.
           </p>
         </div>
 
-        <div className="space-y-5">
+        {/* Step 1: Required fields */}
+        {step === 1 && <div className="space-y-5">
           {/* Name */}
           <div>
             <Label className="mb-2 block">이름 *</Label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 placeholder="본명을 입력해주세요"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="pl-11 h-12 bg-white border-slate-200"
+                className="pl-11 h-12 bg-card border-border"
                 maxLength={20}
               />
             </div>
@@ -203,31 +215,30 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
           <div>
             <Label className="mb-2 block">생년월일 * {calculateAge()}</Label>
             <div className="grid grid-cols-3 gap-3">
-              <Input
-                type="number"
-                placeholder="년도"
+              <select
                 value={formData.birthYear}
                 onChange={(e) => setFormData({ ...formData, birthYear: e.target.value })}
-                className="h-12 bg-white border-slate-200"
-              />
-              <Input
-                type="number"
-                placeholder="월"
+                className="h-12 px-3 rounded-lg border-2 border-border bg-card focus:border-primary text-sm"
+              >
+                <option value="">년도</option>
+                {birthYears.map(y => <option key={y} value={y}>{y}년</option>)}
+              </select>
+              <select
                 value={formData.birthMonth}
                 onChange={(e) => setFormData({ ...formData, birthMonth: e.target.value })}
-                className="h-12 bg-white border-slate-200"
-                min="1"
-                max="12"
-              />
-              <Input
-                type="number"
-                placeholder="일"
+                className="h-12 px-3 rounded-lg border-2 border-border bg-card focus:border-primary text-sm"
+              >
+                <option value="">월</option>
+                {birthMonths.map(m => <option key={m} value={m}>{parseInt(m)}월</option>)}
+              </select>
+              <select
                 value={formData.birthDay}
                 onChange={(e) => setFormData({ ...formData, birthDay: e.target.value })}
-                className="h-12 bg-white border-slate-200"
-                min="1"
-                max="31"
-              />
+                className="h-12 px-3 rounded-lg border-2 border-border bg-card focus:border-primary text-sm"
+              >
+                <option value="">일</option>
+                {birthDays.map(d => <option key={d} value={d}>{parseInt(d)}일</option>)}
+              </select>
             </div>
           </div>
 
@@ -241,39 +252,14 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                   onClick={() => setFormData({ ...formData, gender })}
                   className={`py-3 rounded-xl border-2 font-medium transition-all ${
                     formData.gender === gender
-                      ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                      : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card border-border text-muted-foreground hover:border-primary/40"
                   }`}
                 >
                   {gender}
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Phone Number */}
-          <div>
-            <Label className="mb-2 block">핸드폰 번호 *</Label>
-            <Input
-              type="tel"
-              placeholder="010-1234-5678"
-              value={formData.phoneNumber}
-              onChange={(e) => {
-                // Auto-format phone number
-                let value = e.target.value.replace(/[^\d]/g, '');
-                if (value.length > 3 && value.length <= 7) {
-                  value = value.slice(0, 3) + '-' + value.slice(3);
-                } else if (value.length > 7) {
-                  value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11);
-                }
-                setFormData({ ...formData, phoneNumber: value });
-              }}
-              className="h-12 bg-white border-slate-200"
-              maxLength={13}
-            />
-            {formData.phoneNumber && !isPhoneValid && (
-              <p className="text-xs text-red-500 mt-1">올바른 형식으로 입력해주세요 (010-1234-5678)</p>
-            )}
           </div>
 
           {/* Height */}
@@ -285,9 +271,9 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
               max="220"
               value={formData.height}
               onChange={(e) => setFormData({ ...formData, height: parseInt(e.target.value) })}
-              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-pink-500"
+              className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
             />
-            <div className="flex justify-between text-xs text-slate-500 mt-1">
+            <div className="flex justify-between text-xs text-muted-foreground mt-1">
               <span>140cm</span>
               <span>220cm</span>
             </div>
@@ -303,8 +289,8 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                   onClick={() => setFormData({ ...formData, bodyType: type })}
                   className={`py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
                     formData.bodyType === type
-                      ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                      : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card border-border text-muted-foreground hover:border-primary/40"
                   }`}
                 >
                   {type}
@@ -327,8 +313,8 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                       onClick={() => setFormData({ ...formData, mbtiE: type })}
                       className={`py-2 rounded-lg border-2 text-sm font-medium transition-all ${
                         formData.mbtiE === type
-                          ? "bg-gradient-to-r from-purple-400 to-indigo-400 text-white border-purple-400"
-                          : "bg-white border-slate-200 text-slate-600 hover:border-purple-300"
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card border-border text-muted-foreground hover:border-primary/40"
                       }`}
                     >
                       {type}
@@ -336,7 +322,6 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                   ))}
                 </div>
               </div>
-
               {/* S/N */}
               <div className="space-y-2">
                 <p className="text-xs text-center text-muted-foreground font-medium">감각/직관</p>
@@ -347,8 +332,8 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                       onClick={() => setFormData({ ...formData, mbtiS: type })}
                       className={`py-2 rounded-lg border-2 text-sm font-medium transition-all ${
                         formData.mbtiS === type
-                          ? "bg-gradient-to-r from-purple-400 to-indigo-400 text-white border-purple-400"
-                          : "bg-white border-slate-200 text-slate-600 hover:border-purple-300"
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card border-border text-muted-foreground hover:border-primary/40"
                       }`}
                     >
                       {type}
@@ -356,7 +341,6 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                   ))}
                 </div>
               </div>
-
               {/* T/F */}
               <div className="space-y-2">
                 <p className="text-xs text-center text-muted-foreground font-medium">사고/감정</p>
@@ -367,8 +351,8 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                       onClick={() => setFormData({ ...formData, mbtiT: type })}
                       className={`py-2 rounded-lg border-2 text-sm font-medium transition-all ${
                         formData.mbtiT === type
-                          ? "bg-gradient-to-r from-purple-400 to-indigo-400 text-white border-purple-400"
-                          : "bg-white border-slate-200 text-slate-600 hover:border-purple-300"
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card border-border text-muted-foreground hover:border-primary/40"
                       }`}
                     >
                       {type}
@@ -376,7 +360,6 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                   ))}
                 </div>
               </div>
-
               {/* P/J */}
               <div className="space-y-2">
                 <p className="text-xs text-center text-muted-foreground font-medium">인식/판단</p>
@@ -387,8 +370,8 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                       onClick={() => setFormData({ ...formData, mbtiP: type })}
                       className={`py-2 rounded-lg border-2 text-sm font-medium transition-all ${
                         formData.mbtiP === type
-                          ? "bg-gradient-to-r from-purple-400 to-indigo-400 text-white border-purple-400"
-                          : "bg-white border-slate-200 text-slate-600 hover:border-purple-300"
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card border-border text-muted-foreground hover:border-primary/40"
                       }`}
                     >
                       {type}
@@ -398,7 +381,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
               </div>
             </div>
             {formData.mbtiE && formData.mbtiS && formData.mbtiT && formData.mbtiP && (
-              <p className="text-sm text-center text-purple-600 font-medium mt-2">
+              <p className="text-sm text-center text-primary font-medium mt-2">
                 선택된 MBTI: {formData.mbtiE}{formData.mbtiS}{formData.mbtiT}{formData.mbtiP}
               </p>
             )}
@@ -410,45 +393,13 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
             <select
               value={formData.jobCategory}
               onChange={(e) => setFormData({ ...formData, jobCategory: e.target.value })}
-              className="w-full h-12 px-4 rounded-lg border-2 border-slate-200 bg-white focus:border-pink-400 focus:ring-pink-400"
+              className="w-full h-12 px-4 rounded-lg border-2 border-border bg-card focus:border-primary focus:ring-primary"
             >
               <option value="">선택해주세요</option>
               {jobCategories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
+                <option key={category} value={category}>{category}</option>
               ))}
             </select>
-          </div>
-
-          {/* Company & Position */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="mb-2 block">직장명 (선택)</Label>
-              <Input
-                placeholder="예: 구글"
-                value={formData.company}
-                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                className="h-12 bg-white border-slate-200"
-                maxLength={30}
-              />
-            </div>
-            <div>
-              <Label className="mb-2 block">소득 인증 (선택)</Label>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full h-12 border-2 border-dashed hover:border-pink-300 hover:bg-pink-50"
-                onClick={() => {
-                  toast.info('홈택스 연동 기능은 준비 중입니다');
-                }}
-              >
-                소득인증하기
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                소득 인증은 선택사항입니다. 홈택스 연동을 통해 인증하면 고소득 뱃지가 프로필에 표시됩니다. (연소득 7,500만원 이상)
-              </p>
-            </div>
           </div>
 
           {/* Education */}
@@ -461,35 +412,13 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                   onClick={() => setFormData({ ...formData, education: level })}
                   className={`py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
                     formData.education === level
-                      ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                      : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card border-border text-muted-foreground hover:border-primary/40"
                   }`}
                 >
                   {level}
                 </button>
               ))}
-            </div>
-          </div>
-
-          {/* School & Major */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="mb-2 block">학교명 (선택)</Label>
-              <Input
-                placeholder="예: 서울대학교"
-                value={formData.school}
-                onChange={(e) => setFormData({ ...formData, school: e.target.value })}
-                className="h-12 bg-white border-slate-200"
-              />
-            </div>
-            <div>
-              <Label className="mb-2 block">전공 (선택)</Label>
-              <Input
-                placeholder="예: 경영학"
-                value={formData.major}
-                onChange={(e) => setFormData({ ...formData, major: e.target.value })}
-                className="h-12 bg-white border-slate-200"
-              />
             </div>
           </div>
 
@@ -499,52 +428,137 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
             <select
               value={formData.region}
               onChange={(e) => setFormData({ ...formData, region: e.target.value })}
-              className="w-full h-12 px-4 rounded-lg border-2 border-slate-200 bg-white focus:border-pink-400 focus:ring-pink-400"
+              className="w-full h-12 px-4 rounded-lg border-2 border-border bg-card focus:border-primary focus:ring-primary"
             >
               <option value="">선택해주세요</option>
               {regions.map((region) => (
-                <option key={region} value={region}>
-                  {region}
-                </option>
+                <option key={region} value={region}>{region}</option>
               ))}
             </select>
           </div>
-        </div>
+        </div>}
 
-        {/* Next Button */}
-        <Button
-          onClick={() => onNext({
-            basicInfo: {
-              name: formData.name,
-              birthYear: formData.birthYear,
-              birthMonth: formData.birthMonth,
-              birthDay: formData.birthDay,
-              gender: formData.gender,
-              phoneNumber: formData.phoneNumber,
-              height: formData.height,
-              bodyType: formData.bodyType,
-              mbti: `${formData.mbtiE}${formData.mbtiS}${formData.mbtiT}${formData.mbtiP}`,
-            },
-            careerInfo: {
-              category: formData.jobCategory,
-              company: formData.company,
-              incomeRange: formData.incomeRange,
-            },
-            educationInfo: {
-              level: formData.education,
-              school: formData.school,
-              major: formData.major,
-            },
-            locationInfo: {
-              region: formData.region,
-              district: "",
-            },
-          })}
-          disabled={!isValid}
-          className="w-full h-14 bg-gradient-to-r from-pink-400 to-rose-400 text-white disabled:opacity-50"
-        >
-          다음 - 사진 등록
-        </Button>
+        {/* Step 2: Optional fields */}
+        {step === 2 && <div className="space-y-5">
+          <div className="bg-secondary border border-border rounded-xl p-4">
+            <p className="text-sm text-muted-foreground">아래 정보는 모두 선택 사항이에요. 건너뛰어도 괜찮아요!</p>
+          </div>
+
+          {/* Phone Number */}
+          <div>
+            <Label className="mb-2 block">핸드폰 번호</Label>
+            <Input
+              type="tel"
+              placeholder="010-1234-5678"
+              value={formData.phoneNumber}
+              onChange={(e) => {
+                let value = e.target.value.replace(/[^\d]/g, '');
+                if (value.length > 3 && value.length <= 7) value = value.slice(0, 3) + '-' + value.slice(3);
+                else if (value.length > 7) value = value.slice(0, 3) + '-' + value.slice(3, 7) + '-' + value.slice(7, 11);
+                setFormData({ ...formData, phoneNumber: value });
+              }}
+              className="h-12 bg-card border-border"
+              maxLength={13}
+            />
+            {formData.phoneNumber && !isPhoneValid && (
+              <p className="text-xs text-red-500 mt-1">올바른 형식으로 입력해주세요 (010-1234-5678)</p>
+            )}
+          </div>
+
+          {/* Company */}
+          <div>
+            <Label className="mb-2 block">직장명</Label>
+            <Input
+              placeholder="예: 구글"
+              value={formData.company}
+              onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+              className="h-12 bg-card border-border"
+              maxLength={30}
+            />
+          </div>
+
+          {/* School & Major */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="mb-2 block">학교명</Label>
+              <Input
+                placeholder="예: 서울대학교"
+                value={formData.school}
+                onChange={(e) => setFormData({ ...formData, school: e.target.value })}
+                className="h-12 bg-card border-border"
+              />
+            </div>
+            <div>
+              <Label className="mb-2 block">전공</Label>
+              <Input
+                placeholder="예: 경영학"
+                value={formData.major}
+                onChange={(e) => setFormData({ ...formData, major: e.target.value })}
+                className="h-12 bg-card border-border"
+              />
+            </div>
+          </div>
+
+          {/* Income Verification */}
+          <div>
+            <Label className="mb-2 block">소득 인증</Label>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-12 border-2 border-dashed hover:border-primary/40 hover:bg-secondary"
+              onClick={() => toast.info('홈택스 연동 기능은 준비 중입니다')}
+            >
+              소득인증하기
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+              홈택스 연동으로 인증하면 고소득 뱃지가 프로필에 표시됩니다. (연소득 7,500만원 이상)
+            </p>
+          </div>
+        </div>}
+
+        {/* Next / Submit Button */}
+        {step === 1 ? (
+          <Button
+            onClick={() => setStep(2)}
+            disabled={!isStep1Valid}
+            className="w-full h-14 bg-primary text-primary-foreground disabled:opacity-50"
+          >
+            다음 - 추가 정보 (선택)
+          </Button>
+        ) : (
+          <Button
+            onClick={() => onNext({
+              basicInfo: {
+                name: formData.name,
+                birthYear: formData.birthYear,
+                birthMonth: formData.birthMonth,
+                birthDay: formData.birthDay,
+                gender: formData.gender,
+                phoneNumber: formData.phoneNumber,
+                height: formData.height,
+                bodyType: formData.bodyType,
+                mbti: `${formData.mbtiE}${formData.mbtiS}${formData.mbtiT}${formData.mbtiP}`,
+              },
+              careerInfo: {
+                category: formData.jobCategory,
+                company: formData.company,
+                incomeRange: formData.incomeRange,
+              },
+              educationInfo: {
+                level: formData.education,
+                school: formData.school,
+                major: formData.major,
+              },
+              locationInfo: {
+                region: formData.region,
+                district: "",
+              },
+            })}
+            className="w-full h-14 bg-primary text-primary-foreground"
+          >
+            다음 - 사진 등록
+          </Button>
+        )}
       </div>
     </div>
   );

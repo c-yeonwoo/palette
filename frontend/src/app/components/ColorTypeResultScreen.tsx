@@ -77,7 +77,7 @@ export function ColorTypeResultScreen({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-pink-50 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Color Card */}
       <div className={`bg-gradient-to-br ${info.bgGradient} px-6 pt-16 pb-12 text-white text-center`}>
         <div className="text-6xl mb-4">{info.emoji}</div>
@@ -99,18 +99,18 @@ export function ColorTypeResultScreen({
       <div className="flex-1 px-6 py-6 space-y-5">
         {/* Generated Intro */}
         {generatedIntroduction && (
-          <div className="bg-white rounded-2xl shadow-sm p-5 border border-slate-100">
+          <div className="bg-card rounded-2xl shadow-sm p-5 border border-border">
             <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-4 h-4 text-pink-400" />
-              <span className="font-semibold text-slate-700 text-sm">AI가 작성한 나의 소개</span>
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span className="font-semibold text-foreground text-sm">AI가 작성한 나의 소개</span>
             </div>
-            <p className="text-slate-600 text-sm leading-relaxed">{generatedIntroduction}</p>
+            <p className="text-muted-foreground text-sm leading-relaxed">{generatedIntroduction}</p>
           </div>
         )}
 
         {/* Color Traits */}
-        <div className="bg-white rounded-2xl shadow-sm p-5 border border-slate-100">
-          <p className="font-semibold text-slate-700 text-sm mb-3">이런 점이 매력이에요</p>
+        <div className="bg-card rounded-2xl shadow-sm p-5 border border-border">
+          <p className="font-semibold text-foreground text-sm mb-3">이런 점이 매력이에요</p>
           <div className="flex flex-wrap gap-2">
             {getColorTraits(colorType).map((trait) => (
               <span
@@ -124,9 +124,9 @@ export function ColorTypeResultScreen({
         </div>
 
         {/* Harmony Info */}
-        <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl p-5 border border-pink-100">
-          <p className="text-xs text-pink-600 font-medium mb-1">색의 조화</p>
-          <p className="text-sm text-slate-600">
+        <div className="bg-secondary rounded-2xl p-5 border border-border">
+          <p className="text-xs text-primary font-medium mb-1">색의 조화</p>
+          <p className="text-sm text-muted-foreground">
             매칭 시 "{colorName}"과 잘 어울리는 색깔을 가진 분들이 추천될 거예요 ✨
           </p>
         </div>
@@ -139,7 +139,7 @@ export function ColorTypeResultScreen({
           <ArrowRight className="w-5 h-5 ml-2" />
         </Button>
 
-        <p className="text-center text-xs text-slate-400">
+        <p className="text-center text-xs text-muted-foreground">
           나중에 프로필에서 색깔을 변경할 수 있어요
         </p>
       </div>

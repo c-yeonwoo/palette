@@ -134,30 +134,30 @@ export function AIInterviewScreen({ onComplete, onBack }: AIInterviewScreenProps
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <Sparkles className="w-10 h-10 text-pink-400 animate-pulse mx-auto mb-3" />
-          <p className="text-slate-600">AI 인터뷰 준비 중...</p>
+          <Sparkles className="w-10 h-10 text-primary animate-pulse mx-auto mb-3" />
+          <p className="text-muted-foreground">AI 인터뷰 준비 중...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur border-b border-pink-100 px-4 py-3 flex items-center gap-3">
-        <button onClick={onBack} className="text-slate-500 text-sm">
+      <div className="bg-card/80 backdrop-blur border-b border-border px-4 py-3 flex items-center gap-3">
+        <button onClick={onBack} className="text-muted-foreground text-sm">
           ← 뒤로
         </button>
         <div className="flex-1 text-center">
           <div className="flex items-center justify-center gap-2">
-            <Sparkles className="w-4 h-4 text-pink-500" />
-            <span className="font-semibold text-slate-800">AI 인터뷰</span>
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="font-semibold text-foreground">AI 인터뷰</span>
           </div>
         </div>
         {questions.length > 0 && (
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-muted-foreground">
             {Math.min(currentStep + 1, questions.length)}/{questions.length}
           </span>
         )}
@@ -165,9 +165,9 @@ export function AIInterviewScreen({ onComplete, onBack }: AIInterviewScreenProps
 
       {/* Progress Bar */}
       {questions.length > 0 && (
-        <div className="h-1 bg-pink-100">
+        <div className="h-1 bg-muted">
           <div
-            className="h-1 bg-gradient-to-r from-pink-400 to-purple-500 transition-all duration-500"
+            className="h-1 bg-primary transition-all duration-500"
             style={{ width: `${((currentStep) / questions.length) * 100}%` }}
           />
         </div>
@@ -181,15 +181,15 @@ export function AIInterviewScreen({ onComplete, onBack }: AIInterviewScreenProps
             className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"} gap-2`}
           >
             {msg.type === "ai" && (
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center flex-shrink-0">
-                <MessageCircle className="w-4 h-4 text-white" />
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                <MessageCircle className="w-4 h-4 text-primary-foreground" />
               </div>
             )}
             <div
               className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-line ${
                 msg.type === "ai"
-                  ? "bg-white shadow-sm text-slate-700 rounded-tl-none"
-                  : "bg-gradient-to-r from-pink-400 to-rose-400 text-white rounded-tr-none"
+                  ? "bg-card shadow-sm text-foreground rounded-tl-none"
+                  : "bg-primary text-primary-foreground rounded-tr-none"
               }`}
             >
               {msg.content}
@@ -198,14 +198,14 @@ export function AIInterviewScreen({ onComplete, onBack }: AIInterviewScreenProps
         ))}
         {isAnalyzing && (
           <div className="flex justify-start gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center">
-              <MessageCircle className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+              <MessageCircle className="w-4 h-4 text-primary-foreground" />
             </div>
-            <div className="bg-white shadow-sm rounded-2xl rounded-tl-none px-4 py-3">
+            <div className="bg-card shadow-sm rounded-2xl rounded-tl-none px-4 py-3">
               <div className="flex gap-1">
-                <span className="w-2 h-2 bg-pink-300 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-2 h-2 bg-pink-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                <span className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
               </div>
             </div>
           </div>
@@ -215,7 +215,7 @@ export function AIInterviewScreen({ onComplete, onBack }: AIInterviewScreenProps
 
       {/* Input Area */}
       {!isAnalyzing && currentQuestion && (
-        <div className="bg-white border-t border-pink-100 px-4 py-4 space-y-3">
+        <div className="bg-card border-t border-border px-4 py-4 space-y-3">
           {currentQuestion.inputType === "chips" && currentQuestion.chips && (
             <div className="flex flex-wrap gap-2 mb-2">
               {currentQuestion.chips.map((chip) => (
@@ -224,8 +224,8 @@ export function AIInterviewScreen({ onComplete, onBack }: AIInterviewScreenProps
                   onClick={() => toggleChip(chip)}
                   className={`px-3 py-1.5 rounded-full text-sm transition-all ${
                     selectedChips.includes(chip)
-                      ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      ? "bg-primary text-primary-foreground shadow"
+                      : "bg-muted text-foreground hover:bg-accent"
                   }`}
                 >
                   {chip}
@@ -242,7 +242,7 @@ export function AIInterviewScreen({ onComplete, onBack }: AIInterviewScreenProps
                 onChange={(e) => setCurrentInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSubmitAnswer()}
                 placeholder={currentQuestion.hint}
-                className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-pink-400"
+                className="flex-1 border border-border bg-card rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
                 autoFocus
               />
             </div>
@@ -255,7 +255,7 @@ export function AIInterviewScreen({ onComplete, onBack }: AIInterviewScreenProps
                 ? selectedChips.length === 0
                 : currentInput.trim().length === 0
             }
-            className="w-full h-12 bg-gradient-to-r from-pink-400 to-rose-400 text-white"
+            className="w-full h-12 bg-primary text-primary-foreground"
           >
             {currentStep === questions.length - 1 ? "완성하기 ✨" : "다음"}
             <ChevronRight className="w-4 h-4 ml-1" />
@@ -267,7 +267,7 @@ export function AIInterviewScreen({ onComplete, onBack }: AIInterviewScreenProps
                 setCurrentInput("없어요");
                 setTimeout(handleSubmitAnswer, 0);
               }}
-              className="w-full text-center text-xs text-slate-400 py-1"
+              className="w-full text-center text-xs text-muted-foreground py-1"
             >
               건너뛰기
             </button>

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { MapPin, SlidersHorizontal, X, Bell, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
-import { FortuneBanner } from "./FortuneBanner";
+import { DailyMatchBanner } from "./DailyMatchBanner";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
+import { getCompatibilityDeterministic, COLOR_META, type ColorType } from "../../lib/colorCompatibility";
 
 interface ProfilePhoto {
   id: string;
@@ -47,6 +48,13 @@ interface ProfileMetricsDto {
   viewCount: number;
 }
 
+interface ColorTypeDto {
+  type: string | null;
+  name: string | null;
+  hex: string | null;
+  description: string | null;
+}
+
 interface Profile {
   id: string;
   userId: string;
@@ -58,6 +66,7 @@ interface Profile {
   photos: ProfilePhoto[];
   primaryPhotoUrl: string | null;
   metrics: ProfileMetricsDto;
+  colorType?: ColorTypeDto | null;
 }
 
 interface FeedProfileItem {
@@ -104,6 +113,7 @@ interface UserProfile {
   nickname: string;
   accountType: string;
   isProfileCompleted: boolean;
+  colorType?: ColorTypeDto | null;
 }
 
 interface FilterState {
@@ -159,18 +169,27 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
     return qs ? `?${qs}` : "";
   };
 
+  const [isFeedVisible, setIsFeedVisible] = useState(true);
+
   const fetchUserAndFeed = async (f: FilterState = filters) => {
     try {
       setLoading(true);
       const userData = await api.get<UserProfile>('/api/v1/auth/me');
       setUserProfile(userData);
       if (userData.accountType === "REGULAR") {
-        const [feedResponse, aiSignalResponse] = await Promise.all([
-          api.get<FeedResponse>(`/api/v1/feed${buildQueryString(f)}`),
-          api.get<AiSignalResponse>("/api/v1/feed/ai-signal").catch(() => null),
-        ]);
-        setFeedItems(feedResponse.items);
-        setAiSignal(aiSignalResponse);
+        // 피드 노출 설정 확인
+        const profileData = await api.get<{ settings?: { isAcceptingMatches?: boolean } }>('/api/v1/profile').catch(() => null);
+        const visible = profileData?.settings?.isAcceptingMatches !== false;
+        setIsFeedVisible(visible);
+
+        if (visible) {
+          const [feedResponse, aiSignalResponse] = await Promise.all([
+            api.get<FeedResponse>(`/api/v1/feed${buildQueryString(f)}`),
+            api.get<AiSignalResponse>("/api/v1/feed/ai-signal").catch(() => null),
+          ]);
+          setFeedItems(feedResponse.items);
+          setAiSignal(aiSignalResponse);
+        }
       }
     } catch (error) {
       console.error("Failed to fetch feed:", error);
@@ -199,10 +218,10 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <div className="max-w-2xl mx-auto px-5 pt-6 pb-4">
+      <div className="max-w-2xl mx-auto px-6 pt-6 pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-semibold text-muted-foreground tracking-[0.18em] uppercase mb-0.5">Palette</p>
+            <p className="text-xs font-semibold text-muted-foreground tracking-[0.18em] uppercase mb-0.5">Palette</p>
             <h1 className="text-[26px] font-bold tracking-tight leading-none">주변 지인</h1>
           </div>
           <div className="flex items-center gap-2">
@@ -261,13 +280,13 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
             className="absolute right-0 top-0 h-full w-full max-w-sm bg-background overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
-            <div className="sticky top-0 bg-background/90 backdrop-blur-xl border-b border-border px-5 py-4 flex items-center justify-between">
+            <div className="sticky top-0 bg-background/90 backdrop-blur-xl border-b border-border px-6 py-4 flex items-center justify-between">
               <h3 className="font-semibold text-base">필터</h3>
               <button onClick={() => setShowFilter(false)} className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="px-5 py-6 space-y-7">
+            <div className="px-6 py-6 space-y-7">
               <FilterSection title="나이">
                 <div className="flex items-center gap-2">
                   <input type="number" placeholder="최소" min={18} max={60}
@@ -323,7 +342,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
                 </div>
               </FilterSection>
             </div>
-            <div className="sticky bottom-0 bg-background/90 backdrop-blur-xl border-t border-border px-5 py-4 flex gap-2.5">
+            <div className="sticky bottom-0 bg-background/90 backdrop-blur-xl border-t border-border px-6 py-4 flex gap-2.5">
               <Button variant="outline" className="flex-1 rounded-xl h-11" onClick={resetFilters}>초기화</Button>
               <Button className="flex-1 rounded-xl h-11" onClick={applyFilters}>적용하기</Button>
             </div>
@@ -331,12 +350,26 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
         </div>
       )}
 
+      {/* F08 데일리 컬러 매칭 배너 */}
+      <div className="max-w-2xl mx-auto pt-2">
+        <DailyMatchBanner className="mb-3" />
+      </div>
+
       {/* Feed */}
       <div className="max-w-2xl mx-auto px-4">
         {loading ? (
           <LoadingState />
         ) : userProfile?.accountType === "MATCHMAKER_ONLY" ? (
           <EmptyState title="주선자 전용 계정" description="주선 기능은 주선자 대시보드에서 이용하실 수 있습니다" />
+        ) : !isFeedVisible ? (
+          <div className="flex flex-col items-center gap-3 py-16 text-center px-4">
+            <span className="text-4xl">🙈</span>
+            <p className="font-semibold text-foreground">피드 노출이 꺼져 있어요</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              내 프로필이 다른 사람에게 보이지 않아요.<br />
+              내 프로필 → 주선받기 설정에서 켤 수 있어요.
+            </p>
+          </div>
         ) : feedItems.length === 0 ? (
           hasActiveFilters ? (
             <EmptyState title="조건에 맞는 지인이 없어요" description="필터 조건을 조정해보세요" />
@@ -346,7 +379,12 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {feedItems.map((item) => (
-              <ProfileCard key={item.profile.userId} item={item} onClick={() => onProfileClick?.(item)} />
+              <ProfileCard
+                key={item.profile.userId}
+                item={item}
+                myColorType={(userProfile?.colorType?.type ?? null) as ColorType | null}
+                onClick={() => onProfileClick?.(item)}
+              />
             ))}
           </div>
         )}
@@ -355,7 +393,15 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
   );
 }
 
-function ProfileCard({ item, onClick }: { item: FeedProfileItem; onClick: () => void }) {
+function ProfileCard({
+  item,
+  myColorType,
+  onClick,
+}: {
+  item: FeedProfileItem;
+  myColorType: ColorType | null;
+  onClick: () => void;
+}) {
   const { profile, mutualFriends, viewCost = 3000, isOpened = false } = item;
   const [revealed, setRevealed] = useState(isOpened);
   const [peeling, setPeeling] = useState(false);
@@ -369,9 +415,11 @@ function ProfileCard({ item, onClick }: { item: FeedProfileItem; onClick: () => 
   const job = profile.careerInfo.category ? jobMap[profile.careerInfo.category] ?? null : null;
   const location = profile.locationInfo.sido;
 
-  const mutualText = mutualFriends.length === 0 ? null
-    : mutualFriends.length === 1 ? `${mutualFriends[0]}의 지인`
-    : `${mutualFriends[0]} 외 ${mutualFriends.length - 1}명의 지인`;
+  const theirColorType = (profile.colorType?.type ?? null) as ColorType | null;
+  const compat = getCompatibilityDeterministic(myColorType, theirColorType, profile.userId);
+  const theirMeta = theirColorType ? COLOR_META[theirColorType] : null;
+
+  const degree = item.degree;
 
   const handleClick = () => {
     if (revealed) {
@@ -416,18 +464,6 @@ function ProfileCard({ item, onClick }: { item: FeedProfileItem; onClick: () => 
           }} />
         )}
 
-        {/* Cost pill */}
-        <div className="absolute top-2.5 right-2.5">
-          {!revealed ? (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/20 backdrop-blur-sm text-primary-foreground/80">
-              {(viewCost / 1000).toFixed(0)}천원
-            </span>
-          ) : (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-black/30 backdrop-blur-sm text-white/90">
-              {(viewCost / 1000).toFixed(0)}천원
-            </span>
-          )}
-        </div>
 
         {/* 공개 후 하단 정보 */}
         {revealed && (
@@ -441,23 +477,87 @@ function ProfileCard({ item, onClick }: { item: FeedProfileItem; onClick: () => 
               </p>
             )}
             {(job || location) && (
-              <p className="text-white/70 text-[11px] mt-0.5">
+              <p className="text-white/70 text-xs mt-0.5">
                 {[job, location].filter(Boolean).join(" · ")}
               </p>
             )}
           </div>
         )}
+
+        {/* 미공개 상태: 색깔 타입 힌트 */}
+        {!revealed && theirMeta && (
+          <div className="absolute top-2 left-2">
+            <span
+              className="w-5 h-5 rounded-full border-2 border-white/80 shadow block"
+              style={{ backgroundColor: theirMeta.hex }}
+              title={theirMeta.name}
+            />
+          </div>
+        )}
+
+        {/* 공개 후: 색깔 궁합 배지 */}
+        {revealed && compat && (
+          <div className="absolute top-2 right-2">
+            <span className="text-xs font-bold bg-white/90 text-foreground rounded-full px-2 py-0.5 shadow-sm">
+              {compat.label} {compat.score}%
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* Mutual friend */}
-      {mutualText && (
-        <div className="flex items-center gap-1 mt-1.5 px-0.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-          <p className="text-[11px] text-muted-foreground truncate">{mutualText}</p>
-        </div>
-      )}
+      {/* 지인 연결 + 색깔 타입 */}
+      <div className="mt-1.5 px-0.5 space-y-0.5">
+        <RelationshipBadge degree={degree} mutualFriends={mutualFriends} />
+        {theirMeta && compat && revealed && (
+          <p className="text-xs text-muted-foreground truncate">{compat.tagline}</p>
+        )}
+      </div>
     </div>
   );
+}
+
+function RelationshipBadge({ degree, mutualFriends }: { degree?: number; mutualFriends: string[] }) {
+  // 1촌: 직접 연결
+  if (degree === 1) {
+    return (
+      <div className="flex items-center gap-1 min-w-0">
+        <span className="flex-shrink-0 text-xs font-bold bg-primary/10 text-primary rounded-full px-1.5 py-0.5 leading-none">
+          1촌
+        </span>
+        <p className="text-xs text-muted-foreground truncate">직접 연결</p>
+      </div>
+    );
+  }
+
+  // 2촌: 공통 지인 통해
+  if (degree === 2 && mutualFriends.length > 0) {
+    const connector = mutualFriends[0];
+    const extra = mutualFriends.length > 1 ? ` 외 ${mutualFriends.length - 1}명` : "";
+    return (
+      <div className="flex items-center gap-1 min-w-0">
+        <span className="flex-shrink-0 text-xs font-bold bg-secondary text-muted-foreground rounded-full px-1.5 py-0.5 leading-none border border-border">
+          2촌
+        </span>
+        <p className="text-xs text-muted-foreground truncate">
+          {connector}{extra} 통해
+        </p>
+      </div>
+    );
+  }
+
+  // degree 없이 mutualFriends만 있는 경우 (fallback)
+  if (mutualFriends.length > 0) {
+    const name = mutualFriends[0];
+    const extra = mutualFriends.length > 1 ? ` 외 ${mutualFriends.length - 1}명` : "";
+    return (
+      <div className="flex items-center gap-1 min-w-0">
+        <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 flex-shrink-0" />
+        <p className="text-xs text-muted-foreground truncate">{name}{extra}의 지인</p>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 function AiSignalSection({
@@ -499,9 +599,9 @@ function AiSignalSection({
         <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
           <Sparkles className="w-3.5 h-3.5 text-primary" />
         </div>
-        <p className="text-sm font-semibold">오늘의 AI 시그널</p>
-        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">준비 중</span>
-        <span className="ml-auto text-[10px] text-muted-foreground">매일 1장 무료</span>
+        <p className="text-sm font-semibold">색깔로 찾은 인연</p>
+        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">준비 중</span>
+        <span className="ml-auto text-xs text-muted-foreground">매일 1장 무료</span>
       </div>
       <div className="flex gap-3 overflow-x-auto pb-1">
         {recommendations.map((rec, i) => {
@@ -536,13 +636,13 @@ function AiSignalSection({
                       <p className="text-white/90 text-xs font-semibold">{rec.teaserAge}세</p>
                     )}
                     {rec.teaserLocation && (
-                      <p className="text-white/70 text-[10px]">{rec.teaserLocation}</p>
+                      <p className="text-white/70 text-xs">{rec.teaserLocation}</p>
                     )}
                   </div>
                   <button
                     onClick={() => handleUnlock(rec)}
                     disabled={unlocking}
-                    className="mt-1 w-full py-1.5 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold shadow-lg active:scale-95 transition-transform disabled:opacity-60"
+                    className="mt-1 w-full py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-lg active:scale-95 transition-transform disabled:opacity-60"
                   >
                     {unlocking ? "처리 중..." : `열기 ${rec.unlockPrice.toLocaleString()}원`}
                   </button>
@@ -553,7 +653,7 @@ function AiSignalSection({
                   </span>
                 </div>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1.5 px-0.5 truncate">{rec.reason}</p>
+              <p className="text-xs text-muted-foreground mt-1.5 px-0.5 truncate">{rec.reason}</p>
             </div>
           );
         })}
@@ -637,12 +737,12 @@ function AiSignalCard({
               <p className="text-white text-xs font-semibold">{profile.basicInfo.height}cm</p>
             )}
             {(job || location) && (
-              <p className="text-white/70 text-[10px]">{[job, location].filter(Boolean).join(" · ")}</p>
+              <p className="text-white/70 text-xs">{[job, location].filter(Boolean).join(" · ")}</p>
             )}
           </div>
         )}
       </div>
-      <p className="text-[10px] text-muted-foreground mt-1.5 px-0.5 truncate">{rec.reason}</p>
+      <p className="text-xs text-muted-foreground mt-1.5 px-0.5 truncate">{rec.reason}</p>
     </div>
   );
 }
@@ -699,7 +799,7 @@ function NoFriendsNudge({ onNavigateToFriends }: { onNavigateToFriends?: () => v
     <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
       {/* Illustration */}
       <div className="relative mb-8">
-        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-pink-400/20 flex items-center justify-center">
+        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
           <span className="text-4xl">🫂</span>
         </div>
         <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">

@@ -5,6 +5,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ChevronLeft, Loader2, Send, Users, ExternalLink, Lock, CreditCard, EyeOff } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
+import { getCompatibilityDeterministic, COLOR_META, COMPAT_STYLE, type ColorType } from "../../lib/colorCompatibility";
+import { CategoryCard } from "./profile/CategoryCard";
+import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
 
 interface ProfileDetailScreenProps {
   userId: string;
@@ -12,6 +15,7 @@ interface ProfileDetailScreenProps {
   mutualFriends?: string[];  // 공통 친구 닉네임 리스트
   degree?: number;           // 1=1촌, 2=2촌, 3=3촌
   viewCost?: number;         // 열람 비용 (0=무료)
+  onNavigateToFriends?: () => void;
 }
 
 interface PublicUserResponse {
@@ -108,8 +112,8 @@ function PhotoCarousel({ photos }: { photos: Array<{ id: string; url: string }> 
       >
         {/* 블러 배경 */}
         <img src={photos[idx].url} alt="" className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-40 pointer-events-none" aria-hidden />
-        {/* 실제 사진 — 가운데 정렬 */}
-        <img src={photos[idx].url} alt="" className="relative max-w-full max-h-full object-contain" />
+        {/* 실제 사진 — 중앙 정렬 */}
+        <img src={photos[idx].url} alt="" className="absolute inset-0 w-full h-full object-contain z-10" />
       </div>
 
       {/* prev/next tap zones */}
@@ -131,13 +135,13 @@ function PhotoCarousel({ photos }: { photos: Array<{ id: string; url: string }> 
 
       {/* counter */}
       <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-sm rounded-full px-2 py-0.5">
-        <span className="text-white text-[10px] font-medium">{idx + 1} / {photos.length}</span>
+        <span className="text-white text-xs font-medium">{idx + 1} / {photos.length}</span>
       </div>
     </div>
   );
 }
 
-export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree = 2, viewCost = 3000 }: ProfileDetailScreenProps) {
+export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree = 2, viewCost = 3000, onNavigateToFriends }: ProfileDetailScreenProps) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [userInfo, setUserInfo] = useState<PublicUserResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -147,6 +151,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   const [selectedMatchmaker, setSelectedMatchmaker] = useState<string | null>(null);
   const [requestMessage, setRequestMessage] = useState("");
   const [alreadyRequested, setAlreadyRequested] = useState(false);
+  const [selectedPoints, setSelectedPoints] = useState<100 | 300 | 500>(300);
 
   // Cooltime state
   const [inCoolTime, setInCoolTime] = useState(false);
@@ -330,7 +335,8 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
       await api.post("/api/v1/matchmaking/request", {
         targetUserId: userId,
         matchmakerName: selectedMatchmaker,
-        message: requestMessage || null
+        message: requestMessage || null,
+        offeredPoints: selectedPoints,
       });
 
       toast.success(`${selectedMatchmaker}님께 주선을 요청했습니다`);
@@ -350,6 +356,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     setModalStep(1);
     setSelectedMatchmaker(null);
     setRequestMessage("");
+    setSelectedPoints(300);
   };
 
   const getMutualFriendsText = () => {
@@ -401,7 +408,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
               {viewCost.toLocaleString()}원
             </p>
             <p className="text-xs text-muted-foreground mt-2">
-              결제 후 프로필을 무제한 열람할 수 있습니다
+              결제 후 24시간 동안 프로필을 열람할 수 있습니다
             </p>
           </div>
 
@@ -418,7 +425,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
             {isProcessingPayment ? "결제 중..." : `${viewCost.toLocaleString()}원 결제하기`}
           </Button>
           <p className="text-xs text-muted-foreground mt-3">
-            테스트 환경 - 실제 결제 없이 진행됩니다
+            결제 후 24시간 동안 프로필을 열람할 수 있습니다
           </p>
 
           <Button variant="ghost" className="mt-4 text-muted-foreground" onClick={onBack}>
@@ -441,10 +448,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   // Section components (same as MyProfileScreen)
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div className="space-y-3">
-      <h3
-        className="text-lg font-semibold"
-        style={accentColor ? { color: accentColor } : {}}
-      >{title}</h3>
+      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{title}</h3>
       {children}
     </div>
   );
@@ -474,9 +478,9 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
 
   const InterviewAnswer = ({ question, answer }: { question: string; answer: string }) => {
     return (
-      <div className="space-y-2 pb-3 border-b border-border/50 last:border-0">
-        <p className="text-sm font-medium" style={accentColor ? { color: accentColor } : { color: "hsl(var(--primary))" }}>{question}</p>
-        <p className="text-sm leading-relaxed text-muted-foreground">{answer}</p>
+      <div className="space-y-1.5 pb-3 border-b border-border/50 last:border-0">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{question}</p>
+        <p className="text-sm leading-relaxed text-foreground">{answer}</p>
       </div>
     );
   };
@@ -614,40 +618,26 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
 
       <div className="max-w-2xl mx-auto">
         {/* Photo Carousel */}
-        <div className="px-4 pt-3">
+        <div className="px-4 pt-3 flex justify-center">
           {sortedPhotos.length > 0 ? (
-            <div className="rounded-2xl overflow-hidden">
+            <div className="rounded-2xl overflow-hidden w-full max-w-[320px]">
               <PhotoCarousel photos={sortedPhotos} />
             </div>
           ) : (
-            <div className="aspect-[3/4] max-h-[420px] bg-muted flex items-center justify-center rounded-2xl">
+            <div className="aspect-[3/4] max-h-[420px] w-full max-w-[320px] bg-muted flex items-center justify-center rounded-2xl">
               <span className="text-sm text-muted-foreground">사진 없음</span>
             </div>
           )}
         </div>
 
-        {/* Color Badge */}
-        {profile.colorType?.hex && profile.colorType?.name && (
-          <div className="px-4 pt-3">
-            <div
-              className="flex items-center gap-2.5 rounded-xl px-4 py-3"
-              style={{ backgroundColor: `${profile.colorType.hex}18`, border: `1px solid ${profile.colorType.hex}40` }}
-            >
-              <div
-                className="w-5 h-5 rounded-full shrink-0 shadow-sm"
-                style={{ backgroundColor: profile.colorType.hex }}
-              />
-              <div className="min-w-0">
-                <span className="text-sm font-semibold" style={{ color: profile.colorType.hex }}>
-                  {profile.colorType.name}
-                </span>
-                {profile.colorType.description && (
-                  <span className="text-xs text-muted-foreground ml-2">{profile.colorType.description}</span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* 색깔 궁합 + AI 분석 배너 */}
+        <ColorCompatBanner
+          theirColorType={(profile.colorType?.type ?? null) as ColorType | null}
+          theirColorName={profile.colorType?.name ?? null}
+          theirColorHex={profile.colorType?.hex ?? null}
+          theirProfile={profile}
+          targetUserId={userId}
+        />
 
         {/* Tabs */}
         <div className="border-b border-border px-6 mt-6">
@@ -672,7 +662,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                 activeTab === "ideal" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              이상형
+              원하는 이상형
               {activeTab === "ideal" && (
                 <div
                   className="absolute bottom-0 left-0 right-0 h-0.5"
@@ -687,47 +677,17 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
         <div className="p-6 space-y-6">
           {activeTab === "about" ? (
             <>
-              {/* Basic Info */}
-              <Section title="기본 정보">
-                <div className="bg-card rounded-xl p-4 border border-border divide-y divide-border">
-                  <InfoRow label="키" value={profile.basicInfo.height ? `${profile.basicInfo.height}cm` : null} />
-                  <InfoRow label="체형" value={getBodyTypeDisplay(profile.basicInfo.bodyType)} />
-                  <InfoRow label="MBTI" value={profile.basicInfo.mbti} />
-                </div>
-              </Section>
-
-              {/* Career & Education */}
-              <Section title="직업 & 학력">
-                <div className="bg-card rounded-xl p-4 border border-border divide-y divide-border">
-                  <InfoRow label="직군" value={getJobCategoryDisplay(profile.careerInfo.category)} />
-                  <InfoRow label="회사" value={profile.careerInfo.company} />
-                  <InfoRow label="학력" value={getEducationDisplay(profile.educationInfo.level)} />
-                  <InfoRow label="학교" value={profile.educationInfo.school} />
-                  <InfoRow label="전공" value={profile.educationInfo.major} />
-                </div>
-              </Section>
-
-              {/* Location */}
-              <Section title="위치">
-                <div className="bg-card rounded-xl p-4 border border-border">
-                  <InfoRow
-                    label="거주지"
-                    value={profile.locationInfo.sido && profile.locationInfo.sigungu
-                      ? `${profile.locationInfo.sido} ${profile.locationInfo.sigungu}`
-                      : null
-                    }
+              {/* 기본정보 — CategoryCard 3종 */}
+              <div className="space-y-3">
+                {PROFILE_GROUPS.map((group) => (
+                  <CategoryCard
+                    key={group.key}
+                    group={group}
+                    values={toProfileValues(profile)}
+                    mode="view"
                   />
-                </div>
-              </Section>
-
-              {/* Lifestyle */}
-              <Section title="라이프스타일">
-                <div className="bg-card rounded-xl p-4 border border-border divide-y divide-border">
-                  <InfoRow label="흡연" value={getFrequencyDisplay(profile.lifestyleInfo.smoking)} />
-                  <InfoRow label="음주" value={getFrequencyDisplay(profile.lifestyleInfo.drinking)} />
-                  <InfoRow label="종교" value={getReligionDisplay(profile.lifestyleInfo.religion)} />
-                </div>
-              </Section>
+                ))}
+              </div>
 
               {/* Introduction */}
               <Section title="자기소개">
@@ -841,9 +801,16 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
             </p>
           )}
           {mutualFriends.length === 0 ? (
-            <div className="rounded-2xl bg-muted/60 border border-border p-4 text-center space-y-1.5">
-              <p className="text-sm font-medium text-muted-foreground">주선 요청을 하려면</p>
-              <p className="text-xs text-muted-foreground">공통 친구가 필요해요. 친구를 연결하면 지인을 통한 주선이 가능해요.</p>
+            <div className="rounded-2xl bg-muted/60 border border-border p-4 text-center space-y-3">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">주선 요청을 하려면 공통 친구가 필요해요</p>
+                <p className="text-xs text-muted-foreground">친구를 연결하면 지인을 통한 신뢰있는 주선이 가능해요.</p>
+              </div>
+              {onNavigateToFriends && (
+                <Button variant="outline" size="sm" className="w-full" onClick={onNavigateToFriends}>
+                  친구 연결하기
+                </Button>
+              )}
             </div>
           ) : (
             <Button
@@ -968,64 +935,254 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
               </div>
             )}
 
-            {/* Step 2: Write Message */}
+            {/* Step 2: Points + Message */}
             {modalStep === 2 && (
               <div className="animate-in fade-in slide-in-from-right duration-300">
                 {/* Modal Header */}
                 <div className="border-b border-border px-6 py-4">
                   <h3 className="text-lg font-semibold text-center">주선 요청</h3>
                   <p className="text-sm text-muted-foreground text-center mt-1">
-                    {selectedMatchmaker}님께 전달할 메시지를 작성해주세요
+                    주선자에게 감사 포인트를 설정해주세요
                   </p>
                 </div>
 
-                {/* Message Input */}
-                <div className="p-6">
-                  <div className="space-y-3">
-                    <div className="bg-primary/5 rounded-xl p-4 border border-primary/20">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Users className="w-4 h-4 text-primary" />
-                        <p className="text-sm font-medium text-primary">선택된 주선자</p>
-                      </div>
-                      <p className="font-medium">{selectedMatchmaker}</p>
+                <div className="p-5 space-y-5 overflow-y-auto max-h-[65vh]">
+                  {/* Selected matchmaker summary */}
+                  <div className="flex items-center gap-3 bg-secondary rounded-xl px-4 py-3">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Users className="w-4 h-4 text-primary" />
                     </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">선택된 주선자</p>
+                      <p className="font-semibold text-sm">{selectedMatchmaker}</p>
+                    </div>
+                  </div>
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        요청 메시지 <span className="text-muted-foreground">(선택사항)</span>
-                      </label>
-                      <textarea
-                        value={requestMessage}
-                        onChange={(e) => setRequestMessage(e.target.value)}
-                        placeholder="예: 안녕하세요! 프로필을 보고 관심이 생겨서 주선을 요청드립니다."
-                        className="w-full min-h-[120px] px-4 py-3 rounded-xl border border-border bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
-                        maxLength={200}
-                      />
-                      <p className="text-xs text-muted-foreground text-right">
-                        {requestMessage.length}/200
+                  {/* Points selection */}
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm font-semibold">감사 포인트</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        주선자가 수락하는 순간 즉시 지급돼요
                       </p>
                     </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {([
+                        { points: 100 as const, label: "기본", desc: "~1,000원" },
+                        { points: 300 as const, label: "성의표시", desc: "~3,000원", recommended: true },
+                        { points: 500 as const, label: "적극요청", desc: "~5,000원" },
+                      ]).map(({ points, label, desc, recommended }) => (
+                        <button
+                          key={points}
+                          onClick={() => setSelectedPoints(points)}
+                          className={`relative p-3 rounded-xl border-2 text-center transition-all ${
+                            selectedPoints === points
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/40"
+                          }`}
+                        >
+                          {recommended && (
+                            <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] font-bold bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                              추천
+                            </span>
+                          )}
+                          <p className="font-bold text-base mt-1">{points}P</p>
+                          <p className="text-xs text-muted-foreground">{label}</p>
+                          <p className="text-xs text-muted-foreground/70">{desc}</p>
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      ※ 상대방이 거절해도 포인트는 환불되지 않아요
+                    </p>
+                  </div>
+
+                  {/* Optional message */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">
+                      한마디 <span className="text-muted-foreground text-xs">(선택 · 주선자가 수락 후 전달)</span>
+                    </label>
+                    <textarea
+                      value={requestMessage}
+                      onChange={(e) => setRequestMessage(e.target.value)}
+                      placeholder="주선자에게 전할 말이 있으면 남겨주세요"
+                      className="w-full min-h-[80px] px-4 py-3 rounded-xl border border-border bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+                      maxLength={200}
+                    />
+                    <p className="text-xs text-muted-foreground text-right">
+                      {requestMessage.length}/200
+                    </p>
                   </div>
                 </div>
 
                 {/* Modal Actions */}
-                <div className="border-t border-border px-6 py-4 flex gap-3">
-                  <Button
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setModalStep(1)}
-                  >
+                <div className="border-t border-border px-6 py-4 flex gap-2.5">
+                  <Button variant="outline" className="flex-1" onClick={() => setModalStep(1)}>
                     이전
                   </Button>
-                  <Button
-                    className="flex-1"
-                    onClick={handleConfirmMatchRequest}
-                  >
-                    요청하기
+                  <Button className="flex-1 gap-1.5" onClick={handleConfirmMatchRequest}>
+                    {selectedPoints}P로 요청하기
                   </Button>
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── 색깔 궁합 배너 ──────────────────────────────────────────
+// ─── AI 매칭 인사이트 생성 ────────────────────────────────────────────
+function generateMatchInsights(
+  myProfile: any,
+  theirProfile: ProfileData,
+  compat: ReturnType<typeof getCompatibilityDeterministic>,
+): string[] {
+  const points: string[] = [];
+
+  // 1. 색깔 궁합 기반 인사이트
+  if (compat) {
+    const colorInsight: Record<string, string> = {
+      complement: "서로 다른 에너지가 빈자리를 채워줘요. 함께할수록 균형이 생기는 관계예요.",
+      synergy:    "같은 방향을 바라보며 함께 성장할 수 있어요. 추진력이 배가되는 조합이에요.",
+      harmony:    "자연스럽게 어우러지는 궁합이에요. 편안하게 대화가 이어질 것 같아요.",
+      contrast:   "강한 대비가 서로에게 새로운 시각을 열어줘요. 만남 자체가 자극이 될 수 있어요.",
+      neutral:    "안정적인 기반 위에서 천천히 쌓아가기 좋은 관계예요.",
+    };
+    const insight = colorInsight[compat.type];
+    if (insight) points.push(insight);
+  }
+
+  // 2. 자기소개 인터뷰 기반 — 상대방의 답변 키워드로 대화 풍부도 예측
+  const answers = theirProfile.introduction.interviewAnswers;
+  if (answers) {
+    const filled = [answers.hobby, answers.charm, answers.passion, answers.happiness]
+      .filter((a): a is string => !!a && a.trim().length > 0);
+    if (filled.length >= 3) {
+      points.push("자기소개가 풍부해서 처음 만남에도 대화가 끊기지 않을 것 같아요.");
+    } else if (filled.length > 0) {
+      const snippet = filled[0].length > 18 ? filled[0].slice(0, 18) + "…" : filled[0];
+      points.push(`"${snippet}" — 답변에서 느껴지는 취향이 흥미로운 대화 소재가 될 거예요.`);
+    }
+  }
+
+  // 3. 라이프스타일 호환성 비교
+  const ml = myProfile?.lifestyleInfo;
+  const tl = theirProfile.lifestyleInfo;
+  if (ml && tl) {
+    const noSmoke = (v: string | null) => !v || v === "NEVER";
+    const lightDrink = (v: string | null) => !v || v === "NEVER" || v === "OCCASIONALLY";
+    if (noSmoke(ml.smoking) && noSmoke(tl.smoking) && lightDrink(ml.drinking) && lightDrink(tl.drinking)) {
+      points.push("생활 패턴이 비슷해요. 일상을 함께 그려나가기 편할 거예요.");
+    } else if (ml.religion && tl.religion && ml.religion === tl.religion && ml.religion !== "NONE") {
+      points.push("종교적 가치관이 일치해요. 중요한 부분에서 공감대가 생기기 쉬워요.");
+    }
+  }
+
+  // 4. 중요 가치관
+  const values = theirProfile.idealType.importantValues;
+  const valueLabel: Record<string, string> = {
+    PERSONALITY: "성격", APPEARANCE: "외모", STABILITY: "안정감",
+    HUMOR: "유머 감각", CARE: "배려심", AMBITION: "열정", HONESTY: "솔직함",
+  };
+  if (values.length > 0 && points.length < 3) {
+    const labels = values.slice(0, 2).map(v => valueLabel[v] ?? v).join("과 ");
+    points.push(`${labels}을 중시하는 가치관이 관계에서 신뢰를 만들어줄 것 같아요.`);
+  }
+
+  // 최소 2개 보장
+  if (points.length < 2) {
+    points.push("프로필을 더 읽다 보면 예상치 못한 공통점을 발견하게 될 거예요.");
+  }
+
+  return points.slice(0, 3);
+}
+
+// ─── 색깔 궁합 + AI 분석 통합 배너 ───────────────────────────────────
+function ColorCompatBanner({
+  theirColorType,
+  theirColorName,
+  theirColorHex,
+  theirProfile,
+  targetUserId,
+}: {
+  theirColorType: ColorType | null;
+  theirColorName: string | null;
+  theirColorHex: string | null;
+  theirProfile: ProfileData;
+  targetUserId: string;
+}) {
+  const [myColorType, setMyColorType] = useState<ColorType | null>(null);
+  const [myProfile, setMyProfile] = useState<any>(null);
+
+  useEffect(() => {
+    api.get<any>("/api/v1/profile")
+      .then((p) => {
+        setMyColorType((p.colorType?.type ?? null) as ColorType | null);
+        setMyProfile(p);
+      })
+      .catch(() => {});
+  }, []);
+
+  if (!theirColorType || !theirColorHex || !theirColorName) return null;
+
+  const theirMeta = COLOR_META[theirColorType];
+  const myMeta = myColorType ? COLOR_META[myColorType] : null;
+  const compat = getCompatibilityDeterministic(myColorType, theirColorType, targetUserId);
+  const style = compat ? COMPAT_STYLE[compat.type] : null;
+
+  const insights = generateMatchInsights(myProfile, theirProfile, compat);
+
+  return (
+    <div className="px-4 pt-3">
+      {compat && myMeta ? (
+        <div className={`rounded-2xl border px-4 py-4 ${style!.bg} ${style!.border}`}>
+          {/* 상단: 두 색 도트 + 궁합 레이블 + AI 뱃지 */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center shrink-0">
+              <span className="w-7 h-7 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: myMeta.hex }} />
+              <span className="w-7 h-7 rounded-full border-2 border-white shadow-sm -ml-2" style={{ backgroundColor: theirMeta.hex }} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`text-xs font-bold uppercase tracking-wide ${style!.text}`}>{compat.label}</span>
+                <span className={`text-xs font-semibold ${style!.text}`}>{compat.score}%</span>
+              </div>
+              <p className="text-xs text-neutral-500 mt-0.5 leading-snug">{compat.tagline}</p>
+            </div>
+            <span className="shrink-0 text-[10px] font-medium text-neutral-400 bg-black/5 px-2 py-0.5 rounded-full">✦ AI 분석</span>
+          </div>
+
+          {/* 구분선 */}
+          <div className="border-t border-black/5 pt-3 space-y-2">
+            {insights.map((pt, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <span className={`text-[10px] mt-[3px] font-bold shrink-0 ${style!.text}`}>•</span>
+                <p className="text-xs text-neutral-600 leading-relaxed">{pt}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        /* 내 색깔 없을 때 — 상대 색깔 + 단순 분석 */
+        <div
+          className="rounded-2xl px-4 py-3.5 space-y-2"
+          style={{ backgroundColor: `${theirColorHex}12`, border: `1px solid ${theirColorHex}35` }}
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="w-5 h-5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: theirColorHex }} />
+            <span className="text-sm font-semibold" style={{ color: theirColorHex }}>{theirColorName}</span>
+            {theirMeta?.energy && <span className="text-xs text-neutral-400">{theirMeta.energy}</span>}
+          </div>
+          <div className="border-t border-black/5 pt-2 space-y-1.5">
+            {generateMatchInsights(null, theirProfile, null).map((pt, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <span className="text-[10px] mt-[3px] font-bold shrink-0 text-neutral-400">•</span>
+                <p className="text-xs text-neutral-500 leading-relaxed">{pt}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}

@@ -1,15 +1,33 @@
 import * as React from "react";
-
+import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "./utils";
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
+const cardVariants = cva(
+  "flex flex-col gap-6 rounded-lg",
+  {
+    variants: {
+      variant: {
+        flat:        "bg-surface shadow-card",
+        elevated:    "bg-surface-elevated shadow-card",
+        interactive: "bg-surface shadow-card hover:shadow-card-hover cursor-pointer transition-shadow duration-150",
+        accent:      "bg-surface shadow-card border-l-4 border-brand",
+      },
+    },
+    defaultVariants: {
+      variant: "flat",
+    },
+  },
+);
+
+function Card({
+  className,
+  variant,
+  ...props
+}: React.ComponentProps<"div"> & VariantProps<typeof cardVariants>) {
   return (
     <div
       data-slot="card"
-      className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border",
-        className,
-      )}
+      className={cn(cardVariants({ variant }), className)}
       {...props}
     />
   );
@@ -32,7 +50,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <h4
       data-slot="card-title"
-      className={cn("leading-none", className)}
+      className={cn("leading-none font-semibold text-text-primary", className)}
       {...props}
     />
   );
@@ -42,7 +60,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <p
       data-slot="card-description"
-      className={cn("text-muted-foreground", className)}
+      className={cn("text-text-secondary text-body-sm", className)}
       {...props}
     />
   );
@@ -89,4 +107,5 @@ export {
   CardAction,
   CardDescription,
   CardContent,
+  cardVariants,
 };

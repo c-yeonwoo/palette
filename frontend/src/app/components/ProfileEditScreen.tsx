@@ -2,11 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Textarea } from "./ui/textarea";
-import { Badge } from "./ui/badge";
-import { ArrowLeft, Loader2, Save, Plus, Video, Star, X, ExternalLink, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, ChevronDown, Lock, Loader2, Plus, Video, X, Sparkles } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
-import { tokenStorage } from "../../lib/auth/tokenStorage";
 import { toast } from "sonner";
 import { PersonalityTestManager } from "./PersonalityTestManager";
 
@@ -37,6 +34,8 @@ interface ProfileData {
   locationInfo: {
     sido: string | null;
     sigungu: string | null;
+    hometownSido: string | null;
+    hometownSigungu: string | null;
   };
   lifestyleInfo: {
     smoking: string | null;
@@ -53,6 +52,7 @@ interface ProfileData {
       happiness: string | null;
       motto: string | null;
     } | null;
+    datingStyle?: Record<string, string>; // questionKey -> optionKey
   };
   idealType: {
     datePreferences: string[];
@@ -60,11 +60,29 @@ interface ProfileData {
     personalities: string[];
     appearanceStyles: string[];
     dealBreakers: string[];
+    bucketList: string[]; // 시스템 키 or "custom:..." 최대 10개
   };
   personalityTests?: Array<{
     link: string;
     title: string;
   }>;
+  colorType?: {
+    type: string | null;
+    name: string | null;
+    hex: string | null;
+    description: string | null;
+  } | null;
+  attachmentProfile?: {
+    contactAnxiety: number;
+    intimacyAvoidance: number;
+    conflictStyle: number;
+    emotionExpression: number;
+    independenceLevel: number;
+    attachmentType?: string;
+    attachmentTypeLabel?: string;
+    attachmentTypeDescription?: string;
+    attachmentTypeEmoji?: string;
+  } | null;
   photos: Array<{
     id: string;
     url: string;
@@ -77,7 +95,194 @@ interface ProfileData {
   };
 }
 
-// MBTI 타입
+// ─── 애착 유형 ───────────────────────────────────────────────
+
+interface AttachmentSlider {
+  key: "contactAnxiety" | "intimacyAvoidance" | "conflictStyle" | "emotionExpression" | "independenceLevel";
+  title: string;
+  leftLabel: string;
+  rightLabel: string;
+}
+
+const ATTACHMENT_SLIDERS: AttachmentSlider[] = [
+  { key: "contactAnxiety",    title: "연락 & 관계",  leftLabel: "연락 없어도 편해요",   rightLabel: "연락 없으면 불안해요" },
+  { key: "intimacyAvoidance", title: "거리감",       leftLabel: "밀착이 좋아요",        rightLabel: "내 공간이 필요해요"  },
+  { key: "conflictStyle",     title: "갈등 처리",    leftLabel: "바로 해결해요",        rightLabel: "시간이 필요해요"     },
+  { key: "emotionExpression", title: "감정 표현",    leftLabel: "솔직하게 표현해요",    rightLabel: "속으로 삭이는 편"   },
+  { key: "independenceLevel", title: "독립성",       leftLabel: "같이 있고 싶어요",     rightLabel: "각자의 시간도 중요해요" },
+];
+
+const ATTACHMENT_TYPE_INFO: Record<string, { label: string; description: string; emoji: string; color: string }> = {
+  SECURE:       { label: "안정형", emoji: "🌿", color: "#22C55E", description: "신뢰를 바탕으로 편안하게 가까워질 수 있어요" },
+  ANXIOUS:      { label: "불안형", emoji: "🌊", color: "#3B82F6", description: "상대방에게 확신을 많이 구하는 편이에요" },
+  AVOIDANT:     { label: "회피형", emoji: "🦋", color: "#A855F7", description: "독립성을 중요하게 여기고 거리감이 필요해요" },
+  DISORGANIZED: { label: "혼란형", emoji: "🌪️", color: "#F97316", description: "친밀함을 원하지만 동시에 두려움도 느껴요" },
+};
+
+function computeAttachmentTypeClient(contactAnxiety: number, intimacyAvoidance: number): string {
+  if (contactAnxiety < 40 && intimacyAvoidance < 40) return "SECURE";
+  if (contactAnxiety >= 60 && intimacyAvoidance < 40) return "ANXIOUS";
+  if (contactAnxiety < 40 && intimacyAvoidance >= 60) return "AVOIDANT";
+  return "DISORGANIZED";
+}
+
+// ─── 연애 스타일 Q&A ────────────────────────────────────────
+
+interface DatingStyleQuestion {
+  key: string;
+  emoji: string;
+  label: string;
+  options: { key: string; label: string }[];
+}
+
+const DATING_STYLE_QUESTIONS: DatingStyleQuestion[] = [
+  {
+    key: "MEET_FREQUENCY",
+    emoji: "📅",
+    label: "만남 빈도",
+    options: [
+      { key: "WEEKLY_1_2",        label: "주 1~2회" },
+      { key: "WEEKEND_TOGETHER",  label: "주말은 같이 보내요" },
+      { key: "WHENEVER_POSSIBLE", label: "시간 될 때마다" },
+    ],
+  },
+  {
+    key: "CONTACT_STYLE",
+    emoji: "💬",
+    label: "연락 스타일",
+    options: [
+      { key: "FREQUENT",   label: "자주 연락해요" },
+      { key: "DAILY_FEW",  label: "하루 몇 번이면 충분" },
+      { key: "WHENEVER",   label: "생각날 때 연락" },
+    ],
+  },
+  {
+    key: "DATE_STYLE",
+    emoji: "🗓️",
+    label: "데이트 스타일",
+    options: [
+      { key: "OUTDOOR", label: "나들이·액티비티" },
+      { key: "INDOOR",  label: "집·카페 인도어" },
+      { key: "MIX",     label: "둘 다 좋아요" },
+    ],
+  },
+  {
+    key: "DRINKING_DATE",
+    emoji: "🍻",
+    label: "음주 스타일",
+    options: [
+      { key: "ENJOY",     label: "술자리 즐겨요" },
+      { key: "SOMETIMES", label: "가끔 한 잔" },
+      { key: "NO_NEED",   label: "없어도 충분해요" },
+    ],
+  },
+  {
+    key: "OPPOSITE_FRIENDS",
+    emoji: "🙋",
+    label: "이성 친구",
+    options: [
+      { key: "FREE",           label: "자유롭게 OK" },
+      { key: "SOME_BOUNDARY",  label: "어느 정도 선은 있어요" },
+      { key: "UNCOMFORTABLE",  label: "적극적 연락은 불편해요" },
+    ],
+  },
+  {
+    key: "LEAD_STYLE",
+    emoji: "🎯",
+    label: "리드 스타일",
+    options: [
+      { key: "LEAD",      label: "내가 리드하는 편" },
+      { key: "FOLLOW",    label: "따라가는 편" },
+      { key: "ALTERNATE", label: "번갈아가며" },
+    ],
+  },
+  {
+    key: "CONFLICT_STYLE",
+    emoji: "🕊️",
+    label: "갈등 해결",
+    options: [
+      { key: "TALK_NOW",  label: "바로 대화해요" },
+      { key: "COOL_DOWN", label: "식히고 나서 얘기해요" },
+      { key: "LET_GO",    label: "웬만하면 넘겨요" },
+    ],
+  },
+  {
+    key: "AFFECTION_STYLE",
+    emoji: "💝",
+    label: "애정 표현",
+    options: [
+      { key: "PHYSICAL", label: "스킨십으로" },
+      { key: "WORDS",    label: "말·문자로" },
+      { key: "ACTIONS",  label: "챙겨주는 것으로" },
+    ],
+  },
+  {
+    key: "MARRIAGE_PLAN",
+    emoji: "💍",
+    label: "결혼 계획",
+    options: [
+      { key: "SERIOUS_FAST",  label: "빠르게 진지하게" },
+      { key: "SLOW_NATURAL",  label: "천천히 자연스럽게" },
+      { key: "NOT_YET",       label: "아직 생각 중" },
+    ],
+  },
+  {
+    key: "SNS_PUBLIC",
+    emoji: "📸",
+    label: "SNS 공개",
+    options: [
+      { key: "LOVE_IT",        label: "커플 인증 좋아요" },
+      { key: "PRIVATE",        label: "우리끼리만" },
+      { key: "FOLLOW_PARTNER", label: "상대 따라갈게요" },
+    ],
+  },
+];
+
+// ─── 버킷리스트 풀 ────────────────────────────────────────────
+
+interface BucketItem {
+  key: string;
+  label: string;
+  emoji: string;
+  category: string;
+}
+
+const BUCKET_POOL: BucketItem[] = [
+  // 여행
+  { key: "JEJU_MONTH",       label: "제주도 한 달 살기",     emoji: "🌴", category: "여행" },
+  { key: "BACKPACKING",      label: "배낭여행",               emoji: "🎒", category: "여행" },
+  { key: "OSAKA",            label: "오사카 2박 3일",         emoji: "🇯🇵", category: "여행" },
+  { key: "BANGKOK",          label: "방콕 뚝뚝이",           emoji: "🛺", category: "여행" },
+  { key: "SOLO_ABROAD",      label: "혼자 해외여행",          emoji: "✈️", category: "여행" },
+  { key: "ROAD_TRIP",        label: "아무 계획 없는 드라이브", emoji: "🚗", category: "여행" },
+  { key: "CAMPING",          label: "캠핑 & 불멍",            emoji: "🏕️", category: "여행" },
+  { key: "DAYTRIP",          label: "주말 당일치기",          emoji: "🗺️", category: "여행" },
+  // 새벽 감성
+  { key: "CONVENIENCE_NIGHT", label: "새벽 편의점 치킨",     emoji: "🍗", category: "새벽감성" },
+  { key: "HANGANG_RAMYEON",  label: "한강에서 라면",          emoji: "🍜", category: "새벽감성" },
+  { key: "MIDNIGHT_MOVIE",   label: "새벽 영화관",            emoji: "🎬", category: "새벽감성" },
+  { key: "ROOFTOP_BAR",      label: "루프탑 바",              emoji: "🌃", category: "새벽감성" },
+  { key: "NIGHT_DRIVE",      label: "야경 드라이브",          emoji: "🌉", category: "새벽감성" },
+  // 음식/술
+  { key: "FOOD_TOUR",        label: "맛집 웨이팅 성공",       emoji: "🍽️", category: "음식" },
+  { key: "NIGHT_MARKET",     label: "야시장 투어",            emoji: "🏮", category: "음식" },
+  { key: "HOME_PARTY",       label: "홈파티 열기",            emoji: "🥂", category: "음식" },
+  { key: "COOK_TOGETHER",    label: "함께 요리 도전",         emoji: "👨‍🍳", category: "음식" },
+  // 문화/취미
+  { key: "MUSICAL",          label: "뮤지컬 관람",            emoji: "🎭", category: "문화" },
+  { key: "MUSEUM_DATE",      label: "미술관 데이트",          emoji: "🖼️", category: "문화" },
+  { key: "FESTIVAL",         label: "음악 페스티벌",          emoji: "🎵", category: "문화" },
+  { key: "HANOK_VILLAGE",    label: "한옥마을 투어",          emoji: "🏯", category: "문화" },
+  // 도전
+  { key: "BUNGEE",           label: "번지점프",               emoji: "🪂", category: "도전" },
+  { key: "SURFING",          label: "서핑 배우기",            emoji: "🏄", category: "도전" },
+  { key: "SKI",              label: "스키장",                 emoji: "⛷️", category: "도전" },
+  { key: "HIKING",           label: "한라산 or 설악산",       emoji: "🏔️", category: "도전" },
+  { key: "STARGAZING",       label: "별빛 텐트",              emoji: "⭐", category: "도전" },
+];
+
+// ─── 데이터 정의 ────────────────────────────────────────────
+
 const mbtiTypes = [
   "ISTJ", "ISFJ", "INFJ", "INTJ",
   "ISTP", "ISFP", "INFP", "INTP",
@@ -85,101 +290,364 @@ const mbtiTypes = [
   "ESTJ", "ESFJ", "ENFJ", "ENTJ"
 ];
 
-// 연소득 구간
-const incomeRanges: Record<string, string> = {
-  INCOME_RANGE_1: "5,000만원 이하",
-  INCOME_RANGE_2: "5,000~7,500만원",
-  INCOME_RANGE_3: "7,500~9,000만원",
-  INCOME_RANGE_4: "9,000~11,000만원",
-  INCOME_RANGE_5: "11,000만원 이상"
-};
-
-// 선호하는 성격 옵션
-const personalities = [
-  "유머있는", "다정한", "지적인", "활발한", "차분한",
-  "섬세한", "솔직한", "적극적인", "배려심많은", "독립적인"
+const bodyTypeOptions = [
+  { value: "SLIM", label: "슬림", emoji: "🩶" },
+  { value: "AVERAGE", label: "보통", emoji: "😊" },
+  { value: "ATHLETIC", label: "탄탄", emoji: "💪" },
+  { value: "MUSCULAR", label: "건장", emoji: "🏋️" },
+  { value: "CURVY", label: "통통", emoji: "🍑" },
 ];
 
-// 남자가 선택하는 여자 외모 스타일 (enum -> 한글)
-const femaleAppearanceStyles: Record<string, string> = {
-  PUPPY: "강아지상",
-  CAT: "고양이상",
-  RABBIT: "토끼상",
-  FOX: "여우상",
-  DEER: "사슴상",
-  TOFU: "두부상",
-  SOFT_TOFU: "순두부상",
-  ARAB: "아랍상",
-  BOSS: "일진상",
-  MOTHER_IN_LAW_APPROVED: "상견례입구컷상"
-};
+const careerCategories = [
+  { value: "IT_DEVELOPMENT", label: "IT/개발", emoji: "💻" },
+  { value: "FINANCE", label: "금융/보험", emoji: "💰" },
+  { value: "EDUCATION", label: "교육", emoji: "📚" },
+  { value: "MEDICAL", label: "의료/보건", emoji: "🏥" },
+  { value: "MEDIA", label: "미디어/엔터", emoji: "🎬" },
+  { value: "SERVICE", label: "서비스/영업", emoji: "🤝" },
+  { value: "MANUFACTURING", label: "제조/생산", emoji: "🏭" },
+  { value: "PUBLIC_OFFICIAL", label: "공무원", emoji: "🏛️" },
+  { value: "PROFESSIONAL", label: "전문직", emoji: "⚖️" },
+  { value: "OTHER", label: "기타", emoji: "✨" },
+];
 
-// 여자가 선택하는 남자 외모 스타일 (enum -> 한글)
-const maleAppearanceStyles: Record<string, string> = {
-  PUPPY: "강아지상",
-  CAT: "고양이상",
-  STUDENT_COUNCIL: "전교회장상",
-  ATHLETIC: "체대상",
-  NERD: "너드상",
-  TOFU: "두부상",
-  ARAB: "아랍상",
-  DINOSAUR: "공룡상"
-};
+const educationLevels = [
+  { value: "HIGH_SCHOOL", label: "고졸" },
+  { value: "ASSOCIATE", label: "전문대" },
+  { value: "BACHELOR", label: "대졸 🎓" },
+  { value: "MASTER", label: "석사 📜" },
+  { value: "DOCTORATE", label: "박사 🏅" },
+];
 
-// Deal Breakers (절대 안되는 것들) - 최대 3개
-const dealBreakerOptions: Record<string, string> = {
-  SMOKING: "흡연자",
-  HEAVY_DRINKING: "과음하는 사람",
-  DISLIKES_PETS: "반려동물을 싫어하는 사람",
-  LONG_DISTANCE: "장거리 연애",
-  DIFFERENT_RELIGION: "종교가 다른 사람",
-  NO_MARRIAGE_PLAN: "결혼 의사가 없는 사람",
-  CHILDREN_PLAN: "자녀 계획이 맞지 않는 사람",
-  UNSTABLE_JOB: "직업이 불안정한 사람",
-  CONTACTS_EX: "전 연인과 연락하는 사람",
-  LARGE_AGE_GAP: "나이 차이가 많이 나는 사람"
-};
+const smokingOptions = [
+  { value: "NEVER", label: "🚭 비흡연" },
+  { value: "SOMETIMES", label: "💨 가끔" },
+  { value: "OFTEN", label: "🚬 자주" },
+];
+
+const drinkingOptions = [
+  { value: "NEVER", label: "🫖 안 마심" },
+  { value: "SOMETIMES", label: "🍷 가끔" },
+  { value: "OFTEN", label: "🍻 자주" },
+];
+
+const religionOptions = [
+  { value: "NONE", label: "무교" },
+  { value: "CHRISTIANITY", label: "✝️ 기독교" },
+  { value: "CATHOLICISM", label: "⛪ 천주교" },
+  { value: "BUDDHISM", label: "🪷 불교" },
+  { value: "OTHER", label: "기타" },
+];
+
+const personalityOptions = [
+  { value: "유머있는", emoji: "😄" },
+  { value: "다정한", emoji: "🥰" },
+  { value: "지적인", emoji: "📚" },
+  { value: "활발한", emoji: "⚡" },
+  { value: "차분한", emoji: "🌊" },
+  { value: "섬세한", emoji: "🌸" },
+  { value: "솔직한", emoji: "✨" },
+  { value: "적극적인", emoji: "🔥" },
+  { value: "배려심많은", emoji: "💝" },
+  { value: "독립적인", emoji: "🦋" },
+  { value: "감성적인", emoji: "🎨" },
+  { value: "유연한", emoji: "🌿" },
+];
+
+const importantValueOptions = [
+  { value: "PERSONALITY", label: "성격/성향", emoji: "💫" },
+  { value: "APPEARANCE", label: "외모", emoji: "👀" },
+  { value: "EDUCATION", label: "학력", emoji: "🎓" },
+  { value: "CAREER", label: "커리어", emoji: "💼" },
+  { value: "FAMILY", label: "집안/가족", emoji: "🏠" },
+  { value: "JOB", label: "직업", emoji: "💡" },
+  { value: "WEALTH", label: "경제력", emoji: "💰" },
+  { value: "VALUES", label: "가치관", emoji: "🌟" },
+];
+
+const datePreferenceOptions = [
+  { value: "ACTIVE", label: "🏄 액티브", desc: "여행, 운동, 액티비티" },
+  { value: "INDOOR", label: "🏠 인도어", desc: "집, 카페, 넷플릭스" },
+  { value: "CULTURE", label: "🎭 문화생활", desc: "전시, 공연, 맛집" },
+  { value: "NATURE", label: "🌿 자연속으로", desc: "산책, 드라이브, 피크닉" },
+  { value: "NIGHT", label: "🌙 야경/술자리", desc: "바, 루프탑, 한강" },
+  { value: "RELAXED", label: "☕ 여유롭게", desc: "브런치, 독서, 산책" },
+];
+
+// 남자가 선택 (여자 외모 스타일)
+const femaleAppearanceStyles = [
+  { value: "PUPPY", label: "강아지상", emoji: "🐶" },
+  { value: "CAT", label: "고양이상", emoji: "🐱" },
+  { value: "RABBIT", label: "토끼상", emoji: "🐰" },
+  { value: "FOX", label: "여우상", emoji: "🦊" },
+  { value: "DEER", label: "사슴상", emoji: "🦌" },
+  { value: "TOFU", label: "두부상", emoji: "🍞" },
+  { value: "SOFT_TOFU", label: "순두부상", emoji: "☁️" },
+  { value: "ARAB", label: "아랍상", emoji: "🌙" },
+  { value: "BOSS", label: "일진상", emoji: "😎" },
+  { value: "MOTHER_IN_LAW_APPROVED", label: "상견례", emoji: "👰" },
+];
+
+// 여자가 선택 (남자 외모 스타일)
+const maleAppearanceStyles = [
+  { value: "PUPPY", label: "강아지상", emoji: "🐶" },
+  { value: "CAT", label: "고양이상", emoji: "🐱" },
+  { value: "STUDENT_COUNCIL", label: "전교회장상", emoji: "🏆" },
+  { value: "ATHLETIC", label: "체대상", emoji: "🏋️" },
+  { value: "NERD", label: "너드상", emoji: "🤓" },
+  { value: "TOFU", label: "두부상", emoji: "🍞" },
+  { value: "ARAB", label: "아랍상", emoji: "🌙" },
+  { value: "DINOSAUR", label: "공룡상", emoji: "🦕" },
+];
+
+const dealBreakerOptions = [
+  { value: "SMOKING", label: "흡연자", emoji: "🚬" },
+  { value: "HEAVY_DRINKING", label: "과음", emoji: "🍺" },
+  { value: "DISLIKES_PETS", label: "반려동물 기피", emoji: "🐾" },
+  { value: "LONG_DISTANCE", label: "장거리", emoji: "✈️" },
+  { value: "DIFFERENT_RELIGION", label: "종교 차이", emoji: "🙏" },
+  { value: "NO_MARRIAGE_PLAN", label: "결혼 의사 없음", emoji: "💍" },
+  { value: "CHILDREN_PLAN", label: "자녀계획 불일치", emoji: "👶" },
+  { value: "UNSTABLE_JOB", label: "불안정한 직업", emoji: "💸" },
+  { value: "CONTACTS_EX", label: "전 연인 연락", emoji: "📱" },
+  { value: "LARGE_AGE_GAP", label: "큰 나이차", emoji: "🎂" },
+];
+
+// ─── 프로필 레벨 ─────────────────────────────────────────
+
+const LEVEL_META = [
+  { level: 1, name: "씨앗", emoji: "🌱",
+    hint: "라이프스타일 2개 이상 선택하면 나만의 색깔 타입이 발급돼요" },
+  { level: 2, name: "새싹", emoji: "🌿",
+    hint: "연애 스타일 5개 이상 답변하면 매칭이 시작돼요" },
+  { level: 3, name: "꽃",   emoji: "🌸",
+    hint: "버킷리스트 3개↑ 또는 성격테스트 1개↑ 추가하면 추천 우선순위가 올라가요" },
+  { level: 4, name: "나무", emoji: "🌳",
+    hint: "완성! 최고 우선순위로 추천돼요 🎉" },
+];
+
+function computeLevel(profile: ProfileData, photos: ({ id: string; url: string } | null)[]): number {
+  if (photos.filter(Boolean).length < 1) return 0;
+  const lifestyleCount = [
+    profile.lifestyleInfo.smoking,
+    profile.lifestyleInfo.drinking,
+    profile.lifestyleInfo.religion,
+  ].filter(Boolean).length;
+  if (lifestyleCount < 2) return 1;
+  const datingStyleCount = Object.keys(profile.introduction.datingStyle || {}).length;
+  if (datingStyleCount < 5) return 2;
+  const bucketCount = (profile.idealType.bucketList ?? []).length;
+  const testCount  = (profile.personalityTests ?? []).length;
+  if (bucketCount < 3 && testCount < 1) return 3;
+  return 4;
+}
+
+// ─── 공통 칩 컴포넌트 ─────────────────────────────────────
+
+function Chip({
+  selected,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-medium transition-all ${
+        selected
+          ? "bg-primary text-primary-foreground border-primary shadow-sm scale-[1.02]"
+          : "bg-card border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ─── 섹션 래퍼 ──────────────────────────────────────────
+
+function Section({
+  emoji,
+  title,
+  subtitle,
+  children,
+  headerRight,
+  completionText,
+  defaultOpen = true,
+}: {
+  emoji: string;
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  headerRight?: React.ReactNode;
+  /** "완료 ✓" | "3/10" | "미작성" 등 — 접혔을 때 우측에 표시 */
+  completionText?: string;
+  defaultOpen?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const isDone = !!completionText && !completionText.startsWith("미");
+
+  return (
+    <section className="bg-card border border-border rounded-2xl overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setIsOpen((v) => !v)}
+        className="w-full px-6 py-4 border-b border-border flex items-center justify-between text-left"
+      >
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-sm">{title}</h3>
+          {subtitle && isOpen && (
+            <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 ml-3 shrink-0">
+          {/* 접혔을 때: 완료 배지 */}
+          {!isOpen && completionText && (
+            <span className={`text-xs px-2 py-px rounded-full font-medium ${
+              isDone
+                ? "bg-primary/10 text-primary"
+                : "bg-muted text-muted-foreground"
+            }`}>
+              {completionText}
+            </span>
+          )}
+          {/* 펼쳐졌을 때: headerRight (AI 버튼 등) */}
+          {isOpen && headerRight}
+          <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+        </div>
+      </button>
+      {isOpen && <div className="p-5 space-y-5">{children}</div>}
+    </section>
+  );
+}
+
+// ─── 서브섹션 레이블 ──────────────────────────────────────
+
+function SubLabel({
+  children,
+  hint,
+}: {
+  children: React.ReactNode;
+  hint?: string;
+}) {
+  return (
+    <div className="mb-3">
+      <p className="text-sm font-semibold text-foreground">{children}</p>
+      {hint && <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>}
+    </div>
+  );
+}
+
+// ─── 프로필 레벨 배너 ─────────────────────────────────────
+
+function ProfileLevelBanner({
+  level,
+  colorType,
+}: {
+  level: number;
+  colorType?: { type?: string | null; name?: string | null; hex?: string | null } | null;
+}) {
+  const meta = LEVEL_META[Math.max(0, level - 1)] ?? LEVEL_META[0];
+  const nextMeta = LEVEL_META[level] ?? null;
+  const progress = Math.max(4, (level / 4) * 100);
+  const colorLocked = level < 2;
+  const hint = level < 4
+    ? (nextMeta ? nextMeta.hint : meta.hint)
+    : "완성! 최고 우선순위로 추천돼요";
+
+  return (
+    <div className="bg-card border border-border rounded-2xl px-4 py-3.5">
+      <div className="flex items-center gap-3">
+        {/* 색깔 원 */}
+        {colorLocked ? (
+          <div className="w-9 h-9 rounded-full bg-muted border border-dashed border-border flex items-center justify-center flex-shrink-0">
+            <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+          </div>
+        ) : colorType?.hex ? (
+          <div
+            className="w-9 h-9 rounded-full border-2 border-white shadow-sm flex-shrink-0"
+            style={{ backgroundColor: colorType.hex }}
+          />
+        ) : (
+          <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-4 h-4 text-primary" />
+          </div>
+        )}
+
+        {/* 레벨 텍스트 + 진행 바 */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-1.5 mb-1.5">
+            <span className="text-xs text-muted-foreground">Lv.{level}</span>
+            <span className="text-sm font-semibold text-foreground">{meta.emoji} {meta.name}</span>
+            {!colorLocked && colorType?.name && (
+              <span className="text-xs text-muted-foreground ml-auto">{colorType.name}</span>
+            )}
+          </div>
+          <div className="relative h-1.5 bg-muted rounded-full">
+            <div
+              className="absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-700"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        {/* 힌트 아이콘 — hover 시 툴팁 */}
+        <div className="relative group flex-shrink-0">
+          <button
+            type="button"
+            className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+          >
+            <span className="text-xs font-bold">?</span>
+          </button>
+          {/* 툴팁 */}
+          <div className="absolute right-0 bottom-full mb-2 w-56 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50">
+            <div className="bg-popover border border-border rounded-xl px-3 py-2.5 shadow-lg">
+              <p className="text-xs text-popover-foreground leading-relaxed">{hint}</p>
+            </div>
+            {/* 말풍선 꼬리 */}
+            <div className="absolute right-2.5 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-border" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── 메인 컴포넌트 ────────────────────────────────────────
 
 export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScreenProps) {
-  // 사용자 성별에 따라 다른 외모 스타일 옵션 제공
   const appearanceStyleOptions = userGender === "MALE" ? femaleAppearanceStyles : maleAppearanceStyles;
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [photos, setPhotos] = useState<(string | null)[]>(Array(6).fill(null));
-  const [mainPhotoIndex, setMainPhotoIndex] = useState(0);
+  // 사진: {id, url} 또는 null — id는 삭제 API 호출에 사용
+  const [photos, setPhotos] = useState<({ id: string; url: string } | null)[]>(Array(6).fill(null));
   const [video, setVideo] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"about" | "ideal">("about");
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState<number | null>(null);
-  const [showAIVersion, setShowAIVersion] = useState(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
-  const [originalAnswers, setOriginalAnswers] = useState<{
-    hobby: string | null;
-    charm: string | null;
-    passion: string | null;
-    happiness: string | null;
-    motto: string | null;
-  } | null>(null);
+  const [newInterest, setNewInterest] = useState("");
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const data = await api.get<ProfileData>('/api/v1/profile');
         setProfile(data);
-
-        // Load existing photos
         if (data.photos && data.photos.length > 0) {
-          const photoUrls = Array(6).fill(null);
+          const photoSlots: ({ id: string; url: string } | null)[] = Array(6).fill(null);
           data.photos
             .sort((a, b) => a.displayOrder - b.displayOrder)
             .forEach((photo, index) => {
-              if (index < 6) {
-                photoUrls[index] = photo.url;
-              }
+              if (index < 6) photoSlots[index] = { id: photo.id, url: photo.url };
             });
-          setPhotos(photoUrls);
+          setPhotos(photoSlots);
         }
       } catch (error) {
         console.error('Failed to fetch profile:', error);
@@ -188,13 +656,11 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
         setIsLoading(false);
       }
     };
-
     fetchProfile();
   }, []);
 
   const handleSave = async () => {
     if (!profile) return;
-
     setIsSaving(true);
     try {
       await api.put('/api/v1/profile', {
@@ -206,7 +672,8 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
         introduction: profile.introduction,
         idealType: profile.idealType,
         personalityTests: profile.personalityTests || [],
-        settings: profile.settings
+        attachmentProfile: profile.attachmentProfile ?? null,
+        // settings은 PATCH /api/v1/profile/settings 전용 엔드포인트로 관리
       });
       toast.success('프로필이 저장되었습니다');
       onSave();
@@ -219,16 +686,12 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
   };
 
   const handlePhotoClick = (index: number) => {
-    // Allow clicking even if photo exists (for re-upload)
     setCurrentPhotoIndex(index);
     fileInputRef.current?.click();
   };
 
-  // Drag and drop handlers
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-
   const handleDragStart = (e: React.DragEvent, index: number) => {
-    if (!photos[index]) return; // Only allow dragging photos that exist
+    if (!photos[index]) return;
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
   };
@@ -241,36 +704,22 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
   const handleDrop = (e: React.DragEvent, dropIndex: number) => {
     e.preventDefault();
     if (draggedIndex === null || draggedIndex === dropIndex) return;
-
     const newPhotos = [...photos];
     const draggedPhoto = newPhotos[draggedIndex];
     newPhotos.splice(draggedIndex, 1);
     newPhotos.splice(dropIndex, 0, draggedPhoto);
-
     setPhotos(newPhotos);
     setDraggedIndex(null);
-
-    // Update photo order in backend
     updatePhotoOrder(newPhotos);
   };
 
-  const updatePhotoOrder = async (newPhotos: (string | null)[]) => {
+  const updatePhotoOrder = async (newPhotos: ({ id: string; url: string } | null)[]) => {
     try {
-      // Get photo IDs from profile data
-      if (!profile?.photos) return;
-
       const photoUpdates = newPhotos
-        .map((url, index) => {
-          if (!url) return null;
-          const photo = profile.photos.find(p => p.url === url);
-          return photo ? { id: photo.id, displayOrder: index } : null;
-        })
+        .map((p, index) => p ? { id: p.id, displayOrder: index } : null)
         .filter(Boolean);
-
       await api.put('/api/v1/profile/photos/reorder', { photos: photoUpdates });
       toast.success('사진 순서가 변경되었습니다');
-
-      // Refresh profile to update isPrimary
       const data = await api.get<ProfileData>('/api/v1/profile');
       setProfile(data);
     } catch (error) {
@@ -282,56 +731,43 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || currentPhotoIndex === null) return;
-
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('이미지 파일만 업로드 가능합니다');
       return;
     }
-
-    // Validate file size (10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast.error('파일 크기는 10MB 이하여야 합니다');
       return;
     }
-
     try {
       setIsUploading(true);
-      const formData = new FormData();
-      formData.append('file', file);
+      const idx = currentPhotoIndex;
 
-      // Use fetch directly for multipart/form-data
-      const accessToken = tokenStorage.getAccessToken();
-      const response = await fetch(`http://localhost:8080/api/v1/profile/photo`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          // Don't set Content-Type for FormData - browser sets it automatically with boundary
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Upload failed: ${response.status}`);
+      // 기존 슬롯에 사진이 있으면 먼저 삭제
+      const existing = photos[idx];
+      if (existing) {
+        try {
+          await api.delete(`/api/v1/profile/photo/${existing.id}`);
+        } catch {
+          // 삭제 실패해도 업로드 계속
+        }
       }
 
-      const data = await response.json();
+      const formData = new FormData();
+      formData.append('file', file);
+      const data = await api.postForm<{ photoId: string; photoUrl: string }>('/api/v1/profile/photo', formData);
 
-      // Update photos array with new photo URL
       const newPhotos = [...photos];
-      newPhotos[currentPhotoIndex] = data.photoUrl;
+      newPhotos[idx] = { id: data.photoId, url: data.photoUrl };
       setPhotos(newPhotos);
-
-      toast.success('사진이 업로드되었습니다');
+      toast.success('사진이 업로드됐어요');
     } catch (error: any) {
       console.error('Failed to upload photo:', error);
       toast.error('사진 업로드에 실패했습니다');
     } finally {
       setIsUploading(false);
       setCurrentPhotoIndex(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -348,17 +784,34 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <p className="text-muted-foreground mb-4">프로필을 불러올 수 없습니다</p>
-          <Button onClick={onBack} variant="outline">
-            돌아가기
-          </Button>
+          <Button onClick={onBack} variant="outline">돌아가기</Button>
         </div>
       </div>
     );
   }
 
+  // ── 완성도 계산 ──────────────────────────────────────────
+  const level = computeLevel(profile, photos);
+
+  const photoCount     = photos.filter(Boolean).length;
+  const lifestyleCount = [profile.lifestyleInfo.smoking, profile.lifestyleInfo.drinking, profile.lifestyleInfo.religion].filter(Boolean).length;
+  const datingStyleCount = Object.keys(profile.introduction.datingStyle || {}).length;
+  const bucketCount    = (profile.idealType.bucketList ?? []).length;
+  const testCount      = (profile.personalityTests ?? []).length;
+  const importantCount = (profile.idealType.importantValues ?? []).length;
+  const personalityCount = (profile.idealType.personalities ?? []).length;
+  const dealBreakerCount = (profile.idealType.dealBreakers ?? []).length;
+  const interestCount  = (profile.introduction.interests ?? []).length;
+  const introText      = profile.introduction.text ?? "";
+  const hasAttachment  = profile.attachmentProfile != null;
+
+  const ct = (n: number, max: number, unit = "") =>
+    n > 0 ? `${n}${unit}/${max}` : "미작성";
+  const done = (filled: boolean) => (filled ? "완료 ✓" : "미작성");
+
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
+      {/* ── 헤더 ── */}
       <div className="sticky top-0 z-10 bg-card border-b border-border">
         <div className="px-6 py-4">
           <div className="flex items-center justify-center relative">
@@ -372,1068 +825,1087 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
             <h2 className="text-lg font-semibold">프로필 수정</h2>
           </div>
         </div>
-
-        {/* Tabs */}
         <div className="px-6">
           <div className="flex gap-4">
-            <button
-              onClick={() => setActiveTab("about")}
-              className={`py-4 px-2 border-b-2 font-medium transition-colors ${
-                activeTab === "about"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              내소개
-            </button>
-            <button
-              onClick={() => setActiveTab("ideal")}
-              className={`py-4 px-2 border-b-2 font-medium transition-colors ${
-                activeTab === "ideal"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              이상형
-            </button>
+            {(["about", "ideal"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`py-4 px-2 border-b-2 font-medium transition-colors ${
+                  activeTab === tab
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {tab === "about" ? "내 소개" : "이상형"}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      <div className="p-6 space-y-8">
-        {/* About Me Tab Content */}
+      <div className="px-4 py-5 space-y-4">
+        {/* ── 레벨 배너 ── */}
+        <ProfileLevelBanner level={level} colorType={profile.colorType} />
+
+        {/* ════ 내 소개 탭 ════ */}
         {activeTab === "about" && (
           <>
-        {/* Photos and Video */}
-        <section className="space-y-4">
-          <h3 className="text-xl font-semibold">프로필 사진 및 동영상</h3>
-
-          {/* Photos */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <Label>프로필 사진 (최대 6장)</Label>
-              <p className="text-sm text-muted-foreground">
-                {photos.filter(p => p !== null).length}/6장
-              </p>
-            </div>
-            <p className="text-xs text-muted-foreground mb-3">
-              <Star className="w-3 h-3 inline text-amber-500" /> 표시를 눌러 메인 사진을 선택하세요
-            </p>
-            {/* Hidden file input */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-
-            <div className="grid grid-cols-3 gap-4">
-              {photos.map((photo, index) => (
-                <div
-                  key={index}
-                  draggable={!!photo}
-                  onDragStart={(e) => handleDragStart(e, index)}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, index)}
-                  onClick={() => handlePhotoClick(index)}
-                  className={`relative aspect-square bg-muted rounded-lg border-2 overflow-hidden cursor-pointer transition-all ${
-                    index === 0
-                      ? 'border-primary ring-2 ring-primary/20'
-                      : photo
-                      ? 'border-border hover:border-primary/50'
-                      : 'border-dashed border-muted-foreground/30 hover:border-primary/50'
-                  } ${isUploading && currentPhotoIndex === index ? 'opacity-50' : ''} ${
-                    draggedIndex === index ? 'opacity-50' : ''
-                  }`}
-                >
-                  {photo ? (
-                    <>
-                      <img src={photo} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
-                      {index === 0 && (
-                        <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs font-semibold">
-                          대표
+            {/* ── 프로필 사진 ── */}
+            <Section
+              emoji="📸"
+              title="프로필 사진"
+              subtitle="첫인상을 만드는 가장 중요한 요소예요"
+              completionText={photoCount > 0 ? `${photoCount}장` : "미등록"}
+              defaultOpen={photoCount === 0}
+            >
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-foreground">
+                    사진 ({photos.filter((p) => p !== null).length}/6)
+                  </p>
+                  <p className="text-xs text-muted-foreground">첫 번째 사진이 대표 사진이에요</p>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <div className="grid grid-cols-3 gap-3">
+                  {photos.map((photo, index) => (
+                    <div
+                      key={index}
+                      draggable={!!photo}
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, index)}
+                      onClick={() => handlePhotoClick(index)}
+                      className={`relative aspect-square bg-muted rounded-xl border-2 overflow-hidden cursor-pointer transition-all ${
+                        index === 0
+                          ? "border-primary ring-2 ring-primary/20"
+                          : photo
+                          ? "border-border hover:border-primary/50"
+                          : "border-dashed border-border hover:border-primary/50"
+                      } ${isUploading && currentPhotoIndex === index ? "opacity-50" : ""} ${
+                        draggedIndex === index ? "opacity-50" : ""
+                      }`}
+                    >
+                      {photo ? (
+                        <>
+                          <img src={photo.url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                          {index === 0 && (
+                            <div className="absolute top-1.5 right-1.5 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs font-semibold">
+                              대표
+                            </div>
+                          )}
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              const target = photos[index];
+                              if (!target) return;
+                              try {
+                                await api.delete(`/api/v1/profile/photo/${target.id}`);
+                              } catch {
+                                toast.error('사진 삭제에 실패했습니다');
+                                return;
+                              }
+                              const newPhotos = [...photos];
+                              newPhotos[index] = null;
+                              setPhotos(newPhotos);
+                            }}
+                            className="absolute top-1.5 left-1.5 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </>
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                          {isUploading && currentPhotoIndex === index ? (
+                            <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
+                          ) : (
+                            <>
+                              <Plus className="w-5 h-5 text-muted-foreground" />
+                              {index === 0 && (
+                                <span className="text-xs text-muted-foreground">대표사진</span>
+                              )}
+                            </>
+                          )}
                         </div>
                       )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 동영상 */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-foreground">동영상 <span className="text-muted-foreground font-normal">(선택)</span></p>
+                  <p className="text-xs text-muted-foreground">+50 신뢰도 🏆</p>
+                </div>
+                <div
+                  className={`relative aspect-video rounded-xl border-2 overflow-hidden cursor-pointer transition-all ${
+                    video ? "border-primary bg-primary/10" : "border-dashed border-border hover:border-primary/50 bg-muted"
+                  }`}
+                >
+                  {video ? (
+                    <>
+                      <video src={video} className="w-full h-full object-cover" />
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const newPhotos = [...photos];
-                          newPhotos[index] = null;
-                          setPhotos(newPhotos);
-                        }}
-                        className="absolute top-1 left-1 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
+                        onClick={() => setVideo(null)}
+                        className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1.5 hover:bg-black/80"
                       >
                         <X className="w-3 h-3" />
                       </button>
                     </>
                   ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      {isUploading && currentPhotoIndex === index ? (
-                        <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
-                      ) : (
-                        <Plus className="w-5 h-5 text-muted-foreground" />
-                      )}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                      <Video className="w-7 h-7 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">동영상 추가 (5~30초)</p>
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Video */}
-          <div>
-            <Label className="mb-3 block">프로필 동영상 (선택)</Label>
-            <div className="grid grid-cols-3 gap-4">
-              <div
-                className={`relative aspect-square rounded-lg border-2 overflow-hidden cursor-pointer transition-all ${
-                  video
-                    ? 'border-primary bg-primary/5'
-                    : 'border-dashed border-muted-foreground/30 hover:border-primary/50 bg-muted'
-                }`}
-              >
-                {video ? (
-                  <>
-                    <video src={video} className="w-full h-full object-cover" />
-                    <button
-                      onClick={() => setVideo(null)}
-                      className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </>
-                ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                    <Video className="w-5 h-5 text-muted-foreground" />
-                    <p className="text-xs text-muted-foreground">동영상</p>
-                  </div>
-                )}
               </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              💡 5-30초 권장, MP4/MOV, 최대 50MB
-            </p>
-          </div>
-        </section>
+            </Section>
 
-        {/* Basic Info */}
-        <section className="space-y-4">
-          <h3 className="text-xl font-semibold">기본 정보</h3>
-          <div className="space-y-4">
-            <div>
-              <Label>키 - {profile.basicInfo.height || 170}cm</Label>
-              <input
-                type="range"
-                min="140"
-                max="220"
-                value={profile.basicInfo.height || 170}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    basicInfo: {
-                      ...profile.basicInfo,
-                      height: parseInt(e.target.value)
-                    }
-                  })
-                }
-                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-pink-500 mt-2"
-              />
-              <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>140cm</span>
-                <span>220cm</span>
-              </div>
-            </div>
-            <div>
-              <Label className="mb-2 block">체형</Label>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { value: "SLIM", label: "슬림" },
-                  { value: "AVERAGE", label: "보통" },
-                  { value: "ATHLETIC", label: "탄탄" },
-                  { value: "MUSCULAR", label: "건장" },
-                  { value: "CURVY", label: "풍만" },
-                ].map((type) => (
-                  <Badge
-                    key={type.value}
-                    onClick={() =>
-                      setProfile({
-                        ...profile,
-                        basicInfo: { ...profile.basicInfo, bodyType: type.value }
-                      })
-                    }
-                    className={`cursor-pointer px-4 py-2 transition-all ${
-                      profile.basicInfo.bodyType === type.value
-                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
-                    }`}
-                    variant={profile.basicInfo.bodyType === type.value ? "default" : "outline"}
-                  >
-                    {type.label}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label className="mb-2 block">MBTI *</Label>
-              <div className="grid grid-cols-4 gap-3">
-                {/* E/I */}
-                <div className="space-y-2">
-                  <p className="text-xs text-center text-muted-foreground font-medium">외향/내향</p>
-                  <div className="grid grid-cols-2 gap-1">
-                    {["E", "I"].map((type) => (
-                      <Badge
-                        key={type}
-                        onClick={() => {
-                          const currentMbti = profile.basicInfo.mbti;
-                          const newMbti = type + currentMbti.substring(1);
-                          setProfile({
-                            ...profile,
-                            basicInfo: { ...profile.basicInfo, mbti: newMbti }
-                          });
-                        }}
-                        className={`cursor-pointer px-2 py-2 transition-all text-center ${
-                          profile.basicInfo.mbti[0] === type
-                            ? "bg-gradient-to-r from-purple-400 to-indigo-400 text-white border-purple-400"
-                            : "bg-white border-slate-200 text-slate-600 hover:border-purple-300"
-                        }`}
-                        variant={profile.basicInfo.mbti[0] === type ? "default" : "outline"}
-                      >
-                        {type}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                {/* S/N */}
-                <div className="space-y-2">
-                  <p className="text-xs text-center text-muted-foreground font-medium">감각/직관</p>
-                  <div className="grid grid-cols-2 gap-1">
-                    {["S", "N"].map((type) => (
-                      <Badge
-                        key={type}
-                        onClick={() => {
-                          const currentMbti = profile.basicInfo.mbti;
-                          const newMbti = currentMbti[0] + type + currentMbti.substring(2);
-                          setProfile({
-                            ...profile,
-                            basicInfo: { ...profile.basicInfo, mbti: newMbti }
-                          });
-                        }}
-                        className={`cursor-pointer px-2 py-2 transition-all text-center ${
-                          profile.basicInfo.mbti[1] === type
-                            ? "bg-gradient-to-r from-purple-400 to-indigo-400 text-white border-purple-400"
-                            : "bg-white border-slate-200 text-slate-600 hover:border-purple-300"
-                        }`}
-                        variant={profile.basicInfo.mbti[1] === type ? "default" : "outline"}
-                      >
-                        {type}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                {/* T/F */}
-                <div className="space-y-2">
-                  <p className="text-xs text-center text-muted-foreground font-medium">사고/감정</p>
-                  <div className="grid grid-cols-2 gap-1">
-                    {["T", "F"].map((type) => (
-                      <Badge
-                        key={type}
-                        onClick={() => {
-                          const currentMbti = profile.basicInfo.mbti;
-                          const newMbti = currentMbti.substring(0, 2) + type + currentMbti[3];
-                          setProfile({
-                            ...profile,
-                            basicInfo: { ...profile.basicInfo, mbti: newMbti }
-                          });
-                        }}
-                        className={`cursor-pointer px-2 py-2 transition-all text-center ${
-                          profile.basicInfo.mbti[2] === type
-                            ? "bg-gradient-to-r from-purple-400 to-indigo-400 text-white border-purple-400"
-                            : "bg-white border-slate-200 text-slate-600 hover:border-purple-300"
-                        }`}
-                        variant={profile.basicInfo.mbti[2] === type ? "default" : "outline"}
-                      >
-                        {type}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                {/* P/J */}
-                <div className="space-y-2">
-                  <p className="text-xs text-center text-muted-foreground font-medium">인식/판단</p>
-                  <div className="grid grid-cols-2 gap-1">
-                    {["P", "J"].map((type) => (
-                      <Badge
-                        key={type}
-                        onClick={() => {
-                          const currentMbti = profile.basicInfo.mbti;
-                          const newMbti = currentMbti.substring(0, 3) + type;
-                          setProfile({
-                            ...profile,
-                            basicInfo: { ...profile.basicInfo, mbti: newMbti }
-                          });
-                        }}
-                        className={`cursor-pointer px-2 py-2 transition-all text-center ${
-                          profile.basicInfo.mbti[3] === type
-                            ? "bg-gradient-to-r from-purple-400 to-indigo-400 text-white border-purple-400"
-                            : "bg-white border-slate-200 text-slate-600 hover:border-purple-300"
-                        }`}
-                        variant={profile.basicInfo.mbti[3] === type ? "default" : "outline"}
-                      >
-                        {type}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <p className="text-sm text-center text-purple-600 font-medium mt-2">
-                선택된 MBTI: {profile.basicInfo.mbti}
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Career Info */}
-        <section className="space-y-4">
-          <h3 className="text-xl font-semibold">직업 정보</h3>
-          <div className="space-y-4">
-            <div>
-              <Label className="mb-2 block">직업 분야</Label>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { value: "IT_DEVELOPMENT", label: "IT/개발" },
-                  { value: "FINANCE", label: "금융/보험" },
-                  { value: "EDUCATION", label: "교육" },
-                  { value: "MEDICAL", label: "의료/보건" },
-                  { value: "MEDIA", label: "미디어/엔터" },
-                  { value: "SERVICE", label: "서비스/영업" },
-                  { value: "MANUFACTURING", label: "제조/생산" },
-                  { value: "PUBLIC_OFFICIAL", label: "공무원/공공기관" },
-                  { value: "PROFESSIONAL", label: "전문직" },
-                  { value: "OTHER", label: "기타" },
-                ].map((category) => (
-                  <Badge
-                    key={category.value}
-                    onClick={() =>
-                      setProfile({
-                        ...profile,
-                        careerInfo: { ...profile.careerInfo, category: category.value }
-                      })
-                    }
-                    className={`cursor-pointer px-4 py-2 transition-all ${
-                      profile.careerInfo.category === category.value
-                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
-                    }`}
-                    variant={profile.careerInfo.category === category.value ? "default" : "outline"}
-                  >
-                    {category.label}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="company">직장명</Label>
-              <Input
-                id="company"
-                value={profile.careerInfo.company || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    careerInfo: { ...profile.careerInfo, company: e.target.value || null }
-                  })
-                }
-                placeholder="직장명을 입력하세요"
-              />
-            </div>
-            <div>
-              <Label>소득 인증 (선택)</Label>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full mt-2 border-2 border-dashed hover:border-pink-300 hover:bg-pink-50"
-                onClick={() => {
-                  toast.info('홈택스 연동 기능은 준비 중입니다');
-                }}
-              >
-                {profile.careerInfo.incomeRange ? '소득인증 완료' : '소득인증하기'}
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                소득 인증은 선택사항입니다. 홈택스 연동을 통해 인증하면 고소득 뱃지가 프로필에 표시됩니다. (연소득 7,500만원 이상)
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Education Info */}
-        <section className="space-y-4">
-          <h3 className="text-xl font-semibold">학력 정보</h3>
-          <div className="space-y-4">
-            <div>
-              <Label className="mb-2 block">학력</Label>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { value: "HIGH_SCHOOL", label: "고졸" },
-                  { value: "ASSOCIATE", label: "전문대" },
-                  { value: "BACHELOR", label: "대졸" },
-                  { value: "MASTER", label: "석사" },
-                  { value: "DOCTORATE", label: "박사" },
-                ].map((level) => (
-                  <Badge
-                    key={level.value}
-                    onClick={() =>
-                      setProfile({
-                        ...profile,
-                        educationInfo: { ...profile.educationInfo, level: level.value }
-                      })
-                    }
-                    className={`cursor-pointer px-4 py-2 transition-all ${
-                      profile.educationInfo.level === level.value
-                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
-                    }`}
-                    variant={profile.educationInfo.level === level.value ? "default" : "outline"}
-                  >
-                    {level.label}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="school">학교명</Label>
-              <Input
-                id="school"
-                value={profile.educationInfo.school || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    educationInfo: { ...profile.educationInfo, school: e.target.value || null }
-                  })
-                }
-                placeholder="학교명을 입력하세요"
-              />
-            </div>
-            <div>
-              <Label htmlFor="major">전공</Label>
-              <Input
-                id="major"
-                value={profile.educationInfo.major || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    educationInfo: { ...profile.educationInfo, major: e.target.value || null }
-                  })
-                }
-                placeholder="전공을 입력하세요"
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* Location Info */}
-        <section className="space-y-4">
-          <h3 className="text-xl font-semibold">지역 정보</h3>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="sido">거주 시/도</Label>
-                <Input
-                  id="sido"
-                  value={profile.locationInfo.sido || ""}
-                  onChange={(e) =>
-                    setProfile({
-                      ...profile,
-                      locationInfo: { ...profile.locationInfo, sido: e.target.value || null }
-                    })
-                  }
-                  placeholder="예: 서울"
-                />
-              </div>
-              <div>
-                <Label htmlFor="sigungu">시/군/구</Label>
-                <Input
-                  id="sigungu"
-                  value={profile.locationInfo.sigungu || ""}
-                  onChange={(e) =>
-                    setProfile({
-                      ...profile,
-                      locationInfo: { ...profile.locationInfo, sigungu: e.target.value || null }
-                    })
-                  }
-                  placeholder="예: 강남구"
-                />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Lifestyle Info */}
-        <section className="space-y-4">
-          <h3 className="text-xl font-semibold">라이프스타일</h3>
-          <div className="space-y-4">
-            <div>
-              <Label className="mb-2 block">흡연</Label>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { value: "NEVER", label: "비흡연" },
-                  { value: "SOMETIMES", label: "가끔" },
-                  { value: "OFTEN", label: "자주" },
-                ].map((option) => (
-                  <Badge
-                    key={option.value}
-                    onClick={() =>
-                      setProfile({
-                        ...profile,
-                        lifestyleInfo: { ...profile.lifestyleInfo, smoking: option.value }
-                      })
-                    }
-                    className={`cursor-pointer px-4 py-2 transition-all ${
-                      profile.lifestyleInfo.smoking === option.value
-                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
-                    }`}
-                    variant={profile.lifestyleInfo.smoking === option.value ? "default" : "outline"}
-                  >
-                    {option.label}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label className="mb-2 block">음주</Label>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { value: "NEVER", label: "안마심" },
-                  { value: "SOMETIMES", label: "가끔" },
-                  { value: "OFTEN", label: "자주" },
-                ].map((option) => (
-                  <Badge
-                    key={option.value}
-                    onClick={() =>
-                      setProfile({
-                        ...profile,
-                        lifestyleInfo: { ...profile.lifestyleInfo, drinking: option.value }
-                      })
-                    }
-                    className={`cursor-pointer px-4 py-2 transition-all ${
-                      profile.lifestyleInfo.drinking === option.value
-                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
-                    }`}
-                    variant={profile.lifestyleInfo.drinking === option.value ? "default" : "outline"}
-                  >
-                    {option.label}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label className="mb-2 block">종교</Label>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { value: "NONE", label: "무교" },
-                  { value: "CHRISTIANITY", label: "기독교" },
-                  { value: "CATHOLICISM", label: "천주교" },
-                  { value: "BUDDHISM", label: "불교" },
-                  { value: "OTHER", label: "기타" },
-                ].map((option) => (
-                  <Badge
-                    key={option.value}
-                    onClick={() =>
-                      setProfile({
-                        ...profile,
-                        lifestyleInfo: { ...profile.lifestyleInfo, religion: option.value }
-                      })
-                    }
-                    className={`cursor-pointer px-4 py-2 transition-all ${
-                      profile.lifestyleInfo.religion === option.value
-                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
-                    }`}
-                    variant={profile.lifestyleInfo.religion === option.value ? "default" : "outline"}
-                  >
-                    {option.label}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Introduction */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold">자기소개</h3>
-            <Button
-              variant={showAIVersion ? "default" : "outline"}
-              size="sm"
-              onClick={() => {
-                if (!showAIVersion) {
-                  // Save original answers before enhancing
-                  setOriginalAnswers(profile.introduction.interviewAnswers || null);
-
-                  setIsGeneratingAI(true);
-                  setTimeout(() => {
-                    // Apply AI enhancements to the actual profile state
-                    const enhanced = {
-                      hobby: profile.introduction.interviewAnswers?.hobby
-                        ? profile.introduction.interviewAnswers.hobby + " 주변 사람들과 함께할 때 더욱 즐겁고 의미있는 시간을 보내려고 노력해요."
-                        : null,
-                      charm: profile.introduction.interviewAnswers?.charm
-                        ? profile.introduction.interviewAnswers.charm + " 이런 점들이 저를 특별하게 만들어주는 것 같아요."
-                        : null,
-                      passion: profile.introduction.interviewAnswers?.passion
-                        ? profile.introduction.interviewAnswers.passion + " 이 과정에서 배우고 성장하는 게 정말 즐거워요."
-                        : null,
-                      happiness: profile.introduction.interviewAnswers?.happiness
-                        ? profile.introduction.interviewAnswers.happiness + " 그런 순간들이 제게 가장 큰 행복이에요."
-                        : null,
-                      motto: profile.introduction.interviewAnswers?.motto
-                        ? profile.introduction.interviewAnswers.motto + " 이 마음가짐으로 매일을 살아가고 있어요."
-                        : null,
-                    };
-
-                    setProfile({
-                      ...profile,
-                      introduction: {
-                        ...profile.introduction,
-                        interviewAnswers: enhanced
-                      }
-                    });
-
-                    setIsGeneratingAI(false);
-                    setShowAIVersion(true);
-                  }, 1500);
-                } else {
-                  // Restore original answers
-                  if (originalAnswers) {
-                    setProfile({
-                      ...profile,
-                      introduction: {
-                        ...profile.introduction,
-                        interviewAnswers: originalAnswers
-                      }
-                    });
-                  }
-                  setShowAIVersion(false);
-                }
-              }}
-              disabled={isGeneratingAI}
-              className="gap-2"
+            {/* ── 기본 정보 ── */}
+            <Section emoji="✏️" title="기본 정보"
+              completionText={done(!!(profile.basicInfo.height || profile.basicInfo.bodyType))}
+              defaultOpen={!(profile.basicInfo.height || profile.basicInfo.bodyType)}
             >
-              {isGeneratingAI ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  AI 생성 중...
-                </>
-              ) : showAIVersion ? (
-                <>원본 보기</>
-              ) : (
-                <>AI 개선 보기</>
-              )}
-            </Button>
-          </div>
+              {/* 키 */}
+              <div>
+                <SubLabel>키</SubLabel>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="text-2xl font-bold text-primary">
+                    {profile.basicInfo.height || 170}
+                  </span>
+                  <span className="text-muted-foreground">cm</span>
+                </div>
+                <input
+                  type="range"
+                  min="140"
+                  max="220"
+                  value={profile.basicInfo.height || 170}
+                  onChange={(e) =>
+                    setProfile({
+                      ...profile,
+                      basicInfo: { ...profile.basicInfo, height: parseInt(e.target.value) },
+                    })
+                  }
+                  className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                />
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                  <span>140cm</span>
+                  <span>220cm</span>
+                </div>
+              </div>
 
-          <div className="space-y-4">
-            {/* Interview Questions */}
-            <div>
-              <Label htmlFor="hobby">쉬는 날엔 주로 이렇게 시간을 보내요 *</Label>
-              <Textarea
-                id="hobby"
-                value={profile.introduction.interviewAnswers?.hobby || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    introduction: {
-                      ...profile.introduction,
-                      interviewAnswers: {
-                        ...profile.introduction.interviewAnswers,
-                        hobby: e.target.value || null,
-                        charm: profile.introduction.interviewAnswers?.charm || null,
-                        passion: profile.introduction.interviewAnswers?.passion || null,
-                        happiness: profile.introduction.interviewAnswers?.happiness || null,
-                        motto: profile.introduction.interviewAnswers?.motto || null,
+              {/* 체형 */}
+              <div>
+                <SubLabel>체형</SubLabel>
+                <div className="flex flex-wrap gap-2">
+                  {bodyTypeOptions.map((type) => (
+                    <Chip
+                      key={type.value}
+                      selected={profile.basicInfo.bodyType === type.value}
+                      onClick={() =>
+                        setProfile({
+                          ...profile,
+                          basicInfo: { ...profile.basicInfo, bodyType: type.value },
+                        })
                       }
-                    }
-                  })
-                }
-                placeholder="예) 주말엔 카페에서 책 읽거나, 친구들과 맛집 탐방하는 걸 좋아해요."
-                rows={3}
-                readOnly={showAIVersion}
-                className={showAIVersion ? "bg-muted" : ""}
-              />
-            </div>
+                    >
+                      {type.emoji} {type.label}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
 
-            <div>
-              <Label htmlFor="charm">제 매력 포인트는 바로 이거! *</Label>
-              <Textarea
-                id="charm"
-                value={profile.introduction.interviewAnswers?.charm || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    introduction: {
-                      ...profile.introduction,
-                      interviewAnswers: {
-                        hobby: profile.introduction.interviewAnswers?.hobby || null,
-                        charm: e.target.value || null,
-                        passion: profile.introduction.interviewAnswers?.passion || null,
-                        happiness: profile.introduction.interviewAnswers?.happiness || null,
-                        motto: profile.introduction.interviewAnswers?.motto || null,
+              {/* MBTI */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <SubLabel>MBTI</SubLabel>
+                  <span className="text-lg font-bold text-primary">{profile.basicInfo.mbti}</span>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { pairs: ["E", "I"], label: "외향/내향", idx: 0 },
+                    { pairs: ["S", "N"], label: "감각/직관", idx: 1 },
+                    { pairs: ["T", "F"], label: "사고/감정", idx: 2 },
+                    { pairs: ["P", "J"], label: "인식/판단", idx: 3 },
+                  ].map(({ pairs, label, idx }) => (
+                    <div key={label} className="space-y-1.5">
+                      <p className="text-xs text-center text-muted-foreground">{label}</p>
+                      <div className="flex flex-col gap-1">
+                        {pairs.map((type) => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => {
+                              const mbti = profile.basicInfo.mbti;
+                              const newMbti =
+                                mbti.substring(0, idx) + type + mbti.substring(idx + 1);
+                              setProfile({
+                                ...profile,
+                                basicInfo: { ...profile.basicInfo, mbti: newMbti },
+                              });
+                            }}
+                            className={`py-1.5 rounded-lg text-sm font-medium transition-all border ${
+                              profile.basicInfo.mbti[idx] === type
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-card border-border text-muted-foreground hover:border-primary/50"
+                            }`}
+                          >
+                            {type}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Section>
+
+            {/* ── 직업 정보 ── */}
+            <Section emoji="💼" title="직업 정보"
+              completionText={done(!!profile.careerInfo.category)}
+              defaultOpen={!profile.careerInfo.category}
+            >
+              <div>
+                <SubLabel>직업 분야</SubLabel>
+                <div className="flex flex-wrap gap-2">
+                  {careerCategories.map((cat) => (
+                    <Chip
+                      key={cat.value}
+                      selected={profile.careerInfo.category === cat.value}
+                      onClick={() =>
+                        setProfile({
+                          ...profile,
+                          careerInfo: { ...profile.careerInfo, category: cat.value },
+                        })
                       }
-                    }
-                  })
-                }
-                placeholder="예) 긍정적이고 밝은 성격이라 주변 사람들에게 에너지를 준다는 말을 자주 들어요."
-                rows={3}
-                readOnly={showAIVersion}
-                className={showAIVersion ? "bg-muted" : ""}
-              />
-            </div>
+                    >
+                      {cat.emoji} {cat.label}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
 
-            <div>
-              <Label htmlFor="passion">요즘 제가 푹 빠져있는 것 *</Label>
-              <Textarea
-                id="passion"
-                value={profile.introduction.interviewAnswers?.passion || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    introduction: {
-                      ...profile.introduction,
-                      interviewAnswers: {
-                        hobby: profile.introduction.interviewAnswers?.hobby || null,
-                        charm: profile.introduction.interviewAnswers?.charm || null,
-                        passion: e.target.value || null,
-                        happiness: profile.introduction.interviewAnswers?.happiness || null,
-                        motto: profile.introduction.interviewAnswers?.motto || null,
-                      }
-                    }
-                  })
-                }
-                placeholder="예) 요즘 테니스를 배우고 있는데 너무 재밌어요!"
-                rows={3}
-                readOnly={showAIVersion}
-                className={showAIVersion ? "bg-muted" : ""}
-              />
-            </div>
+              <div>
+                <Label htmlFor="company" className="block mb-2 text-sm font-semibold">직장명</Label>
+                <Input
+                  id="company"
+                  value={profile.careerInfo.company || ""}
+                  onChange={(e) =>
+                    setProfile({
+                      ...profile,
+                      careerInfo: { ...profile.careerInfo, company: e.target.value || null },
+                    })
+                  }
+                  placeholder="직장명을 입력하세요 (선택)"
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="happiness">저는 이럴 때 행복해요 *</Label>
-              <Textarea
-                id="happiness"
-                value={profile.introduction.interviewAnswers?.happiness || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    introduction: {
-                      ...profile.introduction,
-                      interviewAnswers: {
-                        hobby: profile.introduction.interviewAnswers?.hobby || null,
-                        charm: profile.introduction.interviewAnswers?.charm || null,
-                        passion: profile.introduction.interviewAnswers?.passion || null,
-                        happiness: e.target.value || null,
-                        motto: profile.introduction.interviewAnswers?.motto || null,
-                      }
-                    }
-                  })
-                }
-                placeholder="예) 좋아하는 사람들과 맛있는 음식 먹으면서 이야기할 때가 가장 행복해요."
-                rows={3}
-                readOnly={showAIVersion}
-                className={showAIVersion ? "bg-muted" : ""}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="motto">제 인생의 좌우명은 *</Label>
-              <Textarea
-                id="motto"
-                value={profile.introduction.interviewAnswers?.motto || ""}
-                onChange={(e) =>
-                  setProfile({
-                    ...profile,
-                    introduction: {
-                      ...profile.introduction,
-                      interviewAnswers: {
-                        hobby: profile.introduction.interviewAnswers?.hobby || null,
-                        charm: profile.introduction.interviewAnswers?.charm || null,
-                        passion: profile.introduction.interviewAnswers?.passion || null,
-                        happiness: profile.introduction.interviewAnswers?.happiness || null,
-                        motto: e.target.value || null,
-                      }
-                    }
-                  })
-                }
-                placeholder="예) '오늘 하루를 최선을 다해 살자'가 제 좌우명이에요."
-                rows={3}
-                readOnly={showAIVersion}
-                className={showAIVersion ? "bg-muted" : ""}
-              />
-            </div>
-
-            {showAIVersion && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <p className="text-sm text-amber-800">
-                  💡 AI 개선 버전이 적용되었습니다. 저장하면 이 내용으로 저장되며, "원본 보기"를 누르면 개선 전으로 돌아갑니다.
+              <div>
+                <Label className="block mb-2 text-sm font-semibold">소득 인증 <span className="text-muted-foreground font-normal">(선택)</span></Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full border-dashed hover:border-primary/50 hover:bg-muted"
+                  onClick={() => toast.info('홈택스 연동 기능은 준비 중입니다')}
+                >
+                  {profile.careerInfo.incomeRange ? '✅ 소득인증 완료' : '🏦 소득인증하기'}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                  홈택스 연동 인증 시 고소득 뱃지가 표시돼요. (연소득 7,500만원 이상)
                 </p>
               </div>
-            )}
-          </div>
-        </section>
+            </Section>
 
-        {/* Personality Tests */}
-        <PersonalityTestManager
-          tests={profile.personalityTests || []}
-          onChange={(tests) =>
-            setProfile({
-              ...profile,
-              personalityTests: tests
-            })
-          }
-        />
-          </>
-        )}
+            {/* ── 학력 ── */}
+            <Section emoji="🎓" title="학력"
+              completionText={done(!!profile.educationInfo.level)}
+              defaultOpen={!profile.educationInfo.level}
+            >
+              <div>
+                <SubLabel>최종 학력</SubLabel>
+                <div className="flex flex-wrap gap-2">
+                  {educationLevels.map((lvl) => (
+                    <Chip
+                      key={lvl.value}
+                      selected={profile.educationInfo.level === lvl.value}
+                      onClick={() =>
+                        setProfile({
+                          ...profile,
+                          educationInfo: { ...profile.educationInfo, level: lvl.value },
+                        })
+                      }
+                    >
+                      {lvl.label}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
 
-        {/* Ideal Type Tab Content */}
-        {activeTab === "ideal" && (
-          <>
-        {/* Ideal Type */}
-        <section className="space-y-6">
-          <h3 className="text-xl font-semibold">이상형</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="school" className="block mb-2 text-sm font-semibold">학교명</Label>
+                  <Input
+                    id="school"
+                    value={profile.educationInfo.school || ""}
+                    onChange={(e) =>
+                      setProfile({
+                        ...profile,
+                        educationInfo: { ...profile.educationInfo, school: e.target.value || null },
+                      })
+                    }
+                    placeholder="학교명"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="major" className="block mb-2 text-sm font-semibold">전공</Label>
+                  <Input
+                    id="major"
+                    value={profile.educationInfo.major || ""}
+                    onChange={(e) =>
+                      setProfile({
+                        ...profile,
+                        educationInfo: { ...profile.educationInfo, major: e.target.value || null },
+                      })
+                    }
+                    placeholder="전공"
+                  />
+                </div>
+              </div>
+            </Section>
 
-          {/* Date Preferences */}
-          <div>
-            <Label className="mb-3 block">연인과 어떤 데이트를 선호하시나요? (복수 선택)</Label>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { value: "ACTIVE", label: "액티브한 데이트", desc: "여행, 운동, 액티비티" },
-                { value: "INDOOR", label: "인도어 데이트", desc: "집, 카페, 영화관" },
-                { value: "CULTURE", label: "문화 데이트", desc: "전시, 공연, 맛집 투어" },
-                { value: "NATURE", label: "자연 데이트", desc: "산책, 드라이브, 피크닉" },
-              ].map((pref) => (
-                <button
-                  key={pref.value}
-                  type="button"
-                  onClick={() => {
-                    const current = profile.idealType.datePreferences;
-                    const newPrefs = current.includes(pref.value)
-                      ? current.filter(p => p !== pref.value)
-                      : [...current, pref.value];
+            {/* ── 지역 ── */}
+            <Section emoji="📍" title="거주 지역"
+              completionText={profile.locationInfo.sido ?? "미입력"}
+              defaultOpen={!profile.locationInfo.sido}
+            >
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="sido" className="block mb-2 text-sm font-semibold">시/도</Label>
+                  <select
+                    id="sido"
+                    value={profile.locationInfo.sido || ""}
+                    onChange={(e) =>
+                      setProfile({
+                        ...profile,
+                        locationInfo: { ...profile.locationInfo, sido: e.target.value || null },
+                      })
+                    }
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="">선택</option>
+                    {["서울", "경기", "인천", "부산", "대구", "광주", "대전", "울산", "세종", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"].map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="sigungu" className="block mb-2 text-sm font-semibold">시/군/구</Label>
+                  <Input
+                    id="sigungu"
+                    value={profile.locationInfo.sigungu || ""}
+                    onChange={(e) =>
+                      setProfile({
+                        ...profile,
+                        locationInfo: { ...profile.locationInfo, sigungu: e.target.value || null },
+                      })
+                    }
+                    placeholder="예: 강남구"
+                  />
+                </div>
+              </div>
+            </Section>
+
+            {/* ── 라이프스타일 ── */}
+            <Section emoji="🌱" title="라이프스타일"
+              completionText={lifestyleCount > 0 ? `${lifestyleCount}/3` : "미작성"}
+              defaultOpen={lifestyleCount < 2}
+            >
+              <div>
+                <SubLabel>흡연</SubLabel>
+                <div className="flex flex-wrap gap-2">
+                  {smokingOptions.map((opt) => (
+                    <Chip
+                      key={opt.value}
+                      selected={profile.lifestyleInfo.smoking === opt.value}
+                      onClick={() =>
+                        setProfile({
+                          ...profile,
+                          lifestyleInfo: { ...profile.lifestyleInfo, smoking: opt.value },
+                        })
+                      }
+                    >
+                      {opt.label}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <SubLabel>음주</SubLabel>
+                <div className="flex flex-wrap gap-2">
+                  {drinkingOptions.map((opt) => (
+                    <Chip
+                      key={opt.value}
+                      selected={profile.lifestyleInfo.drinking === opt.value}
+                      onClick={() =>
+                        setProfile({
+                          ...profile,
+                          lifestyleInfo: { ...profile.lifestyleInfo, drinking: opt.value },
+                        })
+                      }
+                    >
+                      {opt.label}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <SubLabel>종교</SubLabel>
+                <div className="flex flex-wrap gap-2">
+                  {religionOptions.map((opt) => (
+                    <Chip
+                      key={opt.value}
+                      selected={profile.lifestyleInfo.religion === opt.value}
+                      onClick={() =>
+                        setProfile({
+                          ...profile,
+                          lifestyleInfo: { ...profile.lifestyleInfo, religion: opt.value },
+                        })
+                      }
+                    >
+                      {opt.label}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+            </Section>
+
+            {/* ── 소개글 ── */}
+            <Section
+              emoji="💬"
+              title="소개글"
+              subtitle="AI가 작성했거나 직접 수정할 수 있어요"
+              completionText={introText.length >= 30 ? "완료 ✓" : "미작성"}
+              defaultOpen={introText.length < 30}
+              headerRight={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isGeneratingAI}
+                  onClick={async () => {
+                    const datingStyle = profile.introduction.datingStyle || {};
+                    const hasDatingStyle = Object.keys(datingStyle).length >= 3;
+                    const hasInterview = !!profile.introduction.interviewAnswers;
+                    if (!hasDatingStyle && !hasInterview) {
+                      toast.info('연애 스타일(이상형 탭)을 먼저 3개 이상 골라주세요');
+                      return;
+                    }
+                    setIsGeneratingAI(true);
+                    try {
+                      const payload = hasDatingStyle
+                        ? { introMethod: 'DATING_STYLE', datingStyle }
+                        : { introMethod: 'MANUAL', manualAnswers: profile.introduction.interviewAnswers };
+                      const data = await api.post<{
+                        generatedIntroduction: string;
+                        colorType: string;
+                        colorName: string;
+                        colorHex: string;
+                        colorDescription: string;
+                      }>('/api/v1/ai-profile/generate', payload);
+                      setProfile((prev) =>
+                        prev ? {
+                          ...prev,
+                          introduction: { ...prev.introduction, text: data.generatedIntroduction },
+                          colorType: {
+                            type: data.colorType,
+                            name: data.colorName,
+                            hex: data.colorHex,
+                            description: data.colorDescription,
+                          },
+                        } : prev
+                      );
+                      toast.success(`✨ 소개글 완성! 색깔 타입: ${data.colorName}`);
+                    } catch {
+                      toast.error('AI 생성에 실패했어요');
+                    } finally {
+                      setIsGeneratingAI(false);
+                    }
+                  }}
+                  className="gap-1.5 shrink-0"
+                >
+                  {isGeneratingAI ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 생성 중</>
+                  ) : (
+                    <><Sparkles className="w-3.5 h-3.5" /> AI 다듬기</>
+                  )}
+                </Button>
+              }
+            >
+              <div>
+                <textarea
+                  value={introText}
+                  onChange={(e) =>
                     setProfile({
                       ...profile,
-                      idealType: { ...profile.idealType, datePreferences: newPrefs }
-                    });
-                  }}
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${
-                    profile.idealType.datePreferences.includes(pref.value)
-                      ? "bg-gradient-to-r from-pink-50 to-rose-50 border-pink-400"
-                      : "bg-white border-slate-200 hover:border-pink-300"
-                  }`}
+                      introduction: { ...profile.introduction, text: e.target.value || null },
+                    })
+                  }
+                  placeholder="나를 표현하는 소개글을 써보거나, AI 다듬기로 자동 생성해보세요 (150~300자 권장)"
+                  maxLength={500}
+                  rows={6}
+                  className="w-full px-3.5 py-3 rounded-xl border border-input bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring leading-relaxed placeholder:text-muted-foreground"
+                />
+                <p className={`text-xs mt-1.5 text-right ${introText.length > 300 ? "text-amber-500" : "text-muted-foreground"}`}>
+                  {introText.length}/500자
+                </p>
+              </div>
+            </Section>
+
+            {/* ── 심리 프로필 ── */}
+            {(() => {
+              const ap = profile.attachmentProfile;
+              const anxiety = ap?.contactAnxiety ?? 50;
+              const avoidance = ap?.intimacyAvoidance ?? 50;
+              const typeKey = ap ? computeAttachmentTypeClient(anxiety, avoidance) : null;
+              const typeInfo = typeKey ? ATTACHMENT_TYPE_INFO[typeKey] : null;
+              return (
+                <Section
+                  emoji="🧬"
+                  title="심리 프로필"
+                  subtitle="연애에서 나는 어떤 유형인지 슬라이더로 표현해보세요"
+                  completionText={hasAttachment ? "완료 ✓" : "미작성"}
+                  defaultOpen={!hasAttachment}
                 >
-                  <p className="font-medium text-slate-900 mb-1">{pref.label}</p>
-                  <p className="text-sm text-slate-600">{pref.desc}</p>
-                </button>
-              ))}
-            </div>
-          </div>
+                  <div className="space-y-6">
+                    {ATTACHMENT_SLIDERS.map((slider) => {
+                      const value = ap?.[slider.key] ?? 50;
+                      return (
+                        <div key={slider.key}>
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs text-muted-foreground leading-tight max-w-[38%]">{slider.leftLabel}</span>
+                            <span className="text-xs font-semibold text-foreground">{slider.title}</span>
+                            <span className="text-xs text-muted-foreground leading-tight max-w-[38%] text-right">{slider.rightLabel}</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            value={value}
+                            onChange={(e) => {
+                              const newVal = Number(e.target.value);
+                              const newAp = {
+                                contactAnxiety: ap?.contactAnxiety ?? 50,
+                                intimacyAvoidance: ap?.intimacyAvoidance ?? 50,
+                                conflictStyle: ap?.conflictStyle ?? 50,
+                                emotionExpression: ap?.emotionExpression ?? 50,
+                                independenceLevel: ap?.independenceLevel ?? 50,
+                                [slider.key]: newVal,
+                              };
+                              setProfile({ ...profile, attachmentProfile: newAp });
+                            }}
+                            className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
 
-          {/* Important Values */}
-          <div>
-            <Label className="mb-3 block">
-              중요하게 보는 세 가지는? (최대 3개)
-              <span className="text-sm text-slate-500 ml-2">
-                {profile.idealType.importantValues.length}/3
-              </span>
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              {["PERSONALITY", "APPEARANCE", "EDUCATION", "CAREER", "FAMILY", "JOB", "WEALTH", "VALUES"].map((value) => {
-                const labels: Record<string, string> = {
-                  PERSONALITY: "성격/성향",
-                  APPEARANCE: "외모",
-                  EDUCATION: "학력",
-                  CAREER: "능력/커리어",
-                  FAMILY: "집안/가족",
-                  JOB: "직업",
-                  WEALTH: "경제력",
-                  VALUES: "가치관"
-                };
-                const isSelected = profile.idealType.importantValues.includes(value);
-                return (
-                  <Badge
-                    key={value}
-                    onClick={() => {
-                      const current = profile.idealType.importantValues;
-                      let newValues;
-                      if (isSelected) {
-                        newValues = current.filter(v => v !== value);
-                      } else if (current.length < 3) {
-                        newValues = [...current, value];
-                      } else {
-                        return;
+                  {/* 유형 결과 */}
+                  {typeInfo && (
+                    <div
+                      className="rounded-xl p-4 border"
+                      style={{ backgroundColor: `${typeInfo.color}15`, borderColor: `${typeInfo.color}40` }}
+                    >
+                      <p className="text-sm font-semibold mb-1" style={{ color: typeInfo.color }}>
+                        {typeInfo.emoji} {typeInfo.label}
+                      </p>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{typeInfo.description}</p>
+                      <p className="text-xs text-muted-foreground mt-2 opacity-70">
+                        슬라이더를 조정하면 유형이 바뀌어요
+                      </p>
+                    </div>
+                  )}
+                </Section>
+              );
+            })()}
+
+            {/* ── 관심사 ── */}
+            <Section
+              emoji="🎯"
+              title="관심사"
+              subtitle="최대 10개"
+              completionText={interestCount > 0 ? `${interestCount}개` : "미작성"}
+              defaultOpen={interestCount === 0}
+            >
+              {/* 선택된 관심사 칩 */}
+              {(profile.introduction.interests ?? []).length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {(profile.introduction.interests ?? []).map((interest) => (
+                    <span
+                      key={interest}
+                      className="inline-flex items-center gap-1 pl-3 pr-2 py-1 rounded-full border border-border bg-primary/10 text-primary text-xs font-medium"
+                    >
+                      {interest}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setProfile({
+                            ...profile,
+                            introduction: {
+                              ...profile.introduction,
+                              interests: (profile.introduction.interests ?? []).filter((i) => i !== interest),
+                            },
+                          })
+                        }
+                        className="text-primary/60 hover:text-primary transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* 직접 입력 */}
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">
+                  관심사를 입력하고 Enter 또는 추가 버튼을 눌러요
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={newInterest}
+                    onChange={(e) => setNewInterest(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        const trimmed = newInterest.trim();
+                        if (!trimmed) return;
+                        const current = profile.introduction.interests ?? [];
+                        if (current.length >= 10) { toast.info('최대 10개까지 추가할 수 있어요'); return; }
+                        if (current.includes(trimmed)) { toast.info('이미 있는 관심사예요'); return; }
+                        setProfile({ ...profile, introduction: { ...profile.introduction, interests: [...current, trimmed] } });
+                        setNewInterest("");
                       }
-                      setProfile({
-                        ...profile,
-                        idealType: { ...profile.idealType, importantValues: newValues }
-                      });
                     }}
-                    className={`cursor-pointer px-4 py-2 transition-all ${
-                      isSelected
-                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
-                    }`}
-                    variant={isSelected ? "default" : "outline"}
-                  >
-                    {labels[value]}
-                  </Badge>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Personalities */}
-          <div>
-            <Label className="mb-3 block">
-              어떤 성격의 사람을 선호하시나요? (최대 5개)
-              <span className="text-sm text-slate-500 ml-2">
-                {profile.idealType.personalities.length}/5
-              </span>
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              {personalities.map((personality) => {
-                const isSelected = profile.idealType.personalities.includes(personality);
-                return (
-                  <Badge
-                    key={personality}
+                    placeholder="예) 맛집탐방, 영화, 여행..."
+                    maxLength={15}
+                    className="flex-1 h-10 px-3.5 rounded-xl border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => {
-                      const current = profile.idealType.personalities;
-                      let newPersonalities;
-                      if (isSelected) {
-                        newPersonalities = current.filter(p => p !== personality);
-                      } else if (current.length < 5) {
-                        newPersonalities = [...current, personality];
-                      } else {
-                        return;
-                      }
-                      setProfile({
-                        ...profile,
-                        idealType: { ...profile.idealType, personalities: newPersonalities }
-                      });
+                      const trimmed = newInterest.trim();
+                      if (!trimmed) return;
+                      const current = profile.introduction.interests ?? [];
+                      if (current.length >= 10) { toast.info('최대 10개까지 추가할 수 있어요'); return; }
+                      if (current.includes(trimmed)) { toast.info('이미 있는 관심사예요'); return; }
+                      setProfile({ ...profile, introduction: { ...profile.introduction, interests: [...current, trimmed] } });
+                      setNewInterest("");
                     }}
-                    className={`cursor-pointer px-4 py-2 transition-all ${
-                      isSelected
-                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
-                    }`}
-                    variant={isSelected ? "default" : "outline"}
+                    disabled={!newInterest.trim()}
+                    className="h-10 px-3.5"
                   >
-                    {personality}
-                  </Badge>
-                );
-              })}
-            </div>
-          </div>
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  {(profile.introduction.interests ?? []).length}/10개
+                </p>
+              </div>
+            </Section>
 
-          {/* Appearance Styles */}
-          <div>
-            <Label className="mb-3 block">선호하는 외모 스타일은? (하나만 선택)</Label>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(appearanceStyleOptions).map(([enumValue, koreanLabel]) => {
-                const isSelected = profile.idealType.appearanceStyles.includes(enumValue);
-                return (
-                  <Badge
-                    key={enumValue}
-                    onClick={() => {
-                      const current = profile.idealType.appearanceStyles;
-                      const newStyles = isSelected
-                        ? []
-                        : [enumValue];
-                      setProfile({
-                        ...profile,
-                        idealType: { ...profile.idealType, appearanceStyles: newStyles }
-                      });
-                    }}
-                    className={`cursor-pointer px-4 py-2 transition-all ${
-                      isSelected
-                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
-                    }`}
-                    variant={isSelected ? "default" : "outline"}
-                  >
-                    {koreanLabel}
-                  </Badge>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Deal Breakers */}
-          <div>
-            <Label className="mb-3 block">
-              절대 안되는 것들은? (최대 3개)
-              <span className="text-sm text-slate-500 ml-2">
-                {profile.idealType.dealBreakers.length}/3
-              </span>
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(dealBreakerOptions).map(([enumValue, koreanLabel]) => {
-                const isSelected = profile.idealType.dealBreakers.includes(enumValue);
-                return (
-                  <Badge
-                    key={enumValue}
-                    onClick={() => {
-                      const current = profile.idealType.dealBreakers;
-                      let newDealBreakers;
-                      if (isSelected) {
-                        newDealBreakers = current.filter(d => d !== enumValue);
-                      } else if (current.length < 3) {
-                        newDealBreakers = [...current, enumValue];
-                      } else {
-                        return;
-                      }
-                      setProfile({
-                        ...profile,
-                        idealType: { ...profile.idealType, dealBreakers: newDealBreakers }
-                      });
-                    }}
-                    className={`cursor-pointer px-4 py-2 transition-all ${
-                      isSelected
-                        ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                        : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
-                    }`}
-                    variant={isSelected ? "default" : "outline"}
-                  >
-                    {koreanLabel}
-                  </Badge>
-                );
-              })}
-            </div>
-          </div>
-        </section>
+            {/* ── 성격 테스트 ── */}
+            <PersonalityTestManager
+              tests={profile.personalityTests || []}
+              onChange={(tests) => setProfile({ ...profile, personalityTests: tests })}
+            />
           </>
         )}
 
-        {/* Save Button */}
-        <div className="pt-4">
+        {/* ════ 이상형 탭 ════ */}
+        {activeTab === "ideal" && (
+          <>
+            {/* ── 연애 스타일 ── */}
+            <Section
+              emoji="💘"
+              title="연애 스타일"
+              subtitle="원하는 관계 방식을 골라봐요"
+              completionText={datingStyleCount > 0 ? `${datingStyleCount}/10` : "미작성"}
+              defaultOpen={datingStyleCount < 5}
+            >
+              <div className="space-y-5">
+                {DATING_STYLE_QUESTIONS.map((q) => {
+                  const selected = profile.introduction.datingStyle?.[q.key];
+                  return (
+                    <div key={q.key}>
+                      <p className="text-sm font-semibold text-foreground mb-2.5">
+                        {q.emoji} {q.label}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {q.options.map((opt) => (
+                          <Chip
+                            key={opt.key}
+                            selected={selected === opt.key}
+                            onClick={() => {
+                              const newStyle = { ...(profile.introduction.datingStyle || {}) };
+                              if (selected === opt.key) {
+                                delete newStyle[q.key];
+                              } else {
+                                newStyle[q.key] = opt.key;
+                              }
+                              setProfile({
+                                ...profile,
+                                introduction: { ...profile.introduction, datingStyle: newStyle },
+                              });
+                            }}
+                          >
+                            {opt.label}
+                          </Chip>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground pt-1">
+                {Object.keys(profile.introduction.datingStyle || {}).length}/{DATING_STYLE_QUESTIONS.length}개 선택됨 · 소개글 탭의 AI 다듬기에서 소개글 자동 생성에 활용돼요
+              </p>
+            </Section>
+
+            {/* ── 버킷리스트 ── */}
+            <BucketListSection
+              selected={profile.idealType.bucketList ?? []}
+              onChange={(list) =>
+                setProfile({
+                  ...profile,
+                  idealType: { ...profile.idealType, bucketList: list },
+                })
+              }
+            />
+
+            {/* ── 중요하게 보는 것 ── */}
+            <Section
+              emoji="🔑"
+              title="중요하게 보는 것"
+              subtitle="최대 3개"
+              completionText={ct(importantCount, 3)}
+              defaultOpen={importantCount === 0}
+            >
+              <div className="flex flex-wrap gap-2">
+                {importantValueOptions.map(({ value, label, emoji }) => {
+                  const isSelected = (profile.idealType.importantValues ?? []).includes(value);
+                  return (
+                    <Chip
+                      key={value}
+                      selected={isSelected}
+                      onClick={() => {
+                        const current = profile.idealType.importantValues ?? [];
+                        let newValues;
+                        if (isSelected) {
+                          newValues = current.filter((v) => v !== value);
+                        } else if (current.length < 3) {
+                          newValues = [...current, value];
+                        } else {
+                          toast.info('최대 3개까지 선택할 수 있어요');
+                          return;
+                        }
+                        setProfile({
+                          ...profile,
+                          idealType: { ...profile.idealType, importantValues: newValues },
+                        });
+                      }}
+                    >
+                      {emoji} {label}
+                    </Chip>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                선택: {(profile.idealType.importantValues ?? []).length}/3
+              </p>
+            </Section>
+
+            {/* ── 선호 성격 ── */}
+            <Section
+              emoji="✨"
+              title="선호하는 성격"
+              subtitle="최대 5개"
+              completionText={ct(personalityCount, 5)}
+              defaultOpen={personalityCount === 0}
+            >
+              <div className="flex flex-wrap gap-2">
+                {personalityOptions.map(({ value, emoji }) => {
+                  const isSelected = (profile.idealType.personalities ?? []).includes(value);
+                  return (
+                    <Chip
+                      key={value}
+                      selected={isSelected}
+                      onClick={() => {
+                        const current = profile.idealType.personalities ?? [];
+                        let newPersonalities;
+                        if (isSelected) {
+                          newPersonalities = current.filter((p) => p !== value);
+                        } else if (current.length < 5) {
+                          newPersonalities = [...current, value];
+                        } else {
+                          toast.info('최대 5개까지 선택할 수 있어요');
+                          return;
+                        }
+                        setProfile({
+                          ...profile,
+                          idealType: { ...profile.idealType, personalities: newPersonalities },
+                        });
+                      }}
+                    >
+                      {emoji} {value}
+                    </Chip>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                선택: {(profile.idealType.personalities ?? []).length}/5
+              </p>
+            </Section>
+
+            {/* ── 외모 스타일 ── */}
+            <Section emoji="👀" title="끌리는 외모 스타일" subtitle="하나만 선택"
+              completionText={done((profile.idealType.appearanceStyles ?? []).length > 0)}
+              defaultOpen={(profile.idealType.appearanceStyles ?? []).length === 0}
+            >
+              <div className="flex flex-wrap gap-2">
+                {appearanceStyleOptions.map(({ value, label, emoji }) => {
+                  const isSelected = (profile.idealType.appearanceStyles ?? []).includes(value);
+                  return (
+                    <Chip
+                      key={value}
+                      selected={isSelected}
+                      onClick={() => {
+                        const newStyles = isSelected ? [] : [value];
+                        setProfile({
+                          ...profile,
+                          idealType: { ...profile.idealType, appearanceStyles: newStyles },
+                        });
+                      }}
+                    >
+                      {emoji} {label}
+                    </Chip>
+                  );
+                })}
+              </div>
+            </Section>
+
+            {/* ── 딜브레이커 ── */}
+            <Section
+              emoji="🚫"
+              title="절대 안 되는 것"
+              subtitle="최대 3개 — 정말 중요한 것만 골라요"
+              completionText={ct(dealBreakerCount, 3)}
+              defaultOpen={dealBreakerCount === 0}
+            >
+              <div className="flex flex-wrap gap-2">
+                {dealBreakerOptions.map(({ value, label, emoji }) => {
+                  const isSelected = (profile.idealType.dealBreakers ?? []).includes(value);
+                  return (
+                    <Chip
+                      key={value}
+                      selected={isSelected}
+                      onClick={() => {
+                        const current = profile.idealType.dealBreakers ?? [];
+                        let newDealBreakers;
+                        if (isSelected) {
+                          newDealBreakers = current.filter((d) => d !== value);
+                        } else if (current.length < 3) {
+                          newDealBreakers = [...current, value];
+                        } else {
+                          toast.info('최대 3개까지 선택할 수 있어요');
+                          return;
+                        }
+                        setProfile({
+                          ...profile,
+                          idealType: { ...profile.idealType, dealBreakers: newDealBreakers },
+                        });
+                      }}
+                    >
+                      {emoji} {label}
+                    </Chip>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                선택: {(profile.idealType.dealBreakers ?? []).length}/3
+              </p>
+            </Section>
+          </>
+        )}
+
+        {/* ── 저장 버튼 ── */}
+        <div className="pt-2">
           <Button
             onClick={handleSave}
             disabled={isSaving}
-            className="w-full"
+            className="w-full h-12"
             size="lg"
           >
             {isSaving ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                저장 중...
-              </>
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> 저장 중...</>
             ) : (
-              '저장하기'
+              "저장하기"
             )}
           </Button>
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── 버킷리스트 섹션 컴포넌트 ──────────────────────────────────
+
+function BucketListSection({
+  selected,
+  onChange,
+}: {
+  selected: string[];
+  onChange: (list: string[]) => void;
+}) {
+  const [customInput, setCustomInput] = useState("");
+  const [customItems, setCustomItems] = useState<BucketItem[]>([]);
+
+  const MAX = 10;
+  const allItems = [...BUCKET_POOL, ...customItems];
+  const categories = ["여행", "새벽감성", "음식", "문화", "도전"];
+
+  const toggle = (key: string) => {
+    if (selected.includes(key)) {
+      onChange(selected.filter((k) => k !== key));
+    } else if (selected.length < MAX) {
+      onChange([...selected, key]);
+    } else {
+      toast.info(`최대 ${MAX}개까지 선택할 수 있어요`);
+    }
+  };
+
+  const addCustom = () => {
+    const trimmed = customInput.trim();
+    if (!trimmed) return;
+    if (trimmed.length > 20) {
+      toast.info("20자 이내로 입력해주세요");
+      return;
+    }
+    const key = `custom:${trimmed}`;
+    if (allItems.some((i) => i.key === key)) {
+      toast.info("이미 있는 항목이에요");
+      return;
+    }
+    const newItem: BucketItem = {
+      key,
+      label: trimmed,
+      emoji: "✍️",
+      category: "직접입력",
+    };
+    setCustomItems((prev) => [...prev, newItem]);
+    setCustomInput("");
+    // 추가하면서 바로 선택
+    if (selected.length < MAX) {
+      onChange([...selected, key]);
+    }
+  };
+
+  return (
+    <Section
+      emoji="🪣"
+      title="버킷리스트"
+      subtitle={`같이 하고 싶은 것들 (${selected.length}/${MAX})`}
+      completionText={selected.length > 0 ? `${selected.length}개` : "미작성"}
+      defaultOpen={selected.length < 3}
+    >
+      {/* 카테고리별 항목 */}
+      <div className="space-y-4">
+        {categories.map((cat) => {
+          const items = allItems.filter((i) => i.category === cat);
+          return (
+            <div key={cat}>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+                {cat}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {items.map((item) => (
+                  <Chip
+                    key={item.key}
+                    selected={selected.includes(item.key)}
+                    onClick={() => toggle(item.key)}
+                  >
+                    {item.emoji} {item.label}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* 직접 입력한 것들 */}
+        {customItems.filter((i) => i.category === "직접입력").length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+              직접 추가
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {customItems
+                .filter((i) => i.category === "직접입력")
+                .map((item) => (
+                  <Chip
+                    key={item.key}
+                    selected={selected.includes(item.key)}
+                    onClick={() => toggle(item.key)}
+                  >
+                    ✍️ {item.label}
+                  </Chip>
+                ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 직접 입력 */}
+      <div className="pt-2 border-t border-border">
+        <p className="text-xs font-semibold text-muted-foreground mb-2">
+          원하는 게 없으면 직접 추가해요
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={customInput}
+            onChange={(e) => setCustomInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addCustom()}
+            placeholder="예) 새벽 한강 자전거..."
+            maxLength={20}
+            className="flex-1 h-9 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addCustom}
+            disabled={!customInput.trim()}
+            className="h-9 px-3"
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground mt-1.5">
+          직접 추가한 항목은 상대방에게 그대로 보여요 — 개성 있게 써보세요 😄
+        </p>
+      </div>
+    </Section>
   );
 }

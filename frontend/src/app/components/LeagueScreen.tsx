@@ -35,7 +35,7 @@ const TIER_INFO = [
   { name: "브론즈 큐피드", emoji: "🥉", min: 0, color: "#CD7F32", bg: "bg-orange-50 dark:bg-orange-950/20", border: "border-orange-200 dark:border-orange-800/50" },
   { name: "실버 큐피드", emoji: "🥈", min: 3, color: "#C0C0C0", bg: "bg-gray-50 dark:bg-gray-900/20", border: "border-gray-200 dark:border-gray-700/50" },
   { name: "골드 큐피드", emoji: "🥇", min: 6, color: "#FFD700", bg: "bg-yellow-50 dark:bg-yellow-950/20", border: "border-yellow-200 dark:border-yellow-800/50" },
-  { name: "플래티넘 큐피드", emoji: "💎", min: 11, color: "#E5E4E2", bg: "bg-slate-50 dark:bg-slate-900/20", border: "border-slate-200 dark:border-slate-700/50" },
+  { name: "플래티넘 큐피드", emoji: "💎", min: 11, color: "#E5E4E2", bg: "bg-secondary dark:bg-slate-900/20", border: "border-border dark:border-slate-700/50" },
   { name: "다이아 큐피드", emoji: "👑", min: 21, color: "#B9F2FF", bg: "bg-cyan-50 dark:bg-cyan-950/20", border: "border-cyan-200 dark:border-cyan-800/50" },
 ];
 
@@ -89,7 +89,7 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
       {/* 비주선자 CTA */}
       {!isMatchmaker && (
         <div className="max-w-2xl mx-auto px-4 mb-2">
-          <div className="rounded-2xl bg-gradient-to-r from-primary/10 to-pink-500/10 border border-primary/20 p-4 flex items-center gap-3">
+          <div className="rounded-2xl bg-secondary border border-border p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
               <HeartHandshake className="w-5 h-5 text-primary" />
             </div>
@@ -99,7 +99,7 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
             </div>
             <button
               onClick={onNavigateToMatchmaker}
-              className="text-[11px] font-bold text-primary bg-primary/10 rounded-xl px-3 py-1.5 flex-shrink-0"
+              className="text-xs font-bold text-primary bg-primary/10 rounded-xl px-3 py-1.5 flex-shrink-0"
             >
               시작하기
             </button>
@@ -157,7 +157,7 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-primary to-pink-400 rounded-full transition-all"
+                  className="h-full bg-primary rounded-full transition-all"
                   style={{ width: `${progressToNext}%` }}
                 />
               </div>

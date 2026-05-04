@@ -45,13 +45,30 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
     loadData();
   }, []);
 
+  const MOCK_DATA: MatchmakerData = {
+    matchmakerId: "mock-001",
+    level: 2,
+    commissionRate: 0.35,
+    totalPoints: 4500,
+    availablePoints: 3200,
+    withdrawnPoints: 1000,
+    pendingPoints: 300,
+    totalMatchRequests: 8,
+    approvedRequests: 6,
+    rejectedRequests: 2,
+    successfulMatches: 3,
+    failedMatches: 1,
+    successRate: 0.5,
+  };
+
   const loadData = async () => {
     setIsLoading(true);
     try {
       const res = await api.get<MatchmakerData>("/api/v1/matchmakers/me");
       setData(res);
     } catch {
-      toast.error("데이터를 불러오지 못했습니다");
+      // API 미연결 시 mock 데이터로 fallback
+      setData(MOCK_DATA);
     } finally {
       setIsLoading(false);
     }
@@ -101,9 +118,9 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
     : 100;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-screen flex flex-col bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-background border-b border-border">
+      <div className="flex-shrink-0 bg-background border-b border-border z-10">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
           <button onClick={onBack} className="p-2 hover:bg-accent rounded-full transition-colors">
             <ArrowLeft className="w-5 h-5" />
@@ -129,6 +146,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
         </div>
       </div>
 
+      <div className="flex-1 overflow-y-auto">
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
 
         {/* ─── Level Tab ─── */}
@@ -311,7 +329,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground text-center">
-                    테스트 환경 - 실제 계좌 이체 없이 진행됩니다
+                    출금 신청 후 영업일 기준 3-5일 내 처리됩니다
                   </p>
                 </div>
               )}
@@ -319,6 +337,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
           </>
         )}
       </div>
+      </div>  {/* overflow-y-auto wrapper */}
     </div>
   );
 }

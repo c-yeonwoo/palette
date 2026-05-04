@@ -3,7 +3,10 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { ChevronRight, UserCircle, HeartHandshake, LogOut, Users, Camera, Edit2, Loader2, UserPlus, Shield, Star, Trash2 } from "lucide-react";
+import { ChevronRight, UserCircle, HeartHandshake, LogOut, Users, Camera, Edit2, Loader2, UserPlus, Shield, Trash2, Coins } from "lucide-react";
+import { SectionHeader } from "./ui/section-header";
+import { StatBlock } from "./ui/stat-block";
+import { ListRow } from "./ui/list-row";
 import { api } from "../../lib/api/apiClient";
 import { tokenStorage } from "../../lib/auth/tokenStorage";
 import { toast } from "sonner";
@@ -168,47 +171,47 @@ export function MyPageScreen({
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Hero Section */}
-      <div className="relative bg-gradient-to-b from-primary/15 via-primary/5 to-background pt-safe-top">
-        <div className="max-w-2xl mx-auto px-4 pt-6 pb-8">
-          <div className="flex items-start justify-between mb-5">
+      {/* ── 헤더 ── */}
+      <div className="bg-card border-b border-border px-4 pt-safe-top">
+        <div className="max-w-2xl mx-auto py-5">
+          <div className="flex items-center justify-between mb-5">
             <h1 className="text-lg font-bold">마이페이지</h1>
-            {(isMatchmakerOnly) && (
-              <button onClick={handleOpenEditDialog} className="p-2 rounded-full hover:bg-white/20 transition-colors">
-                <Edit2 className="w-4.5 h-4.5 text-muted-foreground" />
+            {isMatchmakerOnly && (
+              <button
+                onClick={handleOpenEditDialog}
+                className="p-2 rounded-lg hover:bg-muted transition-colors"
+                aria-label="프로필 수정"
+              >
+                <Edit2 className="w-4 h-4 text-muted-foreground" />
               </button>
             )}
           </div>
 
-          {/* Avatar + Name */}
+          {/* 아바타 + 이름 */}
           <div className="flex items-center gap-4">
             <div className="relative flex-shrink-0">
               {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="w-20 h-20 rounded-2xl object-cover shadow-md" />
+                <img src={avatarUrl} alt="" className="w-16 h-16 rounded-2xl object-cover" />
               ) : (
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/60 to-pink-400 flex items-center justify-center shadow-md">
-                  <span className="text-white text-3xl font-bold">{displayName[0]}</span>
+                <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
+                  <span className="text-2xl font-bold text-muted-foreground">{displayName[0]}</span>
                 </div>
               )}
               {isMatchmaker && (
-                <div className="absolute -bottom-1.5 -right-1.5 bg-rose-500 rounded-full p-1 shadow">
-                  <HeartHandshake className="w-3 h-3 text-white" />
+                <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-1">
+                  <HeartHandshake className="w-3 h-3 text-primary-foreground" />
                 </div>
               )}
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="text-xl font-bold truncate">{displayName}</p>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                  isMatchmakerOnly
-                    ? "bg-rose-500/15 text-rose-600 dark:text-rose-400"
-                    : "bg-primary/15 text-primary"
-                }`}>
+              <p className="text-lg font-bold truncate">{displayName}</p>
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-primary/10 text-primary">
                   {isMatchmakerOnly ? "주선자 전용" : "일반 회원"}
                 </span>
                 {!user?.phoneNumber && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 font-medium">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
                     인증 필요
                   </span>
                 )}
@@ -219,56 +222,46 @@ export function MyPageScreen({
             </div>
           </div>
 
-          {/* Stats Row */}
+          {/* 통계 — P2 StatBlock */}
           {(trustScore !== null || matchmaker?.level) && (
-            <div className="mt-5 grid grid-cols-3 gap-2">
-              {trustScore !== null && (
-                <div className="bg-white/60 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-3 text-center">
-                  <p className="text-lg font-bold text-primary">{trustScore}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">신뢰 점수</p>
-                </div>
-              )}
-              {matchmaker?.level && (
-                <div className="bg-white/60 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-3 text-center">
-                  <p className="text-lg font-bold text-rose-500">Lv.{matchmaker.level}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">주선자 레벨</p>
-                </div>
-              )}
-              {matchmaker?.successCount !== undefined && (
-                <div className="bg-white/60 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-3 text-center">
-                  <p className="text-lg font-bold text-rose-500">{matchmaker.successCount}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">성사 커플</p>
-                </div>
-              )}
-              {matchmaker?.totalPoints !== undefined && (
-                <div className="bg-white/60 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-3 text-center">
-                  <p className="text-lg font-bold">{(matchmaker.totalPoints ?? 0).toLocaleString()}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">포인트</p>
-                </div>
-              )}
+            <div className="mt-4 bg-surface-sunken rounded-xl overflow-hidden">
+              <div className="grid divide-x divide-border-subtle"
+                style={{ gridTemplateColumns: `repeat(${[trustScore !== null, !!matchmaker?.level, matchmaker?.totalPoints !== undefined].filter(Boolean).length}, 1fr)` }}
+              >
+                {trustScore !== null && (
+                  <StatBlock value={trustScore} label="신뢰 점수" emphasis className="py-4" />
+                )}
+                {matchmaker?.level && (
+                  <StatBlock value={`Lv.${matchmaker.level}`} label="주선자 레벨" className="py-4" />
+                )}
+                {matchmaker?.totalPoints !== undefined && (
+                  <StatBlock value={`${(matchmaker.totalPoints ?? 0).toLocaleString()}P`} label="포인트" icon={<Coins className="w-3.5 h-3.5" />} className="py-4" />
+                )}
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Phone verification banner */}
+      {/* 핸드폰 인증 배너 */}
       {!user?.phoneNumber && isMatchmaker && (
-        <div className="max-w-2xl mx-auto mx-4 mb-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl px-4 py-3 flex items-center gap-2">
-          <Shield className="w-4 h-4 text-amber-500 flex-shrink-0" />
-          <p className="text-xs text-amber-700 dark:text-amber-400">핸드폰 인증 후 주선 서비스를 이용할 수 있어요</p>
+        <div className="max-w-2xl mx-auto px-4 mt-3">
+          <div className="bg-primary/10 border border-primary/20 rounded-2xl px-4 py-3 flex items-center gap-2">
+            <Shield className="w-4 h-4 text-primary flex-shrink-0" />
+            <p className="text-xs text-primary">핸드폰 인증 후 주선 서비스를 이용할 수 있어요</p>
+          </div>
         </div>
       )}
 
-      {/* Menu Sections */}
-      <div className="max-w-2xl mx-auto px-4 space-y-4">
+      {/* 메뉴 */}
+      <div className="max-w-2xl mx-auto px-4 mt-4 space-y-4">
         {/* 내 활동 */}
         <section>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest px-1 mb-2">내 활동</p>
-          <div className="bg-card rounded-2xl border border-border/60 overflow-hidden divide-y divide-border/40">
+          <SectionHeader title="내 활동" className="px-1 mb-3" />
+          <div className="bg-card rounded-2xl border border-border overflow-hidden divide-y divide-border">
             {!isMatchmakerOnly && (
               <MenuItem
-                icon={<UserCircle className="w-4.5 h-4.5 text-primary" />}
-                iconBg="bg-primary/10"
+                icon={<UserCircle className="w-4 h-4" />}
                 title="내 프로필"
                 subtitle={profileSubtitle}
                 onClick={onNavigateToProfile}
@@ -276,8 +269,7 @@ export function MyPageScreen({
             )}
             {onNavigateToFriends && (
               <MenuItem
-                icon={<UserPlus className="w-4.5 h-4.5 text-green-500" />}
-                iconBg="bg-green-500/10"
+                icon={<UserPlus className="w-4 h-4" />}
                 title="친구 연결"
                 subtitle="초대 코드 & 친구 검색"
                 onClick={onNavigateToFriends}
@@ -285,8 +277,7 @@ export function MyPageScreen({
             )}
             {isMatchmaker && (
               <MenuItem
-                icon={<HeartHandshake className="w-4.5 h-4.5 text-rose-500" />}
-                iconBg="bg-rose-500/10"
+                icon={<HeartHandshake className="w-4 h-4" />}
                 title="주선자 대시보드"
                 subtitle="주선 요청 관리 및 수익 확인"
                 onClick={onNavigateToConnector}
@@ -295,14 +286,13 @@ export function MyPageScreen({
           </div>
         </section>
 
-        {/* 계정 */}
+        {/* 계정 전환 */}
         {isMatchmakerOnly && (
           <section>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest px-1 mb-2">계정</p>
-            <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
+            <div className="bg-card rounded-2xl border border-border overflow-hidden">
               <MenuItem
-                icon={<Users className="w-4.5 h-4.5 text-blue-500" />}
-                iconBg="bg-blue-500/10"
+                icon={<Users className="w-4 h-4" />}
                 title="일반 회원으로 전환"
                 subtitle="매칭 서비스도 함께 이용하기"
                 onClick={handleConvertToRegular}
@@ -313,37 +303,33 @@ export function MyPageScreen({
 
         {/* 설정 */}
         <section>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest px-1 mb-2">설정</p>
-          <div className="bg-card rounded-2xl border border-border/60 overflow-hidden divide-y divide-border/40">
+          <SectionHeader title="설정" className="px-1 mb-3" />
+          <div className="bg-card rounded-2xl border border-border overflow-hidden divide-y divide-border">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted transition-colors"
+            >
+              <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                <LogOut className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <span className="text-sm font-medium">로그아웃</span>
+            </button>
             <button
               onClick={() => setShowWithdrawDialog(true)}
-              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/50 transition-colors active:bg-muted/70"
+              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted transition-colors"
             >
               <div className="w-8 h-8 rounded-xl bg-destructive/10 flex items-center justify-center flex-shrink-0">
                 <Trash2 className="w-4 h-4 text-destructive" />
               </div>
               <span className="text-sm font-medium text-destructive">회원탈퇴</span>
             </button>
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/50 transition-colors active:bg-muted/70"
-            >
-              <div className="w-8 h-8 rounded-xl bg-gray-500/10 flex items-center justify-center flex-shrink-0">
-                <LogOut className="w-4 h-4 text-gray-500" />
-              </div>
-              <span className="text-sm font-medium">로그아웃</span>
-            </button>
           </div>
         </section>
 
-        {/* App version */}
-        <div className="flex items-center justify-center gap-1.5 py-2">
-          <Star className="w-3 h-3 text-primary/40" />
-          <p className="text-xs text-muted-foreground/50">Palette v0.1.0</p>
-        </div>
+        <p className="text-center text-xs text-muted-foreground py-2">Palette v0.1.0</p>
       </div>
 
-      {/* Withdraw Dialog */}
+      {/* 회원탈퇴 다이얼로그 */}
       <Dialog open={showWithdrawDialog} onOpenChange={setShowWithdrawDialog}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
@@ -371,7 +357,7 @@ export function MyPageScreen({
         </DialogContent>
       </Dialog>
 
-      {/* Edit Profile Dialog */}
+      {/* 프로필 수정 다이얼로그 */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -383,7 +369,7 @@ export function MyPageScreen({
               <div className="relative">
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-24 h-24 rounded-full bg-muted border-2 border-dashed border-muted-foreground/30 flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors overflow-hidden"
+                  className="w-24 h-24 rounded-full bg-muted border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors overflow-hidden"
                 >
                   {profilePhoto ? (
                     <img src={profilePhoto} alt="Profile" className="w-full h-full object-cover" />
@@ -426,13 +412,11 @@ export function MyPageScreen({
 
 function MenuItem({
   icon,
-  iconBg,
   title,
   subtitle,
   onClick,
 }: {
   icon: React.ReactNode;
-  iconBg: string;
   title: string;
   subtitle?: string;
   onClick: () => void;
@@ -440,16 +424,16 @@ function MenuItem({
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted/50 transition-colors active:bg-muted/70"
+      className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted transition-colors text-left"
     >
-      <div className={`w-8 h-8 rounded-xl ${iconBg} flex items-center justify-center flex-shrink-0`}>
+      <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center flex-shrink-0 text-muted-foreground">
         {icon}
       </div>
-      <div className="flex-1 text-left min-w-0">
+      <div className="flex-1 min-w-0">
         <p className="text-sm font-medium">{title}</p>
         {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
       </div>
-      <ChevronRight className="w-4 h-4 text-muted-foreground/60 flex-shrink-0" />
+      <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
     </button>
   );
 }

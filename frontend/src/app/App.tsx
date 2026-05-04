@@ -20,6 +20,9 @@ import { ProfileDetailScreen } from "./components/ProfileDetailScreen";
 import { MainFeedScreen } from "./components/MainFeedScreen";
 import { IntroductionHistoryScreen } from "./components/IntroductionHistoryScreen";
 import { ConnectorDashboard } from "./components/ConnectorDashboard";
+import { MatchmakerMarketplaceScreen } from "./components/MatchmakerMarketplaceScreen";
+import { MatchmakerPublicProfileScreen } from "./components/MatchmakerPublicProfileScreen";
+import { DesignSystemScreen } from "./components/DesignSystemScreen";
 import { MyPageScreen } from "./components/MyPageScreen";
 import { PublicProfileScreen } from "./components/PublicProfileScreen";
 import { FriendConnectScreen } from "./components/FriendConnectScreen";
@@ -27,9 +30,13 @@ import { MatchmakerRewardScreen } from "./components/MatchmakerRewardScreen";
 import { NotificationScreen } from "./components/NotificationScreen";
 import { LeagueScreen } from "./components/LeagueScreen";
 import { AiHubScreen } from "./components/AiHubScreen";
+import { MatchDetailScreen } from "./components/MatchDetailScreen";
+import { PhotoVerifyScreen } from "./components/PhotoVerifyScreen";
+import { ColorTestScreen } from "./components/ColorTestScreen";
+import { InviteHubScreen } from "./components/invite/InviteHubScreen";
 import { Toaster } from "./components/ui/sonner";
 import { Button } from "./components/ui/button";
-import { Home, User, Clock, Bell, Trophy, Sparkles } from "lucide-react";
+import { Home, User, Clock, Trophy, Sparkles, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { authService } from "../lib/auth/authService";
 import { tokenStorage } from "../lib/auth/tokenStorage";
@@ -63,7 +70,100 @@ type Screen =
   | "matchmakerReward"
   | "notifications"
   | "league"
-  | "aiHub";
+  | "aiHub"
+  | "matchmakerMarketplace"
+  | "matchmakerPublicProfile"
+  | "designSystem"
+  | "matchDetail"
+  | "photoVerify"
+  | "colorTest"
+  | "inviteHub";
+
+const ONBOARDING_DRAFT_KEY = "palette_onboarding_draft";
+const ONBOARDING_SCREENS: Screen[] = ["basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance"];
+
+function loadOnboardingDraft() {
+  try {
+    const raw = localStorage.getItem(ONBOARDING_DRAFT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** hex → { h, s, l } (0-360, 0-100, 0-100) */
+function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
+  if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return null;
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+      case g: h = ((b - r) / d + 2) / 6; break;
+      case b: h = ((r - g) / d + 4) / 6; break;
+    }
+  }
+  return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+/** Apply brand color from HSL values to all relevant CSS custom properties */
+function applyBrandFromHsl(h: number, s: number, l: number, hex?: string) {
+  const root = document.documentElement;
+  const softL = Math.min(Math.max(l + 35, 90), 97);
+  const fgLight = l > 62 ? '0 0% 10%' : '0 0% 100%';
+  // shadcn/ui primary (hex-based, derive if not provided)
+  if (hex) {
+    root.style.setProperty('--primary', hex);
+    root.style.setProperty('--ring', hex);
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const bv = parseInt(hex.slice(5, 7), 16) / 255;
+    const luminance = 0.299 * r + 0.587 * g + 0.114 * bv;
+    root.style.setProperty('--primary-foreground', luminance > 0.62 ? '#1A1916' : '#FFFFFF');
+  }
+  // --brand (HSL triplet: "h s% l%") used by BottomNavigation, brand buttons, etc.
+  root.style.setProperty('--brand', `${h} ${s}% ${l}%`);
+  root.style.setProperty('--brand-foreground', fgLight);
+  root.style.setProperty('--brand-soft', `${h} ${s}% ${softL}%`);
+}
+
+/** Apply brand color from hex */
+function applyBrandColor(hex: string) {
+  if (!hex || !/^#[0-9A-Fa-f]{6}$/.test(hex)) return;
+  const hsl = hexToHsl(hex);
+  if (!hsl) return;
+  applyBrandFromHsl(hsl.h, hsl.s, hsl.l, hex);
+}
+
+/** Apply brand color from localStorage color type key using pre-defined HSL values */
+function applyBrandFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem("palette_color_test");
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    const key = parsed?.colorType;
+    if (!key) return;
+    // Import inline to avoid circular deps — use fetch from colorCompatibility COLOR_META
+    const COLOR_HSL: Record<string, { h: number; s: number; l: number }> = {
+      orange: { h: 22, s: 92, l: 56 },
+      blue:   { h: 212, s: 78, l: 56 },
+      red:    { h: 4, s: 78, l: 58 },
+      pink:   { h: 340, s: 80, l: 66 },
+      green:  { h: 152, s: 52, l: 46 },
+      purple: { h: 268, s: 56, l: 60 },
+      yellow: { h: 42, s: 92, l: 56 },
+      gray:   { h: 220, s: 8, l: 48 },
+    };
+    const hsl = COLOR_HSL[key];
+    if (hsl) applyBrandFromHsl(hsl.h, hsl.s, hsl.l);
+  } catch {}
+}
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>("login");
@@ -79,63 +179,79 @@ export default function App() {
   const [selectedViewCost, setSelectedViewCost] = useState<number>(3000);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [introMethod, setIntroMethod] = useState<"INTERVIEW" | "MANUAL">("INTERVIEW");
+  const [prevScreen, setPrevScreen] = useState<Screen>("mainFeed");
+  const [selectedMatchmakerId, setSelectedMatchmakerId] = useState<string | undefined>(undefined);
+  const [selectedMatchId, setSelectedMatchId] = useState<string>("match-001");
 
-  // Profile data collected during registration
-  const [profileData, setProfileData] = useState({
-    basicInfo: {
-      name: "",
-      birthYear: "",
-      birthMonth: "",
-      birthDay: "",
-      gender: "",
-      height: 170,
-      bodyType: "",
-    },
-    careerInfo: {
-      category: "",
-      company: "",
-      position: "",
-    },
-    educationInfo: {
-      level: "",
-      school: "",
-      major: "",
-    },
-    locationInfo: {
-      region: "",
-      district: "",
-    },
-    photos: [] as string[],
-    mainPhotoIndex: 0,
-    video: null as string | null,
-    introduction: {
-      text: "",
-      interests: [] as string[],
-      interviewAnswers: {
-        hobby: "",
-        charm: "",
-        passion: "",
-        happiness: "",
-        motto: "",
+  const navigateToNotifications = () => {
+    setPrevScreen(currentScreen);
+    setCurrentScreen("notifications");
+  };
+
+  // Profile data collected during registration (persisted to localStorage, excluding photos/video)
+  const [profileData, setProfileData] = useState(() => {
+    const draft = loadOnboardingDraft();
+    return {
+      basicInfo: draft?.basicInfo ?? {
+        name: "",
+        birthYear: "",
+        birthMonth: "",
+        birthDay: "",
+        gender: "",
+        height: 170,
+        bodyType: "",
       },
-    },
-    lifestyleInfo: {
-      smoking: "",
-      drinking: "",
-      religion: "",
-    },
-    idealType: {
-      ageMin: null as number | null,
-      ageMax: null as number | null,
-      heightMin: null as number | null,
-      heightMax: null as number | null,
-      bodyTypes: [] as string[],
-      personalities: [] as string[],
-      dateStyle: "",
-      purpose: "",
-      dealBreakers: "",
-    },
+      careerInfo: draft?.careerInfo ?? {
+        category: "",
+        company: "",
+        position: "",
+      },
+      educationInfo: draft?.educationInfo ?? {
+        level: "",
+        school: "",
+        major: "",
+      },
+      locationInfo: draft?.locationInfo ?? {
+        region: "",
+        district: "",
+      },
+      photos: [] as string[],
+      mainPhotoIndex: 0,
+      video: null as string | null,
+      introduction: draft?.introduction ?? {
+        text: "",
+        interests: [] as string[],
+        interviewAnswers: {
+          hobby: "",
+          charm: "",
+          passion: "",
+          happiness: "",
+          motto: "",
+        },
+      },
+      lifestyleInfo: draft?.lifestyleInfo ?? {
+        smoking: "",
+        drinking: "",
+        religion: "",
+      },
+      idealType: draft?.idealType ?? {
+        ageMin: null as number | null,
+        ageMax: null as number | null,
+        heightMin: null as number | null,
+        heightMax: null as number | null,
+        bodyTypes: [] as string[],
+        personalities: [] as string[],
+        dateStyle: "",
+        purpose: "",
+        dealBreakers: "",
+      },
+    };
   });
+
+  // Apply brand color from localStorage immediately on mount (before API call)
+  useEffect(() => {
+    applyBrandFromLocalStorage();
+  }, []);
 
   // Check authentication state on mount
   useEffect(() => {
@@ -188,21 +304,24 @@ export default function App() {
     checkAuth();
   }, []);
 
+  // Persist onboarding draft to localStorage (excludes photos/video — too large)
+  useEffect(() => {
+    if (!ONBOARDING_SCREENS.includes(currentScreen)) return;
+    try {
+      const { photos: _photos, video: _video, mainPhotoIndex: _idx, ...saveable } = profileData;
+      localStorage.setItem(ONBOARDING_DRAFT_KEY, JSON.stringify(saveable));
+    } catch {
+      // quota exceeded — silently ignore
+    }
+  }, [profileData, currentScreen]);
+
   // Apply user's color type as app primary color
   useEffect(() => {
     if (!isLoggedIn) return;
     api.get<any>('/api/v1/profile').then(p => {
       const hex = p?.colorType?.hex;
       if (!hex || !/^#[0-9A-Fa-f]{6}$/.test(hex)) return;
-      const r = parseInt(hex.slice(1, 3), 16) / 255;
-      const g = parseInt(hex.slice(3, 5), 16) / 255;
-      const b = parseInt(hex.slice(5, 7), 16) / 255;
-      const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-      const fg = luminance > 0.62 ? '#1A1916' : '#FFFFFF';
-      const root = document.documentElement;
-      root.style.setProperty('--primary', hex);
-      root.style.setProperty('--primary-foreground', fg);
-      root.style.setProperty('--ring', hex);
+      applyBrandColor(hex);
     }).catch(() => {});
   }, [isLoggedIn]);
 
@@ -279,6 +398,7 @@ export default function App() {
       toast.info("일반 회원 전환이 취소되었습니다");
       setCurrentScreen("myProfile");
     } else {
+      localStorage.removeItem(ONBOARDING_DRAFT_KEY);
       setCurrentScreen("accountTypeSelection");
     }
   };
@@ -491,6 +611,7 @@ export default function App() {
         toast.success("일반 회원으로 전환되었습니다!");
       }
 
+      localStorage.removeItem(ONBOARDING_DRAFT_KEY);
       setCurrentScreen("mainFeed");
       toast.success("프로필이 성공적으로 생성되었습니다!");
     } catch (error: any) {
@@ -508,7 +629,7 @@ export default function App() {
   };
 
   const handleConnectorDashboardBack = () => {
-    setCurrentScreen("myPage");
+    setCurrentScreen("mainFeed");
   };
 
   const handleProfileEditSave = () => {
@@ -522,9 +643,11 @@ export default function App() {
   };
 
   const handleConvertToRegular = () => {
-    // 즉시 전환하지 않고, 프로필 작성 시작만 표시
     setIsConvertingToRegular(true);
-    toast.info("프로필을 작성하면 일반 회원으로 전환됩니다");
+    toast.info("프로필 작성을 완료하면 일반 회원으로 전환됩니다.", {
+      description: "언제든 뒤로가기를 눌러 취소할 수 있어요.",
+      duration: 5000,
+    });
     setCurrentScreen("basicInfo");
   };
 
@@ -721,6 +844,7 @@ export default function App() {
 {currentScreen === "aboutMe" && (
         <AboutMeScreen
           onNext={handleAboutMeNext}
+          onBack={() => setCurrentScreen("introMethodSelection")}
           initialData={{
             introduction: profileData.introduction,
             lifestyleInfo: profileData.lifestyleInfo,
@@ -766,7 +890,7 @@ export default function App() {
       {currentScreen === "mainFeed" && (
         <MainFeedScreen
           onProfileClick={handleProfileClick}
-          onNotificationClick={() => setCurrentScreen("notifications")}
+          onNotificationClick={navigateToNotifications}
           onNavigateToFriends={() => setCurrentScreen("friendConnect")}
           unreadNotifications={unreadNotificationCount}
         />
@@ -781,6 +905,7 @@ export default function App() {
           mutualFriends={selectedMutualFriends}
           degree={selectedDegree}
           viewCost={selectedViewCost}
+          onNavigateToFriends={() => setCurrentScreen("friendConnect")}
         />
       )}
 
@@ -788,6 +913,28 @@ export default function App() {
         <ConnectorDashboard
           onBack={handleConnectorDashboardBack}
           onNavigateToReward={() => setCurrentScreen("matchmakerReward")}
+          onNavigateToFriends={() => setCurrentScreen("friendConnect")}
+          onNavigateToMarketplace={() => setCurrentScreen("matchmakerMarketplace")}
+        />
+      )}
+
+      {currentScreen === "matchmakerMarketplace" && (
+        <MatchmakerMarketplaceScreen
+          onBack={() => setCurrentScreen("connectorDashboard")}
+          onViewMatchmaker={(id) => {
+            setSelectedMatchmakerId(id);
+            setCurrentScreen("matchmakerPublicProfile");
+          }}
+        />
+      )}
+
+      {currentScreen === "matchmakerPublicProfile" && selectedMatchmakerId && (
+        <MatchmakerPublicProfileScreen
+          matchmakerId={selectedMatchmakerId}
+          onBack={() => setCurrentScreen("matchmakerMarketplace")}
+          onRequestMatch={(id) => {
+            toast.info("매칭 요청 기능은 곧 오픈돼요!");
+          }}
         />
       )}
 
@@ -798,6 +945,7 @@ export default function App() {
           onConvertToRegular={handleConvertToRegular}
           onNavigateToFriends={() => setCurrentScreen("friendConnect")}
           onLogout={() => {
+            localStorage.removeItem(ONBOARDING_DRAFT_KEY);
             setIsLoggedIn(false);
             setCurrentScreen("login");
           }}
@@ -816,7 +964,11 @@ export default function App() {
 
       {currentScreen === "notifications" && (
         <NotificationScreen
-          onBack={() => setCurrentScreen("mainFeed")}
+          onBack={() => setCurrentScreen(prevScreen)}
+          onOpenMatch={(matchId) => {
+            setSelectedMatchId(matchId);
+            setCurrentScreen("matchDetail");
+          }}
         />
       )}
 
@@ -834,12 +986,50 @@ export default function App() {
         }} />
       )}
 
+      {currentScreen === "designSystem" && (
+        <DesignSystemScreen onBack={() => setCurrentScreen("myProfile")} />
+      )}
+
+      {/* F01~F04: 매칭 상세 / 사진 인증 */}
+      {currentScreen === "matchDetail" && (
+        <MatchDetailScreen
+          matchId={selectedMatchId}
+          onBack={() => setCurrentScreen("mainFeed")}
+        />
+      )}
+
+      {currentScreen === "photoVerify" && (
+        <PhotoVerifyScreen
+          onBack={() => setCurrentScreen("myPage")}
+          onComplete={() => {
+            setCurrentScreen("myPage");
+            toast.success("본인인증이 완료됐어요! 🛡️");
+          }}
+          userId="me-001"
+        />
+      )}
+
+      {/* F12: 친구 초대 허브 */}
+      {currentScreen === "inviteHub" && (
+        <InviteHubScreen onBack={() => setCurrentScreen("myPage")} />
+      )}
+
+      {/* F05: 컬러 타입 진단 */}
+      {currentScreen === "colorTest" && (
+        <ColorTestScreen
+          onComplete={(colorType) => {
+            setCurrentScreen("myPage");
+            toast.success(`나의 컬러 타입: ${colorType} 🎨`);
+          }}
+          onSkip={() => setCurrentScreen("myPage")}
+        />
+      )}
+
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding/detail screens */}
-      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "matchmakerInfo", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "notifications"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "matchmakerInfo", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "matchDetail", "photoVerify", "colorTest", "inviteHub"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}
-          unreadNotifications={unreadNotificationCount}
         />
       )}
 
@@ -851,24 +1041,28 @@ export default function App() {
 function BottomNavigation({
   currentScreen,
   onNavigate,
-  unreadNotifications = 0,
 }: {
   currentScreen: Screen;
   onNavigate: (screen: Screen) => void;
-  unreadNotifications?: number;
 }) {
-  const tabs: { screen: Screen; icon: React.ElementType; label: string; badge?: number; matchScreens?: Screen[] }[] = [
+  const tabs: { screen: Screen; icon: React.ElementType; label: string; matchScreens?: Screen[] }[] = [
     { screen: "mainFeed", icon: Home, label: "홈" },
-    { screen: "aiHub", icon: Sparkles, label: "AI" },
-    { screen: "introductionHistory", icon: Clock, label: "소개", badge: unreadNotifications },
-    { screen: "league", icon: Trophy, label: "리그" },
-    { screen: "myPage", icon: User, label: "나", matchScreens: ["myPage", "myProfile", "connectorDashboard"] },
+    { screen: "introductionHistory", icon: Clock, label: "소개" },
+    { screen: "connectorDashboard", icon: Heart, label: "주선" },
+    { screen: "myPage", icon: User, label: "나", matchScreens: ["myPage", "myProfile"] },
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card/90 backdrop-blur-xl border-t border-border/60 z-30 safe-area-inset-bottom">
+    <div
+      className="fixed bottom-0 left-0 right-0 z-30 safe-area-inset-bottom"
+      style={{
+        background: "hsl(var(--surface) / 0.92)",
+        backdropFilter: "blur(16px)",
+        boxShadow: "0 -1px 0 hsl(0 0% 0% / 0.06), 0 -4px 16px hsl(0 0% 0% / 0.04)",
+      }}
+    >
       <div className="max-w-2xl mx-auto flex items-center justify-around h-[60px] px-2">
-        {tabs.map(({ screen, icon: Icon, label, badge, matchScreens }) => {
+        {tabs.map(({ screen, icon: Icon, label, matchScreens }) => {
           const active = (matchScreens ?? [screen]).includes(currentScreen as Screen);
           return (
             <button
@@ -876,15 +1070,21 @@ function BottomNavigation({
               onClick={() => onNavigate(screen)}
               className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 min-w-[52px] transition-all"
             >
-              <div className={`relative w-9 h-9 rounded-2xl flex items-center justify-center transition-all duration-200 ${active ? "bg-primary/10" : ""}`}>
-                <Icon className={`w-[18px] h-[18px] transition-colors duration-200 ${active ? "text-primary" : "text-muted-foreground"}`} />
-                {badge !== undefined && badge > 0 && (
-                  <span className="absolute top-0.5 right-0.5 bg-primary text-primary-foreground text-[9px] font-bold min-w-[16px] h-4 px-0.5 rounded-full flex items-center justify-center">
-                    {badge > 9 ? "9+" : badge}
-                  </span>
-                )}
+              <div
+                className="w-9 h-9 rounded-2xl flex items-center justify-center transition-all duration-200"
+                style={active ? { background: "hsl(var(--brand) / 0.10)" } : undefined}
+              >
+                <Icon
+                  className="w-[18px] h-[18px] transition-colors duration-200"
+                  style={{ color: active ? "hsl(var(--brand))" : "hsl(var(--text-tertiary))" }}
+                />
               </div>
-              <span className={`text-[10px] font-medium transition-colors duration-200 ${active ? "text-primary" : "text-muted-foreground"}`}>{label}</span>
+              <span
+                className="text-[10px] font-medium transition-colors duration-200"
+                style={{ color: active ? "hsl(var(--brand))" : "hsl(var(--text-tertiary))" }}
+              >
+                {label}
+              </span>
             </button>
           );
         })}

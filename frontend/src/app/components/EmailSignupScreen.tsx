@@ -29,6 +29,7 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
   const [isVerificationLoading, setIsVerificationLoading] = useState(false);
+  const [verificationVerified, setVerificationVerified] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
@@ -71,6 +72,8 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
       const response = await sendVerificationCode(formData.phoneNumber);
       if (response.success) {
         setVerificationSent(true);
+        setVerificationVerified(false);
+        setFormData(prev => ({ ...prev, verificationCode: "" }));
         toast.success("인증번호가 발송되었습니다");
       } else {
         toast.error(response.message);
@@ -115,10 +118,11 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
       // 먼저 인증번호 검증
       const verifyResponse = await verifyCode(formData.phoneNumber, formData.verificationCode);
       if (!verifyResponse.success) {
-        toast.error(verifyResponse.message);
+        toast.error(verifyResponse.message || "인증번호가 올바르지 않습니다");
         setIsSubmitting(false);
         return;
       }
+      setVerificationVerified(true);
 
       // 회원가입 진행
       const response = await api.post<{
@@ -172,7 +176,7 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl">이메일로 회원가입</CardTitle>
-          <CardDescription>Pallete에 가입하여 새로운 인연을 만나보세요</CardDescription>
+          <CardDescription>Palette에 가입하여 새로운 인연을 만나보세요</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -287,8 +291,11 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
                   type="text"
                   placeholder="010-1234-5678"
                   value={formData.phoneNumber}
-                  onChange={(e) => handlePhoneNumberChange(e.target.value)}
-                  disabled={isSubmitting || verificationSent}
+                  onChange={(e) => {
+                    handlePhoneNumberChange(e.target.value);
+                    if (verificationSent) setVerificationSent(false);
+                  }}
+                  disabled={isSubmitting || verificationVerified}
                   maxLength={13}
                   required
                 />
@@ -296,22 +303,25 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
                   type="button"
                   variant="outline"
                   onClick={handleSendVerification}
-                  disabled={isSubmitting || verificationSent || isVerificationLoading}
+                  disabled={isSubmitting || verificationVerified || isVerificationLoading}
                   className="whitespace-nowrap"
                 >
                   {isVerificationLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : verificationSent ? (
-                    "발송완료"
+                    "재발송"
                   ) : (
                     "인증번호"
                   )}
                 </Button>
               </div>
+              {formData.phoneNumber && !/^010-\d{4}-\d{4}$/.test(formData.phoneNumber) && (
+                <p className="text-xs text-red-500">올바른 형식으로 입력해주세요 (010-1234-5678)</p>
+              )}
             </div>
 
             {/* 인증번호 입력 */}
-            {verificationSent && (
+            {verificationSent && !verificationVerified && (
               <div className="space-y-2">
                 <Label htmlFor="verificationCode">인증번호</Label>
                 <Input
@@ -326,9 +336,12 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
                   required
                 />
                 <p className="text-xs text-muted-foreground">
-                  인증번호가 오지 않으면 다시 발송해주세요
+                  인증번호가 오지 않으면 재발송 버튼을 눌러주세요
                 </p>
               </div>
+            )}
+            {verificationVerified && (
+              <p className="text-xs text-green-600">✓ 인증이 완료되었습니다</p>
             )}
 
             {/* 버튼 */}

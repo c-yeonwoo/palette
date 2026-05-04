@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
 import { Switch } from "./ui/switch";
 import {
   Dialog,
@@ -10,12 +9,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { Edit3, Loader2, Settings, LogOut, ExternalLink, Sparkles, CheckCircle2, Share2, Link, AlertCircle, Phone } from "lucide-react";
+import {
+  Edit3, Loader2, Settings, LogOut, ChevronLeft,
+  ExternalLink, CheckCircle2, Share2, Link,
+  AlertCircle, Phone, Eye, ChevronRight,
+} from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { authService } from "../../lib/auth/authService";
 import { toast } from "sonner";
 import { MatchmakerProfileScreen } from "./MatchmakerProfileScreen";
 import PhoneVerificationModal from "./PhoneVerificationModal";
+import { CategoryCard } from "./profile/CategoryCard";
+import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
+import { AccentScope } from "../contexts/AccentScope";
+import { ColorTypeAura } from "./color/ColorTypeAura";
+import { ColorTypeBadge } from "./color/ColorTypeBadge";
+import { TrustTier } from "./color/TrustTier";
+import { getMyColorType } from "../../lib/daily-match";
 
 interface MyProfileScreenProps {
   onBack: () => void;
@@ -70,6 +80,7 @@ interface ProfileData {
       happiness: string | null;
       motto: string | null;
     } | null;
+    datingStyle?: Record<string, string>;
   };
   idealType: {
     datePreferences: string[];
@@ -77,17 +88,21 @@ interface ProfileData {
     personalities: string[];
     appearanceStyles: string[];
     dealBreakers: string[];
+    bucketList?: string[];
   };
-  personalityTests?: Array<{
-    link: string;
-    title: string;
-  }>;
-  photos: Array<{
-    id: string;
-    url: string;
-    displayOrder: number;
-    isPrimary: boolean;
-  }>;
+  personalityTests?: Array<{ link: string; title: string }>;
+  attachmentProfile?: {
+    contactAnxiety: number;
+    intimacyAvoidance: number;
+    conflictStyle: number;
+    emotionExpression: number;
+    independenceLevel: number;
+    attachmentType?: string;
+    attachmentTypeLabel?: string;
+    attachmentTypeDescription?: string;
+    attachmentTypeEmoji?: string;
+  } | null;
+  photos: Array<{ id: string; url: string; displayOrder: number; isPrimary: boolean }>;
   primaryPhotoUrl: string | null;
   metadata: {
     createdAt: string;
@@ -106,10 +121,12 @@ interface ProfileData {
   };
   colorType: {
     type: string | null;
+    key: string | null;
     name: string | null;
     hex: string | null;
     description: string | null;
   } | null;
+  vouches?: Array<{ message: string }>;
 }
 
 export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfileScreenProps) {
@@ -130,49 +147,37 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
       try {
         const userData = await api.get<UserProfile>('/api/v1/auth/me');
         setUserProfile(userData);
-
-        // Only fetch profile for REGULAR users
         if (userData.accountType === "REGULAR") {
           try {
             const profileData = await api.get<ProfileData>('/api/v1/profile');
             setProfile(profileData);
-          } catch (error) {
+          } catch {
             console.log('No profile found for user');
           }
         }
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
+      } catch {
         toast.error('프로필을 불러오는데 실패했습니다');
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
-  // Close menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowSettingsMenu(false);
-      }
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowSettingsMenu(false);
     };
-
     if (showSettingsMenu) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showSettingsMenu]);
 
-  // Close share menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (shareMenuRef.current && !shareMenuRef.current.contains(event.target as Node)) {
-        setShowShareMenu(false);
-      }
+    const handleClickOutside = (e: MouseEvent) => {
+      if (shareMenuRef.current && !shareMenuRef.current.contains(e.target as Node)) setShowShareMenu(false);
     };
-
     if (showShareMenu) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -183,10 +188,8 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
     try {
       await authService.logout();
       toast.success('로그아웃되었습니다');
-      // Reload to clear state and redirect to login
       window.location.reload();
-    } catch (error) {
-      console.error('Logout failed:', error);
+    } catch {
       toast.error('로그아웃에 실패했습니다');
     }
   };
@@ -198,795 +201,694 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
 
   const confirmToggleAcceptingMatches = async () => {
     try {
-      await api.patch('/api/v1/profile/settings', {
-        isAcceptingMatches: pendingToggleValue
-      });
-
-      // Update local state
+      await api.patch('/api/v1/profile/settings', { isAcceptingMatches: pendingToggleValue });
       if (profile) {
-        setProfile({
-          ...profile,
-          settings: {
-            ...profile.settings,
-            isAcceptingMatches: pendingToggleValue
-          }
-        });
+        setProfile({ ...profile, settings: { ...profile.settings, isAcceptingMatches: pendingToggleValue } });
       }
-
       toast.success(pendingToggleValue ? '주선받기가 활성화되었습니다' : '주선받기가 비활성화되었습니다');
       setShowConfirmModal(false);
-    } catch (error) {
-      console.error('Failed to update settings:', error);
+    } catch {
       toast.error('설정 변경에 실패했습니다');
     }
   };
 
   const handleCopyLink = async () => {
     if (!profile) return;
-
     try {
-      // 단축 공유 링크 생성/조회
       let shareUrl: string;
       try {
-        const linkData = await api.post<{ code: string; shareUrl: string; viewCount: number }>(
-          '/api/v1/share/link',
-          { expiry: 'unlimited' }
+        const linkData = await api.post<{ code: string; shareUrl: string }>(
+          '/api/v1/share/link', { expiry: 'unlimited' }
         );
         shareUrl = linkData.shareUrl;
       } catch {
         shareUrl = `${window.location.origin}/profile/${profile.userId}`;
       }
       await navigator.clipboard.writeText(shareUrl);
-      toast.success(`공유 링크가 복사됐어요! 📋\n${shareUrl}`);
+      toast.success('링크가 복사됐어요');
       setShowShareMenu(false);
-    } catch (error) {
-      console.error('Copy failed:', error);
+    } catch {
       toast.error('링크 복사에 실패했습니다');
     }
   };
 
   const handleKakaoShare = () => {
     if (!profile || !userProfile) return;
-
     const shareUrl = `${window.location.origin}/profile/${profile.userId}`;
-
-    // Check if Kakao SDK is loaded
     if (typeof (window as any).Kakao === 'undefined') {
-      toast.error('카카오톡 공유 기능을 사용할 수 없습니다');
+      toast.error('카카오톡 공유를 사용할 수 없습니다');
       return;
     }
-
     const Kakao = (window as any).Kakao;
-
-    // Initialize Kakao SDK if not initialized
-    if (!Kakao.isInitialized()) {
-      // TODO: Replace with your actual Kakao JavaScript Key
-      Kakao.init('YOUR_KAKAO_JAVASCRIPT_KEY');
-    }
-
+    if (!Kakao.isInitialized()) Kakao.init(import.meta.env.VITE_KAKAO_JS_KEY ?? '');
     Kakao.Share.sendDefault({
       objectType: 'feed',
       content: {
         title: `${userProfile.nickname}님의 프로필`,
-        description: `Palette에서 ${userProfile.nickname}님의 프로필을 확인해보세요`,
+        description: `Palette에서 확인해보세요`,
         imageUrl: profile.primaryPhotoUrl || 'https://via.placeholder.com/300',
-        link: {
-          mobileWebUrl: shareUrl,
-          webUrl: shareUrl,
-        },
+        link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
       },
-      buttons: [
-        {
-          title: '프로필 보기',
-          link: {
-            mobileWebUrl: shareUrl,
-            webUrl: shareUrl,
-          },
-        },
-      ],
+      buttons: [{ title: '프로필 보기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }],
     });
-
-    toast.success('카카오톡으로 공유되었습니다');
     setShowShareMenu(false);
   };
 
-  const handlePhoneVerified = async (phoneNumber: string) => {
+  const handlePhoneVerified = async () => {
     try {
-      // Refresh user data to get updated isPhoneVerified status
       const userData = await api.get<UserProfile>('/api/v1/auth/me');
       setUserProfile(userData);
       setShowPhoneVerificationModal(false);
-      toast.success('핸드폰 인증이 완료되었습니다!');
-    } catch (error) {
-      console.error('Failed to refresh user data:', error);
-      toast.error('사용자 정보를 새로고침하는데 실패했습니다');
+      toast.success('인증이 완료되었습니다');
+    } catch {
+      toast.error('정보를 새로고침하는데 실패했습니다');
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   if (!userProfile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <p className="text-muted-foreground mb-4">프로필을 불러올 수 없습니다</p>
-          <Button onClick={onBack} variant="outline">
-            돌아가기
-          </Button>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <p className="text-sm text-muted-foreground">프로필을 불러올 수 없습니다</p>
+          <Button onClick={onBack} variant="outline" size="sm">돌아가기</Button>
         </div>
       </div>
     );
   }
 
-  // Show MatchmakerProfileScreen for MATCHMAKER_ONLY users
   if (userProfile.accountType === "MATCHMAKER_ONLY") {
-    return (
-      <MatchmakerProfileScreen
-        onBack={onBack}
-        onConvertToRegular={onConvertToRegular}
-      />
-    );
+    return <MatchmakerProfileScreen onBack={onBack} onConvertToRegular={onConvertToRegular} />;
   }
+
+  const sortedPhotos = profile?.photos.slice().sort((a, b) => a.displayOrder - b.displayOrder) ?? [];
+  const basicChips: string[] = [
+    profile?.basicInfo.height ? `${profile.basicInfo.height}cm` : null,
+    profile?.basicInfo.bodyType ? getBodyTypeLabel(profile.basicInfo.bodyType) : null,
+    profile?.basicInfo.mbti || null,
+    profile?.careerInfo.category || null,
+    profile?.locationInfo.sido || null,
+  ].filter(Boolean) as string[];
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <div className="bg-card border-b border-border px-6 py-4 flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={onBack}>
-          ← 뒤로
-        </Button>
-        <h2 className="text-lg font-semibold">내 프로필</h2>
-        <div className="relative" ref={menuRef}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+    <div className="min-h-screen bg-background pb-32">
+
+      {/* ── 사진 히어로 ── */}
+      <div className="relative bg-muted" style={{ height: 320 }}>
+        {/* 블러 bg */}
+        {profile?.primaryPhotoUrl && (
+          <img
+            src={profile.primaryPhotoUrl}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 w-full h-full object-cover blur-xl opacity-20 scale-110 pointer-events-none"
+          />
+        )}
+
+        {/* 상단 네비 */}
+        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-12 z-10">
+          <button
+            onClick={onBack}
+            className="w-9 h-9 rounded-full bg-card/80 backdrop-blur-sm shadow-sm flex items-center justify-center"
           >
-            <Settings className="w-6 h-6" />
-          </Button>
-
-          {/* Settings Dropdown Menu */}
-          {showSettingsMenu && (
-            <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-1 z-50">
+            <ChevronLeft className="w-5 h-5 text-foreground/80" />
+          </button>
+          <div className="flex items-center gap-2">
+            <div className="relative" ref={shareMenuRef}>
               <button
-                onClick={handleLogout}
-                className="w-full px-4 py-3 text-left text-sm text-destructive hover:bg-destructive/10 flex items-center gap-3 transition-colors"
+                onClick={() => setShowShareMenu(!showShareMenu)}
+                className="w-9 h-9 rounded-full bg-card/80 backdrop-blur-sm shadow-sm flex items-center justify-center"
               >
-                <LogOut className="w-4 h-4" />
-                로그아웃
+                <Share2 className="w-4 h-4 text-foreground/80" />
               </button>
+              {showShareMenu && (
+                <div className="absolute right-0 top-11 bg-card border border-border rounded-xl shadow-lg p-2 flex gap-1 z-30">
+                  <button onClick={handleKakaoShare} className="p-2 hover:bg-muted rounded-lg" title="카카오톡">
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#FEE500">
+                      <path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.442 1.492 4.585 3.773 5.973-.142.53-.92 3.46-.945 3.68-.03.273.099.537.316.649.218.112.486.085.675-.073 0 0 2.216-1.478 3.288-2.186C9.67 18.764 10.814 19 12 19c5.523 0 10-3.477 10-7.5S17.523 3 12 3z" stroke="#000" strokeWidth="0.5" />
+                    </svg>
+                  </button>
+                  <button onClick={handleCopyLink} className="p-2 hover:bg-muted rounded-lg" title="링크 복사">
+                    <Link className="w-5 h-5 text-muted-foreground" />
+                  </button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-card border-b border-border px-6">
-        <div className="flex items-center justify-between">
-          <div className="flex gap-4">
-            <button
-              onClick={() => setActiveTab("about")}
-              className={`py-4 px-2 border-b-2 font-medium transition-colors ${
-                activeTab === "about"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              내소개
-            </button>
-            <button
-              onClick={() => setActiveTab("ideal")}
-              className={`py-4 px-2 border-b-2 font-medium transition-colors ${
-                activeTab === "ideal"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              이상형
-            </button>
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+                className="w-9 h-9 rounded-full bg-card/80 backdrop-blur-sm shadow-sm flex items-center justify-center"
+              >
+                <Settings className="w-4 h-4 text-foreground/80" />
+              </button>
+              {showSettingsMenu && (
+                <div className="absolute right-0 top-11 w-40 bg-card border border-border rounded-xl shadow-lg py-1 z-30">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-4 py-3 text-left text-sm text-red-500 hover:bg-muted flex items-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    로그아웃
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="relative" ref={shareMenuRef}>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowShareMenu(!showShareMenu)}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <Share2 className="w-5 h-5" />
-            </Button>
+        </div>
 
-            {/* Share Menu Tooltip */}
-            {showShareMenu && (
-              <div className="absolute right-0 top-full mt-2 bg-card border border-border rounded-lg shadow-lg p-2 flex gap-2 z-10">
-                <button
-                  onClick={handleKakaoShare}
-                  className="p-2 hover:bg-accent rounded-lg transition-colors"
-                  title="카카오톡 공유"
-                >
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="#FEE500">
-                    <path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.442 1.492 4.585 3.773 5.973-.142.53-.92 3.46-.945 3.68-.03.273.099.537.316.649.218.112.486.085.675-.073 0 0 2.216-1.478 3.288-2.186C9.67 18.764 10.814 19 12 19c5.523 0 10-3.477 10-7.5S17.523 3 12 3z" stroke="#000" strokeWidth="0.5"/>
-                  </svg>
-                </button>
-                <button
-                  onClick={handleCopyLink}
-                  className="p-2 hover:bg-accent rounded-lg transition-colors"
-                  title="링크 복사"
-                >
-                  <Link className="w-6 h-6 text-foreground" />
-                </button>
+        {/* 프로필 사진 — 히어로 하단 오버랩 */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
+          <div className="relative">
+            {/* 완성도 링 */}
+            <svg className="absolute inset-0 w-[108px] h-[108px] -rotate-90" viewBox="0 0 108 108">
+              <circle cx="54" cy="54" r="50" fill="none" strokeWidth="3" stroke="#e5e7eb" />
+              <circle
+                cx="54" cy="54" r="50" fill="none" strokeWidth="3"
+                stroke="hsl(var(--primary))" strokeLinecap="round"
+                strokeDasharray={`${2 * Math.PI * 50}`}
+                strokeDashoffset={`${2 * Math.PI * 50 * (1 - (profile?.metrics.completionRate ?? 0) / 100)}`}
+                className="transition-all duration-700"
+              />
+            </svg>
+            {profile?.primaryPhotoUrl ? (
+              <img
+                src={profile.primaryPhotoUrl}
+                alt="프로필"
+                className="w-[108px] h-[108px] rounded-full object-cover border-4 border-background shadow-md"
+              />
+            ) : (
+              <div className="w-[108px] h-[108px] rounded-full bg-accent border-4 border-card shadow-md flex items-center justify-center text-3xl font-semibold text-muted-foreground">
+                {userProfile.nickname.charAt(0).toUpperCase()}
+              </div>
+            )}
+            {profile?.metrics.completionRate === 100 && (
+              <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-1 shadow">
+                <CheckCircle2 className="w-4 h-4 text-primary-foreground" />
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Profile Content */}
-      <div className="p-6 space-y-6">
-        {/* Phone Verification Banner */}
-        {userProfile && !userProfile.isPhoneVerified && (
-          <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
-            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 space-y-2">
-              <p className="text-sm font-medium text-amber-900">
-                핸드폰 인증 후에 서비스를 이용하실 수 있습니다
-              </p>
-              <p className="text-xs text-amber-700">
-                안전한 매칭을 위해 본인 인증이 필요합니다
-              </p>
-            </div>
-            <Button
-              onClick={() => setShowPhoneVerificationModal(true)}
-              size="sm"
-              className="bg-amber-600 hover:bg-amber-700 text-white whitespace-nowrap"
-            >
-              <Phone className="w-4 h-4 mr-1" />
-              인증하기
-            </Button>
+      {/* ── 이름 + 기본 정보 ── */}
+      <div className="pt-16 pb-5 px-6 text-center border-b border-border">
+        <h3 className="text-2xl font-bold tracking-tight text-foreground">{userProfile.nickname}</h3>
+
+        {basicChips.length > 0 && (
+          <div className="flex flex-wrap items-center justify-center gap-1.5 mt-2">
+            {basicChips.map((chip, i) => (
+              <span key={i} className="text-xs text-muted-foreground font-medium">
+                {i > 0 && <span className="mr-1.5 text-muted-foreground/40">·</span>}
+                {chip}
+              </span>
+            ))}
           </div>
         )}
 
-        {/* Profile Header */}
-        <div className="flex items-start gap-4">
-          <div className="relative">
-            {/* Circular Progress Ring */}
-            <svg className="w-24 h-24 -rotate-90" viewBox="0 0 100 100">
-              {/* Background circle */}
-              <circle
-                cx="50"
-                cy="50"
-                r="45"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="4"
-                className="text-muted/20"
-              />
-              {/* Progress circle */}
-              <circle
-                cx="50"
-                cy="50"
-                r="45"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="4"
-                strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 45}`}
-                strokeDashoffset={`${2 * Math.PI * 45 * (1 - (profile?.metrics.completionRate || 0) / 100)}`}
-                className="text-primary transition-all duration-500"
-              />
-            </svg>
-
-            {/* Profile Photo */}
-            <div className="absolute inset-0 flex items-center justify-center p-2">
-              {profile?.primaryPhotoUrl ? (
-                <img
-                  src={profile.primaryPhotoUrl}
-                  alt="프로필 사진"
-                  className="w-20 h-20 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-2xl">
-                  {userProfile.nickname.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
-
-            {/* Completion Badge */}
-            {profile?.metrics.completionRate === 100 && (
-              <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-1">
-                <CheckCircle2 className="w-5 h-5 text-white" />
-              </div>
-            )}
+        {/* 색깔 타입 — 작은 도트 + 이름만 */}
+        {profile?.colorType?.name && (
+          <div className="flex items-center justify-center gap-1.5 mt-2.5">
+            <span
+              className="inline-block w-2 h-2 rounded-full"
+              style={{ backgroundColor: profile.colorType.hex ?? "#d1d5db" }}
+            />
+            <span className="text-xs text-muted-foreground font-medium">{profile.colorType.name}</span>
           </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <h3 className="text-xl font-bold">{userProfile.nickname}</h3>
-              <Badge variant={userProfile.isProfileCompleted ? "default" : "secondary"}>
-                {userProfile.isProfileCompleted ? "프로필 완성" : "프로필 미완성"}
-              </Badge>
-              {profile?.careerInfo.incomeRange &&
-               ["INCOME_RANGE_3", "INCOME_RANGE_4", "INCOME_RANGE_5"].includes(profile.careerInfo.incomeRange) && (
-                <Badge className="bg-gradient-to-r from-amber-500 to-yellow-500 text-white border-0">
-                  고소득
-                </Badge>
-              )}
+        )}
+      </div>
+
+      {/* ── Stats ── */}
+      {profile && (
+        <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
+          <div className="flex flex-col items-center py-4 gap-0.5">
+            <span className="text-base font-bold text-foreground">{profile.metrics.trustScore}</span>
+            <span className="text-xs text-muted-foreground">신뢰도</span>
+          </div>
+          <div className="flex flex-col items-center py-4 gap-0.5">
+            <span className="text-base font-bold text-foreground">{profile.metrics.viewCount}</span>
+            <div className="flex items-center gap-0.5">
+              <Eye className="w-3 h-3 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">열람</span>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {userProfile.accountType === "REGULAR" ? "일반 회원" : "주선자"}
-            </p>
-            {profile && (
-              <p className="text-sm text-muted-foreground mt-1">
-                프로필 완성도: {profile.metrics.completionRate}%
-              </p>
-            )}
+          </div>
+          <div className="flex flex-col items-center py-4 gap-0.5">
+            <span className="text-base font-bold text-foreground">{profile.metrics.completionRate}%</span>
+            <span className="text-xs text-muted-foreground">완성도</span>
           </div>
         </div>
+      )}
 
-        {/* About Me Tab Content */}
-        {activeTab === "about" && (
-          <div className="space-y-4">
-          <Section title="기본 정보">
-            {profile ? (
-              <div className="space-y-2 text-sm">
-                {profile.basicInfo.height && (
-                  <InfoRow label="키" value={`${profile.basicInfo.height}cm`} />
-                )}
-                {profile.basicInfo.bodyType && (
-                  <InfoRow label="체형" value={getBodyTypeLabel(profile.basicInfo.bodyType)} />
-                )}
-                {profile.basicInfo.mbti && (
-                  <InfoRow label="MBTI" value={profile.basicInfo.mbti} />
-                )}
-                {profile.careerInfo.company && (
-                  <InfoRow label="직장" value={profile.careerInfo.company} />
-                )}
-                {profile.educationInfo.school && (
-                  <InfoRow label="학력" value={`${profile.educationInfo.school} ${profile.educationInfo.major || ''}`} />
-                )}
-                {profile.locationInfo.sido && (
-                  <InfoRow label="지역" value={`${profile.locationInfo.sido} ${profile.locationInfo.sigungu || ''}`} />
-                )}
-              </div>
-            ) : (
-              <EmptyContent message="프로필을 완성하면 정보가 표시됩니다" />
-            )}
-          </Section>
+      {/* ── 핸드폰 미인증 ── */}
+      {!userProfile.isPhoneVerified && (
+        <button
+          onClick={() => setShowPhoneVerificationModal(true)}
+          className="w-full flex items-center gap-3 px-6 py-3.5 bg-amber-50 border-b border-amber-100 text-left"
+        >
+          <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-amber-800">핸드폰 인증이 필요해요</p>
+          </div>
+          <div className="flex items-center gap-1 text-amber-500">
+            <Phone className="w-3.5 h-3.5" />
+            <ChevronRight className="w-3.5 h-3.5" />
+          </div>
+        </button>
+      )}
 
-          {profile?.colorType?.type && (
-            <Section title="나의 색깔">
-              <div
-                className="rounded-2xl p-4 flex items-center gap-4"
-                style={{ backgroundColor: profile.colorType.hex + "22", borderLeft: `4px solid ${profile.colorType.hex}` }}
-              >
-                <div
-                  className="w-12 h-12 rounded-full flex-shrink-0 shadow-md"
-                  style={{ backgroundColor: profile.colorType.hex ?? undefined }}
-                />
-                <div>
-                  <p className="font-semibold text-base">{profile.colorType.name}</p>
-                  {profile.colorType.description && (
-                    <p className="text-sm text-muted-foreground mt-0.5 leading-snug">{profile.colorType.description}</p>
-                  )}
-                </div>
+      {/* ── 탭 ── */}
+      <div className="flex border-b border-border sticky top-0 bg-card z-20">
+        {(["about", "ideal"] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 py-3.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
+              activeTab === tab
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {tab === "about" ? "내소개" : "이상형"}
+          </button>
+        ))}
+      </div>
+
+      {/* ── 내소개 탭 ── */}
+      {activeTab === "about" && (
+        <div className="divide-y divide-border">
+
+          {/* 사진 */}
+          {sortedPhotos.length > 0 && (
+            <section className="px-6 py-6">
+              <SectionLabel>사진</SectionLabel>
+              <div className="grid grid-cols-3 gap-2">
+                {sortedPhotos.map((photo, i) => (
+                  <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden bg-muted">
+                    <img src={photo.url} alt={`사진 ${i + 1}`} className="w-full h-full object-cover" />
+                    {photo.isPrimary && (
+                      <span className="absolute top-1.5 left-1.5 text-xs font-semibold bg-black/60 text-white rounded-md px-1.5 py-0.5">
+                        대표
+                      </span>
+                    )}
+                  </div>
+                ))}
               </div>
-            </Section>
+            </section>
           )}
 
-          <Section title="사진">
-            {profile?.photos && profile.photos.length > 0 ? (
-              <div className="grid grid-cols-3 gap-3">
-                {profile.photos
-                  .sort((a, b) => a.displayOrder - b.displayOrder)
-                  .map((photo, index) => (
-                    <div key={photo.id} className="relative aspect-square">
-                      <img
-                        src={photo.url}
-                        alt={`프로필 사진 ${index + 1}`}
-                        className="w-full h-full rounded-lg object-cover"
-                      />
-                      {photo.isPrimary && (
-                        <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-xs font-semibold">
-                          대표
-                        </div>
-                      )}
+          {/* 자기소개 */}
+          {profile?.introduction.interviewAnswers && (
+            <section className="px-6 py-6">
+              <SectionLabel>자기소개</SectionLabel>
+              <div className="space-y-5">
+                {[
+                  { key: "hobby" as const,     q: "쉬는 날엔" },
+                  { key: "charm" as const,     q: "나의 매력" },
+                  { key: "passion" as const,   q: "요즘 빠진 것" },
+                  { key: "happiness" as const, q: "행복한 순간" },
+                  { key: "motto" as const,     q: "인생 좌우명" },
+                ]
+                  .filter(({ key }) => !!profile.introduction.interviewAnswers![key])
+                  .map(({ key, q }) => (
+                    <div key={key}>
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{q}</p>
+                      <p className="text-sm text-foreground leading-relaxed">
+                        {profile.introduction.interviewAnswers![key]}
+                      </p>
                     </div>
                   ))}
               </div>
-            ) : (
-              <EmptyContent message="프로필 수정에서 사진을 추가할 수 있습니다" />
-            )}
-          </Section>
+            </section>
+          )}
 
-          <Section title="자기소개">
-            {profile?.introduction.interviewAnswers ? (
-              <div className="space-y-4">
-                {profile.introduction.interviewAnswers.hobby && (
-                  <InterviewAnswer
-                    question="쉬는 날엔 주로 이렇게 시간을 보내요"
-                    answer={profile.introduction.interviewAnswers.hobby}
-                  />
-                )}
-                {profile.introduction.interviewAnswers.charm && (
-                  <InterviewAnswer
-                    question="제 매력 포인트는 바로 이거!"
-                    answer={profile.introduction.interviewAnswers.charm}
-                  />
-                )}
-                {profile.introduction.interviewAnswers.passion && (
-                  <InterviewAnswer
-                    question="요즘 제가 푹 빠져있는 것"
-                    answer={profile.introduction.interviewAnswers.passion}
-                  />
-                )}
-                {profile.introduction.interviewAnswers.happiness && (
-                  <InterviewAnswer
-                    question="저는 이럴 때 행복해요"
-                    answer={profile.introduction.interviewAnswers.happiness}
-                  />
-                )}
-                {profile.introduction.interviewAnswers.motto && (
-                  <InterviewAnswer
-                    question="제 인생의 좌우명은"
-                    answer={profile.introduction.interviewAnswers.motto}
-                  />
-                )}
+          {/* 기본 정보 — CategoryCard */}
+          {profile && (
+            <section className="px-6 py-4 space-y-3">
+              {PROFILE_GROUPS.map((group) => (
+                <CategoryCard
+                  key={group.key}
+                  group={group}
+                  values={toProfileValues(profile)}
+                  mode="view"
+                />
+              ))}
+            </section>
+          )}
+
+          {/* 색깔 타입 설명 */}
+          {profile?.colorType?.description && (
+            <section className="px-6 pt-4 pb-4">
+              {(() => {
+                const colorKey = (profile.colorType!.key ?? getMyColorType()) as import("../../lib/colorTypes").ColorTypeKey;
+                return (
+                  <AccentScope colorType={colorKey}>
+                    <div className="bg-user-accent-soft border border-border-subtle rounded-lg p-4">
+                      <p className="text-caption text-text-tertiary mb-2">나의 색깔</p>
+                      <div className="flex items-start gap-3">
+                        <ColorTypeBadge colorType={colorKey} style="dot" size="lg" />
+                        <div>
+                          <p className="text-body-sm font-semibold text-text-primary mb-0.5">{profile.colorType!.name}</p>
+                          <p className="text-caption text-text-secondary leading-relaxed">{profile.colorType!.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </AccentScope>
+                );
+              })()}
+            </section>
+          )}
+
+          {/* 심리 프로필 */}
+          {profile?.attachmentProfile && (
+            <section className="px-6 py-6">
+              <SectionLabel>심리 프로필</SectionLabel>
+              {(() => {
+                const ap = profile.attachmentProfile!;
+                const typeKey = ap.attachmentType ?? (() => {
+                  if (ap.contactAnxiety < 40 && ap.intimacyAvoidance < 40) return "SECURE";
+                  if (ap.contactAnxiety >= 60 && ap.intimacyAvoidance < 40) return "ANXIOUS";
+                  if (ap.contactAnxiety < 40 && ap.intimacyAvoidance >= 60) return "AVOIDANT";
+                  return "DISORGANIZED";
+                })();
+                const INFO: Record<string, { label: string; emoji: string; color: string; desc: string }> = {
+                  SECURE:       { label: "안정형", emoji: "🌿", color: "#22C55E", desc: "신뢰를 바탕으로 편안하게 가까워질 수 있어요" },
+                  ANXIOUS:      { label: "불안형", emoji: "🌊", color: "#3B82F6", desc: "상대방에게 확신을 많이 구하는 편이에요" },
+                  AVOIDANT:     { label: "회피형", emoji: "🦋", color: "#A855F7", desc: "독립성을 중요하게 여기고 거리감이 필요해요" },
+                  DISORGANIZED: { label: "혼란형", emoji: "🌪️", color: "#F97316", desc: "친밀함을 원하지만 동시에 두려움도 느껴요" },
+                };
+                const info = INFO[typeKey] ?? INFO.SECURE;
+                return (
+                  <div
+                    className="rounded-xl p-4 border"
+                    style={{ backgroundColor: `${info.color}12`, borderColor: `${info.color}35` }}
+                  >
+                    <p className="text-base font-bold mb-1" style={{ color: info.color }}>
+                      {info.emoji} {ap.attachmentTypeLabel ?? info.label}
+                    </p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {ap.attachmentTypeDescription ?? info.desc}
+                    </p>
+                  </div>
+                );
+              })()}
+            </section>
+          )}
+
+          {/* 추천사 */}
+          {profile?.vouches && profile.vouches.length > 0 && (
+            <section className="px-6 py-6">
+              <SectionLabel>친구 추천사</SectionLabel>
+              <div className="space-y-3">
+                {profile.vouches.map((v, i) => (
+                  <p key={i} className="text-sm text-muted-foreground leading-relaxed">
+                    "{v.message}"
+                  </p>
+                ))}
               </div>
-            ) : (
-              <EmptyContent message="자기소개를 작성해주세요" />
-            )}
-          </Section>
+            </section>
+          )}
 
-          <Section title="라이프스타일">
-            {profile ? (
-              <div className="space-y-2 text-sm">
-                {profile.lifestyleInfo.smoking && (
-                  <InfoRow label="흡연" value={getFrequencyLabel(profile.lifestyleInfo.smoking)} />
-                )}
-                {profile.lifestyleInfo.drinking && (
-                  <InfoRow label="음주" value={getFrequencyLabel(profile.lifestyleInfo.drinking)} />
-                )}
-                {profile.lifestyleInfo.religion && (
-                  <InfoRow label="종교" value={getReligionLabel(profile.lifestyleInfo.religion)} />
-                )}
-              </div>
-            ) : (
-              <EmptyContent message="라이프스타일 정보를 입력해주세요" />
-            )}
-          </Section>
-
-          <Section title="추천사">
-            <EmptyContent message="아직 받은 추천사가 없습니다" />
-          </Section>
-
-          {/* Personality Tests */}
+          {/* 퍼스널리티 테스트 */}
           {profile?.personalityTests && profile.personalityTests.length > 0 && (
-            <Section title="나는 이런 사람이에요">
+            <section className="px-6 py-6">
+              <SectionLabel>테스트 결과</SectionLabel>
               <div className="flex flex-wrap gap-2">
-                {profile.personalityTests.map((test, index) => (
+                {profile.personalityTests.map((test, i) => (
                   <a
-                    key={index}
+                    key={i}
                     href={test.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-full px-4 py-2 text-sm font-medium text-purple-900 hover:text-purple-700 hover:border-purple-300 transition-colors"
+                    className="inline-flex items-center gap-1 border border-border rounded-full px-2.5 py-0.5 text-xs text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
                   >
                     {test.title}
-                    <ExternalLink className="w-3 h-3" />
+                    <ExternalLink className="w-3 h-3 text-muted-foreground" />
                   </a>
                 ))}
               </div>
-            </Section>
+            </section>
           )}
 
-          {/* Settings Section - 주선받기 + 프로필 노출 */}
-          {userProfile?.accountType === "REGULAR" && profile && (
-            <Section title="설정">
-              {/* 프로필 피드 노출 */}
-              <div className="flex items-center justify-between py-2">
-                <div className="flex-1">
-                  <p className="text-sm font-medium">피드 노출</p>
-                  <p className="text-xs text-slate-500">
-                    {profile.settings.hiddenAt
-                      ? `${new Date(profile.settings.hiddenAt).toLocaleDateString('ko')}부터 숨김 상태`
-                      : "2촌 피드에 프로필이 노출돼요"}
-                  </p>
+          {/* 설정 */}
+          {userProfile.accountType === "REGULAR" && profile && (
+            <section className="px-6 py-6">
+              <SectionLabel>설정</SectionLabel>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">피드 노출</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {profile.settings.hiddenAt ? "숨김 상태" : "내 프로필이 타인의 피드에 노출되어요"}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={!profile.settings.hiddenAt}
+                    onCheckedChange={async (visible) => {
+                      try {
+                        const result = await api.patch<{ isAcceptingMatches: boolean; hiddenAt: string | null }>(
+                          '/api/v1/profile/settings/visibility', { visible }
+                        );
+                        setProfile(prev => prev ? { ...prev, settings: { ...prev.settings, hiddenAt: result.hiddenAt } } : prev);
+                        toast.success(visible ? '피드에 노출됩니다' : '프로필이 숨겨졌습니다');
+                      } catch {
+                        toast.error('설정 변경에 실패했습니다');
+                      }
+                    }}
+                  />
                 </div>
-                <Switch
-                  checked={!profile.settings.hiddenAt}
-                  onCheckedChange={async (visible) => {
-                    try {
-                      const result = await api.patch<{ isAcceptingMatches: boolean; hiddenAt: string | null }>(
-                        '/api/v1/profile/settings/visibility',
-                        { visible }
-                      );
-                      setProfile(prev => prev ? {
-                        ...prev,
-                        settings: { ...prev.settings, hiddenAt: result.hiddenAt }
-                      } : prev);
-                      toast.success(visible ? '피드에 프로필이 노출됩니다' : '프로필이 숨겨졌습니다');
-                    } catch {
-                      toast.error('설정 변경에 실패했습니다');
-                    }
-                  }}
-                />
-              </div>
-              {/* 주선받기 */}
-              <div className="flex items-center justify-between py-2 border-t border-slate-50">
-                <div className="flex-1">
-                  <p className="text-sm font-medium">주선받기</p>
-                  <p className="text-xs text-slate-500">다른 사람의 주선 요청을 받아요</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">주선받기</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">주선 요청을 받아요</p>
+                  </div>
+                  <Switch checked={profile.settings.isAcceptingMatches} onCheckedChange={handleToggleAcceptingMatches} />
                 </div>
-                <Switch
-                  checked={profile.settings.isAcceptingMatches}
-                  onCheckedChange={handleToggleAcceptingMatches}
-                />
               </div>
-            </Section>
+            </section>
           )}
-          </div>
-        )}
-
-        {/* Ideal Type Tab Content */}
-        {activeTab === "ideal" && (
-          <div className="space-y-4">
-            <Section title="Q1. 연인과 어떤 데이트를 선호하시나요?">
-              {profile?.idealType.datePreferences && profile.idealType.datePreferences.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {profile.idealType.datePreferences.map((pref, idx) => (
-                    <Badge key={idx} variant="secondary">
-                      {getDatePreferenceLabel(pref)}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <EmptyContent message="데이트 선호도를 설정해주세요" />
-              )}
-            </Section>
-
-            <Section title="Q2. 중요하게 보는 세 가지는?">
-              {profile?.idealType.importantValues && profile.idealType.importantValues.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {profile.idealType.importantValues.map((value, idx) => (
-                    <Badge key={idx} variant="secondary">
-                      {getImportantValueLabel(value)}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <EmptyContent message="중요하게 보는 가치를 선택해주세요" />
-              )}
-            </Section>
-
-            <Section title="Q3. 어떤 성격의 사람을 선호하시나요?">
-              {profile?.idealType.personalities && profile.idealType.personalities.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {profile.idealType.personalities.map((personality, idx) => (
-                    <Badge key={idx} variant="secondary">
-                      {personality}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <EmptyContent message="선호하는 성격을 선택해주세요" />
-              )}
-            </Section>
-
-            <Section title="Q4. 선호하는 외모 스타일은?">
-              {profile?.idealType.appearanceStyles && profile.idealType.appearanceStyles.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {profile.idealType.appearanceStyles.map((style, idx) => (
-                    <Badge key={idx} variant="secondary">
-                      {getAppearanceStyleLabel(style)}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <EmptyContent message="선호하는 외모 스타일을 선택해주세요" />
-              )}
-            </Section>
-
-            <Section title="Q5. 절대 안되는 것들은?">
-              {profile?.idealType.dealBreakers && profile.idealType.dealBreakers.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {profile.idealType.dealBreakers.map((dealBreaker) => (
-                    <Badge key={dealBreaker} variant="outline" className="text-sm">
-                      {getDealBreakerLabel(dealBreaker)}
-                    </Badge>
-                  ))}
-                </div>
-              ) : (
-                <EmptyContent message="절대 안되는 것들을 선택해주세요" />
-              )}
-            </Section>
-          </div>
-        )}
-
-        {/* Edit Profile Button */}
-        <div className="pt-4 pb-6">
-          <Button
-            onClick={onEdit}
-            className="w-full h-14 bg-gradient-to-r from-pink-400 to-rose-400 text-white hover:from-pink-500 hover:to-rose-500"
-            size="lg"
-          >
-            <Edit3 className="w-5 h-5 mr-2" />
-            프로필 수정하기
-          </Button>
         </div>
+      )}
+
+      {/* ── 이상형 탭 ── */}
+      {activeTab === "ideal" && (
+        <div className="divide-y divide-border">
+
+          {/* 연애 스타일 */}
+          <section className="px-6 py-6">
+            <SectionLabel>연애 스타일</SectionLabel>
+            {profile?.introduction.datingStyle && Object.keys(profile.introduction.datingStyle).length > 0 ? (
+              <div className="space-y-2.5">
+                {Object.entries(profile.introduction.datingStyle).map(([qKey, optKey]) => (
+                  <div key={qKey} className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      {DATING_STYLE_QUESTION_LABELS[qKey] ?? qKey}
+                    </span>
+                    <span className="text-sm font-medium text-foreground">
+                      {DATING_STYLE_OPTION_LABELS[optKey] ?? optKey}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">미설정</p>
+            )}
+          </section>
+
+          {/* 버킷리스트 */}
+          <section className="px-6 py-6">
+            <SectionLabel>함께하고 싶은 것</SectionLabel>
+            {profile?.idealType.bucketList && profile.idealType.bucketList.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {profile.idealType.bucketList.map((key, i) => (
+                  <span
+                    key={i}
+                    className="text-xs px-2.5 py-0.5 rounded-full border border-border text-foreground bg-card"
+                  >
+                    {getBucketLabel(key)}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">미설정</p>
+            )}
+          </section>
+
+          {[
+            { title: "선호 데이트",    items: profile?.idealType.datePreferences?.map(getDatePreferenceLabel) },
+            { title: "중요하게 보는 것", items: profile?.idealType.importantValues?.map(getImportantValueLabel) },
+            { title: "선호 성격",      items: profile?.idealType.personalities },
+            { title: "선호 외모",      items: profile?.idealType.appearanceStyles?.map(getAppearanceStyleLabel) },
+            { title: "절대 안되는 것", items: profile?.idealType.dealBreakers?.map(getDealBreakerLabel) },
+          ].map(({ title, items }) => (
+            <section key={title} className="px-6 py-6">
+              <SectionLabel>{title}</SectionLabel>
+              {items && items.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {items.map((item, i) => (
+                    <span
+                      key={i}
+                      className="text-xs px-2.5 py-0.5 rounded-full border border-border text-foreground bg-card"
+                    >
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">미설정</p>
+              )}
+            </section>
+          ))}
+        </div>
+      )}
+
+      {/* ── 수정 버튼 (sticky) ── */}
+      <div className="fixed bottom-16 left-0 right-0 px-6 pb-2 z-40 pointer-events-none">
+        <Button
+          onClick={onEdit}
+          className="w-full h-12 rounded-2xl font-semibold shadow-sm pointer-events-auto"
+        >
+          <Edit3 className="w-4 h-4 mr-2" />
+          프로필 수정하기
+        </Button>
       </div>
 
-      {/* Confirmation Modal */}
+      {/* ── 모달 ── */}
       <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {pendingToggleValue ? '주선받기 활성화' : '주선받기 비활성화'}
-            </DialogTitle>
+            <DialogTitle>{pendingToggleValue ? '주선받기 활성화' : '주선받기 비활성화'}</DialogTitle>
             <DialogDescription>
               {pendingToggleValue
-                ? '내 프로필이 노출됩니다. 단, 내 친구는 내 프로필을 볼 수 없습니다.'
-                : '내 프로필이 더 이상 노출되지 않습니다.'
-              }
+                ? '내 프로필이 2촌 피드에 노출됩니다.'
+                : '내 프로필이 더 이상 노출되지 않습니다.'}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowConfirmModal(false)}
-            >
-              취소
-            </Button>
-            <Button
-              onClick={confirmToggleAcceptingMatches}
-              className="bg-gradient-to-r from-pink-400 to-rose-400"
-            >
-              확인
-            </Button>
+            <Button variant="outline" onClick={() => setShowConfirmModal(false)}>취소</Button>
+            <Button onClick={confirmToggleAcceptingMatches}>확인</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Phone Verification Modal */}
       <PhoneVerificationModal
         isOpen={showPhoneVerificationModal}
         onClose={() => setShowPhoneVerificationModal(false)}
         onVerified={handlePhoneVerified}
         userId={userProfile?.userId}
-        initialPhoneNumber={userProfile?.isPhoneVerified ? undefined : undefined}
+        initialPhoneNumber={undefined}
       />
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-card rounded-lg border border-border p-4">
-      <h4 className="font-semibold mb-3">{title}</h4>
-      {children}
-    </div>
-  );
-}
-
-function EmptyContent({ message }: { message: string }) {
-  return (
-    <div className="text-center py-8">
-      <p className="text-sm text-muted-foreground">{message}</p>
-    </div>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between items-center py-2 border-b border-border/50 last:border-0">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{value}</span>
-    </div>
-  );
-}
-
-function InterviewAnswer({ question, answer }: { question: string; answer: string }) {
-  return (
-    <div className="space-y-2 pb-3 border-b border-border/50 last:border-0">
-      <p className="text-sm font-medium text-primary">{question}</p>
-      <p className="text-sm leading-relaxed text-muted-foreground">{answer}</p>
-    </div>
+    <p className="text-sm font-semibold text-foreground mb-3">{children}</p>
   );
 }
 
 function getBodyTypeLabel(type: string): string {
-  const labels: Record<string, string> = {
-    SLIM: "슬림",
-    AVERAGE: "보통",
-    ATHLETIC: "운동함",
-    MUSCULAR: "근육질",
-    CURVY: "글래머"
-  };
-  return labels[type] || type;
+  return { SLIM: "슬림", AVERAGE: "보통", ATHLETIC: "탄탄", MUSCULAR: "건장", CURVY: "통통" }[type] ?? type;
 }
 
-function getFrequencyLabel(freq: string): string {
-  const labels: Record<string, string> = {
-    NEVER: "안함",
-    SOMETIMES: "가끔",
-    OFTEN: "자주"
-  };
-  return labels[freq] || freq;
+function getSmokingLabel(v: string): string {
+  return { NEVER: "비흡연", SOMETIMES: "가끔", OFTEN: "자주" }[v] ?? v;
 }
 
-function getReligionLabel(religion: string): string {
-  const labels: Record<string, string> = {
-    NONE: "무교",
-    CHRISTIANITY: "기독교",
-    CATHOLICISM: "천주교",
-    BUDDHISM: "불교",
-    OTHER: "기타"
-  };
-  return labels[religion] || religion;
+function getDrinkingLabel(v: string): string {
+  return { NEVER: "안 마심", SOMETIMES: "가끔", OFTEN: "자주" }[v] ?? v;
+}
+
+function getReligionLabel(v: string): string {
+  return {
+    NONE: "무교", CHRISTIANITY: "기독교", CATHOLICISM: "천주교",
+    BUDDHISM: "불교", OTHER: "기타",
+  }[v] ?? v;
+}
+
+function getEducationLabel(v: string): string {
+  return {
+    HIGH_SCHOOL: "고졸", ASSOCIATE: "전문대", BACHELOR: "대졸",
+    MASTER: "석사", DOCTORATE: "박사",
+  }[v] ?? v;
 }
 
 function getDatePreferenceLabel(pref: string): string {
-  const labels: Record<string, string> = {
-    ACTIVE: "액티브한 데이트",
-    INDOOR: "인도어 데이트",
-    CULTURE: "문화 데이트",
-    NATURE: "자연 데이트"
-  };
-  return labels[pref] || pref;
+  return {
+    ACTIVE: "액티브한 데이트", INDOOR: "실내 데이트",
+    CULTURE: "문화 데이트", NATURE: "자연 데이트",
+    NIGHT: "야경/술자리", RELAXED: "여유롭게",
+  }[pref] ?? pref;
+}
+
+const DATING_STYLE_QUESTION_LABELS: Record<string, string> = {
+  MEET_FREQUENCY: "만남 빈도", CONTACT_STYLE: "연락 스타일",
+  DATE_STYLE: "데이트 스타일", DRINKING_DATE: "음주 스타일",
+  OPPOSITE_FRIENDS: "이성 친구", LEAD_STYLE: "리드 스타일",
+  CONFLICT_STYLE: "갈등 해결", AFFECTION_STYLE: "애정 표현",
+  MARRIAGE_PLAN: "결혼 계획", SNS_PUBLIC: "SNS 공개",
+};
+
+const DATING_STYLE_OPTION_LABELS: Record<string, string> = {
+  WEEKLY_1_2: "주 1~2회", WEEKEND_TOGETHER: "주말은 같이 보내요", WHENEVER_POSSIBLE: "시간 될 때마다",
+  FREQUENT: "자주 연락해요", DAILY_FEW: "하루 몇 번이면 충분", WHENEVER: "생각날 때 연락",
+  OUTDOOR: "나들이·액티비티", INDOOR: "집·카페 인도어", MIX: "둘 다 좋아요",
+  ENJOY: "술자리 즐겨요", SOMETIMES: "가끔 한 잔", NO_NEED: "없어도 충분해요",
+  FREE: "자유롭게 OK", SOME_BOUNDARY: "어느 정도 선은 있어요", UNCOMFORTABLE: "적극적 연락은 불편해요",
+  LEAD: "내가 리드하는 편", FOLLOW: "따라가는 편", ALTERNATE: "번갈아가며",
+  TALK_NOW: "바로 대화해요", COOL_DOWN: "식히고 나서 얘기해요", LET_GO: "웬만하면 넘겨요",
+  PHYSICAL: "스킨십으로", WORDS: "말·문자로", ACTIONS: "챙겨주는 것으로",
+  SERIOUS_FAST: "빠르게 진지하게", SLOW_NATURAL: "천천히 자연스럽게", NOT_YET: "아직 생각 중",
+  LOVE_IT: "커플 인증 좋아요", PRIVATE: "우리끼리만", FOLLOW_PARTNER: "상대 따라갈게요",
+};
+
+const BUCKET_LABELS: Record<string, string> = {
+  JEJU_MONTH: "제주도 한 달 살기", BACKPACKING: "배낭여행", OSAKA: "오사카 2박 3일",
+  BANGKOK: "방콕 뚝뚝이", SOLO_ABROAD: "혼자 해외여행", ROAD_TRIP: "아무 계획 없는 드라이브",
+  CAMPING: "캠핑 & 불멍", DAYTRIP: "주말 당일치기",
+  CONVENIENCE_NIGHT: "새벽 편의점 치킨", HANGANG_RAMYEON: "한강에서 라면",
+  MIDNIGHT_MOVIE: "새벽 영화관", ROOFTOP_BAR: "루프탑 바", NIGHT_DRIVE: "야경 드라이브",
+  FOOD_TOUR: "맛집 웨이팅 성공", NIGHT_MARKET: "야시장 투어", HOME_PARTY: "홈파티 열기",
+  COOK_TOGETHER: "함께 요리 도전",
+  MUSICAL: "뮤지컬 관람", MUSEUM_DATE: "미술관 데이트", FESTIVAL: "음악 페스티벌",
+  HANOK_VILLAGE: "한옥마을 투어",
+  BUNGEE: "번지점프", SURFING: "서핑 배우기", SKI: "스키장",
+  HIKING: "한라산 or 설악산", STARGAZING: "별빛 텐트",
+};
+
+function getBucketLabel(key: string): string {
+  if (key.startsWith("custom:")) return key.slice(7);
+  return BUCKET_LABELS[key] ?? key;
 }
 
 function getImportantValueLabel(value: string): string {
-  const labels: Record<string, string> = {
-    PERSONALITY: "성격/성향",
-    APPEARANCE: "외모",
-    EDUCATION: "학력",
-    CAREER: "능력/커리어",
-    FAMILY: "집안/가족",
-    JOB: "직업",
-    WEALTH: "경제력",
-    VALUES: "가치관"
-  };
-  return labels[value] || value;
+  return {
+    PERSONALITY: "성격/성향", APPEARANCE: "외모", EDUCATION: "학력",
+    CAREER: "능력/커리어", FAMILY: "집안/가족", JOB: "직업", WEALTH: "경제력", VALUES: "가치관",
+  }[value] ?? value;
 }
 
 function getAppearanceStyleLabel(style: string): string {
-  const labels: Record<string, string> = {
-    // 남자 스타일
-    PUPPY: "강아지상",
-    CAT: "고양이상",
-    STUDENT_COUNCIL: "전교회장상",
-    ATHLETIC: "체대상",
-    NERD: "너드상",
-    TOFU: "두부상",
-    ARAB: "아랍상",
-    DINOSAUR: "공룡상",
-    // 여자 스타일
-    RABBIT: "토끼상",
-    FOX: "여우상",
-    DEER: "사슴상",
-    SOFT_TOFU: "순두부상",
-    BOSS: "일진상",
-    MOTHER_IN_LAW_APPROVED: "상견례입구컷상"
-  };
-  return labels[style] || style;
+  return {
+    PUPPY: "강아지상", CAT: "고양이상", STUDENT_COUNCIL: "전교회장상", ATHLETIC: "체대상",
+    NERD: "너드상", TOFU: "두부상", ARAB: "아랍상", DINOSAUR: "공룡상",
+    RABBIT: "토끼상", FOX: "여우상", DEER: "사슴상", SOFT_TOFU: "순두부상",
+    BOSS: "일진상", MOTHER_IN_LAW_APPROVED: "상견례입구컷상",
+  }[style] ?? style;
 }
 
 function getDealBreakerLabel(dealBreaker: string): string {
-  const labels: Record<string, string> = {
-    SMOKING: "흡연자",
-    HEAVY_DRINKING: "과음하는 사람",
-    DISLIKES_PETS: "반려동물을 싫어하는 사람",
-    LONG_DISTANCE: "장거리 연애",
-    DIFFERENT_RELIGION: "종교가 다른 사람",
-    NO_MARRIAGE_PLAN: "결혼 의사가 없는 사람",
-    CHILDREN_PLAN: "자녀 계획이 맞지 않는 사람",
-    UNSTABLE_JOB: "직업이 불안정한 사람",
-    CONTACTS_EX: "전 연인과 연락하는 사람",
-    LARGE_AGE_GAP: "나이 차이가 많이 나는 사람"
-  };
-  return labels[dealBreaker] || dealBreaker;
+  return {
+    SMOKING: "흡연자", HEAVY_DRINKING: "과음하는 사람", DISLIKES_PETS: "반려동물을 싫어하는 사람",
+    LONG_DISTANCE: "장거리 연애", DIFFERENT_RELIGION: "종교가 다른 사람",
+    NO_MARRIAGE_PLAN: "결혼 의사가 없는 사람", CHILDREN_PLAN: "자녀 계획이 맞지 않는 사람",
+    UNSTABLE_JOB: "직업이 불안정한 사람", CONTACTS_EX: "전 연인과 연락하는 사람",
+    LARGE_AGE_GAP: "나이 차이가 많이 나는 사람",
+  }[dealBreaker] ?? dealBreaker;
 }
-

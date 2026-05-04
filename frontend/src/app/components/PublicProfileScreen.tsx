@@ -141,10 +141,10 @@ export function PublicProfileScreen() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-gradient-to-b from-pink-200 via-rose-200 to-sky-200 shadow-md">
+      <div className="bg-primary shadow-md">
         <div className="max-w-2xl mx-auto px-6 py-12 text-center">
-          <h1 className="text-3xl font-bold mb-2 text-gray-800">Palette</h1>
-          <p className="text-gray-600">나의 색을 찾고, 너의 색과 조화를 이루다</p>
+          <h1 className="text-3xl font-bold mb-2 text-primary-foreground">Palette</h1>
+          <p className="text-primary-foreground/80">나의 색을 찾고, 너의 색과 조화를 이루다</p>
         </div>
       </div>
 
@@ -310,7 +310,7 @@ export function PublicProfileScreen() {
                       href={test.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-full px-4 py-2 text-sm font-medium text-purple-900 hover:text-purple-700 hover:border-purple-300 transition-colors"
+                      className="inline-flex items-center gap-1 bg-secondary border border-border rounded-full px-4 py-2 text-sm font-medium text-foreground hover:text-primary hover:border-primary/30 transition-colors"
                     >
                       {test.title}
                       <ExternalLink className="w-3 h-3" />
@@ -398,14 +398,14 @@ export function PublicProfileScreen() {
         )}
 
         {/* CTA Section */}
-        <div className="mt-8 bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl p-8 text-center border border-pink-200">
+        <div className="mt-8 bg-secondary rounded-2xl p-8 text-center border border-border">
           <h3 className="text-2xl font-bold mb-2">이 분을 소개받고 싶으신가요?</h3>
           <p className="text-muted-foreground mb-6">
             Palette에 가입하고 더 많은 프로필을 만나보세요
           </p>
           <Button
             size="lg"
-            className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
             onClick={() => window.location.href = '/'}
           >
             지금 가입하기

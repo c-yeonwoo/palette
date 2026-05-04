@@ -391,12 +391,12 @@ function PaintCard({
               <p className="text-white text-xs font-semibold">{profile.basicInfo.height}cm</p>
             )}
             {(job || location) && (
-              <p className="text-white/70 text-[10px]">{[job, location].filter(Boolean).join(" · ")}</p>
+              <p className="text-white/70 text-xs">{[job, location].filter(Boolean).join(" · ")}</p>
             )}
           </div>
         )}
       </div>
-      <p className="text-[10px] text-muted-foreground mt-1.5 px-0.5 truncate">{rec.reason}</p>
+      <p className="text-xs text-muted-foreground mt-1.5 px-0.5 truncate">{rec.reason}</p>
     </div>
   );
 }
@@ -436,7 +436,7 @@ function AiSignalSection({
           <Sparkles className="w-3.5 h-3.5 text-primary" />
         </div>
         <p className="text-sm font-semibold">오늘의 AI 시그널</p>
-        <span className="ml-auto text-[10px] text-muted-foreground">매일 1장 무료</span>
+        <span className="ml-auto text-xs text-muted-foreground">매일 1장 무료</span>
       </div>
       <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4">
         {signal.recommendations.map((rec, i) => {
@@ -455,12 +455,12 @@ function AiSignalSection({
                   </div>
                   <div className="text-center">
                     {rec.teaserAge && <p className="text-white/90 text-xs font-semibold">{rec.teaserAge}세</p>}
-                    {rec.teaserLocation && <p className="text-white/70 text-[10px]">{rec.teaserLocation}</p>}
+                    {rec.teaserLocation && <p className="text-white/70 text-xs">{rec.teaserLocation}</p>}
                   </div>
                   <button
                     onClick={() => handleUnlock(rec)}
                     disabled={unlocking}
-                    className="mt-1 w-full py-1.5 rounded-xl bg-primary text-primary-foreground text-[10px] font-bold shadow-lg active:scale-95 transition-transform disabled:opacity-60"
+                    className="mt-1 w-full py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-lg active:scale-95 transition-transform disabled:opacity-60"
                   >
                     {unlocking ? "처리 중..." : `열기 ${rec.unlockPrice.toLocaleString()}원`}
                   </button>
@@ -471,7 +471,7 @@ function AiSignalSection({
                   </span>
                 </div>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1.5 px-0.5 truncate">{rec.reason}</p>
+              <p className="text-xs text-muted-foreground mt-1.5 px-0.5 truncate">{rec.reason}</p>
             </div>
           );
         })}
@@ -593,7 +593,7 @@ function AttachmentStyleCard({
             <span className="text-lg">{info.emoji}</span>
             <span className="text-sm font-bold">{info.label}</span>
           </div>
-          <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{info.desc}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{info.desc}</p>
         </div>
       ) : (
         <div>
@@ -636,7 +636,7 @@ function LoveLanguageCard({
             <span className="text-lg">{info.emoji}</span>
             <span className="text-sm font-bold">{info.label}</span>
           </div>
-          <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">{info.desc}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{info.desc}</p>
         </div>
       ) : (
         <div>
@@ -672,13 +672,13 @@ function MbtiCompatCard({ mbti }: { mbti: string | null }) {
           <p className="text-xs text-muted-foreground mb-1">나의 MBTI</p>
           <p className="text-base font-bold text-primary mb-1">{mbti.toUpperCase()}</p>
           {goldenPairs.length > 0 && (
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               최고 궁합: <span className="font-semibold text-foreground">{goldenPairs.join(", ")}</span>
             </p>
           )}
         </div>
       ) : (
-        <p className="text-[11px] text-muted-foreground leading-relaxed">
+        <p className="text-xs text-muted-foreground leading-relaxed">
           프로필에서 MBTI를<br />설정해주세요
         </p>
       )}
@@ -727,12 +727,12 @@ function ZodiacCard({ birthDate }: { birthDate: string | null }) {
               <span key={i} className={`text-xs ${i < todayLoveScore ? "text-amber-400" : "text-muted"}`}>★</span>
             ))}
           </div>
-          <p className="text-[11px] text-muted-foreground leading-relaxed line-clamp-2">
+          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
             {zodiacMessages[todayLoveScore]}
           </p>
         </div>
       ) : (
-        <p className="text-[11px] text-muted-foreground leading-relaxed">
+        <p className="text-xs text-muted-foreground leading-relaxed">
           프로필에서 생년월일을<br />설정하면 확인할 수 있어요
         </p>
       )}
@@ -787,7 +787,7 @@ function CompatibilityCalculatorCard() {
 
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div>
-            <label className="text-[11px] text-muted-foreground mb-1 block">나의 생년월일</label>
+            <label className="text-xs text-muted-foreground mb-1 block">나의 생년월일</label>
             <input
               type="date"
               value={date1}
@@ -796,7 +796,7 @@ function CompatibilityCalculatorCard() {
             />
           </div>
           <div>
-            <label className="text-[11px] text-muted-foreground mb-1 block">상대방 생년월일</label>
+            <label className="text-xs text-muted-foreground mb-1 block">상대방 생년월일</label>
             <input
               type="date"
               value={date2}
@@ -808,7 +808,7 @@ function CompatibilityCalculatorCard() {
 
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div>
-            <label className="text-[11px] text-muted-foreground mb-1 block">나의 MBTI (선택)</label>
+            <label className="text-xs text-muted-foreground mb-1 block">나의 MBTI (선택)</label>
             <select
               value={mbti1}
               onChange={(e) => setMbti1(e.target.value)}
@@ -821,7 +821,7 @@ function CompatibilityCalculatorCard() {
             </select>
           </div>
           <div>
-            <label className="text-[11px] text-muted-foreground mb-1 block">상대방 MBTI (선택)</label>
+            <label className="text-xs text-muted-foreground mb-1 block">상대방 MBTI (선택)</label>
             <select
               value={mbti2}
               onChange={(e) => setMbti2(e.target.value)}
@@ -917,7 +917,7 @@ function MatchmakerAiTools() {
               <p className="text-xs text-muted-foreground mt-0.5">{tool.desc}</p>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">준비 중</span>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">준비 중</span>
               <Lock className="w-3 h-3 text-muted-foreground" />
             </div>
           </div>

@@ -138,12 +138,12 @@ export default function PhoneVerificationModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-md w-full p-6 space-y-6">
+      <div className="bg-card rounded-xl max-w-md w-full p-6 space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">핸드폰 인증</h2>
+          <h2 className="text-xl font-bold text-foreground">핸드폰 인증</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-muted-foreground hover:text-foreground"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -154,7 +154,7 @@ export default function PhoneVerificationModal({
         <div className="space-y-4">
           {/* Phone Number Input */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-foreground/80">
               핸드폰 번호
             </label>
             <div className="flex gap-2">
@@ -181,7 +181,7 @@ export default function PhoneVerificationModal({
           {isCodeSent && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-foreground/80">
                   인증번호
                 </label>
                 <span className="text-sm text-red-600 font-medium">

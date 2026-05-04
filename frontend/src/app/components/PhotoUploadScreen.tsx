@@ -41,9 +41,9 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
   const trustScore = Math.min(100, photoCount * 15 + (hasVideo ? 50 : 0));
 
   const getTrustLevel = (score: number) => {
-    if (score >= 71) return { level: "Gold", circles: 3, color: "text-amber-500" };
-    if (score >= 41) return { level: "Silver", circles: 2, color: "text-slate-400" };
-    return { level: "Bronze", circles: 1, color: "text-orange-600" };
+    if (score >= 71) return { level: "Gold", circles: 3, colorClass: "bg-primary", textClass: "text-primary" };
+    if (score >= 41) return { level: "Silver", circles: 2, colorClass: "bg-muted-foreground", textClass: "text-muted-foreground" };
+    return { level: "Bronze", circles: 1, colorClass: "bg-foreground/40", textClass: "text-foreground/60" };
   };
 
   const trustLevel = getTrustLevel(trustScore);
@@ -88,7 +88,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
       formData.append("file", file);
       await api.postForm("/api/v1/profile/photo", formData);
     } catch {
-      // Silently ignore - preview still shows
+      toast.error("사진 업로드에 실패했습니다. 다시 시도해주세요.");
     }
   };
 
@@ -161,16 +161,16 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
       {/* Content */}
       <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
         {/* Trust Score Display */}
-        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-6">
+        <div className="bg-secondary border-2 border-border rounded-xl p-6">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h3 className="text-amber-900 mb-1">신뢰도 점수</h3>
-              <p className="text-sm text-amber-700">
+              <h3 className="text-foreground mb-1">신뢰도 점수</h3>
+              <p className="text-sm text-muted-foreground">
                 사진이 많을수록 신뢰도가 올라가요
               </p>
             </div>
             <div className="text-right">
-              <div className={`text-3xl font-bold ${trustLevel.color}`}>
+              <div className={`text-3xl font-bold ${trustLevel.textClass}`}>
                 {trustScore}점
               </div>
               <div className="flex gap-1 mt-1 justify-end">
@@ -178,19 +178,19 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
                   <div
                     key={i}
                     className={`w-3 h-3 rounded-full ${
-                      i < trustLevel.circles ? trustLevel.color.replace('text', 'bg') : 'bg-slate-200'
+                      i < trustLevel.circles ? trustLevel.colorClass : 'bg-muted'
                     }`}
                   />
                 ))}
               </div>
-              <p className="text-xs text-slate-600 mt-1">{trustLevel.level}</p>
+              <p className="text-xs text-muted-foreground mt-1">{trustLevel.level}</p>
             </div>
           </div>
 
           {/* Trust Score Tips */}
-          <div className="bg-white rounded-lg p-4 space-y-2">
-            <p className="text-sm font-medium text-slate-900 mb-2">신뢰도 높이는 방법:</p>
-            <div className="space-y-1.5 text-sm text-slate-700">
+          <div className="bg-card rounded-lg p-4 space-y-2">
+            <p className="text-sm font-medium text-foreground mb-2">신뢰도 높이는 방법:</p>
+            <div className="space-y-1.5 text-sm text-foreground/80">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-green-500" />
                 <span>타인 촬영 사진: +20점</span>
@@ -204,7 +204,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
                 <span>다양한 상황 사진: +10점</span>
               </div>
               <div className="flex items-center gap-2">
-                <Star className="w-4 h-4 text-amber-500" />
+                <Star className="w-4 h-4 text-primary" />
                 <span className="font-medium">동영상 업로드: +50점</span>
               </div>
             </div>
@@ -212,12 +212,12 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
         </div>
 
         {/* Guide Text */}
-        <div className="bg-pink-50 border border-pink-200 rounded-xl p-5">
+        <div className="bg-secondary border border-border rounded-xl p-5">
           <div className="flex items-start gap-3">
-            <Camera className="w-5 h-5 text-pink-600 mt-0.5 flex-shrink-0" />
+            <Camera className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
             <div>
-              <h3 className="text-pink-900 mb-1">셀카는 승인 거절될 수 있어요</h3>
-              <p className="text-sm text-pink-700">
+              <h3 className="text-foreground mb-1">셀카는 승인 거절될 수 있어요</h3>
+              <p className="text-sm text-muted-foreground">
                 남이 찍어준 자연스러운 사진만 올려주세요. 최대 6장까지 등록할 수 있습니다.
               </p>
             </div>
@@ -228,10 +228,10 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
         <div>
           <div className="flex items-center justify-between mb-3">
             <Label>프로필 사진 (최대 6장)</Label>
-            <p className="text-sm text-slate-600">{uploadedCount}/6장</p>
+            <p className="text-sm text-muted-foreground">{uploadedCount}/6장</p>
           </div>
           <p className="text-sm text-muted-foreground mb-3">
-            <Star className="w-4 h-4 inline text-amber-500" /> 표시된 사진이 메인 프로필로 사용됩니다
+            <Star className="w-4 h-4 inline text-primary" /> 표시된 사진이 메인 프로필로 사용됩니다
           </p>
           {/* Hidden file input for photos */}
           <input
@@ -245,10 +245,10 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
             {photos.map((photo, index) => (
               <div
                 key={index}
-                className={`relative aspect-square bg-slate-50 rounded-xl border-2 border-dashed overflow-hidden hover:border-pink-300 transition-colors cursor-pointer ${
+                className={`relative aspect-square bg-muted rounded-xl border-2 border-dashed overflow-hidden hover:border-primary/40 transition-colors cursor-pointer ${
                   index === mainPhotoIndex && photo
-                    ? 'border-pink-400 border-solid ring-2 ring-pink-200'
-                    : 'border-slate-200'
+                    ? 'border-primary border-solid ring-2 ring-primary/20'
+                    : 'border-border'
                 }`}
                 onClick={() => handlePhotoSlotClick(index)}
               >
@@ -256,27 +256,28 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
                   <>
                     <img src={photo} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
                     {index === mainPhotoIndex && (
-                      <div className="absolute top-1 left-1 bg-pink-500 text-white rounded-full p-1">
+                      <div className="absolute top-1 left-1 bg-primary text-primary-foreground rounded-full p-1">
                         <Star className="w-3 h-3 fill-current" />
                       </div>
                     )}
                     <button
                       onClick={(e) => handleRemovePhoto(index, e)}
-                      className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1"
+                      className="absolute top-0 right-0 w-8 h-8 bg-black/60 text-white rounded-bl-xl flex items-center justify-center"
+                      aria-label="사진 삭제"
                     >
-                      <X className="w-3 h-3" />
+                      <X className="w-4 h-4" />
                     </button>
                   </>
                 ) : (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                    <Plus className="w-6 h-6 text-slate-300" />
-                    <span className="text-xs text-slate-300">사진 추가</span>
+                    <Plus className="w-6 h-6 text-border" />
+                    <span className="text-xs text-muted-foreground/50">사진 추가</span>
                   </div>
                 )}
               </div>
             ))}
           </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-muted-foreground mt-2">
             💡 권장: 3:4 세로 또는 1:1 정사각형, JPG/PNG/HEIC, 최대 10MB
           </p>
         </div>
@@ -295,8 +296,8 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
             <div
               className={`relative aspect-square rounded-xl border-2 border-dashed overflow-hidden transition-colors cursor-pointer ${
                 video
-                  ? 'border-amber-400 bg-amber-50'
-                  : 'border-orange-200 bg-gradient-to-br from-pink-50 to-orange-50 hover:border-orange-300'
+                  ? 'border-primary bg-secondary'
+                  : 'border-border bg-muted hover:border-primary/40'
               }`}
               onClick={() => !video && videoInputRef.current?.click()}
             >
@@ -308,34 +309,35 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
                   </div>
                   <button
                     onClick={(e) => { e.stopPropagation(); setVideo(null); setVideoFile(null); }}
-                    className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1"
+                    className="absolute top-0 right-0 w-8 h-8 bg-black/60 text-white rounded-bl-xl flex items-center justify-center"
+                    aria-label="동영상 삭제"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-4 h-4" />
                   </button>
                 </>
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                  <Video className="w-8 h-8 text-orange-400" />
-                  <p className="text-xs text-orange-600 text-center px-1">동영상 추가</p>
+                  <Video className="w-8 h-8 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground text-center px-1">동영상 추가</p>
                 </div>
               )}
             </div>
             {!video && (
-              <div className="col-span-2 flex flex-col justify-center space-y-1 text-sm text-slate-600">
+              <div className="col-span-2 flex flex-col justify-center space-y-1 text-sm text-foreground/80">
                 <p className="font-medium">동영상으로 신뢰도 UP! ⬆️</p>
-                <p className="text-xs text-slate-500">• 5~30초 분량</p>
-                <p className="text-xs text-slate-500">• MP4/MOV 형식</p>
-                <p className="text-xs text-slate-500">• 최대 50MB</p>
+                <p className="text-xs text-muted-foreground">• 5~30초 분량</p>
+                <p className="text-xs text-muted-foreground">• MP4/MOV 형식</p>
+                <p className="text-xs text-muted-foreground">• 최대 50MB</p>
                 <button
                   onClick={() => videoInputRef.current?.click()}
-                  className="mt-2 text-xs text-pink-500 underline text-left"
+                  className="mt-2 text-xs text-primary underline text-left"
                 >
                   동영상 선택하기 →
                 </button>
               </div>
             )}
           </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-muted-foreground mt-2">
             💡 얼굴이 잘 보이는 자연스러운 동영상을 올려주세요
           </p>
         </div>
@@ -344,7 +346,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
         <Button
           onClick={handleShareRequest}
           variant="outline"
-          className="w-full h-14 border-2 border-rose-300 text-rose-700 hover:bg-rose-50"
+          className="w-full h-14 border-2 border-border text-foreground hover:bg-muted"
         >
           <Share2 className="w-5 h-5 mr-2" />
           친구에게 인생샷 요청하기
@@ -352,16 +354,25 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
 
         {/* Next Button */}
         <Button
-          onClick={() => onNext({ photos, mainPhotoIndex, video })}
+          onClick={() => {
+            if (uploadedCount === 0) {
+              toast.warning("사진이 없으면 매칭 확률이 낮아져요. 정말 진행하시겠어요?", {
+                action: { label: "계속하기", onClick: () => onNext({ photos, mainPhotoIndex, video }) },
+                duration: 6000,
+              });
+              return;
+            }
+            onNext({ photos, mainPhotoIndex, video });
+          }}
           disabled={isUploading}
-          className="w-full h-14 bg-gradient-to-r from-pink-400 to-rose-400 text-white"
+          className="w-full h-14 bg-primary text-primary-foreground"
         >
           {isUploading ? "업로드 중..." : "다음 - AI 인터뷰"}
         </Button>
 
         {uploadedCount === 0 && (
           <p className="text-sm text-center text-muted-foreground">
-            💡 나중에 사진을 추가할 수 있습니다
+            💡 사진을 등록하면 매칭 가능성이 높아집니다
           </p>
         )}
       </div>

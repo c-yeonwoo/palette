@@ -21,7 +21,7 @@ const personalities = [
 
 const datePreferences = [
   { id: "active", label: "액티브한 데이트", desc: "여행, 운동, 액티비티" },
-  { id: "indoor", label: "인도어 데이트", desc: "집, 카페, 영화관" },
+  { id: "indoor", label: "실내 데이트", desc: "집, 카페, 영화관" },
   { id: "culture", label: "문화 데이트", desc: "전시, 공연, 맛집 투어" },
   { id: "nature", label: "자연 데이트", desc: "산책, 드라이브, 피크닉" },
 ];
@@ -73,6 +73,10 @@ export function IdealTypeScreen({ onNext, initialData, userGender }: IdealTypeSc
   const [selectedDealBreakers, setSelectedDealBreakers] = useState<string[]>(
     initialData?.idealType?.dealBreakers || []
   );
+  const [ageMin, setAgeMin] = useState<string>(initialData?.idealType?.ageMin?.toString() || "");
+  const [ageMax, setAgeMax] = useState<string>(initialData?.idealType?.ageMax?.toString() || "");
+  const [heightMin, setHeightMin] = useState<string>(initialData?.idealType?.heightMin?.toString() || "");
+  const [heightMax, setHeightMax] = useState<string>(initialData?.idealType?.heightMax?.toString() || "");
 
   const toggleDatePreference = (id: string) => {
     if (selectedDatePreferences.includes(id)) {
@@ -133,14 +137,67 @@ export function IdealTypeScreen({ onNext, initialData, userGender }: IdealTypeSc
       {/* Content */}
       <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
         {/* Info Banner */}
-        <div className="bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200 rounded-xl p-6">
+        <div className="bg-secondary border border-border rounded-xl p-6">
           <div className="flex items-center gap-2 mb-2">
-            <Heart className="w-5 h-5 text-rose-500" />
-            <h3 className="text-rose-900">이상형을 알려주세요</h3>
+            <Heart className="w-5 h-5 text-primary" />
+            <h3 className="text-foreground">이상형을 알려주세요</h3>
           </div>
-          <p className="text-sm text-rose-700">
+          <p className="text-sm text-muted-foreground">
             키워드를 선택하면 AI가 자연스러운 문장으로 만들어 드려요
           </p>
+        </div>
+
+        {/* Age & Height Range */}
+        <div className="bg-card rounded-xl p-6 border border-border space-y-4">
+          <Label className="text-base font-semibold block">나이 / 키 범위 (선택)</Label>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">나이 범위</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  placeholder="최소"
+                  value={ageMin}
+                  onChange={(e) => setAgeMin(e.target.value)}
+                  min="20" max="60"
+                  className="w-full h-10 px-3 rounded-lg border-2 border-border bg-card text-sm focus:border-primary focus:outline-none"
+                />
+                <span className="text-muted-foreground text-sm">~</span>
+                <input
+                  type="number"
+                  placeholder="최대"
+                  value={ageMax}
+                  onChange={(e) => setAgeMax(e.target.value)}
+                  min="20" max="60"
+                  className="w-full h-10 px-3 rounded-lg border-2 border-border bg-card text-sm focus:border-primary focus:outline-none"
+                />
+                <span className="text-sm text-muted-foreground">세</span>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">키 범위</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  placeholder="최소"
+                  value={heightMin}
+                  onChange={(e) => setHeightMin(e.target.value)}
+                  min="140" max="220"
+                  className="w-full h-10 px-3 rounded-lg border-2 border-border bg-card text-sm focus:border-primary focus:outline-none"
+                />
+                <span className="text-muted-foreground text-sm">~</span>
+                <input
+                  type="number"
+                  placeholder="최대"
+                  value={heightMax}
+                  onChange={(e) => setHeightMax(e.target.value)}
+                  min="140" max="220"
+                  className="w-full h-10 px-3 rounded-lg border-2 border-border bg-card text-sm focus:border-primary focus:outline-none"
+                />
+                <span className="text-sm text-muted-foreground">cm</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Question 1: Date Preferences */}
@@ -158,12 +215,12 @@ export function IdealTypeScreen({ onNext, initialData, userGender }: IdealTypeSc
                 onClick={() => toggleDatePreference(pref.id)}
                 className={`p-4 rounded-xl border-2 text-left transition-all ${
                   selectedDatePreferences.includes(pref.id)
-                    ? "bg-gradient-to-r from-pink-50 to-rose-50 border-pink-400"
-                    : "bg-white border-slate-200 hover:border-pink-300"
+                    ? "bg-secondary border-primary"
+                    : "bg-card border-border hover:border-primary/40"
                 }`}
               >
-                <p className="font-medium text-slate-900 mb-1">{pref.label}</p>
-                <p className="text-sm text-slate-600">{pref.desc}</p>
+                <p className="font-medium text-foreground mb-1">{pref.label}</p>
+                <p className="text-sm text-muted-foreground">{pref.desc}</p>
               </button>
             ))}
           </div>
@@ -173,7 +230,7 @@ export function IdealTypeScreen({ onNext, initialData, userGender }: IdealTypeSc
         <div className="bg-card rounded-xl p-6 border border-border space-y-4">
           <div>
             <Label className="text-base font-semibold mb-1 block">
-              Q2. 중요하게 보는 세 가지가 있다면? *
+              Q2. 상대방에게서 중요하게 보는 가치는? *
             </Label>
             <p className="text-sm text-muted-foreground mb-3">
               최대 3개 선택 ({selectedImportantValues.length}/3)
@@ -186,8 +243,8 @@ export function IdealTypeScreen({ onNext, initialData, userGender }: IdealTypeSc
                 onClick={() => toggleImportantValue(value)}
                 className={`cursor-pointer px-4 py-2 transition-all ${
                   selectedImportantValues.includes(value)
-                    ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                    : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-card border-border text-muted-foreground hover:border-primary/40"
                 }`}
                 variant={selectedImportantValues.includes(value) ? "default" : "outline"}
               >
@@ -216,8 +273,8 @@ export function IdealTypeScreen({ onNext, initialData, userGender }: IdealTypeSc
                   onClick={() => togglePersonality(personality)}
                   className={`cursor-pointer px-4 py-2 transition-all ${
                     isSelected
-                      ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                      : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card border-border text-muted-foreground hover:border-primary/40"
                   }`}
                   variant={isSelected ? "default" : "outline"}
                 >
@@ -243,8 +300,8 @@ export function IdealTypeScreen({ onNext, initialData, userGender }: IdealTypeSc
                 onClick={() => toggleAppearanceStyle(style)}
                 className={`cursor-pointer px-4 py-2 transition-all ${
                   selectedAppearanceStyles.includes(style)
-                    ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                    : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-card border-border text-muted-foreground hover:border-primary/40"
                 }`}
                 variant={selectedAppearanceStyles.includes(style) ? "default" : "outline"}
               >
@@ -271,8 +328,8 @@ export function IdealTypeScreen({ onNext, initialData, userGender }: IdealTypeSc
                 onClick={() => toggleDealBreaker(option.value)}
                 className={`cursor-pointer px-4 py-2 transition-all ${
                   selectedDealBreakers.includes(option.value)
-                    ? "bg-gradient-to-r from-pink-400 to-rose-400 text-white border-pink-400"
-                    : "bg-white border-slate-200 text-slate-600 hover:border-pink-300"
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-card border-border text-muted-foreground hover:border-primary/40"
                 }`}
                 variant={selectedDealBreakers.includes(option.value) ? "default" : "outline"}
               >
@@ -286,6 +343,10 @@ export function IdealTypeScreen({ onNext, initialData, userGender }: IdealTypeSc
         <Button
           onClick={() => onNext({
             idealType: {
+              ageMin: ageMin ? parseInt(ageMin) : null,
+              ageMax: ageMax ? parseInt(ageMax) : null,
+              heightMin: heightMin ? parseInt(heightMin) : null,
+              heightMax: heightMax ? parseInt(heightMax) : null,
               datePreferences: selectedDatePreferences,
               importantValues: selectedImportantValues,
               personalities: selectedPersonalities,
@@ -294,10 +355,10 @@ export function IdealTypeScreen({ onNext, initialData, userGender }: IdealTypeSc
             },
           })}
           disabled={!isValid}
-          className="w-full h-14 bg-gradient-to-r from-pink-400 to-rose-400 text-white disabled:opacity-50"
+          className="w-full h-14 bg-primary text-primary-foreground disabled:opacity-50"
         >
           <Sparkles className="w-5 h-5 mr-2" />
-          AI 프로필 개선하기
+          다음 - AI 프로필 완성
         </Button>
 
         {!isValid && (

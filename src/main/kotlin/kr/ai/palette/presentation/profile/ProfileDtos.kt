@@ -3,6 +3,40 @@ package kr.ai.palette.presentation.profile
 import kr.ai.palette.domain.profile.*
 import java.time.Instant
 
+data class AttachmentProfileDto(
+    val contactAnxiety: Int,
+    val intimacyAvoidance: Int,
+    val conflictStyle: Int,
+    val emotionExpression: Int,
+    val independenceLevel: Int,
+    val attachmentType: String,
+    val attachmentTypeLabel: String,
+    val attachmentTypeDescription: String,
+    val attachmentTypeEmoji: String,
+) {
+    fun toDomain() = AttachmentProfile(
+        contactAnxiety = contactAnxiety,
+        intimacyAvoidance = intimacyAvoidance,
+        conflictStyle = conflictStyle,
+        emotionExpression = emotionExpression,
+        independenceLevel = independenceLevel,
+    )
+
+    companion object {
+        fun from(ap: AttachmentProfile) = AttachmentProfileDto(
+            contactAnxiety = ap.contactAnxiety,
+            intimacyAvoidance = ap.intimacyAvoidance,
+            conflictStyle = ap.conflictStyle,
+            emotionExpression = ap.emotionExpression,
+            independenceLevel = ap.independenceLevel,
+            attachmentType = ap.attachmentType.name,
+            attachmentTypeLabel = ap.attachmentType.label,
+            attachmentTypeDescription = ap.attachmentType.description,
+            attachmentTypeEmoji = ap.attachmentType.emoji,
+        )
+    }
+}
+
 // Response DTOs
 data class ProfileResponse(
     val id: String,
@@ -18,6 +52,7 @@ data class ProfileResponse(
     val photos: List<ProfilePhotoDto>,
     val primaryPhotoUrl: String?,
     val colorType: ColorTypeDto?,
+    val attachmentProfile: AttachmentProfileDto?,
     val metadata: ProfileMetadataDto,
     val metrics: ProfileMetricsDto,
     val settings: ProfileSettingsDto
@@ -38,6 +73,7 @@ data class ProfileResponse(
                 photos = profile.photos.map { ProfilePhotoDto.from(it) },
                 primaryPhotoUrl = profile.photos.firstOrNull { it.isPrimary }?.url,
                 colorType = profile.colorType?.let { ColorTypeDto.from(it) },
+                attachmentProfile = profile.attachmentProfile?.let { AttachmentProfileDto.from(it) },
                 metadata = ProfileMetadataDto.from(profile.metadata),
                 metrics = ProfileMetricsDto.from(profile.metrics),
                 settings = ProfileSettingsDto.from(profile.settings)
@@ -48,15 +84,28 @@ data class ProfileResponse(
 
 data class ColorTypeDto(
     val type: String?,
+    val key: String?,
     val name: String?,
     val hex: String?,
     val description: String?
 ) {
     companion object {
+        private val ENUM_TO_KEY = mapOf(
+            "WARM_ORANGE"       to "orange",
+            "CALM_BLUE"         to "blue",
+            "VIBRANT_RED"       to "red",
+            "SOFT_PINK"         to "pink",
+            "FRESH_GREEN"       to "green",
+            "ELEGANT_PURPLE"    to "purple",
+            "BRIGHT_YELLOW"     to "yellow",
+            "SOPHISTICATED_GRAY" to "gray",
+        )
+
         fun from(ct: ColorType) = ColorTypeDto(
             type = ct.type?.name,
+            key  = ct.type?.name?.let { ENUM_TO_KEY[it] },
             name = ct.name,
-            hex = ct.hex,
+            hex  = ct.hex,
             description = ct.description
         )
     }
@@ -72,7 +121,8 @@ data class UpdateProfileRequest(
     val introduction: IntroductionDto?,
     val idealType: IdealTypeDto?,
     val personalityTests: List<PersonalityTestResultDto>?,
-    val settings: ProfileSettingsDto?
+    val settings: ProfileSettingsDto?,
+    val attachmentProfile: AttachmentProfileDto?
 )
 
 data class UpdateSettingsRequest(
@@ -160,21 +210,17 @@ data class EducationInfoDto(
 
 data class LocationInfoDto(
     val sido: String?,
-    val sigungu: String?
+    val sigungu: String?,
+    val hometownSido: String? = null,
+    val hometownSigungu: String? = null,
 ) {
     fun toDomain(): LocationInfo {
-        return LocationInfo(
-            sido = sido,
-            sigungu = sigungu
-        )
+        return LocationInfo(sido = sido, sigungu = sigungu, hometownSido = hometownSido, hometownSigungu = hometownSigungu)
     }
 
     companion object {
         fun from(locationInfo: LocationInfo): LocationInfoDto {
-            return LocationInfoDto(
-                sido = locationInfo.sido,
-                sigungu = locationInfo.sigungu
-            )
+            return LocationInfoDto(sido = locationInfo.sido, sigungu = locationInfo.sigungu, hometownSido = locationInfo.hometownSido, hometownSigungu = locationInfo.hometownSigungu)
         }
     }
 }
@@ -206,13 +252,15 @@ data class LifestyleInfoDto(
 data class IntroductionDto(
     val text: String?,
     val interests: List<String>?,
-    val interviewAnswers: InterviewAnswersDto?
+    val interviewAnswers: InterviewAnswersDto?,
+    val datingStyle: Map<String, String>? = null // questionKey -> selectedOptionKey
 ) {
     fun toDomain(): Introduction {
         return Introduction(
             text = text,
             interests = interests ?: emptyList(),
-            interviewAnswers = interviewAnswers?.toDomain()
+            interviewAnswers = interviewAnswers?.toDomain(),
+            datingStyle = datingStyle ?: emptyMap()
         )
     }
 
@@ -221,7 +269,8 @@ data class IntroductionDto(
             return IntroductionDto(
                 text = introduction.text,
                 interests = introduction.interests,
-                interviewAnswers = introduction.interviewAnswers?.let { InterviewAnswersDto.from(it) }
+                interviewAnswers = introduction.interviewAnswers?.let { InterviewAnswersDto.from(it) },
+                datingStyle = introduction.datingStyle.ifEmpty { null }
             )
         }
     }
@@ -258,11 +307,12 @@ data class InterviewAnswersDto(
 }
 
 data class IdealTypeDto(
-    val datePreferences: List<String>, // DatePreference enum values
+    val datePreferences: List<String> = emptyList(), // 하위호환용
     val importantValues: List<String>, // ImportantValue enum values (max 3)
     val personalities: List<String>, // max 5
     val appearanceStyles: List<String>, // MaleAppearanceStyle or FemaleAppearanceStyle enum values
-    val dealBreakers: List<String> // DealBreaker enum values (max 3)
+    val dealBreakers: List<String>, // DealBreaker enum values (max 3)
+    val bucketList: List<String> = emptyList() // 시스템 키 or "custom:..." (max 10)
 ) {
     fun toDomain(): IdealType {
         return IdealType(
@@ -273,10 +323,11 @@ data class IdealTypeDto(
                 try { ImportantValue.valueOf(it) } catch (e: Exception) { null }
             },
             personalities = personalities,
-            appearanceStyles = appearanceStyles, // Store as strings (enum values)
+            appearanceStyles = appearanceStyles,
             dealBreakers = dealBreakers.mapNotNull {
                 try { DealBreaker.valueOf(it) } catch (e: Exception) { null }
-            }
+            },
+            bucketList = bucketList
         )
     }
 
@@ -287,7 +338,8 @@ data class IdealTypeDto(
                 importantValues = idealType.importantValues.map { it.name },
                 personalities = idealType.personalities,
                 appearanceStyles = idealType.appearanceStyles,
-                dealBreakers = idealType.dealBreakers.map { it.name }
+                dealBreakers = idealType.dealBreakers.map { it.name },
+                bucketList = idealType.bucketList
             )
         }
     }

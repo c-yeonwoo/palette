@@ -41,7 +41,7 @@ export function AccountTypeSelectionScreen({ onComplete }: AccountTypeSelectionS
       <div className="w-full max-w-2xl space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold">Pallete에 오신 것을 환영합니다!</h1>
+          <h1 className="text-3xl font-bold">Palette에 오신 것을 환영합니다!</h1>
           <p className="text-muted-foreground">
             어떤 방식으로 서비스를 이용하시겠어요?
           </p>
@@ -119,7 +119,7 @@ export function AccountTypeSelectionScreen({ onComplete }: AccountTypeSelectionS
                 </li>
                 <li className="flex items-start">
                   <span className="mr-2">✓</span>
-                  <span>나는 매칭 대상이 되지 않음</span>
+                  <span>매칭 대상에서 제외됩니다</span>
                 </li>
               </ul>
             </CardContent>

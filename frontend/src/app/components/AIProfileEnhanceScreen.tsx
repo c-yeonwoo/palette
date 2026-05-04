@@ -118,6 +118,16 @@ export function AIProfileEnhanceScreen({
     onComplete(result);
   };
 
+  const handleSkip = () => {
+    onComplete({
+      colorType: "SOFT_PINK",
+      colorName: "소프트 핑크",
+      colorHex: "#F9A8D4",
+      colorDescription: "",
+      generatedIntroduction: "",
+    });
+  };
+
   const gradient = result ? (COLOR_GRADIENT[result.colorType] ?? "from-slate-400 to-gray-500") : "";
   const emoji = result ? (COLOR_EMOJI[result.colorType] ?? "✨") : "";
 
@@ -128,12 +138,12 @@ export function AIProfileEnhanceScreen({
         <p className="text-center text-sm text-muted-foreground mt-1">마지막 단계예요</p>
       </div>
 
-      <div className="max-w-md mx-auto px-5 py-6 space-y-5">
+      <div className="max-w-md mx-auto px-6 py-6 space-y-5">
 
         {/* 입력 내용 요약 */}
         <div className="bg-card border border-border rounded-2xl overflow-hidden">
           <button
-            className="w-full flex items-center justify-between px-5 py-4"
+            className="w-full flex items-center justify-between px-6 py-4"
             onClick={() => setShowDetail(!showDetail)}
           >
             <span className="font-medium text-sm">입력한 내용 확인</span>
@@ -141,7 +151,7 @@ export function AIProfileEnhanceScreen({
           </button>
 
           {showDetail && (
-            <div className="px-5 pb-4 space-y-3 border-t border-border pt-3">
+            <div className="px-6 pb-4 space-y-3 border-t border-border pt-3">
               {Object.entries(answers).filter(([, v]) => v).map(([key, value]) => (
                 <div key={key}>
                   <p className="text-xs text-muted-foreground">{labels[key] ?? key}</p>
@@ -160,20 +170,20 @@ export function AIProfileEnhanceScreen({
 
         {/* 결과 없을 때: 생성 버튼 */}
         {!result && (
-          <div className="bg-gradient-to-br from-pink-50 to-purple-50 border border-pink-200 rounded-2xl p-6 text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-400 to-purple-500 flex items-center justify-center mx-auto">
-              <Sparkles className="w-8 h-8 text-white" />
+          <div className="bg-secondary border border-border rounded-2xl p-6 text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center mx-auto">
+              <Sparkles className="w-8 h-8 text-primary-foreground" />
             </div>
             <div>
-              <h3 className="font-semibold text-slate-800">AI 소개글 생성</h3>
-              <p className="text-sm text-slate-500 mt-1">
+              <h3 className="font-semibold text-foreground">AI 소개글 생성</h3>
+              <p className="text-sm text-muted-foreground mt-1">
                 입력한 내용을 바탕으로 소개글과<br />나만의 색깔 타입을 찾아드려요
               </p>
             </div>
             <Button
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="w-full h-12 bg-gradient-to-r from-pink-400 to-purple-500 text-white"
+              className="w-full h-12 bg-primary text-primary-foreground"
             >
               {isGenerating ? (
                 <>
@@ -186,6 +196,14 @@ export function AIProfileEnhanceScreen({
                   AI 소개글 & 색깔 타입 생성하기
                 </>
               )}
+            </Button>
+            <Button
+              onClick={handleSkip}
+              disabled={isGenerating}
+              variant="ghost"
+              className="w-full text-muted-foreground text-sm"
+            >
+              건너뛰기 (나중에 직접 작성)
             </Button>
           </div>
         )}
@@ -208,7 +226,7 @@ export function AIProfileEnhanceScreen({
             {/* 생성된 소개글 */}
             <div className="bg-card border border-border rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-4 h-4 text-pink-500" />
+                <Sparkles className="w-4 h-4 text-primary" />
                 <p className="text-sm font-medium">AI가 완성한 소개글</p>
               </div>
               <p className="text-sm text-foreground leading-relaxed">{result.generatedIntroduction}</p>
@@ -220,7 +238,7 @@ export function AIProfileEnhanceScreen({
                 onClick={handleGenerate}
                 disabled={isGenerating}
                 variant="outline"
-                className="w-full h-11 border-pink-200 text-pink-600 hover:bg-pink-50"
+                className="w-full h-11 border-border text-primary hover:bg-muted"
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${isGenerating ? "animate-spin" : ""}`} />
                 {isGenerating ? "재생성 중..." : "다시 생성하기"}
@@ -228,7 +246,7 @@ export function AIProfileEnhanceScreen({
 
               <Button
                 onClick={handleComplete}
-                className="w-full h-12 bg-gradient-to-r from-pink-400 to-rose-400 text-white"
+                className="w-full h-12 bg-primary text-primary-foreground"
               >
                 이 소개글로 완료하기
                 <ArrowRight className="w-4 h-4 ml-2" />

@@ -16,9 +16,14 @@ interface MatchRequest {
   matchmakerName: string | null;
   message: string | null;
   matchmakerMessage: string | null;
+  offeredPoints?: number;
   status: string;
   createdAt: string;
   updatedAt: string;
+}
+
+interface MatchRequestWithRole extends MatchRequest {
+  myRole: "requester" | "target";
 }
 
 interface RelationshipStatus {
@@ -48,7 +53,7 @@ type TabType = "pending" | "completed";
 
 export function IntroductionHistoryScreen() {
   const [activeTab, setActiveTab] = useState<TabType>("pending");
-  const [pendingItems, setPendingItems] = useState<MatchRequest[]>([]);
+  const [pendingItems, setPendingItems] = useState<MatchRequestWithRole[]>([]);
   const [completedItems, setCompletedItems] = useState<RelationshipStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingStage, setUpdatingStage] = useState<string | null>(null);
@@ -67,12 +72,17 @@ export function IntroductionHistoryScreen() {
         api.get<RelationshipStatus[]>("/api/v1/relationships").catch(() => []),
       ]);
 
-      const all = [
-        ...(requesterRes.requests || []),
-        ...(targetRes.requests || []),
-      ];
-      const unique = all.filter((item, i, self) => i === self.findIndex(t => t.id === item.id));
-      setPendingItems(unique);
+      // 역할 태깅 후 병합 (중복 시 requester 우선)
+      const requesterItems: MatchRequestWithRole[] = (requesterRes.requests || []).map(
+        (r: MatchRequest) => ({ ...r, myRole: "requester" as const })
+      );
+      const targetItems: MatchRequestWithRole[] = (targetRes.requests || []).map(
+        (r: MatchRequest) => ({ ...r, myRole: "target" as const })
+      );
+      const map = new Map<string, MatchRequestWithRole>();
+      targetItems.forEach(r => map.set(r.id, r));
+      requesterItems.forEach(r => map.set(r.id, r)); // requester 우선
+      setPendingItems(Array.from(map.values()));
       setCompletedItems(Array.isArray(relRes) ? relRes : []);
     } catch {
       toast.error("소개 이력을 불러오는데 실패했습니다");
@@ -127,23 +137,9 @@ export function IntroductionHistoryScreen() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "PENDING":
-        return { label: "주선자 검토 중", bg: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300", icon: <Clock className="w-3 h-3" /> };
-      case "MATCHMAKER_APPROVED":
-        return { label: "응답 필요", bg: "bg-primary/10 text-primary", icon: <Heart className="w-3 h-3" /> };
-      case "COMPLETED":
-        return { label: "매칭 완료", bg: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300", icon: <CheckCircle2 className="w-3 h-3" /> };
-      case "REJECTED_BY_MATCHMAKER":
-      case "REJECTED_BY_TARGET":
-        return { label: "불발", bg: "bg-muted text-muted-foreground", icon: <XCircle className="w-3 h-3" /> };
-      default:
-        return { label: status, bg: "bg-muted text-muted-foreground", icon: <Clock className="w-3 h-3" /> };
-    }
-  };
+  // getStatusBadge → RequestTimeline 컴포넌트로 대체
 
-  const actionNeeded = pendingItems.filter(r => r.status === "MATCHMAKER_APPROVED").length;
+  const actionNeeded = pendingItems.filter(r => r.status === "MATCHMAKER_APPROVED" && r.myRole === "target").length;
 
   if (isLoading) {
     return (
@@ -184,7 +180,7 @@ export function IntroductionHistoryScreen() {
                 <Clock className="w-3.5 h-3.5" />
                 진행 중
                 {pendingItems.length > 0 && (
-                  <span className="bg-primary text-primary-foreground text-[10px] font-bold min-w-[16px] h-4 px-0.5 rounded-full inline-flex items-center justify-center">
+                  <span className="bg-primary text-primary-foreground text-xs font-bold min-w-[16px] h-4 px-0.5 rounded-full inline-flex items-center justify-center">
                     {pendingItems.length}
                   </span>
                 )}
@@ -194,7 +190,7 @@ export function IntroductionHistoryScreen() {
                 <Heart className="w-3.5 h-3.5" />
                 매칭 완료
                 {completedItems.length > 0 && (
-                  <span className="bg-muted text-muted-foreground text-[10px] font-bold min-w-[16px] h-4 px-0.5 rounded-full inline-flex items-center justify-center">
+                  <span className="bg-muted text-muted-foreground text-xs font-bold min-w-[16px] h-4 px-0.5 rounded-full inline-flex items-center justify-center">
                     {completedItems.length}
                   </span>
                 )}
@@ -226,46 +222,47 @@ export function IntroductionHistoryScreen() {
             ) : (
               <div className="space-y-3">
                 {pendingItems.map(request => {
-                  const badge = getStatusBadge(request.status);
-                  const isAwaitingMyResponse = request.status === "MATCHMAKER_APPROVED";
-
+                  const isActionNeeded = request.status === "MATCHMAKER_APPROVED" && request.myRole === "target";
                   return (
                     <div
                       key={request.id}
                       className={`bg-card rounded-2xl border overflow-hidden ${
-                        isAwaitingMyResponse ? "border-primary/40 shadow-sm shadow-primary/10" : "border-border/60"
+                        isActionNeeded ? "border-primary/40 shadow-sm shadow-primary/10" : "border-border/60"
                       }`}
                     >
-                      {isAwaitingMyResponse && (
-                        <div className="bg-primary/8 px-4 py-2 border-b border-primary/20">
-                          <p className="text-xs font-semibold text-primary">💌 응답이 필요해요</p>
+                      {isActionNeeded && (
+                        <div className="bg-primary/5 px-4 py-2 border-b border-primary/15">
+                          <p className="text-xs font-semibold text-primary">💌 소개 요청이 왔어요</p>
                         </div>
                       )}
-                      <div className="p-4 space-y-3">
+                      <div className="p-4 space-y-4">
+                        {/* Header */}
                         <div className="flex items-start justify-between gap-2">
                           <div>
-                            <p className="font-semibold">
-                              {request.targetNickname || request.targetRealName || "상대방"}
+                            <p className="font-semibold text-sm">
+                              {request.myRole === "requester"
+                                ? (request.targetNickname || request.targetRealName || "상대방")
+                                : "소개 요청"
+                              }
                             </p>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              {request.matchmakerName}님의 주선
+                              {request.matchmakerName}님 주선 ·{" "}
+                              {new Date(request.createdAt).toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}
                             </p>
                           </div>
-                          <span className={`flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-full flex-shrink-0 ${badge.bg}`}>
-                            {badge.icon}
-                            {badge.label}
-                          </span>
+                          {(request.offeredPoints ?? 0) > 0 && request.myRole === "requester" && (
+                            <span className="text-xs font-bold text-primary bg-primary/10 rounded-full px-2 py-0.5">
+                              {request.offeredPoints}P 제안
+                            </span>
+                          )}
                         </div>
 
-                        {request.message && (
-                          <div className="bg-muted/40 rounded-xl p-3">
-                            <p className="text-xs text-muted-foreground mb-0.5">내 메시지</p>
-                            <p className="text-sm">{request.message}</p>
-                          </div>
-                        )}
+                        {/* Timeline */}
+                        <RequestTimeline request={request} />
 
+                        {/* Matchmaker message */}
                         {request.matchmakerMessage && (
-                          <div className="bg-primary/5 rounded-xl p-3 flex gap-2">
+                          <div className="bg-secondary rounded-xl p-3 flex gap-2">
                             <MessageSquare className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
                             <div>
                               <p className="text-xs text-muted-foreground mb-0.5">주선자 메시지</p>
@@ -274,19 +271,13 @@ export function IntroductionHistoryScreen() {
                           </div>
                         )}
 
-                        {isAwaitingMyResponse && (
+                        {/* Target action buttons */}
+                        {isActionNeeded && (
                           <div className="flex gap-2 pt-1">
-                            <Button
-                              variant="outline"
-                              className="flex-1 h-10"
-                              onClick={() => handleTargetReject(request.id)}
-                            >
+                            <Button variant="outline" className="flex-1 h-10" onClick={() => handleTargetReject(request.id)}>
                               거절
                             </Button>
-                            <Button
-                              className="flex-1 h-10 bg-gradient-to-r from-primary to-pink-500"
-                              onClick={() => handleTargetAccept(request.id)}
-                            >
+                            <Button className="flex-1 h-10" onClick={() => handleTargetAccept(request.id)}>
                               수락하기 💌
                             </Button>
                           </div>
@@ -342,7 +333,7 @@ export function IntroductionHistoryScreen() {
                           {STAGE_STEPS.map((step, idx) => (
                             <div key={step.key} className="flex-1 text-center">
                               <div className={`h-1.5 rounded-full mb-1 transition-all ${idx <= currentStageIdx ? "bg-primary" : "bg-muted"}`} />
-                              <span className={`text-[10px] ${idx === currentStageIdx ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+                              <span className={`text-xs ${idx === currentStageIdx ? "text-primary font-semibold" : "text-muted-foreground"}`}>
                                 {step.emoji}
                               </span>
                             </div>
@@ -402,6 +393,98 @@ export function IntroductionHistoryScreen() {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── 요청 상태 타임라인 ────────────────────────────────────────
+function RequestTimeline({ request }: { request: MatchRequestWithRole }) {
+  type Step = { label: string; sub?: string; state: "done" | "active" | "failed" | "waiting" };
+
+  const steps: Step[] = (() => {
+    const { status, myRole, matchmakerName, offeredPoints } = request;
+    const pts = offeredPoints ?? 0;
+
+    if (myRole === "requester") {
+      // 주선자가 검토하는 단계
+      const step1: Step = { label: "주선 요청 전달", sub: `${matchmakerName}님께 전달됐어요`, state: "done" };
+
+      if (status === "PENDING") {
+        return [
+          step1,
+          { label: "주선자 검토 중", sub: "보통 1~2일 내 답변해요", state: "active" },
+          { label: "상대방 응답 대기", state: "waiting" },
+        ];
+      }
+      if (status === "REJECTED_BY_MATCHMAKER") {
+        return [
+          step1,
+          { label: "이번엔 인연이 닿지 않았어요", sub: "다음 인연을 찾아볼게요 🌿", state: "failed" },
+        ];
+      }
+      const step2: Step = {
+        label: "주선자가 수락했어요",
+        sub: pts > 0 ? `${pts}P가 ${matchmakerName}님께 전달됐어요` : undefined,
+        state: "done",
+      };
+      if (status === "MATCHMAKER_APPROVED") {
+        return [step1, step2, { label: "상대방 검토 중", sub: "보통 1~3일 내 답변해요", state: "active" }];
+      }
+      if (status === "REJECTED_BY_TARGET") {
+        return [step1, step2, { label: "이번엔 인연이 닿지 않았어요", sub: "다음 인연을 찾아볼게요 🌿", state: "failed" }];
+      }
+      if (status === "COMPLETED") {
+        return [step1, step2, { label: "매칭 성사! 🎉", sub: "연락처를 확인해보세요", state: "done" }];
+      }
+      return [step1, step2];
+    }
+
+    // Target(수신자) 뷰 — 훨씬 단순하게
+    if (status === "MATCHMAKER_APPROVED") {
+      return [
+        { label: "소개 요청이 도착했어요", sub: `${matchmakerName}님이 연결해드려요`, state: "active" },
+      ];
+    }
+    if (status === "COMPLETED") {
+      return [{ label: "매칭 성사! 🎉", sub: "연락처를 확인해보세요", state: "done" }];
+    }
+    if (status === "REJECTED_BY_TARGET") {
+      return [{ label: "거절하셨어요", sub: "언제든 마음이 바뀌면 주선을 요청해보세요", state: "failed" }];
+    }
+    return [{ label: "처리 중", state: "active" }];
+  })();
+
+  const dotColor: Record<Step["state"], string> = {
+    done: "bg-primary",
+    active: "bg-primary ring-4 ring-primary/20",
+    failed: "bg-muted-foreground/30",
+    waiting: "bg-muted",
+  };
+  const labelColor: Record<Step["state"], string> = {
+    done: "text-foreground",
+    active: "text-primary font-semibold",
+    failed: "text-muted-foreground",
+    waiting: "text-muted-foreground/50",
+  };
+
+  return (
+    <div className="space-y-0">
+      {steps.map((step, i) => (
+        <div key={i} className="flex gap-3">
+          {/* Dot + connector */}
+          <div className="flex flex-col items-center">
+            <div className={`w-2.5 h-2.5 rounded-full mt-1 flex-shrink-0 transition-all ${dotColor[step.state]}`} />
+            {i < steps.length - 1 && (
+              <div className={`w-px flex-1 my-1 ${step.state === "done" ? "bg-primary/30" : "bg-border"}`} style={{ minHeight: 16 }} />
+            )}
+          </div>
+          {/* Content */}
+          <div className="pb-3 min-w-0">
+            <p className={`text-sm leading-snug ${labelColor[step.state]}`}>{step.label}</p>
+            {step.sub && <p className="text-xs text-muted-foreground mt-0.5">{step.sub}</p>}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

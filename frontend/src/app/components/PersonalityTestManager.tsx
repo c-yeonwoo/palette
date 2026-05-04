@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Badge } from "./ui/badge";
 import { Plus, X, ExternalLink, Sparkles } from "lucide-react";
 
 interface PersonalityTest {
@@ -17,20 +15,12 @@ interface PersonalityTestManagerProps {
 
 export function PersonalityTestManager({ tests, onChange }: PersonalityTestManagerProps) {
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newTest, setNewTest] = useState<PersonalityTest>({
-    link: "",
-    title: "",
-  });
+  const [newTest, setNewTest] = useState<PersonalityTest>({ link: "", title: "" });
 
   const handleAddTest = () => {
-    if (!newTest.link || !newTest.title) {
-      return;
-    }
+    if (!newTest.link || !newTest.title) return;
     onChange([...tests, newTest]);
-    setNewTest({
-      link: "",
-      title: "",
-    });
+    setNewTest({ link: "", title: "" });
     setShowAddForm(false);
   };
 
@@ -39,113 +29,151 @@ export function PersonalityTestManager({ tests, onChange }: PersonalityTestManag
   };
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-center justify-between">
+    <section className="bg-card border border-border rounded-2xl overflow-hidden">
+      {/* 헤더 */}
+      <div className="px-6 py-4 border-b border-border flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-semibold">나는 이런 사람이에요 (선택)</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            MBTI, 에니어그램 등 성격 테스트 결과를 추가해보세요
+          <h3 className="font-semibold text-sm flex items-center gap-2">
+            <span>🧠</span>
+            <span>성격 테스트 결과</span>
+            <span className="text-xs font-normal text-muted-foreground">(선택)</span>
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            MBTI, 에니어그램 등 나를 더 잘 표현해보세요
           </p>
         </div>
         {!showAddForm && (
-          <Button variant="outline" size="sm" onClick={() => setShowAddForm(true)}>
-            <Plus className="w-4 h-4 mr-2" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAddForm(true)}
+            className="shrink-0 gap-1.5"
+          >
+            <Plus className="w-3.5 h-3.5" />
             추가
           </Button>
         )}
       </div>
 
-      {/* Existing Tests */}
-      {tests.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {tests.map((test, index) => (
-            <div
-              key={index}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-full px-4 py-2"
-            >
-              <a
-                href={test.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-medium text-purple-900 hover:text-purple-700 flex items-center gap-1"
+      <div className="p-5 space-y-4">
+        {/* 추가된 테스트 목록 */}
+        {tests.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {tests.map((test, index) => (
+              <div
+                key={index}
+                className="inline-flex items-center gap-2 bg-muted border border-border rounded-full px-3.5 py-2"
               >
-                {test.title}
-                <ExternalLink className="w-3 h-3" />
-              </a>
+                <a
+                  href={test.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium text-foreground hover:text-primary flex items-center gap-1.5 transition-colors"
+                >
+                  {test.title}
+                  <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                </a>
+                <button
+                  onClick={() => handleRemoveTest(index)}
+                  className="text-muted-foreground hover:text-destructive transition-colors ml-0.5"
+                  aria-label="삭제"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 추가 폼 */}
+        {showAddForm && (
+          <div className="bg-muted border border-border rounded-xl p-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                테스트 결과 추가
+              </p>
               <button
-                onClick={() => handleRemoveTest(index)}
-                className="text-purple-600 hover:text-red-600 ml-1"
+                onClick={() => setShowAddForm(false)}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="닫기"
               >
-                <X className="w-3 h-3" />
+                <X className="w-4 h-4" />
               </button>
             </div>
-          ))}
-        </div>
-      )}
 
-      {/* Add New Test Form */}
-      {showAddForm && (
-        <div className="bg-card border border-border rounded-xl p-6 space-y-4">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="font-semibold flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-purple-500" />
-              성격 테스트 결과 추가
-            </h4>
-            <button
-              onClick={() => setShowAddForm(false)}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div>
+              <label
+                htmlFor="test-link"
+                className="block mb-2 text-sm font-semibold text-foreground"
+              >
+                결과 링크
+              </label>
+              <Input
+                id="test-link"
+                type="url"
+                placeholder="https://..."
+                value={newTest.link}
+                onChange={(e) => setNewTest({ ...newTest, link: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="test-title"
+                className="block mb-2 text-sm font-semibold text-foreground"
+              >
+                결과 제목
+              </label>
+              <Input
+                id="test-title"
+                placeholder="예) ENFP - 재기발랄한 활동가"
+                value={newTest.title}
+                onChange={(e) => setNewTest({ ...newTest, title: e.target.value })}
+                maxLength={50}
+              />
+              <p className="text-xs text-muted-foreground mt-1.5">
+                {newTest.title.length}/50자
+              </p>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <Button
+                onClick={handleAddTest}
+                disabled={!newTest.link || !newTest.title}
+                className="flex-1"
+              >
+                추가하기
+              </Button>
+              <Button
+                onClick={() => setShowAddForm(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                취소
+              </Button>
+            </div>
           </div>
+        )}
 
-          <div>
-            <Label htmlFor="link">결과 링크 *</Label>
-            <Input
-              id="link"
-              type="url"
-              placeholder="https://..."
-              value={newTest.link}
-              onChange={(e) => setNewTest({ ...newTest, link: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="title">결과 제목 * (예: ENFP - 재기발랄한 활동가)</Label>
-            <Input
-              id="title"
-              placeholder="테스트 결과를 한 줄로 요약해주세요"
-              value={newTest.title}
-              onChange={(e) => setNewTest({ ...newTest, title: e.target.value })}
-              maxLength={50}
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              {newTest.title.length}/50자
-            </p>
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <Button
-              onClick={handleAddTest}
-              disabled={!newTest.link || !newTest.title}
-              className="flex-1"
-            >
-              추가
-            </Button>
-            <Button onClick={() => setShowAddForm(false)} variant="outline">
-              취소
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {tests.length === 0 && !showAddForm && (
-        <div className="text-center py-8 text-muted-foreground border-2 border-dashed border-border rounded-xl">
-          <Sparkles className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p className="text-sm">아직 추가된 테스트 결과가 없습니다</p>
-          <p className="text-xs mt-1">성격 테스트 결과를 추가하여 나를 더 잘 표현해보세요</p>
-        </div>
-      )}
+        {/* 빈 상태 — 버튼 중앙 배치 */}
+        {tests.length === 0 && !showAddForm && (
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="w-full py-7 flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted transition-all group"
+          >
+            <Sparkles className="w-9 h-9 text-muted-foreground group-hover:text-primary transition-colors" />
+            <div className="space-y-1 text-center">
+              <p className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                성격 테스트 결과 추가하기
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                MBTI · 에니어그램 · 버즈피드 등 뭐든 OK
+              </p>
+            </div>
+          </button>
+        )}
+      </div>
     </section>
   );
 }
