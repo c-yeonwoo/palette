@@ -341,7 +341,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
         photoUrl: app.photoUrl,
         joinedAt: new Date().toISOString(),
       }]);
-      toast.success(`${app.name}님을 멤버로 수락했어요!`);
+      toast.success(`${app.name}님을 지인으로 수락했어요!`);
     } catch {
       // mock: just update state
       setApplications(prev => prev.filter(a => a.id !== app.id));
@@ -358,7 +358,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
         photoUrl: app.photoUrl,
         joinedAt: new Date().toISOString(),
       }]);
-      toast.success(`${app.name}님을 멤버로 수락했어요!`);
+      toast.success(`${app.name}님을 지인으로 수락했어요!`);
     }
   };
 
@@ -464,7 +464,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "내 멤버", value: `${members.length}명` },
+            { label: "내 지인", value: `${members.length}명` },
             { label: "총 주선", value: `${matchmakerData?.totalMatchRequests ?? 0}건` },
             { label: "성공률", value: matchmakerData?.successRate ? `${Math.round(matchmakerData.successRate * 100)}%` : "-" },
           ].map(({ label, value }) => (
@@ -479,7 +479,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
       {/* ── 메인 탭 ── */}
       <div className="flex-shrink-0 flex border-b border-border bg-card">
         {([
-          { key: "members", label: "내 멤버", badge: members.length },
+          { key: "members", label: "내 지인", badge: members.length },
           { key: "requests", label: "주선 요청", badge: pendingRequests.length },
           { key: "history", label: "이력", badge: 0 },
         ] as const).map(({ key, label, badge }) => (
@@ -506,7 +506,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-4 py-4">
 
-          {/* ════ 내 멤버 탭 ════ */}
+          {/* ════ 내 지인 탭 ════ */}
           {activeMainTab === "members" && (
             <div className="space-y-4">
               {/* 남/여 토글 */}
@@ -526,11 +526,11 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                 ))}
               </div>
 
-              {/* 멤버 그리드 */}
+              {/* 지인 그리드 */}
               {filteredMembers.length === 0 ? (
                 <div className="py-16 text-center space-y-3">
                   <div className="text-4xl">👥</div>
-                  <p className="font-semibold text-foreground">아직 {memberGender === "MALE" ? "남성" : "여성"} 멤버가 없어요</p>
+                  <p className="font-semibold text-foreground">아직 {memberGender === "MALE" ? "남성" : "여성"} 지인이 없어요</p>
                   <p className="text-sm text-muted-foreground">신청 벨을 눌러 들어온 신청을 수락해보세요</p>
                   <button
                     onClick={() => setShowApplicationSheet(true)}
@@ -584,7 +584,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                 <div className="py-16 text-center space-y-3">
                   <div className="text-4xl">📭</div>
                   <p className="font-semibold text-foreground">대기 중인 주선 요청이 없어요</p>
-                  <p className="text-sm text-muted-foreground">멤버를 모아두면 주선 요청이 들어와요</p>
+                  <p className="text-sm text-muted-foreground">지인을 모아두면 주선 요청이 들어와요</p>
                   {onNavigateToFriends && (
                     <button
                       onClick={onNavigateToFriends}
@@ -1096,7 +1096,7 @@ function NudgeFlowSheet({
             <div className="space-y-3">
               {candidates.length === 0 ? (
                 <div className="py-12 text-center text-muted-foreground text-sm">
-                  연결 가능한 {oppositeGender === "FEMALE" ? "여성" : "남성"} 멤버가 없어요
+                  연결 가능한 {oppositeGender === "FEMALE" ? "여성" : "남성"} 지인이 없어요
                 </div>
               ) : (
                 candidates.map(candidate => {
@@ -1245,7 +1245,7 @@ function NudgeFlowSheet({
   );
 }
 
-// ─── 멤버 카드 ─────────────────────────────────────────────────────
+// ─── 지인 카드 ─────────────────────────────────────────────────────
 function MemberCard({
   member,
   hasActiveNudge,
@@ -1341,7 +1341,7 @@ function ApplicationCard({
           onClick={onAccept}
           className="flex-1 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
         >
-          멤버로 수락
+          지인으로 수락
         </button>
       </div>
     </div>
