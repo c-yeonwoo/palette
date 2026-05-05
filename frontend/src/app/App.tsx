@@ -1123,10 +1123,10 @@ function BottomNavigation({
             <button
               key={screen}
               onClick={() => onNavigate(screen)}
-              className="flex flex-col items-center justify-center gap-px px-3 py-1.5 min-w-[52px] transition-all"
+              className="flex flex-col items-center justify-center gap-0 px-3 py-1.5 min-w-[52px] transition-all"
             >
               <div
-                className="w-8 h-7 rounded-xl flex items-center justify-center transition-all duration-200"
+                className="w-8 h-6 rounded-xl flex items-center justify-center transition-all duration-200"
                 style={active ? { background: "hsl(var(--brand) / 0.10)" } : undefined}
               >
                 <Icon
