@@ -67,8 +67,10 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
       const res = await api.get<MatchmakerData>("/api/v1/matchmakers/me");
       setData(res);
     } catch {
-      // API 미연결 시 mock 데이터로 fallback
-      setData(MOCK_DATA);
+      // API 미연결 시 dev 환경에서만 mock 데이터로 fallback
+      if (import.meta.env.DEV) {
+        setData(MOCK_DATA);
+      }
     } finally {
       setIsLoading(false);
     }

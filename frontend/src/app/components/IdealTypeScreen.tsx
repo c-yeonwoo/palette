@@ -3,11 +3,11 @@ import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
 import { Badge } from "./ui/badge";
-import { Textarea } from "./ui/textarea";
-import { Heart, Sparkles } from "lucide-react";
+import { Heart, Sparkles, ChevronLeft } from "lucide-react";
 
 interface IdealTypeScreenProps {
   onNext: (data: any) => void;
+  onBack?: () => void;
   initialData?: {
     idealType?: any;
   };
@@ -54,7 +54,7 @@ const dealBreakerOptions = [
   { value: "LARGE_AGE_GAP", label: "나이 차이가 많이 나는 사람" }
 ];
 
-export function IdealTypeScreen({ onNext, initialData, userGender }: IdealTypeScreenProps) {
+export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: IdealTypeScreenProps) {
   // 사용자 성별에 따라 다른 외모 스타일 옵션 제공
   const appearanceStyles = userGender === "MALE" ? femaleAppearanceStyles : maleAppearanceStyles;
 
@@ -127,7 +127,14 @@ export function IdealTypeScreen({ onNext, initialData, userGender }: IdealTypeSc
     <div className="min-h-screen bg-background">
       {/* Header with Progress */}
       <div className="bg-card border-b border-border px-6 py-4 space-y-3">
-        <h2 className="text-center">이상형 설정</h2>
+        <div className="flex items-center">
+          {onBack && (
+            <button onClick={onBack} className="mr-2 p-1 rounded-full hover:bg-accent transition-colors">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          )}
+          <h2 className={onBack ? "" : "text-center w-full"}>이상형 설정</h2>
+        </div>
         <div className="space-y-2">
           <Progress value={80} className="h-2" />
           <p className="text-sm text-muted-foreground text-center">4/5 단계 - 약 3분 소요</p>

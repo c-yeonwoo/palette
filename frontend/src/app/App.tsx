@@ -17,7 +17,7 @@ import { IntroMethodSelectionScreen } from "./components/IntroMethodSelectionScr
 import { MyProfileScreen } from "./components/MyProfileScreen";
 import { ProfileEditScreen } from "./components/ProfileEditScreen";
 import { ProfileDetailScreen } from "./components/ProfileDetailScreen";
-import { MainFeedScreen } from "./components/MainFeedScreen";
+import { MainFeedScreen, type MutualFriend } from "./components/MainFeedScreen";
 import { IntroductionHistoryScreen } from "./components/IntroductionHistoryScreen";
 import { ConnectorDashboard } from "./components/ConnectorDashboard";
 import { MatchmakerMarketplaceScreen } from "./components/MatchmakerMarketplaceScreen";
@@ -80,7 +80,9 @@ type Screen =
   | "inviteHub";
 
 const ONBOARDING_DRAFT_KEY = "palette_onboarding_draft";
+const ONBOARDING_STEP_KEY = "palette_onboarding_step";
 const ONBOARDING_SCREENS: Screen[] = ["basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance"];
+const ONBOARDING_SCREENS_SET = new Set<Screen>(ONBOARDING_SCREENS);
 
 function loadOnboardingDraft() {
   try {
@@ -174,7 +176,7 @@ export default function App() {
   const [userGender, setUserGender] = useState<string | undefined>(undefined);
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>(undefined);
-  const [selectedMutualFriends, setSelectedMutualFriends] = useState<string[]>([]);
+  const [selectedMutualFriends, setSelectedMutualFriends] = useState<MutualFriend[]>([]);
   const [selectedDegree, setSelectedDegree] = useState<number>(2);
   const [selectedViewCost, setSelectedViewCost] = useState<number>(3000);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
@@ -241,9 +243,10 @@ export default function App() {
         heightMax: null as number | null,
         bodyTypes: [] as string[],
         personalities: [] as string[],
-        dateStyle: "",
-        purpose: "",
-        dealBreakers: "",
+        datePreferences: [] as string[],
+        importantValues: [] as string[],
+        appearanceStyles: [] as string[],
+        dealBreakers: [] as string[],
       },
     };
   });
@@ -279,11 +282,15 @@ export default function App() {
           if (user) {
             setIsLoggedIn(true);
             setUserGender(user.gender); // Store user gender for profile editing
-            // If profile is completed, go to main feed, otherwise start onboarding
+            // If profile is completed, go to main feed, otherwise restore or start onboarding
             if (user.isProfileCompleted) {
               setCurrentScreen("mainFeed");
             } else {
-              setCurrentScreen("basicInfo");
+              const savedStep = localStorage.getItem(ONBOARDING_STEP_KEY);
+              const validStep = savedStep && ONBOARDING_SCREENS_SET.has(savedStep as Screen)
+                ? (savedStep as Screen)
+                : "basicInfo";
+              setCurrentScreen(validStep);
             }
           } else {
             // Invalid tokens, clear them
@@ -303,6 +310,13 @@ export default function App() {
 
     checkAuth();
   }, []);
+
+  // Persist current onboarding step to localStorage for mid-flow restoration
+  useEffect(() => {
+    if (ONBOARDING_SCREENS_SET.has(currentScreen)) {
+      localStorage.setItem(ONBOARDING_STEP_KEY, currentScreen);
+    }
+  }, [currentScreen]);
 
   // Persist onboarding draft to localStorage (excludes photos/video — too large)
   useEffect(() => {
@@ -612,6 +626,7 @@ export default function App() {
       }
 
       localStorage.removeItem(ONBOARDING_DRAFT_KEY);
+      localStorage.removeItem(ONBOARDING_STEP_KEY);
       setCurrentScreen("mainFeed");
       toast.success("프로필이 성공적으로 생성되었습니다!");
     } catch (error: any) {
@@ -723,7 +738,11 @@ export default function App() {
 
   const handleProfileClick = (item: any) => {
     setSelectedUserId(item.profile.userId);
-    setSelectedMutualFriends(item.mutualFriends || []);
+    const rawFriends = item.mutualFriends || [];
+    const friends: MutualFriend[] = rawFriends.map((f: any) =>
+      typeof f === "string" ? { name: f } : f
+    );
+    setSelectedMutualFriends(friends);
     setSelectedDegree(item.degree ?? 2);
     setSelectedViewCost(item.viewCost ?? 3000);
     setCurrentScreen("profileDetail");
@@ -855,6 +874,7 @@ export default function App() {
       {currentScreen === "idealType" && (
         <IdealTypeScreen
           onNext={handleIdealTypeNext}
+          onBack={() => introMethod === "INTERVIEW" ? setCurrentScreen("aiInterview") : setCurrentScreen("aboutMe")}
           initialData={{
             idealType: profileData.idealType,
           }}
@@ -896,7 +916,9 @@ export default function App() {
         />
       )}
 
-      {currentScreen === "introductionHistory" && <IntroductionHistoryScreen />}
+      {currentScreen === "introductionHistory" && (
+        <IntroductionHistoryScreen onBack={() => setCurrentScreen("mainFeed")} />
+      )}
 
       {currentScreen === "profileDetail" && selectedUserId && (
         <ProfileDetailScreen
@@ -946,6 +968,7 @@ export default function App() {
           onNavigateToFriends={() => setCurrentScreen("friendConnect")}
           onLogout={() => {
             localStorage.removeItem(ONBOARDING_DRAFT_KEY);
+            localStorage.removeItem(ONBOARDING_STEP_KEY);
             setIsLoggedIn(false);
             setCurrentScreen("login");
           }}
@@ -979,7 +1002,7 @@ export default function App() {
       {currentScreen === "aiHub" && (
         <AiHubScreen onProfileClick={(userId) => {
           setSelectedUserId(userId);
-          setSelectedMutualFriends([]);
+          setSelectedMutualFriends([] as MutualFriend[]);
           setSelectedDegree(2);
           setSelectedViewCost(0);
           setCurrentScreen("profileDetail");

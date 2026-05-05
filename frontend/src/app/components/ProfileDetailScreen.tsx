@@ -9,12 +9,18 @@ import { getCompatibilityDeterministic, COLOR_META, COMPAT_STYLE, type ColorType
 import { CategoryCard } from "./profile/CategoryCard";
 import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
 
+interface MutualFriend {
+  name: string;
+  phoneHint?: string;
+  userId?: string;
+}
+
 interface ProfileDetailScreenProps {
   userId: string;
   onBack: () => void;
-  mutualFriends?: string[];  // 공통 친구 닉네임 리스트
-  degree?: number;           // 1=1촌, 2=2촌, 3=3촌
-  viewCost?: number;         // 열람 비용 (0=무료)
+  mutualFriends?: MutualFriend[];  // 공통 친구 리스트
+  degree?: number;                 // 1=1촌, 2=2촌, 3=3촌
+  viewCost?: number;               // 열람 비용 (0=무료)
   onNavigateToFriends?: () => void;
 }
 
@@ -148,7 +154,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   const [activeTab, setActiveTab] = useState<"about" | "ideal">("about");
   const [showMatchmakerModal, setShowMatchmakerModal] = useState(false);
   const [modalStep, setModalStep] = useState<1 | 2>(1);
-  const [selectedMatchmaker, setSelectedMatchmaker] = useState<string | null>(null);
+  const [selectedMatchmaker, setSelectedMatchmaker] = useState<MutualFriend | null>(null);
   const [requestMessage, setRequestMessage] = useState("");
   const [alreadyRequested, setAlreadyRequested] = useState(false);
   const [selectedPoints, setSelectedPoints] = useState<100 | 300 | 500>(300);
@@ -316,7 +322,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     setModalStep(1);
   };
 
-  const handleMatchmakerSelect = (matchmaker: string) => {
+  const handleMatchmakerSelect = (matchmaker: MutualFriend) => {
     setSelectedMatchmaker(matchmaker);
   };
 
@@ -334,12 +340,12 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     try {
       await api.post("/api/v1/matchmaking/request", {
         targetUserId: userId,
-        matchmakerName: selectedMatchmaker,
+        matchmakerName: selectedMatchmaker.name,
         message: requestMessage || null,
         offeredPoints: selectedPoints,
       });
 
-      toast.success(`${selectedMatchmaker}님께 주선을 요청했습니다`);
+      toast.success(`${selectedMatchmaker.name}님께 주선을 요청했습니다`);
       setAlreadyRequested(true);
       setShowMatchmakerModal(false);
       setModalStep(1);
@@ -361,8 +367,8 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
 
   const getMutualFriendsText = () => {
     if (mutualFriends.length === 0) return "";
-    if (mutualFriends.length === 1) return `${mutualFriends[0]}의 지인`;
-    return `${mutualFriends[0]} 외 ${mutualFriends.length - 1}명의 지인`;
+    if (mutualFriends.length === 1) return `${mutualFriends[0].name}의 지인`;
+    return `${mutualFriends[0].name} 외 ${mutualFriends.length - 1}명의 지인`;
   };
 
   if (isLoading) {
@@ -398,7 +404,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
           </p>
           {mutualFriends.length > 0 && (
             <p className="text-sm text-primary mb-4">
-              공통 친구: {mutualFriends.join(", ")}
+              공통 친구: {mutualFriends.map(f => f.name).join(", ")}
             </p>
           )}
 
@@ -878,7 +884,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                         key={index}
                         onClick={() => handleMatchmakerSelect(friend)}
                         className={`w-full text-left px-4 py-4 rounded-xl border-2 transition-all ${
-                          selectedMatchmaker === friend
+                          selectedMatchmaker?.name === friend.name
                             ? "border-primary bg-primary/5"
                             : "border-border hover:border-primary/50 hover:bg-accent/5"
                         }`}
@@ -889,10 +895,13 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                               <Users className="w-5 h-5 text-primary" />
                             </div>
                             <div>
-                              <p className="font-medium">{friend}</p>
+                              <p className="font-medium">{friend.name}</p>
+                              {friend.phoneHint && (
+                                <p className="text-xs text-muted-foreground">{friend.phoneHint}</p>
+                              )}
                             </div>
                           </div>
-                          {selectedMatchmaker === friend && (
+                          {selectedMatchmaker?.name === friend.name && (
                             <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
                               <svg
                                 className="w-4 h-4 text-white"
@@ -927,7 +936,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                   <Button
                     className="flex-1"
                     onClick={handleNextStep}
-                    disabled={!selectedMatchmaker}
+                    disabled={!selectedMatchmaker?.name}
                   >
                     다음
                   </Button>
@@ -954,7 +963,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">선택된 주선자</p>
-                      <p className="font-semibold text-sm">{selectedMatchmaker}</p>
+                      <p className="font-semibold text-sm">{selectedMatchmaker?.name}</p>
                     </div>
                   </div>
 

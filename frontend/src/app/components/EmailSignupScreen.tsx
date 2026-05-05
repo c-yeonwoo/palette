@@ -154,14 +154,10 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
       });
 
       toast.success("회원가입이 완료되었습니다!");
-
-      // 화면 전환을 위해 약간의 딜레이
-      setTimeout(() => {
-        onSuccess();
-      }, 500);
+      onSuccess();
     } catch (error: any) {
       console.error("Signup failed:", error);
-      if (error.response?.status === 400) {
+      if (error.status === 400) {
         toast.error("이미 사용 중인 이메일 또는 닉네임입니다");
       } else {
         toast.error("회원가입에 실패했습니다. 다시 시도해주세요.");

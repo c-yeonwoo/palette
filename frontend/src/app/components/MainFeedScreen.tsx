@@ -69,9 +69,15 @@ interface Profile {
   colorType?: ColorTypeDto | null;
 }
 
+export interface MutualFriend {
+  name: string;
+  phoneHint?: string;
+  userId?: string;
+}
+
 interface FeedProfileItem {
   profile: Profile;
-  mutualFriends: string[];
+  mutualFriends: MutualFriend[];
   degree?: number;
   viewCost?: number;
   isOpened?: boolean;
@@ -407,6 +413,12 @@ function ProfileCard({
   const [peeling, setPeeling] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
   const jobMap: Record<string, string> = {
     IT_DEVELOPMENT: "IT개발", FINANCE: "금융", EDUCATION: "교육", MEDICAL: "의료",
     MEDIA: "미디어", SERVICE: "서비스", MANUFACTURING: "제조", PUBLIC_OFFICIAL: "공무원",
@@ -516,7 +528,7 @@ function ProfileCard({
   );
 }
 
-function RelationshipBadge({ degree, mutualFriends }: { degree?: number; mutualFriends: string[] }) {
+function RelationshipBadge({ degree, mutualFriends }: { degree?: number; mutualFriends: MutualFriend[] }) {
   // 1촌: 직접 연결
   if (degree === 1) {
     return (
@@ -531,7 +543,7 @@ function RelationshipBadge({ degree, mutualFriends }: { degree?: number; mutualF
 
   // 2촌: 공통 지인 통해
   if (degree === 2 && mutualFriends.length > 0) {
-    const connector = mutualFriends[0];
+    const connector = mutualFriends[0].name;
     const extra = mutualFriends.length > 1 ? ` 외 ${mutualFriends.length - 1}명` : "";
     return (
       <div className="flex items-center gap-1 min-w-0">
@@ -547,7 +559,7 @@ function RelationshipBadge({ degree, mutualFriends }: { degree?: number; mutualF
 
   // degree 없이 mutualFriends만 있는 경우 (fallback)
   if (mutualFriends.length > 0) {
-    const name = mutualFriends[0];
+    const name = mutualFriends[0].name;
     const extra = mutualFriends.length > 1 ? ` 외 ${mutualFriends.length - 1}명` : "";
     return (
       <div className="flex items-center gap-1 min-w-0">
@@ -676,12 +688,18 @@ function AiSignalCard({
   const [peeling, setPeeling] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
   const job = profile.careerInfo.category ? jobMap[profile.careerInfo.category] ?? null : null;
   const location = profile.locationInfo.sido;
 
   const handleClick = () => {
     if (revealed) {
-      onProfileClick?.({ profile, mutualFriends: [], degree: 0, viewCost: 0 });
+      onProfileClick?.({ profile, mutualFriends: [] as MutualFriend[], degree: 0, viewCost: 0 });
       return;
     }
     if (peeling) return;

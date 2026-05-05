@@ -232,33 +232,35 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
       setMatchmakerData(matchmakerRes);
       setRequests(requestsResponse.requests);
 
-      // Load members and applications (with mock fallback)
+      // Load members and applications (with mock fallback in dev only)
       try {
         const membersRes = await api.get<{ members: ClientMember[] }>('/api/v1/matchmakers/me/members');
         setMembers(membersRes.members);
       } catch {
-        setMembers(MOCK_MEMBERS);
+        if (import.meta.env.DEV) setMembers(MOCK_MEMBERS);
       }
       try {
         const appsRes = await api.get<{ applications: ClientApplication[] }>('/api/v1/matchmakers/me/applications');
         setApplications(appsRes.applications);
       } catch {
-        setApplications(MOCK_APPLICATIONS);
+        if (import.meta.env.DEV) setApplications(MOCK_APPLICATIONS);
       }
       try {
         const nudgesRes = await api.get<{ nudges: NudgeProposal[] }>('/api/v1/matchmakers/me/nudges');
         setNudges(nudgesRes.nudges);
       } catch {
-        setNudges(MOCK_NUDGES);
+        if (import.meta.env.DEV) setNudges(MOCK_NUDGES);
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
-      // Use mock data as fallback when API is unavailable
-      setMatchmakerData(MOCK_MATCHMAKER_DATA);
-      setRequests(MOCK_REQUESTS);
-      setMembers(MOCK_MEMBERS);
-      setApplications(MOCK_APPLICATIONS);
-      setNudges(MOCK_NUDGES);
+      // Use mock data as fallback when API is unavailable (dev only)
+      if (import.meta.env.DEV) {
+        setMatchmakerData(MOCK_MATCHMAKER_DATA);
+        setRequests(MOCK_REQUESTS);
+        setMembers(MOCK_MEMBERS);
+        setApplications(MOCK_APPLICATIONS);
+        setNudges(MOCK_NUDGES);
+      }
     } finally {
       setIsLoading(false);
     }

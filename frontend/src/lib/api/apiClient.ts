@@ -9,6 +9,7 @@ import { authService } from '../auth/authService';
 
 interface ApiRequestOptions extends RequestInit {
   requiresAuth?: boolean;
+  _isRetry?: boolean;
 }
 
 /**
@@ -18,7 +19,7 @@ export async function apiRequest<T>(
   endpoint: string,
   options: ApiRequestOptions = {}
 ): Promise<T> {
-  const { requiresAuth = true, ...fetchOptions } = options;
+  const { requiresAuth = true, _isRetry: _retry, ...fetchOptions } = options;
 
   const headers = new Headers(fetchOptions.headers);
 
@@ -64,11 +65,11 @@ export async function apiRequest<T>(
     });
 
     // Handle 401 Unauthorized
-    if (response.status === 401 && requiresAuth) {
+    if (response.status === 401 && requiresAuth && !options._isRetry) {
       const refreshed = await authService.refreshToken();
       if (refreshed) {
-        // Retry the request with new token
-        return apiRequest<T>(endpoint, options);
+        // Retry the request with new token (mark as retry to prevent infinite loop)
+        return apiRequest<T>(endpoint, { ...options, _isRetry: true });
       } else {
         // Refresh failed, redirect to login
         tokenStorage.clearTokens();
