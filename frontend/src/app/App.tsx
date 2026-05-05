@@ -184,6 +184,10 @@ export default function App() {
   const [prevScreen, setPrevScreen] = useState<Screen>("mainFeed");
   const [selectedMatchmakerId, setSelectedMatchmakerId] = useState<string | undefined>(undefined);
   const [selectedMatchId, setSelectedMatchId] = useState<string>("match-001");
+  /** 이메일 회원가입 전 선택한 계정 유형 (pre-auth 경로 전용) */
+  const [preSelectedAccountType, setPreSelectedAccountType] = useState<"REGULAR" | "MATCHMAKER_ONLY" | null>(null);
+  /** accountTypeSelection 화면의 동작 모드 */
+  const [accountTypeSelectionMode, setAccountTypeSelectionMode] = useState<"pre-auth" | "post-auth">("post-auth");
 
   const navigateToNotifications = () => {
     setPrevScreen(currentScreen);
@@ -363,8 +367,9 @@ export default function App() {
       return;
     }
 
-    // If new user, go to account type selection
+    // If new user, go to account type selection (post-auth: API 호출 포함)
     if (isNewUser) {
+      setAccountTypeSelectionMode("post-auth");
       setCurrentScreen("accountTypeSelection");
       toast.success("환영합니다!");
     } else {
@@ -670,7 +675,9 @@ export default function App() {
     setCurrentScreen("emailLogin");
   };
 
-  const handleEmailSignup = () => {
+  /** 이메일 회원가입 전 타입 선택 → 타입 저장 후 이메일 폼으로 */
+  const handlePreAuthAccountTypeSelect = (accountType: "REGULAR" | "MATCHMAKER_ONLY") => {
+    setPreSelectedAccountType(accountType);
     setCurrentScreen("emailSignup");
   };
 
@@ -683,21 +690,31 @@ export default function App() {
       console.log('User fetched:', user);
 
       if (user) {
-        setUserGender(user.gender); // Store user gender
+        setUserGender(user.gender);
         if (user.isProfileCompleted) {
-          console.log('Profile completed, going to mainFeed');
           setCurrentScreen("mainFeed");
           toast.success("로그인되었습니다!");
-        } else {
-          console.log('Profile not completed, going to accountTypeSelection');
-          setCurrentScreen("accountTypeSelection");
-          toast.success("환영합니다! 계정 유형을 선택해주세요");
+          return;
         }
-      } else {
-        console.log('No user found, going to accountTypeSelection');
-        setCurrentScreen("accountTypeSelection");
-        toast.info("계정 설정을 완료해주세요");
       }
+
+      // pre-auth 경로: 이미 타입 선택 완료 → API 호출 후 바로 다음 단계
+      if (preSelectedAccountType) {
+        try {
+          await api.patch("/api/v1/auth/account-type", { accountType: preSelectedAccountType });
+        } catch (e) {
+          console.warn("account-type 설정 실패, 계속 진행", e);
+        }
+        const type = preSelectedAccountType;
+        setPreSelectedAccountType(null);
+        toast.success("환영합니다!");
+        handleAccountTypeSelection(type);
+        return;
+      }
+
+      // post-auth 경로 (로그인 또는 OAuth 신규): 타입 선택 화면으로
+      setCurrentScreen("accountTypeSelection");
+      toast.success("환영합니다! 계정 유형을 선택해주세요");
     } catch (error) {
       console.error('Error after email auth:', error);
       setCurrentScreen("accountTypeSelection");
@@ -769,7 +786,6 @@ export default function App() {
       {currentScreen === "login" && (
         <LoginScreen
           onEmailLogin={handleEmailLogin}
-          onMatchmakerSignup={() => setCurrentScreen("matchmakerSignup")}
         />
       )}
 
@@ -777,7 +793,10 @@ export default function App() {
         <EmailLoginScreen
           onSuccess={handleEmailAuthSuccess}
           onBackToLogin={handleBackToLogin}
-          onGoToSignup={handleEmailSignup}
+          onGoToSignup={() => {
+            setAccountTypeSelectionMode("pre-auth");
+            setCurrentScreen("accountTypeSelection");
+          }}
         />
       )}
 
@@ -817,7 +836,20 @@ export default function App() {
       )}
 
       {currentScreen === "accountTypeSelection" && (
-        <AccountTypeSelectionScreen onComplete={handleAccountTypeSelection} />
+        accountTypeSelectionMode === "pre-auth" ? (
+          // 이메일 회원가입 전 타입 선택 → 이메일 폼으로 이동 (API 호출 없음)
+          <AccountTypeSelectionScreen
+            mode="pre-auth"
+            onComplete={handlePreAuthAccountTypeSelect}
+            onBack={() => setCurrentScreen("emailLogin")}
+          />
+        ) : (
+          // OAuth/로그인 후 타입 선택 → API 호출 후 온보딩으로
+          <AccountTypeSelectionScreen
+            mode="post-auth"
+            onComplete={handleAccountTypeSelection}
+          />
+        )
       )}
 
       {currentScreen === "basicInfo" && (

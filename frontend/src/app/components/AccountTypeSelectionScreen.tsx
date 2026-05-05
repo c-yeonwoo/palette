@@ -1,21 +1,30 @@
 import { useState } from "react";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
-import { Heart, Users } from "lucide-react";
+import { Heart, Users, ArrowLeft } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 
 interface AccountTypeSelectionScreenProps {
   onComplete: (accountType: "REGULAR" | "MATCHMAKER_ONLY") => void;
+  onBack?: () => void;
+  /** pre-auth: 이메일 회원가입 전 선택 (API 호출 없음). post-auth(기본): OAuth 후 선택 (API 호출). */
+  mode?: "pre-auth" | "post-auth";
 }
 
-export function AccountTypeSelectionScreen({ onComplete }: AccountTypeSelectionScreenProps) {
+export function AccountTypeSelectionScreen({ onComplete, onBack, mode = "post-auth" }: AccountTypeSelectionScreenProps) {
   const [selectedType, setSelectedType] = useState<"REGULAR" | "MATCHMAKER_ONLY" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     if (!selectedType) {
       toast.error("계정 유형을 선택해주세요");
+      return;
+    }
+
+    // pre-auth: API 호출 없이 바로 onComplete (이메일 회원가입 후에 호출됨)
+    if (mode === "pre-auth") {
+      onComplete(selectedType);
       return;
     }
 
@@ -37,7 +46,16 @@ export function AccountTypeSelectionScreen({ onComplete }: AccountTypeSelectionS
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-6">
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* 뒤로가기 (pre-auth에서만) */}
+      {onBack && (
+        <div className="px-4 pt-safe-top pt-4">
+          <button onClick={onBack} className="p-2 -ml-2 hover:bg-accent rounded-full transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+        </div>
+      )}
+      <div className="flex-1 flex items-center justify-center p-6">
       <div className="w-full max-w-2xl space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
@@ -139,6 +157,7 @@ export function AccountTypeSelectionScreen({ onComplete }: AccountTypeSelectionS
         <p className="text-xs text-center text-muted-foreground">
           * 계정 유형은 나중에 설정에서 변경할 수 있습니다
         </p>
+      </div>
       </div>
     </div>
   );

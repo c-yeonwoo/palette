@@ -4,10 +4,9 @@ import { authService } from "../../lib/auth/authService";
 
 interface LoginScreenProps {
   onEmailLogin?: () => void;
-  onMatchmakerSignup?: () => void;
 }
 
-export function LoginScreen({ onEmailLogin, onMatchmakerSignup }: LoginScreenProps) {
+export function LoginScreen({ onEmailLogin }: LoginScreenProps) {
   const handleKakaoLogin = () => {
     authService.loginWithKakao();
   };
@@ -19,12 +18,6 @@ export function LoginScreen({ onEmailLogin, onMatchmakerSignup }: LoginScreenPro
   const handleEmailLogin = () => {
     if (onEmailLogin) {
       onEmailLogin();
-    }
-  };
-
-  const handleMatchmakerSignup = () => {
-    if (onMatchmakerSignup) {
-      onMatchmakerSignup();
     }
   };
 
@@ -110,15 +103,6 @@ export function LoginScreen({ onEmailLogin, onMatchmakerSignup }: LoginScreenPro
           개인정보 처리방침에 동의하는 것으로 간주됩니다
         </p>
 
-        {/* Matchmaker Signup Link */}
-        <div className="mt-4 text-center">
-          <button
-            onClick={handleMatchmakerSignup}
-            className="text-white/90 text-sm hover:text-white underline underline-offset-4"
-          >
-            주선자로 가입하기
-          </button>
-        </div>
       </div>
     </div>
   );
