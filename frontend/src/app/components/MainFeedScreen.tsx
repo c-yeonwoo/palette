@@ -383,15 +383,29 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
             <NoFriendsNudge onNavigateToFriends={onNavigateToFriends} />
           )
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {feedItems.map((item) => (
-              <ProfileCard
-                key={item.profile.userId}
-                item={item}
-                myColorType={(userProfile?.colorType?.type ?? null) as ColorType | null}
-                onClick={() => onProfileClick?.(item)}
+          <div className="space-y-5">
+            {/* AI Signal Section — 오늘의 추천 */}
+            {aiSignal && aiSignal.recommendations.length > 0 && (
+              <AiSignalSection
+                recommendations={aiSignal.recommendations}
+                onUnlocked={(updated) => setAiSignal({ recommendations: updated })}
+                onProfileClick={(rec) => {
+                  const feedItem = feedItems.find(f => f.profile.userId === rec.userId);
+                  if (feedItem) onProfileClick?.(feedItem);
+                }}
               />
-            ))}
+            )}
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {feedItems.map((item) => (
+                <ProfileCard
+                  key={item.profile.userId}
+                  item={item}
+                  myColorType={(userProfile?.colorType?.type ?? null) as ColorType | null}
+                  onClick={() => onProfileClick?.(item)}
+                />
+              ))}
+            </div>
           </div>
         )}
       </div>

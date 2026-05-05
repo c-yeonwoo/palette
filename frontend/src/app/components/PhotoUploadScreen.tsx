@@ -134,8 +134,22 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
     e.target.value = "";
   };
 
-  const handleShareRequest = () => {
-    toast.success("친구에게 사진 요청 링크가 복사되었습니다!");
+  const handleShareRequest = async () => {
+    const requestText = "📸 내 Palette 프로필에 올릴 인생샷을 찍어줘! 사진은 여기로 보내줘: https://palette.app/photo-request";
+    if (navigator.share) {
+      try {
+        await navigator.share({ text: requestText, title: "인생샷 부탁해!" });
+        return;
+      } catch {
+        // user cancelled or share failed, fall through to clipboard
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(requestText);
+      toast.success("📋 친구에게 보낼 메시지가 복사됐어요!");
+    } catch {
+      toast.error("복사에 실패했어요");
+    }
   };
 
   return (

@@ -464,7 +464,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
           </span>
         </div>
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-3 mb-3">
           {[
             { label: "내 지인", value: `${members.length}명` },
             { label: "총 주선", value: `${matchmakerData?.totalMatchRequests ?? 0}건` },
@@ -476,6 +476,31 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
             </div>
           ))}
         </div>
+
+        {/* 레벨 바 */}
+        {matchmakerData && (() => {
+          const lvl = matchmakerData.level;
+          const successes = matchmakerData.successfulMatches;
+          const LEVELS = [
+            { level: 1, name: "새싹", next: 3, nextName: "씨앗", color: "#22C55E" },
+            { level: 2, name: "씨앗", next: 6, nextName: "꽃봉오리", color: "#84CC16" },
+            { level: 3, name: "꽃봉오리", next: 11, nextName: "꽃", color: "#F97316" },
+            { level: 4, name: "꽃", next: 21, nextName: "나무", color: "#EC4899" },
+            { level: 5, name: "나무", next: undefined, nextName: undefined, color: "#A855F7" },
+          ];
+          const meta = LEVELS[Math.min(lvl - 1, 4)];
+          return (
+            <LevelBar
+              level={meta.level}
+              levelName={meta.name}
+              color={meta.color}
+              current={successes}
+              next={meta.next}
+              nextName={meta.nextName}
+              className="mt-1"
+            />
+          );
+        })()}
       </div>
 
       {/* ── 메인 탭 ── */}

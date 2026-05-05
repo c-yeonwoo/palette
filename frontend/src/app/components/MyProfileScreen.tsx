@@ -139,6 +139,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingToggleValue, setPendingToggleValue] = useState(false);
   const [showPhoneVerificationModal, setShowPhoneVerificationModal] = useState(false);
+  const [showCompletionChecklist, setShowCompletionChecklist] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
@@ -438,10 +439,13 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
               <span className="text-xs text-muted-foreground">열람</span>
             </div>
           </div>
-          <div className="flex flex-col items-center py-4 gap-0.5">
+          <button
+            className="flex flex-col items-center py-4 gap-0.5 w-full hover:bg-muted/50 transition-colors"
+            onClick={() => setShowCompletionChecklist(true)}
+          >
             <span className="text-base font-bold text-foreground">{profile.metrics.completionRate}%</span>
-            <span className="text-xs text-muted-foreground">완성도</span>
-          </div>
+            <span className="text-xs text-primary underline underline-offset-2">완성도 올리기</span>
+          </button>
         </div>
       )}
 
@@ -783,8 +787,153 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
         userId={userProfile?.userId}
         initialPhoneNumber={undefined}
       />
+
+      {/* ── 완성도 체크리스트 Bottom Sheet ── */}
+      {showCompletionChecklist && profile && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col justify-end"
+          onClick={() => setShowCompletionChecklist(false)}
+        >
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="relative bg-card rounded-t-3xl px-6 pt-5 pb-10 max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* handle */}
+            <div className="w-10 h-1 rounded-full bg-muted mx-auto mb-5" />
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold">프로필 완성도 올리기</h3>
+              <span className="text-2xl font-bold text-primary">{profile.metrics.completionRate}%</span>
+            </div>
+
+            {/* Overall progress bar */}
+            <div className="w-full h-2.5 bg-muted rounded-full mb-6 overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-700"
+                style={{ width: `${profile.metrics.completionRate}%` }}
+              />
+            </div>
+
+            <div className="space-y-3">
+              {buildCompletionChecklist(profile, userProfile!).map((item) => (
+                <div
+                  key={item.key}
+                  className={`flex items-start gap-3 p-3.5 rounded-xl border transition-colors ${
+                    item.done
+                      ? "border-primary/20 bg-primary/5"
+                      : "border-border bg-card"
+                  }`}
+                >
+                  <div className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    item.done ? "bg-primary" : "bg-muted"
+                  }`}>
+                    {item.done ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-primary-foreground" />
+                    ) : (
+                      <span className="w-2 h-2 rounded-full bg-muted-foreground/40" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className={`text-sm font-medium ${item.done ? "text-foreground line-through opacity-60" : "text-foreground"}`}>
+                        {item.label}
+                      </p>
+                      <span className={`text-xs font-semibold flex-shrink-0 ${item.done ? "text-primary/60" : "text-primary"}`}>
+                        +{item.points}%
+                      </span>
+                    </div>
+                    {!item.done && item.hint && (
+                      <p className="text-xs text-muted-foreground mt-0.5">{item.hint}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {profile.metrics.completionRate < 100 && (
+              <Button
+                className="w-full h-12 mt-6"
+                onClick={() => { setShowCompletionChecklist(false); onEdit(); }}
+              >
+                <Edit3 className="w-4 h-4 mr-2" />
+                프로필 채우러 가기
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+interface ChecklistItem {
+  key: string;
+  label: string;
+  hint?: string;
+  points: number;
+  done: boolean;
+}
+
+function buildCompletionChecklist(profile: ProfileData, user: UserProfile): ChecklistItem[] {
+  return [
+    {
+      key: "photo",
+      label: "사진 등록",
+      hint: "사진을 최소 1장 등록해주세요. 신뢰도가 높아져요!",
+      points: 20,
+      done: profile.photos.length > 0,
+    },
+    {
+      key: "introduction",
+      label: "자기소개 작성",
+      hint: "나를 표현하는 글을 작성해보세요",
+      points: 15,
+      done: !!(profile.introduction.text && profile.introduction.text.length > 10),
+    },
+    {
+      key: "colorType",
+      label: "AI 색깔 타입 분석",
+      hint: "AI 인터뷰로 나만의 색깔을 찾아보세요",
+      points: 15,
+      done: !!(profile.colorType?.type),
+    },
+    {
+      key: "phone",
+      label: "핸드폰 인증",
+      hint: "인증하면 신뢰도 뱃지가 표시돼요",
+      points: 15,
+      done: user.isPhoneVerified,
+    },
+    {
+      key: "idealType",
+      label: "이상형 설정",
+      hint: "어떤 사람을 원하는지 알려주세요",
+      points: 10,
+      done: (profile.idealType.personalities?.length ?? 0) > 0 ||
+            (profile.idealType.datePreferences?.length ?? 0) > 0,
+    },
+    {
+      key: "interests",
+      label: "관심사/취미 등록",
+      hint: "공통 관심사가 있으면 매칭 확률이 올라가요",
+      points: 10,
+      done: (profile.introduction.interests?.length ?? 0) > 0,
+    },
+    {
+      key: "career",
+      label: "직장 또는 학교 입력",
+      hint: "선택 사항이지만 신뢰도가 높아져요",
+      points: 10,
+      done: !!(profile.careerInfo.company || profile.educationInfo.school),
+    },
+    {
+      key: "lifestyle",
+      label: "라이프스타일 입력",
+      hint: "흡연·음주·종교 정보를 입력해주세요",
+      points: 5,
+      done: !!(profile.lifestyleInfo.smoking || profile.lifestyleInfo.drinking),
+    },
+  ].sort((a, b) => Number(a.done) - Number(b.done)); // incomplete first
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
