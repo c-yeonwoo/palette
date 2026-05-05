@@ -653,12 +653,12 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1.5">
-                            <span className="w-6 h-6 rounded-full border border-white shadow-sm" style={{ backgroundColor: nudge.fromMember.colorHex ?? "#d1d5db", display: "inline-block" }} />
+                            <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground/60">{nudge.fromMember.name.charAt(0)}</span>
                             <span className="text-sm font-medium">{nudge.fromMember.name}</span>
                           </div>
                           <span className="text-muted-foreground text-sm">↔</span>
                           <div className="flex items-center gap-1.5">
-                            <span className="w-6 h-6 rounded-full border border-white shadow-sm" style={{ backgroundColor: nudge.toMember.colorHex ?? "#d1d5db", display: "inline-block" }} />
+                            <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground/60">{nudge.toMember.name.charAt(0)}</span>
                             <span className="text-sm font-medium">{nudge.toMember.name}</span>
                           </div>
                           <span className="ml-auto text-xs text-muted-foreground">−{nudge.pointsSpent}P</span>
@@ -1116,16 +1116,12 @@ function NudgeFlowSheet({
                           : "border-border bg-card hover:border-primary/40 hover:bg-primary/5"
                       }`}
                     >
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-base font-bold text-white flex-shrink-0"
-                        style={{ backgroundColor: candidate.colorHex ?? "#d1d5db" }}
-                      >
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-base font-bold text-muted-foreground/60 flex-shrink-0">
                         {candidate.name.charAt(0)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold">{candidate.name}</p>
                         <p className="text-xs text-muted-foreground">{candidate.age}세 · {candidate.region}</p>
-                        {candidate.colorName && <p className="text-[10px] text-muted-foreground">{candidate.colorName}</p>}
                       </div>
                       {alreadyNudged && <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">제안중</span>}
                     </button>
@@ -1142,11 +1138,10 @@ function NudgeFlowSheet({
               <div className="bg-card border border-border rounded-2xl p-5">
                 <div className="flex items-center justify-center gap-6 mb-4">
                   <div className="text-center space-y-1.5">
-                    <div className="w-14 h-14 rounded-full border-2 border-white shadow mx-auto flex items-center justify-center text-xl font-bold text-white" style={{ backgroundColor: source.colorHex ?? "#d1d5db" }}>
+                    <div className="w-14 h-14 rounded-full bg-muted border border-border mx-auto flex items-center justify-center text-xl font-bold text-muted-foreground/60">
                       {source.name.charAt(0)}
                     </div>
                     <p className="text-sm font-semibold">{source.name}</p>
-                    <p className="text-xs text-muted-foreground">{source.colorName}</p>
                   </div>
                   <div className="flex flex-col items-center gap-1">
                     {compat ? (
@@ -1164,11 +1159,10 @@ function NudgeFlowSheet({
                     )}
                   </div>
                   <div className="text-center space-y-1.5">
-                    <div className="w-14 h-14 rounded-full border-2 border-white shadow mx-auto flex items-center justify-center text-xl font-bold text-white" style={{ backgroundColor: selected.colorHex ?? "#d1d5db" }}>
+                    <div className="w-14 h-14 rounded-full bg-muted border border-border mx-auto flex items-center justify-center text-xl font-bold text-muted-foreground/60">
                       {selected.name.charAt(0)}
                     </div>
                     <p className="text-sm font-semibold">{selected.name}</p>
-                    <p className="text-xs text-muted-foreground">{selected.colorName}</p>
                   </div>
                 </div>
                 {compat && <p className="text-xs text-center text-muted-foreground">{compat.tagline}</p>}
@@ -1203,14 +1197,14 @@ function NudgeFlowSheet({
                 <p className="text-sm font-semibold text-center">이렇게 연결 제안할게요</p>
                 <div className="flex items-center justify-center gap-4">
                   <div className="text-center">
-                    <div className="w-12 h-12 rounded-full border-2 border-white shadow mx-auto flex items-center justify-center text-base font-bold text-white" style={{ backgroundColor: source.colorHex ?? "#d1d5db" }}>
+                    <div className="w-12 h-12 rounded-full bg-muted border border-border mx-auto flex items-center justify-center text-base font-bold text-muted-foreground/60">
                       {source.name.charAt(0)}
                     </div>
                     <p className="text-xs font-semibold mt-1">{source.name}</p>
                   </div>
                   <span className="text-primary font-bold text-lg">↔</span>
                   <div className="text-center">
-                    <div className="w-12 h-12 rounded-full border-2 border-white shadow mx-auto flex items-center justify-center text-base font-bold text-white" style={{ backgroundColor: selected.colorHex ?? "#d1d5db" }}>
+                    <div className="w-12 h-12 rounded-full bg-muted border border-border mx-auto flex items-center justify-center text-base font-bold text-muted-foreground/60">
                       {selected.name.charAt(0)}
                     </div>
                     <p className="text-xs font-semibold mt-1">{selected.name}</p>
@@ -1268,18 +1262,9 @@ function MemberCard({
         {member.photoUrl ? (
           <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" />
         ) : (
-          <div
-            className="w-full h-full flex items-center justify-center text-2xl font-bold text-white"
-            style={{ backgroundColor: member.colorHex ?? "#d1d5db" }}
-          >
+          <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-muted-foreground/60">
             {member.name.charAt(0)}
           </div>
-        )}
-        {member.colorHex && (
-          <span
-            className="absolute bottom-2 right-2 w-4 h-4 rounded-full border-2 border-white shadow-sm"
-            style={{ backgroundColor: member.colorHex }}
-          />
         )}
         {hasActiveNudge && (
           <span className="absolute top-2 left-2 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full">
@@ -1320,10 +1305,7 @@ function ApplicationCard({
     <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
       {/* 프로필 행 */}
       <div className="flex items-center gap-3">
-        <div
-          className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold text-white flex-shrink-0"
-          style={{ backgroundColor: app.colorHex ?? "#d1d5db" }}
-        >
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-lg font-bold text-muted-foreground/60 flex-shrink-0">
           {app.name.charAt(0)}
         </div>
         <div className="flex-1 min-w-0">
@@ -1334,12 +1316,6 @@ function ApplicationCard({
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">{app.region}</p>
-          {app.colorName && (
-            <div className="flex items-center gap-1 mt-1">
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: app.colorHex ?? "#d1d5db" }} />
-              <span className="text-xs text-muted-foreground">{app.colorName}</span>
-            </div>
-          )}
         </div>
         <span className="text-xs text-muted-foreground flex-shrink-0">
           {new Date(app.appliedAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
