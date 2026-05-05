@@ -58,6 +58,7 @@ class AiSignalController(
             .map { it.targetUserId }.toSet()
         val excluded = firstDegree + secondDegree + hiddenIds + currentUserId.value.toString()
 
+        // TODO: Replace with vector-similarity query (pgvector/Pinecone) in Phase 3
         val candidates = profileRepository.findAll().filter { profile ->
             val uid = profile.userId.value.toString()
             if (uid in excluded) return@filter false
@@ -104,11 +105,16 @@ class AiSignalController(
 
     /**
      * 2번째 AI 추천 카드 열람 (1,000원 과금)
-     * TODO: 실제 결제 처리 연동 (현재는 in-memory unlock만 처리)
+     *
+     * MVP: paymentKey를 요청 바디에 포함해야 합니다.
+     * 결제 검증이 완료되기 전까지는 unlock을 허용하지 않습니다.
+     *
+     * TODO Phase 2: Toss Payments 결제 검증 연동 후 실제 과금 처리
      */
     @PostMapping("/unlock")
     fun unlockSecondRecommendation(
-        @AuthenticationPrincipal authUser: AuthUser
+        @AuthenticationPrincipal authUser: AuthUser,
+        @RequestBody(required = false) body: UnlockRequestBody?
     ): ResponseEntity<UnlockResponse> {
         val today = LocalDate.now()
         val unlockKey = "${authUser.userId.value}:$today"
@@ -117,7 +123,13 @@ class AiSignalController(
             return ResponseEntity.ok(UnlockResponse(alreadyUnlocked = true, price = 0))
         }
 
-        // TODO: 실제 결제 처리 (사용자 포인트 차감 또는 PG 연동)
+        // 결제 키 검증 (MVP: paymentKey 필수)
+        if (body?.paymentKey.isNullOrBlank()) {
+            return ResponseEntity.status(402).build()
+        }
+
+        // TODO Phase 2: Toss Payments /v1/payments/confirm API 호출하여 paymentKey 검증
+        // 현재는 paymentKey 존재 여부만 체크 (사전 검증 없음)
         unlockedToday[unlockKey] = true
 
         return ResponseEntity.ok(UnlockResponse(alreadyUnlocked = false, price = UNLOCK_PRICE))
@@ -148,4 +160,9 @@ data class AiSignalRecommendation(
 data class UnlockResponse(
     val alreadyUnlocked: Boolean,
     val price: Int
+)
+
+data class UnlockRequestBody(
+    /** Toss Payments paymentKey from front-end payment approval response */
+    val paymentKey: String?
 )

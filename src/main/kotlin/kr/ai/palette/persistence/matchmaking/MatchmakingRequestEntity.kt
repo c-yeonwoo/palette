@@ -5,7 +5,16 @@ import java.time.LocalDateTime
 import java.util.*
 
 @Entity
-@Table(name = "matchmaking_requests")
+@Table(
+    name = "matchmaking_requests",
+    indexes = [
+        Index(name = "idx_mr_requester_id", columnList = "requester_id"),
+        Index(name = "idx_mr_target_user_id", columnList = "target_user_id"),
+        Index(name = "idx_mr_matchmaker_id", columnList = "matchmaker_id"),
+        Index(name = "idx_mr_requester_status", columnList = "requester_id, status"),
+        Index(name = "idx_mr_requester_status_updated", columnList = "requester_id, status, updated_at"),
+    ]
+)
 class MatchmakingRequestEntity(
     @Id
     @Column(name = "id", columnDefinition = "BINARY(16)")

@@ -40,6 +40,13 @@ This is a Kotlin-based Spring Boot 4.0.1 application using Java 21, with a React
 
 ## Build and Run Commands
 
+### Prerequisites
+
+Copy `.env.example` to `.env` and fill required values. At minimum for local dev:
+- `JWT_SECRET` — generate with `openssl rand -base64 64`
+- `KAKAO_CLIENT_ID` / `KAKAO_CLIENT_SECRET` — from Kakao Developers console
+- OR use `SPRING_PROFILES_ACTIVE=local` which loads `application-local.yml` with dev-only dummy secrets (no real credentials needed)
+
 ### Frontend (React + TypeScript)
 
 ```bash
@@ -48,44 +55,43 @@ cd frontend
 # Install dependencies
 npm install
 
-# Development server
+# Development server (connects to backend at localhost:8080)
 npm run dev
+
+# Run unit tests (Vitest)
+npx vitest run
 
 # Build for production
 npm run build
-
-# Preview production build
-npm run preview
 ```
 
 ### Backend (Spring Boot)
 
-### Building the Project
 ```bash
+# Local dev (H2 + dummy secrets — no .env required)
+SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
+
+# With real credentials from .env
+export $(cat .env | grep -v ^# | xargs) && ./gradlew bootRun
+
+# Run tests (uses in-memory H2, no external services)
+SPRING_PROFILES_ACTIVE=test ./gradlew test
+
+# Production build
 ./gradlew build
-```
 
-### Running the Application
-```bash
-./gradlew bootRun
-```
-
-### Running Tests
-```bash
-# Run all tests
-./gradlew test
-
-# Run a specific test class
-./gradlew test --tests kr.ai.palette.PaletteApplicationTests
-
-# Run a specific test method
-./gradlew test --tests kr.ai.palette.PaletteApplicationTests.contextLoads
-```
-
-### Cleaning Build Artifacts
-```bash
+# Clean
 ./gradlew clean
 ```
+
+### Spring Profiles
+
+| Profile | DB | Secrets |
+|---------|----|----|
+| `local` | H2 file | dummy (application-local.yml) |
+| (default) | H2 file | from env vars (required) |
+| `prod` | MySQL | from env vars (required) |
+| `test` | H2 in-memory | test values (application.properties in test/) |
 
 ## Technology Stack
 
@@ -361,3 +367,35 @@ When implementing APIs, follow these guidelines:
 - **Integration Tests**: Test repository layer with H2 database
 - **API Tests**: Test controllers with MockMvc
 - **Test Coverage**: Aim for 80%+ coverage on domain and application layers
+
+## MVP 구현 현황 (2025-05)
+
+### ✅ 구현 완료
+- 이메일 인증 기반 회원가입/로그인 + JWT
+- Kakao OAuth2 로그인
+- 프로필 생성 플로우 (4단계: BasicInfo → PhotoUpload → AboutMe → IdealType)
+- AI 프로필 분석 (OpenAI gpt-4o-mini) — `OPENAI_API_KEY` 필요
+- 사진/영상 업로드 (S3 prod / 로컬 dev)
+- 지인 네트워크 피드 (2촌 기반 + 필터)
+- AI 시그널 추천 (현재 날짜+userId 시드 기반 랜덤, Phase 3에서 벡터 유사도로 교체)
+- 주선 요청 플로우 (2단계 승인: 주선자 → 수신자)
+- 주선자 대시보드 + 레벨 시스템 (Lv.1-5)
+- 전화번호 인증 (NCP SENS prod / Mock dev)
+- 푸시 알림 이벤트 발행 (FCM prod / Mock dev)
+- 리그/랭킹 시스템
+- 관계 단계 트래킹
+
+### 🚧 MVP에서 제한/미완성
+- **AI Signal unlock 결제**: paymentKey 존재 여부만 체크. Phase 2에서 Toss 검증 연동 필요
+- **채팅**: 프론트 mock. WebSocket/SSE 백엔드 미구현
+- **알림 화면**: 프론트 mock. 백엔드 알림 조회 API 미연동
+- **매칭 상세 / 마켓플레이스**: 프론트 mock 데이터
+- **사진 신원 검증**: 95% 통과 mock. Vision API 미연동
+- **홈택스 직업 검증**: UI stub
+- **Apple/Google/Naver OAuth**: UI 표시되나 백엔드 미지원 (graceful error 반환)
+
+### 🔐 보안 규칙 (코드 기여 시 필수 준수)
+- `JWT_SECRET`, `KAKAO_CLIENT_ID/SECRET` 등 실제 자격증명을 코드/application.yml 기본값으로 절대 커밋 금지
+- 새로운 환경변수 추가 시 `.env.example`에 반드시 문서화
+- `println` 대신 `LoggerFactory.getLogger()` 사용
+- 새 엔드포인트는 반드시 `@AuthenticationPrincipal AuthUser`로 인증 체크

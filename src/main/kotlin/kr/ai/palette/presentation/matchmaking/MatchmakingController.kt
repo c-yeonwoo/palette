@@ -31,9 +31,7 @@ class MatchmakingController(
         val requesterId = authUser.userId
         val coolTimeDays = 10L
 
-        val lastCompleted = matchmakingRequestRepository.findAll()
-            .filter { it.requesterId == requesterId && it.status == MatchmakingRequestStatus.COMPLETED }
-            .maxByOrNull { it.updatedAt }
+        val lastCompleted = matchmakingRequestRepository.findLatestCompletedByRequesterId(requesterId)
 
         if (lastCompleted == null) {
             return ResponseEntity.ok(CoolTimeStatusResponse(inCoolTime = false, remainingDays = 0, coolTimeDays = coolTimeDays.toInt()))
@@ -59,14 +57,11 @@ class MatchmakingController(
 
         // Check cooltime (10 days after last successful match)
         val coolTimeDays = 10L
-        val lastCompleted = matchmakingRequestRepository.findAll()
-            .filter { it.requesterId == requesterId && it.status == MatchmakingRequestStatus.COMPLETED }
-            .maxByOrNull { it.updatedAt }
+        val lastCompleted = matchmakingRequestRepository.findLatestCompletedByRequesterId(requesterId)
 
         if (lastCompleted != null) {
             val coolTimeEnd = lastCompleted.updatedAt.plusDays(coolTimeDays)
             if (java.time.LocalDateTime.now().isBefore(coolTimeEnd)) {
-                val remaining = java.time.temporal.ChronoUnit.DAYS.between(java.time.LocalDateTime.now(), coolTimeEnd) + 1
                 return ResponseEntity.status(429).build()
             }
         }
@@ -158,12 +153,8 @@ class MatchmakingController(
         val pendingStatus = MatchmakingRequestStatus.PENDING
         val approvedStatus = MatchmakingRequestStatus.MATCHMAKER_APPROVED
 
-        val allRequests = matchmakingRequestRepository.findAll()
-        val pendingRequests = allRequests
-            .filter {
-                it.requesterId == authUser.userId &&
-                (it.status == pendingStatus || it.status == approvedStatus)
-            }
+        val pendingRequests = (matchmakingRequestRepository.findByRequesterIdAndStatus(authUser.userId, pendingStatus) +
+            matchmakingRequestRepository.findByRequesterIdAndStatus(authUser.userId, approvedStatus))
             .sortedByDescending { it.createdAt }
 
         val enrichedRequests = pendingRequests.map { request ->

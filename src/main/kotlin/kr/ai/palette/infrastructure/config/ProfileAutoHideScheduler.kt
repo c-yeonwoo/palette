@@ -3,6 +3,7 @@ package kr.ai.palette.infrastructure.config
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.profile.ProfileSettings
 import kr.ai.palette.domain.user.UserRepository
+import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -17,6 +18,7 @@ class ProfileAutoHideScheduler(
     private val profileRepository: ProfileRepository,
     private val userRepository: UserRepository
 ) {
+    private val logger = LoggerFactory.getLogger(ProfileAutoHideScheduler::class.java)
 
     /**
      * 매일 새벽 3시에 실행
@@ -51,7 +53,7 @@ class ProfileAutoHideScheduler(
         }
 
         if (hiddenCount > 0) {
-            println("Auto-hidden $hiddenCount inactive profiles")
+            logger.info("Auto-hidden $hiddenCount inactive profiles")
         }
     }
 }

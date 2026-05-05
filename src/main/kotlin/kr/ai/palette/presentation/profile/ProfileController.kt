@@ -37,9 +37,6 @@ class ProfileController(
         @AuthenticationPrincipal authUser: AuthUser,
         @RequestBody request: UpdateProfileRequest
     ): ResponseEntity<ProfileResponse> {
-        // Debug logging
-        println("UPDATE PROFILE - User: ${authUser.userId}, PersonalityTests: ${request.personalityTests?.size ?: 0}")
-
         var profile = profileRepository.findByUserId(authUser.userId)
             ?: Profile.create(authUser.userId)
 
@@ -212,14 +209,43 @@ class ProfileController(
 
         return ResponseEntity.ok(
             PhotoUploadResponse(
+                photoId = newPhoto.id.value.toString(),
                 photoUrl = photoUrl,
                 uploadedAt = Instant.now()
             )
         )
     }
+
+    @DeleteMapping("/photo/{photoId}")
+    @Transactional
+    fun deleteProfilePhoto(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @PathVariable photoId: String
+    ): ResponseEntity<Unit> {
+        val profile = profileRepository.findByUserId(authUser.userId)
+            ?: return ResponseEntity.notFound().build()
+
+        val id = ProfilePhotoId(UUID.fromString(photoId))
+        val photo = profilePhotoRepository.findById(id)
+            ?: return ResponseEntity.notFound().build()
+
+        // 본인 사진인지 확인
+        if (photo.profileId != profile.id) return ResponseEntity.status(403).build()
+
+        // 스토리지에서 삭제
+        try { fileStorageService.deleteFile(photo.url) } catch (_: Exception) {}
+
+        profilePhotoRepository.delete(id)
+
+        // metrics 재계산
+        profileRepository.save(profile.recalculateMetrics())
+
+        return ResponseEntity.noContent().build()
+    }
 }
 
 data class PhotoUploadResponse(
+    val photoId: String,
     val photoUrl: String,
     val uploadedAt: Instant
 )

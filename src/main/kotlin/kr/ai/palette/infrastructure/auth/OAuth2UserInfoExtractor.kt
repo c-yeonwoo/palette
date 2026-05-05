@@ -2,6 +2,7 @@ package kr.ai.palette.infrastructure.auth
 
 import kr.ai.palette.domain.auth.OAuthUserInfo
 import kr.ai.palette.domain.user.OAuthProvider
+import kr.ai.palette.infrastructure.exception.UnsupportedOAuthProviderException
 import org.springframework.security.oauth2.core.user.OAuth2User
 import org.springframework.stereotype.Component
 
@@ -13,7 +14,10 @@ class OAuth2UserInfoExtractor {
             "kakao" -> extractKakaoUser(oAuth2User)
             "naver" -> extractNaverUser(oAuth2User)
             "google" -> extractGoogleUser(oAuth2User)
-            else -> throw IllegalArgumentException("Unsupported OAuth2 provider: $registrationId")
+            // Apple OAuth requires separate OIDC flow (Sign in with Apple).
+            // Not yet supported — return error message for frontend to display.
+            "apple" -> throw UnsupportedOAuthProviderException("apple")
+            else -> throw UnsupportedOAuthProviderException(registrationId)
         }
     }
 

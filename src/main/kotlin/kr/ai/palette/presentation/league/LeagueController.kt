@@ -77,8 +77,7 @@ class LeagueController(
 
         // 이번 시즌(이번 달) 성공한 매칭 집계
         val seasonStartDateTime = seasonStart.atStartOfDay()
-        val allCompleted = matchmakingRequestRepository.findAll()
-            .filter { it.status == MatchmakingRequestStatus.COMPLETED }
+        val allCompleted = matchmakingRequestRepository.findByStatus(MatchmakingRequestStatus.COMPLETED)
             .filter { it.updatedAt >= seasonStartDateTime }
 
         // 주선자별 성공 횟수

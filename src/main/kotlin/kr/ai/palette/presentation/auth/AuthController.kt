@@ -1,6 +1,8 @@
 package kr.ai.palette.presentation.auth
 
 import kr.ai.palette.application.user.UserWithdrawalService
+import kr.ai.palette.application.verification.PhoneVerificationService
+import kr.ai.palette.application.verification.VerifyCodeResult
 import kr.ai.palette.domain.auth.AuthToken
 import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.auth.AuthenticationService
@@ -23,6 +25,7 @@ class AuthController(
     private val passwordEncoder: PasswordEncoder,
     private val matchmakerRepository: kr.ai.palette.domain.matchmaker.MatchmakerRepository,
     private val userWithdrawalService: UserWithdrawalService,
+    private val phoneVerificationService: PhoneVerificationService,
 ) {
 
     @PostMapping("/refresh")
@@ -77,23 +80,13 @@ class AuthController(
     @PatchMapping("/convert-to-regular")
     @Transactional
     fun convertToRegular(@AuthenticationPrincipal authUser: AuthUser): ResponseEntity<Unit> {
-        println("🔄 Convert to regular request received for user: ${authUser.userId.value}")
-
         val user = userRepository.findById(authUser.userId)
-        if (user == null) {
-            println("❌ User not found: ${authUser.userId.value}")
-            return ResponseEntity.notFound().build()
-        }
-
-        println("✅ User found: ${user.publicInfo.nickname}, accountType: ${user.accountType}")
+            ?: return ResponseEntity.notFound().build()
 
         // MATCHMAKER_ONLY를 REGULAR로 변경
         if (user.accountType != AccountType.MATCHMAKER_ONLY) {
-            println("❌ User is not MATCHMAKER_ONLY, current type: ${user.accountType}")
             return ResponseEntity.badRequest().build()
         }
-
-        println("🔄 Converting user to REGULAR...")
 
         val updatedUser = User(
             id = user.id,
@@ -113,7 +106,6 @@ class AuthController(
         )
 
         userRepository.save(updatedUser)
-        println("✅ User converted successfully to REGULAR")
         return ResponseEntity.ok().build()
     }
 
@@ -123,7 +115,10 @@ class AuthController(
         @AuthenticationPrincipal authUser: AuthUser,
         @RequestBody request: CompleteMatchmakerInfoRequest
     ): ResponseEntity<Unit> {
-        // TODO: 핸드폰 인증 코드 검증
+        val verifyResult = phoneVerificationService.verifyCode(request.phoneNumber, request.verificationCode, null)
+        if (verifyResult is VerifyCodeResult.Failure) {
+            return ResponseEntity.badRequest().build()
+        }
 
         val user = userRepository.findById(authUser.userId)
             ?: return ResponseEntity.notFound().build()
@@ -297,7 +292,9 @@ data class CompleteMatchmakerInfoRequest(
 class EmailAuthController(
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
-    private val tokenProvider: kr.ai.palette.domain.auth.TokenProvider
+    private val tokenProvider: kr.ai.palette.domain.auth.TokenProvider,
+    private val phoneVerificationService: PhoneVerificationService,
+    private val refreshTokenRepository: kr.ai.palette.domain.auth.RefreshTokenRepository
 ) {
 
     @PostMapping("/signup")
@@ -377,8 +374,10 @@ class EmailAuthController(
     @PostMapping("/matchmaker/signup")
     @Transactional
     fun matchmakerSignup(@RequestBody request: MatchmakerSignupRequest): ResponseEntity<TokenResponse> {
-        // TODO: 핸드폰 인증 코드 검증 로직 추가 필요
-        // For now, we'll skip actual verification and just mark as verified
+        val verifyResult = phoneVerificationService.verifyCode(request.phoneNumber, request.verificationCode, null)
+        if (verifyResult is VerifyCodeResult.Failure) {
+            return ResponseEntity.badRequest().build()
+        }
 
         // 이메일 중복 체크
         if (userRepository.existsByEmail(request.email)) {
@@ -483,11 +482,12 @@ class EmailAuthController(
         )
     }
 
-    private fun generateAccessToken(userId: UserId): String {
-        return tokenProvider.generateAccessToken(userId)
-    }
+    private fun generateAccessToken(userId: UserId): String =
+        tokenProvider.generateAccessToken(userId)
 
     private fun generateRefreshToken(userId: UserId): String {
-        return tokenProvider.generateRefreshToken(userId)
+        val token = tokenProvider.generateRefreshToken(userId)
+        refreshTokenRepository.save(userId, token, tokenProvider.refreshTokenExpirySeconds())
+        return token
     }
 }

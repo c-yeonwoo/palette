@@ -6,7 +6,14 @@ import java.time.LocalDate
 import java.util.UUID
 
 @Entity
-@Table(name = "users")
+@Table(
+    name = "users",
+    indexes = [
+        Index(name = "idx_users_oauth", columnList = "oauth_provider, oauth_id", unique = true),
+        Index(name = "idx_users_email", columnList = "email"),
+        Index(name = "idx_users_phone", columnList = "phone_number"),
+    ]
+)
 class UserEntity(
     @Id
     @Column(name = "id", columnDefinition = "BINARY(16)")

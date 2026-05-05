@@ -5,7 +5,12 @@ import java.time.Instant
 import java.util.UUID
 
 @Entity
-@Table(name = "profiles")
+@Table(
+    name = "profiles",
+    indexes = [
+        Index(name = "idx_profiles_user_id", columnList = "user_id", unique = true),
+    ]
+)
 class ProfileEntity(
     @Id
     @Column(name = "id", columnDefinition = "BINARY(16)")
@@ -105,6 +110,14 @@ class ProfileEntity(
     @Column(name = "ideal_deal_breakers", columnDefinition = "TEXT")
     var idealDealBreakers: String?, // Comma-separated list: max 3
 
+    // TasteStack - stored as JSON map
+    @Column(name = "taste_stack", columnDefinition = "TEXT")
+    var tasteStack: String?, // JSON: {"COFFEE": 30, "INDOOR": 70, ...}
+
+    // BucketList - stored as JSON array
+    @Column(name = "bucket_list", columnDefinition = "TEXT")
+    var bucketList: String?, // JSON: ["JEJU_MONTH", "custom:새벽 드라이브", ...]
+
     // PersonalityTests - stored as JSON
     @Column(name = "personality_tests", columnDefinition = "TEXT")
     var personalityTests: String?, // JSON array of personality test results
@@ -141,7 +154,34 @@ class ProfileEntity(
     var isAcceptingMatches: Boolean,
 
     @Column(name = "hidden_at")
-    var hiddenAt: Instant?
+    var hiddenAt: Instant?,
+
+    // LocationInfo - hometown
+    @Column(name = "hometown_sido", length = 50)
+    var hometownSido: String? = null,
+
+    @Column(name = "hometown_sigungu", length = 50)
+    var hometownSigungu: String? = null,
+
+    // Introduction text (AI generated or manual)
+    @Column(name = "introduction_text", columnDefinition = "TEXT")
+    var introductionText: String? = null,
+
+    // AttachmentProfile
+    @Column(name = "attachment_contact_anxiety")
+    var attachmentContactAnxiety: Int? = null,
+
+    @Column(name = "attachment_intimacy_avoidance")
+    var attachmentIntimacyAvoidance: Int? = null,
+
+    @Column(name = "attachment_conflict_style")
+    var attachmentConflictStyle: Int? = null,
+
+    @Column(name = "attachment_emotion_expression")
+    var attachmentEmotionExpression: Int? = null,
+
+    @Column(name = "attachment_independence_level")
+    var attachmentIndependenceLevel: Int? = null,
 )
 
 // Enums for ProfileEntity

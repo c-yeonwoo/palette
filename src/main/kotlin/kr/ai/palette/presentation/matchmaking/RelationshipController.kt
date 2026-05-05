@@ -4,26 +4,23 @@ import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestId
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestRepository
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestStatus
+import kr.ai.palette.persistence.relationship.PhotoFeedbackEntity
+import kr.ai.palette.persistence.relationship.PhotoFeedbackJpaRepository
+import kr.ai.palette.persistence.relationship.RelationshipStageEntity
+import kr.ai.palette.persistence.relationship.RelationshipStageJpaRepository
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
+import java.time.Instant
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 
 enum class RelationshipStage {
-    MATCHED,              // 매칭 성사
-    CONTACTS_EXCHANGED,   // 연락처 교환 완료
-    MET,                  // 실제 만남 완료
-    DATING,               // 연애 시작 🎉
+    MATCHED,
+    CONTACTS_EXCHANGED,
+    MET,
+    DATING,
 }
-
-data class RelationshipRecord(
-    val requestId: String,
-    val userId: String,
-    val stage: RelationshipStage,
-    val message: String?,
-    val updatedAt: String
-)
 
 data class UpdateStageRequest(
     val stage: String,
@@ -34,9 +31,9 @@ data class RelationshipStatusResponse(
     val requestId: String,
     val stage: RelationshipStage,
     val message: String?,
-    val encouragementMessage: String?,   // 주선자의 응원 메시지
+    val encouragementMessage: String?,
     val updatedAt: String,
-    val photoFeedback: String? = null    // 사진 유사도 피드백
+    val photoFeedback: String? = null
 )
 
 enum class PhotoSimilarity(val label: String) {
@@ -53,19 +50,10 @@ data class PhotoFeedbackResponse(val requestId: String, val similarity: String, 
 @RequestMapping("/api/v1/relationships")
 class RelationshipController(
     private val matchmakingRequestRepository: MatchmakingRequestRepository,
-    private val userRepository: kr.ai.palette.domain.user.UserRepository
+    private val relationshipStageRepository: RelationshipStageJpaRepository,
+    private val photoFeedbackRepository: PhotoFeedbackJpaRepository
 ) {
 
-    companion object {
-        // requestId -> RelationshipRecord
-        private val stages = ConcurrentHashMap<String, RelationshipRecord>()
-        // requestId -> Map<userId, PhotoSimilarity>
-        private val photoFeedbacks = ConcurrentHashMap<String, ConcurrentHashMap<String, String>>()
-    }
-
-    /**
-     * 관계 단계 조회
-     */
     @GetMapping("/{requestId}")
     fun getRelationshipStatus(
         @AuthenticationPrincipal authUser: AuthUser,
@@ -78,24 +66,25 @@ class RelationshipController(
             return ResponseEntity.badRequest().build()
         }
 
-        val record = stages[requestId.toString()]
-        val encouragement = request.matchmakerDecision?.message
+        val record = relationshipStageRepository.findByRequestId(requestId)
+        val myFeedback = photoFeedbackRepository
+            .findByRequestIdAndUserId(requestId, authUser.userId.value.toString())
+            ?.similarity
 
         return ResponseEntity.ok(
             RelationshipStatusResponse(
                 requestId = requestId.toString(),
-                stage = record?.stage ?: RelationshipStage.MATCHED,
+                stage = record?.stage?.let { RelationshipStage.valueOf(it) } ?: RelationshipStage.MATCHED,
                 message = record?.message,
-                encouragementMessage = encouragement,
-                updatedAt = record?.updatedAt ?: request.updatedAt.toString()
+                encouragementMessage = request.matchmakerDecision?.message,
+                updatedAt = record?.updatedAt?.toString() ?: request.updatedAt.toString(),
+                photoFeedback = myFeedback
             )
         )
     }
 
-    /**
-     * 관계 단계 업데이트
-     */
     @PutMapping("/{requestId}/stage")
+    @Transactional
     fun updateRelationshipStage(
         @AuthenticationPrincipal authUser: AuthUser,
         @PathVariable requestId: UUID,
@@ -108,7 +97,6 @@ class RelationshipController(
             return ResponseEntity.badRequest().build()
         }
 
-        // Only requester or target can update
         if (authUser.userId != request.requesterId && authUser.userId != request.targetUserId) {
             return ResponseEntity.status(403).build()
         }
@@ -119,15 +107,27 @@ class RelationshipController(
             return ResponseEntity.badRequest().build()
         }
 
-        val now = java.time.Instant.now().toString()
-        val record = RelationshipRecord(
-            requestId = requestId.toString(),
-            userId = authUser.userId.value.toString(),
-            stage = stage,
-            message = body.message,
-            updatedAt = now
-        )
-        stages[requestId.toString()] = record
+        val now = Instant.now()
+        val existing = relationshipStageRepository.findByRequestId(requestId)
+        val entity = if (existing != null) {
+            RelationshipStageEntity(
+                id = existing.id,
+                requestId = requestId,
+                userId = authUser.userId.value.toString(),
+                stage = stage.name,
+                message = body.message,
+                updatedAt = now
+            )
+        } else {
+            RelationshipStageEntity(
+                requestId = requestId,
+                userId = authUser.userId.value.toString(),
+                stage = stage.name,
+                message = body.message,
+                updatedAt = now
+            )
+        }
+        relationshipStageRepository.save(entity)
 
         return ResponseEntity.ok(
             RelationshipStatusResponse(
@@ -135,32 +135,30 @@ class RelationshipController(
                 stage = stage,
                 message = body.message,
                 encouragementMessage = request.matchmakerDecision?.message,
-                updatedAt = now
+                updatedAt = now.toString()
             )
         )
     }
 
-    /**
-     * 내 관계 단계 목록 (COMPLETED 매칭들)
-     */
     @GetMapping
     fun getMyRelationships(
         @AuthenticationPrincipal authUser: AuthUser
     ): ResponseEntity<List<RelationshipStatusResponse>> {
         val myId = authUser.userId
-        val completedRequests = matchmakingRequestRepository.findAll()
-            .filter { (it.requesterId == myId || it.targetUserId == myId) &&
-                      it.status == MatchmakingRequestStatus.COMPLETED }
+        val completedRequests = matchmakingRequestRepository.findByRequesterOrTarget(myId)
+            .filter { it.status == MatchmakingRequestStatus.COMPLETED }
 
         val result = completedRequests.map { req ->
-            val record = stages[req.id.value.toString()]
-            val myFeedback = photoFeedbacks[req.id.value.toString()]?.get(myId.value.toString())
+            val record = relationshipStageRepository.findByRequestId(req.id.value)
+            val myFeedback = photoFeedbackRepository
+                .findByRequestIdAndUserId(req.id.value, myId.value.toString())
+                ?.similarity
             RelationshipStatusResponse(
                 requestId = req.id.value.toString(),
-                stage = record?.stage ?: RelationshipStage.MATCHED,
+                stage = record?.stage?.let { RelationshipStage.valueOf(it) } ?: RelationshipStage.MATCHED,
                 message = record?.message,
                 encouragementMessage = req.matchmakerDecision?.message,
-                updatedAt = record?.updatedAt ?: req.updatedAt.toString(),
+                updatedAt = record?.updatedAt?.toString() ?: req.updatedAt.toString(),
                 photoFeedback = myFeedback
             )
         }
@@ -168,10 +166,8 @@ class RelationshipController(
         return ResponseEntity.ok(result)
     }
 
-    /**
-     * 만남 후 사진 유사도 피드백
-     */
     @PostMapping("/{requestId}/photo-feedback")
+    @Transactional
     fun submitPhotoFeedback(
         @AuthenticationPrincipal authUser: AuthUser,
         @PathVariable requestId: UUID,
@@ -184,9 +180,8 @@ class RelationshipController(
             return ResponseEntity.status(403).build()
         }
 
-        // MET 이상 단계에서만 피드백 가능
-        val record = stages[requestId.toString()]
-        val stage = record?.stage ?: RelationshipStage.MATCHED
+        val record = relationshipStageRepository.findByRequestId(requestId)
+        val stage = record?.stage?.let { RelationshipStage.valueOf(it) } ?: RelationshipStage.MATCHED
         if (stage == RelationshipStage.MATCHED || stage == RelationshipStage.CONTACTS_EXCHANGED) {
             return ResponseEntity.badRequest().build()
         }
@@ -197,8 +192,24 @@ class RelationshipController(
             return ResponseEntity.badRequest().build()
         }
 
-        val feedbackMap = photoFeedbacks.getOrPut(requestId.toString()) { ConcurrentHashMap() }
-        feedbackMap[authUser.userId.value.toString()] = similarity.name
+        val userId = authUser.userId.value.toString()
+        val existing = photoFeedbackRepository.findByRequestIdAndUserId(requestId, userId)
+        val entity = if (existing != null) {
+            PhotoFeedbackEntity(
+                id = existing.id,
+                requestId = requestId,
+                userId = userId,
+                similarity = similarity.name,
+                createdAt = existing.createdAt
+            )
+        } else {
+            PhotoFeedbackEntity(
+                requestId = requestId,
+                userId = userId,
+                similarity = similarity.name
+            )
+        }
+        photoFeedbackRepository.save(entity)
 
         return ResponseEntity.ok(
             PhotoFeedbackResponse(

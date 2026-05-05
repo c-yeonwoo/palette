@@ -48,6 +48,23 @@ class MatchmakingRequestRepositoryImpl(
             .map { mapper.toDomain(it) }
     }
 
+    override fun findByRequesterId(requesterId: UserId): List<MatchmakingRequest> {
+        return jpaRepository.findByRequesterId(requesterId.value)
+            .map { mapper.toDomain(it) }
+    }
+
+    override fun findByRequesterOrTarget(userId: UserId): List<MatchmakingRequest> {
+        return jpaRepository.findByRequesterIdOrTargetUserId(userId.value, userId.value)
+            .map { mapper.toDomain(it) }
+    }
+
+    override fun findLatestCompletedByRequesterId(requesterId: UserId): MatchmakingRequest? {
+        return jpaRepository.findTopByRequesterIdAndStatusOrderByUpdatedAtDesc(
+            requesterId.value,
+            MatchmakingRequestStatus.COMPLETED.name
+        )?.let { mapper.toDomain(it) }
+    }
+
     override fun findByRequesterIdAndStatus(requesterId: UserId, status: MatchmakingRequestStatus): List<MatchmakingRequest> {
         return jpaRepository.findByRequesterIdAndStatus(requesterId.value, status.name)
             .map { mapper.toDomain(it) }

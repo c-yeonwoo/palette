@@ -61,11 +61,11 @@ class JwtTokenProvider(
             parseClaims(token)
             true
         } catch (e: Exception) {
-            println("Token validation failed: ${e.message}")
-            e.printStackTrace()
             false
         }
     }
+
+    override fun refreshTokenExpirySeconds(): Long = refreshTokenExpiry
 
     private fun parseClaims(token: String): Claims {
         return Jwts.parser()

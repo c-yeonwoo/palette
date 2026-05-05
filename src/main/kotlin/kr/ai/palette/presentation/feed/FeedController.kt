@@ -55,8 +55,7 @@ class FeedController(
         val secondDegreeFriendIds = friendshipRepository.findSecondDegreeFriendIds(currentUserId)
 
         // 매칭 이력이 있는 사용자 전체 제외 (요청자/대상자 양방향, 모든 상태 포함)
-        val matchHistoryExcluded = matchmakingRequestRepository.findAll()
-            .filter { it.requesterId == currentUserId || it.targetUserId == currentUserId }
+        val matchHistoryExcluded = matchmakingRequestRepository.findByRequesterOrTarget(currentUserId)
             .flatMap { listOf(it.requesterId.value.toString(), it.targetUserId.value.toString()) }
             .toSet()
 

@@ -488,7 +488,6 @@ export default function App() {
       }
 
       // 프로필 생성 또는 업데이트
-      console.log('Creating/updating profile with data:', profileData);
 
       // Convert form data to API format
       const bodyTypeMap: { [key: string]: string } = {
@@ -619,13 +618,10 @@ export default function App() {
       };
 
       await api.put('/api/v1/profile', apiData);
-      console.log('Profile saved successfully');
 
       // 전환 중이었다면 실제로 전환 API 호출
       if (isConvertingToRegular) {
-        console.log('Converting to regular user...');
         await api.patch('/api/v1/auth/convert-to-regular');
-        console.log('Conversion successful');
         setIsConvertingToRegular(false);
         toast.success("일반 회원으로 전환되었습니다!");
       }
@@ -682,12 +678,10 @@ export default function App() {
   };
 
   const handleEmailAuthSuccess = async () => {
-    console.log('handleEmailAuthSuccess called');
     setIsLoggedIn(true);
 
     try {
       const user = await authService.getCurrentUser();
-      console.log('User fetched:', user);
 
       if (user) {
         setUserGender(user.gender);
@@ -727,7 +721,6 @@ export default function App() {
   };
 
   const handleMatchmakerSignupSuccess = async () => {
-    console.log('handleMatchmakerSignupSuccess called');
     setIsLoggedIn(true);
 
     try {
@@ -741,7 +734,6 @@ export default function App() {
   };
 
   const handleMatchmakerInfoComplete = async () => {
-    console.log('handleMatchmakerInfoComplete called');
 
     try {
       // 주선자 정보 입력 완료 후 주선자 대시보드로 이동

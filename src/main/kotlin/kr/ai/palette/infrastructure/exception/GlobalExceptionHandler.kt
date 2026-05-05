@@ -129,10 +129,18 @@ class GlobalExceptionHandler {
         )
     }
 
+    @ExceptionHandler(UnsupportedOAuthProviderException::class)
+    fun handleUnsupportedOAuthProvider(ex: UnsupportedOAuthProviderException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(
+            ErrorResponse(
+                code = "OAUTH_PROVIDER_NOT_SUPPORTED",
+                message = "'${ex.provider}' 로그인은 아직 지원하지 않습니다"
+            )
+        )
+    }
+
     @ExceptionHandler(Exception::class)
     fun handleGeneral(ex: Exception): ResponseEntity<ErrorResponse> {
-        println("Unhandled exception: ${ex.javaClass.simpleName}: ${ex.message}")
-        ex.printStackTrace()
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
             ErrorResponse(
                 code = "INTERNAL_ERROR",
