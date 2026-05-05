@@ -12,7 +12,7 @@ import {
 import {
   Edit3, Loader2, Settings, LogOut, ChevronLeft,
   ExternalLink, CheckCircle2, Share2, Link,
-  AlertCircle, Phone, Eye, ChevronRight,
+  AlertCircle, Phone, Eye, ChevronRight, Camera, Plus,
 } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { authService } from "../../lib/auth/authService";
@@ -301,33 +301,54 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
   return (
     <div className="min-h-screen bg-background pb-32">
 
-      {/* ── 사진 히어로 ── */}
-      <div className="relative bg-muted" style={{ height: 320 }}>
-        {/* 블러 bg */}
-        {profile?.primaryPhotoUrl && (
+      {/* ── 대표사진 히어로 ── */}
+      <div className="relative" style={{ height: 420 }}>
+        {/* 대표사진 or 빈 플레이스홀더 */}
+        {sortedPhotos.length > 0 ? (
           <img
-            src={profile.primaryPhotoUrl}
-            alt=""
-            aria-hidden
-            className="absolute inset-0 w-full h-full object-cover blur-xl opacity-20 scale-110 pointer-events-none"
+            src={sortedPhotos[0].url}
+            alt="대표사진"
+            className="w-full h-full object-cover"
           />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-muted via-muted/80 to-accent/20 flex flex-col items-center justify-center gap-4">
+            <div className="w-20 h-20 rounded-full bg-card/70 backdrop-blur-sm flex items-center justify-center shadow-sm">
+              <Camera className="w-9 h-9 text-muted-foreground" />
+            </div>
+            <div className="text-center space-y-1">
+              <p className="text-sm font-medium text-foreground/80">사진을 추가해보세요</p>
+              <p className="text-xs text-muted-foreground">사진이 있으면 매칭 확률이 3배 높아져요</p>
+            </div>
+            <button
+              onClick={onEdit}
+              className="flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-semibold px-5 py-2.5 rounded-full shadow-md"
+            >
+              <Plus className="w-4 h-4" />
+              사진 추가하기
+            </button>
+          </div>
+        )}
+
+        {/* 상하단 그라데이션 오버레이 */}
+        {sortedPhotos.length > 0 && (
+          <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-black/65 pointer-events-none" />
         )}
 
         {/* 상단 네비 */}
         <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-12 z-10">
           <button
             onClick={onBack}
-            className="w-9 h-9 rounded-full bg-card/80 backdrop-blur-sm shadow-sm flex items-center justify-center"
+            className="w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center"
           >
-            <ChevronLeft className="w-5 h-5 text-foreground/80" />
+            <ChevronLeft className="w-5 h-5 text-white" />
           </button>
           <div className="flex items-center gap-2">
             <div className="relative" ref={shareMenuRef}>
               <button
                 onClick={() => setShowShareMenu(!showShareMenu)}
-                className="w-9 h-9 rounded-full bg-card/80 backdrop-blur-sm shadow-sm flex items-center justify-center"
+                className="w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center"
               >
-                <Share2 className="w-4 h-4 text-foreground/80" />
+                <Share2 className="w-4 h-4 text-white" />
               </button>
               {showShareMenu && (
                 <div className="absolute right-0 top-11 bg-card border border-border rounded-xl shadow-lg p-2 flex gap-1 z-30">
@@ -345,9 +366,9 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-                className="w-9 h-9 rounded-full bg-card/80 backdrop-blur-sm shadow-sm flex items-center justify-center"
+                className="w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center"
               >
-                <Settings className="w-4 h-4 text-foreground/80" />
+                <Settings className="w-4 h-4 text-white" />
               </button>
               {showSettingsMenu && (
                 <div className="absolute right-0 top-11 w-40 bg-card border border-border rounded-xl shadow-lg py-1 z-30">
@@ -364,70 +385,94 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
           </div>
         </div>
 
-        {/* 프로필 사진 — 히어로 하단 오버랩 */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
-          <div className="relative">
-            {/* 완성도 링 */}
-            <svg className="absolute inset-0 w-[108px] h-[108px] -rotate-90" viewBox="0 0 108 108">
-              <circle cx="54" cy="54" r="50" fill="none" strokeWidth="3" stroke="#e5e7eb" />
-              <circle
-                cx="54" cy="54" r="50" fill="none" strokeWidth="3"
-                stroke="hsl(var(--primary))" strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 50}`}
-                strokeDashoffset={`${2 * Math.PI * 50 * (1 - (profile?.metrics.completionRate ?? 0) / 100)}`}
-                className="transition-all duration-700"
-              />
-            </svg>
-            {profile?.primaryPhotoUrl ? (
-              <img
-                src={profile.primaryPhotoUrl}
-                alt="프로필"
-                className="w-[108px] h-[108px] rounded-full object-cover border-4 border-background shadow-md"
-              />
-            ) : (
-              <div className="w-[108px] h-[108px] rounded-full bg-accent border-4 border-card shadow-md flex items-center justify-center text-3xl font-semibold text-muted-foreground">
-                {userProfile.nickname.charAt(0).toUpperCase()}
-              </div>
-            )}
-            {profile?.metrics.completionRate === 100 && (
-              <div className="absolute -bottom-1 -right-1 bg-primary rounded-full p-1 shadow">
-                <CheckCircle2 className="w-4 h-4 text-primary-foreground" />
-              </div>
+        {/* 하단 이름 + 기본정보 오버레이 */}
+        <div className="absolute bottom-0 left-0 right-0 px-5 pb-5 z-10">
+          <div className="flex items-end justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-2xl font-bold text-white drop-shadow-sm tracking-tight leading-tight">
+                {userProfile.nickname}
+              </h3>
+              {basicChips.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                  {basicChips.map((chip, i) => (
+                    <span key={i} className="text-xs text-white/85 font-medium">
+                      {i > 0 && <span className="mr-1.5 text-white/40">·</span>}
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {profile?.colorType?.name && (
+                <div className="flex items-center gap-1.5 mt-2">
+                  <span
+                    className="inline-block w-2 h-2 rounded-full ring-1 ring-white/30"
+                    style={{ backgroundColor: profile.colorType.hex ?? "#d1d5db" }}
+                  />
+                  <span className="text-xs text-white/80 font-medium">{profile.colorType.name}</span>
+                </div>
+              )}
+            </div>
+            {/* 완성도 링 (우하단) */}
+            {profile && (
+              <button
+                onClick={() => setShowCompletionChecklist(true)}
+                className="flex-shrink-0 flex flex-col items-center gap-0.5"
+              >
+                <div className="relative w-11 h-11">
+                  <svg className="absolute inset-0 w-11 h-11 -rotate-90" viewBox="0 0 44 44">
+                    <circle cx="22" cy="22" r="19" fill="none" strokeWidth="3" stroke="rgba(255,255,255,0.25)" />
+                    <circle
+                      cx="22" cy="22" r="19" fill="none" strokeWidth="3"
+                      stroke="white" strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 19}`}
+                      strokeDashoffset={`${2 * Math.PI * 19 * (1 - profile.metrics.completionRate / 100)}`}
+                      className="transition-all duration-700"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-white">{profile.metrics.completionRate}%</span>
+                  </div>
+                </div>
+                <span className="text-[10px] text-white/70">완성도</span>
+              </button>
             )}
           </div>
         </div>
       </div>
 
-      {/* ── 이름 + 기본 정보 ── */}
-      <div className="pt-16 pb-5 px-6 text-center border-b border-border">
-        <h3 className="text-2xl font-bold tracking-tight text-foreground">{userProfile.nickname}</h3>
-
-        {basicChips.length > 0 && (
-          <div className="flex flex-wrap items-center justify-center gap-1.5 mt-2">
-            {basicChips.map((chip, i) => (
-              <span key={i} className="text-xs text-muted-foreground font-medium">
-                {i > 0 && <span className="mr-1.5 text-muted-foreground/40">·</span>}
-                {chip}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* 색깔 타입 — 작은 도트 + 이름만 */}
-        {profile?.colorType?.name && (
-          <div className="flex items-center justify-center gap-1.5 mt-2.5">
-            <span
-              className="inline-block w-2 h-2 rounded-full"
-              style={{ backgroundColor: profile.colorType.hex ?? "#d1d5db" }}
-            />
-            <span className="text-xs text-muted-foreground font-medium">{profile.colorType.name}</span>
-          </div>
-        )}
+      {/* ── 추가 사진 스트립 ── */}
+      <div className="bg-card border-b border-border">
+        <div className="flex gap-2 px-4 py-3 overflow-x-auto">
+          {sortedPhotos.slice(1).map((photo) => (
+            <div
+              key={photo.id}
+              className="relative w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-muted"
+            >
+              <img src={photo.url} alt="사진" className="w-full h-full object-cover" />
+            </div>
+          ))}
+          {/* 사진 추가 슬롯 (최대 6장까지) */}
+          {sortedPhotos.length < 6 && (
+            <button
+              onClick={onEdit}
+              className="w-20 h-20 flex-shrink-0 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/50 transition-colors flex flex-col items-center justify-center gap-1"
+            >
+              <Plus className="w-5 h-5 text-muted-foreground" />
+              <span className="text-[10px] text-muted-foreground">{sortedPhotos.length}/6</span>
+            </button>
+          )}
+          {/* 사진 0장이면 안내 */}
+          {sortedPhotos.length === 0 && (
+            <p className="text-xs text-muted-foreground self-center py-1">
+              사진을 추가하면 여기에 표시돼요
+            </p>
+          )}
+        </div>
       </div>
 
       {/* ── Stats ── */}
       {profile && (
-        <div className="grid grid-cols-3 divide-x divide-border border-b border-border">
+        <div className="grid grid-cols-2 divide-x divide-border border-b border-border">
           <div className="flex flex-col items-center py-4 gap-0.5">
             <span className="text-base font-bold text-foreground">{profile.metrics.trustScore}</span>
             <span className="text-xs text-muted-foreground">신뢰도</span>
@@ -439,13 +484,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
               <span className="text-xs text-muted-foreground">열람</span>
             </div>
           </div>
-          <button
-            className="flex flex-col items-center py-4 gap-0.5 w-full hover:bg-muted/50 transition-colors"
-            onClick={() => setShowCompletionChecklist(true)}
-          >
-            <span className="text-base font-bold text-foreground">{profile.metrics.completionRate}%</span>
-            <span className="text-xs text-primary underline underline-offset-2">완성도 올리기</span>
-          </button>
         </div>
       )}
 
@@ -486,25 +524,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
       {/* ── 내소개 탭 ── */}
       {activeTab === "about" && (
         <div className="divide-y divide-border">
-
-          {/* 사진 */}
-          {sortedPhotos.length > 0 && (
-            <section className="px-6 py-6">
-              <SectionLabel>사진</SectionLabel>
-              <div className="grid grid-cols-3 gap-2">
-                {sortedPhotos.map((photo, i) => (
-                  <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden bg-muted">
-                    <img src={photo.url} alt={`사진 ${i + 1}`} className="w-full h-full object-cover" />
-                    {photo.isPrimary && (
-                      <span className="absolute top-1.5 left-1.5 text-xs font-semibold bg-black/60 text-white rounded-md px-1.5 py-0.5">
-                        대표
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
 
           {/* 자기소개 */}
           {profile?.introduction.interviewAnswers && (
@@ -796,32 +815,32 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
         >
           <div className="absolute inset-0 bg-black/40" />
           <div
-            className="relative bg-card rounded-t-3xl px-6 pt-5 pb-10 max-h-[80vh] overflow-y-auto"
+            className="relative bg-card rounded-t-3xl flex flex-col w-full"
+            style={{ maxHeight: "82dvh" }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* handle */}
-            <div className="w-10 h-1 rounded-full bg-muted mx-auto mb-5" />
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold">프로필 완성도 올리기</h3>
-              <span className="text-2xl font-bold text-primary">{profile.metrics.completionRate}%</span>
+            {/* ── 헤더 (고정) ── */}
+            <div className="flex-shrink-0 px-6 pt-5 pb-4 border-b border-border">
+              <div className="w-10 h-1 rounded-full bg-muted mx-auto mb-4" />
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold">프로필 완성도 올리기</h3>
+                <span className="text-2xl font-bold text-primary">{profile.metrics.completionRate}%</span>
+              </div>
+              <div className="w-full h-2 bg-muted rounded-full mt-3 overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-700"
+                  style={{ width: `${profile.metrics.completionRate}%` }}
+                />
+              </div>
             </div>
 
-            {/* Overall progress bar */}
-            <div className="w-full h-2.5 bg-muted rounded-full mb-6 overflow-hidden">
-              <div
-                className="h-full bg-primary rounded-full transition-all duration-700"
-                style={{ width: `${profile.metrics.completionRate}%` }}
-              />
-            </div>
-
-            <div className="space-y-3">
+            {/* ── 체크리스트 (스크롤) ── */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 min-h-0">
               {buildCompletionChecklist(profile, userProfile!).map((item) => (
                 <div
                   key={item.key}
                   className={`flex items-start gap-3 p-3.5 rounded-xl border transition-colors ${
-                    item.done
-                      ? "border-primary/20 bg-primary/5"
-                      : "border-border bg-card"
+                    item.done ? "border-primary/20 bg-primary/5" : "border-border bg-card"
                   }`}
                 >
                   <div className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
@@ -850,14 +869,20 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
               ))}
             </div>
 
+            {/* ── CTA (고정) ── */}
             {profile.metrics.completionRate < 100 && (
-              <Button
-                className="w-full h-12 mt-6"
-                onClick={() => { setShowCompletionChecklist(false); onEdit(); }}
-              >
-                <Edit3 className="w-4 h-4 mr-2" />
-                프로필 채우러 가기
-              </Button>
+              <div className="flex-shrink-0 px-6 pt-3 pb-8 border-t border-border bg-card">
+                <Button
+                  className="w-full h-12"
+                  onClick={() => { setShowCompletionChecklist(false); onEdit(); }}
+                >
+                  <Edit3 className="w-4 h-4 mr-2" />
+                  프로필 채우러 가기
+                </Button>
+              </div>
+            )}
+            {profile.metrics.completionRate === 100 && (
+              <div className="flex-shrink-0 px-6 pt-3 pb-8" />
             )}
           </div>
         </div>
