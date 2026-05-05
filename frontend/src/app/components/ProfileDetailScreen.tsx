@@ -883,28 +883,28 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                       <button
                         key={index}
                         onClick={() => handleMatchmakerSelect(friend)}
-                        className={`w-full text-left px-4 py-4 rounded-xl border-2 transition-all ${
+                        className={`w-full text-left px-3 py-2.5 rounded-xl border-2 transition-all ${
                           selectedMatchmaker?.name === friend.name
                             ? "border-primary bg-primary/5"
                             : "border-border hover:border-primary/50 hover:bg-accent/5"
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                              <Users className="w-5 h-5 text-primary" />
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0">
+                              <Users className="w-3.5 h-3.5 text-primary" />
                             </div>
                             <div>
-                              <p className="font-medium">{friend.name}</p>
+                              <p className="text-sm font-medium">{friend.name}</p>
                               {friend.phoneHint && (
                                 <p className="text-xs text-muted-foreground">{friend.phoneHint}</p>
                               )}
                             </div>
                           </div>
                           {selectedMatchmaker?.name === friend.name && (
-                            <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
                               <svg
-                                className="w-4 h-4 text-white"
+                                className="w-3 h-3 text-white"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
