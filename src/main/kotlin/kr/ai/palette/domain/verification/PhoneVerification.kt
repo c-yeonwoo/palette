@@ -32,6 +32,20 @@ data class PhoneVerification(
         }
 
         /**
+         * 고정 코드로 인증 정보를 생성합니다 (dev/qa 전용).
+         */
+        fun createWithCode(phoneNumber: String, code: String): PhoneVerification {
+            val now = LocalDateTime.now()
+            return PhoneVerification(
+                phoneNumber = phoneNumber,
+                verificationCode = code,
+                createdAt = now,
+                expiresAt = now.plusMinutes(EXPIRY_MINUTES),
+                isVerified = false
+            )
+        }
+
+        /**
          * 6자리 인증번호를 생성합니다.
          */
         private fun generateCode(): String {

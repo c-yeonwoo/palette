@@ -134,7 +134,54 @@ export default function PhoneVerificationModal({
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // ─── DEV/QA bypass: 번호 입력 후 즉시 통과 ──────────────────────────
+  const isDev = import.meta.env.DEV;
+
+  const handleDevBypass = () => {
+    if (!phoneNumber) {
+      toast.error('핸드폰 번호를 입력해주세요');
+      return;
+    }
+    toast.success('[DEV] 인증 자동 통과');
+    onVerified(phoneNumber);
+    onClose();
+  };
+
   if (!isOpen) return null;
+
+  // DEV 모드: 간소화된 bypass UI
+  if (isDev) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-card rounded-xl max-w-md w-full p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-foreground">핸드폰 인증</h2>
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-3 text-sm text-yellow-800 font-medium">
+            🚧 DEV 환경 — 번호 입력 후 즉시 인증됩니다
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground/80">핸드폰 번호</label>
+            <Input
+              type="tel"
+              placeholder="010-1234-5678"
+              value={phoneNumber}
+              onChange={handlePhoneNumberChange}
+              maxLength={13}
+            />
+          </div>
+          <Button onClick={handleDevBypass} className="w-full">
+            인증 완료 (DEV 자동 통과)
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
