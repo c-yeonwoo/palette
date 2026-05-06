@@ -24,7 +24,9 @@ data class ProfileViewCostResponse(
 
 data class PayProfileViewRequest(
     val targetUserId: String,
-    val paymentMethod: String = "CARD"
+    val paymentMethod: String = "CARD",
+    val paymentKey: String? = null,   // Toss SDK에서 발급된 결제 키
+    val orderId: String? = null       // 주문 ID (프론트에서 생성)
 )
 
 data class PaymentResult(
@@ -123,7 +125,9 @@ class PaymentController(
             )
         }
 
-        return when (val result = paymentGateway.processProfileViewPayment(myIdStr, request.targetUserId, cost)) {
+        return when (val result = paymentGateway.processProfileViewPayment(
+            myIdStr, request.targetUserId, cost, request.paymentKey, request.orderId
+        )) {
             is PaymentGatewayResult.Success -> {
                 paidViewRepository.save(PaidViewEntity(buyerUserId = myIdStr, targetUserId = request.targetUserId))
                 transactionRepository.save(

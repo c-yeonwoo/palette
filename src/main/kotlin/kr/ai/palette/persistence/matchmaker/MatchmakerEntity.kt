@@ -59,7 +59,22 @@ class MatchmakerEntity(
     var createdAt: Instant = Instant.now(),
 
     @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant = Instant.now()
+    var updatedAt: Instant = Instant.now(),
+
+    @Column(name = "bio", columnDefinition = "TEXT")
+    var bio: String? = null,
+
+    @Column(name = "specialties", columnDefinition = "TEXT")
+    var specialties: String? = null, // JSON array
+
+    @Column(name = "is_public_profile", nullable = false)
+    var isPublicProfile: Boolean = false,
+
+    @Column(name = "average_rating", nullable = false)
+    var averageRating: Double = 0.0,
+
+    @Column(name = "total_reviews", nullable = false)
+    var totalReviews: Int = 0,
 ) {
     // JPA requires no-arg constructor
     protected constructor() : this(

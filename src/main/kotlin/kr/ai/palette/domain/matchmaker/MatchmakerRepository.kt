@@ -8,4 +8,5 @@ interface MatchmakerRepository {
     fun findByUserId(userId: UserId): Matchmaker?
     fun existsByUserId(userId: UserId): Boolean
     fun delete(id: MatchmakerId)
+    fun findPublicMatchmakers(page: Int, size: Int): List<Matchmaker>
 }

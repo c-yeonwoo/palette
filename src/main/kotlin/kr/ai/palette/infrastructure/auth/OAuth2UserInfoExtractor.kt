@@ -29,11 +29,10 @@ class OAuth2UserInfoExtractor {
             ?: throw IllegalArgumentException("Kakao account is missing")
         val profile = kakaoAccount["profile"] as? Map<*, *>
 
-        // Extract real name (필수)
+        // realName: 비즈니스 앱 심사 승인 전에는 null. NICE 본인인증 후 업데이트.
         val realName = kakaoAccount["name"] as? String
-            ?: throw IllegalArgumentException("Kakao user real name is required")
 
-        // Extract birth date (필수)
+        // birthDate: 비즈니스 앱 심사 승인 전에는 null. NICE 인증 후 업데이트.
         val birthyear = kakaoAccount["birthyear"] as? String
         val birthday = kakaoAccount["birthday"] as? String
         val birthDate = if (birthyear != null && birthday != null) {
@@ -41,14 +40,9 @@ class OAuth2UserInfoExtractor {
                 val month = birthday.substring(0, 2).toInt()
                 val day = birthday.substring(2, 4).toInt()
                 java.time.LocalDate.of(birthyear.toInt(), month, day)
-            } catch (e: Exception) {
-                throw IllegalArgumentException("Kakao user birth date is invalid or missing")
-            }
-        } else {
-            throw IllegalArgumentException("Kakao user birth date is required")
-        }
+            } catch (e: Exception) { null }
+        } else null
 
-        // Extract gender
         val gender = kakaoAccount["gender"] as? String
 
         return OAuthUserInfo(

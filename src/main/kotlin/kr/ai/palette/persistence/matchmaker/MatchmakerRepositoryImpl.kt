@@ -4,6 +4,7 @@ import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.matchmaker.Matchmaker
 import kr.ai.palette.domain.matchmaker.MatchmakerId
 import kr.ai.palette.domain.matchmaker.MatchmakerRepository
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
 
@@ -47,5 +48,11 @@ class MatchmakerRepositoryImpl(
 
     override fun delete(id: MatchmakerId) {
         jpaRepository.deleteById(id.value)
+    }
+
+    @Transactional(readOnly = true)
+    override fun findPublicMatchmakers(page: Int, size: Int): List<Matchmaker> {
+        return jpaRepository.findByIsPublicProfileTrue(PageRequest.of(page, size))
+            .map { mapper.toDomain(it) }
     }
 }

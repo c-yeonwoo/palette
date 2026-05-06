@@ -17,6 +17,7 @@ data class Profile(
     val videos: List<ProfileVideo>,
     val personalityTests: List<PersonalityTestResult>,
     val colorType: ColorType? = null,
+    val attachmentProfile: AttachmentProfile? = null,
     val metadata: ProfileMetadata,
     val metrics: ProfileMetrics,
     val settings: ProfileSettings
@@ -110,6 +111,10 @@ data class Profile(
             colorType = colorType,
             metadata = metadata.update()
         )
+    }
+
+    fun updateAttachmentProfile(attachmentProfile: AttachmentProfile): Profile {
+        return copy(attachmentProfile = attachmentProfile, metadata = metadata.update())
     }
 
     fun updatePersonalityTests(tests: List<PersonalityTestResult>): Profile {
@@ -218,7 +223,8 @@ data class Profile(
             locationInfo: LocationInfo = LocationInfo(null, null),
             lifestyleInfo: LifestyleInfo = LifestyleInfo(null, null, null),
             introduction: Introduction = Introduction(null, emptyList()),
-            idealType: IdealType = IdealType(emptyList(), emptyList(), emptyList(), emptyList(), emptyList())
+            idealType: IdealType = IdealType(emptyList(), emptyList(), emptyList(), emptyList(), emptyList()),
+            attachmentProfile: AttachmentProfile? = null
         ): Profile {
             val now = Instant.now()
             return Profile(
@@ -234,6 +240,7 @@ data class Profile(
                 photos = emptyList(),
                 videos = emptyList(),
                 personalityTests = emptyList(),
+                attachmentProfile = attachmentProfile,
                 metadata = ProfileMetadata(
                     createdAt = now,
                     updatedAt = now,

@@ -48,6 +48,12 @@ dependencies {
 	implementation(platform("software.amazon.awssdk:bom:2.20.26"))
 	implementation("software.amazon.awssdk:s3")
 
+	// Firebase Admin SDK (FCM)
+	implementation("com.google.firebase:firebase-admin:9.4.3")
+
+	// Redis (Refresh Token 저장)
+	implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
 	runtimeOnly("com.h2database:h2")
 	runtimeOnly("com.mysql:mysql-connector-j")
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")

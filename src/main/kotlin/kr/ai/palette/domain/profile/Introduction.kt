@@ -3,7 +3,8 @@ package kr.ai.palette.domain.profile
 data class Introduction(
     val text: String?,
     val interests: List<String>,
-    val interviewAnswers: InterviewAnswers? = null
+    val interviewAnswers: InterviewAnswers? = null,
+    val datingStyle: Map<String, String> = emptyMap() // questionKey -> selectedOptionKey
 )
 
 data class InterviewAnswers(

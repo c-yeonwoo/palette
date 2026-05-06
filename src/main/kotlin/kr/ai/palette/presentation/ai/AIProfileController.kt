@@ -23,9 +23,14 @@ class AIProfileController(
     ): ResponseEntity<GenerateResponse> {
         val result = openAIService.generateProfile(
             ProfileGenerationRequest(
-                introMethod = if (request.introMethod == "MANUAL") IntroMethod.MANUAL else IntroMethod.INTERVIEW,
+                introMethod = when (request.introMethod) {
+                    "MANUAL" -> IntroMethod.MANUAL
+                    "TASTE_STACK" -> IntroMethod.DATING_STYLE
+                    else -> IntroMethod.INTERVIEW
+                },
                 interviewAnswers = request.interviewAnswers,
                 manualAnswers = request.manualAnswers,
+                datingStyle = request.datingStyle,
                 idealType = request.idealType?.let {
                     IdealTypeContext(
                         personalities = it.personalities,
@@ -44,6 +49,7 @@ data class GenerateRequest(
     val introMethod: String = "INTERVIEW",
     val interviewAnswers: Map<String, String> = emptyMap(),
     val manualAnswers: Map<String, String> = emptyMap(),
+    val datingStyle: Map<String, String> = emptyMap(),
     val idealType: IdealTypeRequest? = null,
 )
 

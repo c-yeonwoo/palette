@@ -3,6 +3,8 @@ package kr.ai.palette.presentation.matchmaker
 import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.matchmaker.*
 import kr.ai.palette.infrastructure.storage.FileStorageService
+import kr.ai.palette.persistence.matchmaker.MatchmakerReviewEntity
+import kr.ai.palette.persistence.matchmaker.MatchmakerReviewJpaRepository
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.transaction.annotation.Transactional
@@ -17,8 +19,77 @@ import java.util.*
 class MatchmakerController(
     private val matchmakerRepository: MatchmakerRepository,
     private val fileStorageService: FileStorageService,
-    private val userRepository: kr.ai.palette.domain.user.UserRepository
+    private val userRepository: kr.ai.palette.domain.user.UserRepository,
+    private val matchmakerReviewJpaRepository: MatchmakerReviewJpaRepository
 ) {
+
+    @GetMapping("/marketplace")
+    fun getMarketplace(
+        @RequestParam(defaultValue = "0") page: Int,
+        @RequestParam(defaultValue = "20") size: Int,
+    ): ResponseEntity<List<MatchmakerPublicResponse>> {
+        val matchmakers = matchmakerRepository.findPublicMatchmakers(page, size)
+        return ResponseEntity.ok(matchmakers.map { MatchmakerPublicResponse.from(it) })
+    }
+
+    @GetMapping("/{matchmakerId}/public")
+    fun getPublicMatchmaker(
+        @PathVariable matchmakerId: UUID
+    ): ResponseEntity<MatchmakerPublicResponse> {
+        val matchmaker = matchmakerRepository.findById(MatchmakerId(matchmakerId))
+            ?: return ResponseEntity.notFound().build()
+        if (!matchmaker.isPublicProfile) {
+            return ResponseEntity.notFound().build()
+        }
+        return ResponseEntity.ok(MatchmakerPublicResponse.from(matchmaker))
+    }
+
+    @PutMapping("/me/public-profile")
+    @Transactional
+    fun updatePublicProfile(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @RequestBody request: UpdatePublicProfileRequest
+    ): ResponseEntity<MatchmakerPublicResponse> {
+        val matchmaker = matchmakerRepository.findByUserId(authUser.userId)
+            ?: return ResponseEntity.notFound().build()
+        val updated = matchmaker.updatePublicProfile(
+            bio = request.bio,
+            specialties = request.specialties,
+            isPublicProfile = request.isPublicProfile
+        )
+        val saved = matchmakerRepository.save(updated)
+        return ResponseEntity.ok(MatchmakerPublicResponse.from(saved))
+    }
+
+    @PostMapping("/{matchmakerId}/reviews")
+    @Transactional
+    fun createReview(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @PathVariable matchmakerId: UUID,
+        @RequestBody request: CreateReviewRequest
+    ): ResponseEntity<Map<String, Any>> {
+        if (request.rating < 1 || request.rating > 5) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "평점은 1~5 사이여야 합니다"))
+        }
+        val matchmaker = matchmakerRepository.findById(MatchmakerId(matchmakerId))
+            ?: return ResponseEntity.notFound().build()
+        val review = MatchmakerReviewEntity(
+            id = UUID.randomUUID(),
+            matchmakerId = matchmakerId,
+            reviewerUserId = authUser.userId.value,
+            rating = request.rating,
+            comment = request.comment,
+        )
+        matchmakerReviewJpaRepository.save(review)
+        val updatedMatchmaker = matchmaker.addReview(request.rating)
+        matchmakerRepository.save(updatedMatchmaker)
+        return ResponseEntity.ok(mapOf(
+            "success" to true,
+            "message" to "리뷰가 등록되었습니다",
+            "newAverageRating" to updatedMatchmaker.averageRating,
+            "totalReviews" to updatedMatchmaker.totalReviews
+        ))
+    }
 
     @PostMapping
     @Transactional
@@ -230,3 +301,44 @@ data class PhotoUploadResponse(
 data class WithdrawRequest(
     val amount: Int
 )
+
+data class UpdatePublicProfileRequest(
+    val bio: String?,
+    val specialties: List<String>,
+    val isPublicProfile: Boolean,
+)
+
+data class CreateReviewRequest(
+    val rating: Int,  // 1-5
+    val comment: String,
+)
+
+data class MatchmakerPublicResponse(
+    val matchmakerId: String,
+    val userId: String,
+    val level: Int,
+    val commissionRate: Double,
+    val successfulMatches: Int,
+    val bio: String?,
+    val specialties: List<String>,
+    val isPublicProfile: Boolean,
+    val averageRating: Double,
+    val totalReviews: Int,
+    val profilePhotoUrl: String?,
+) {
+    companion object {
+        fun from(matchmaker: Matchmaker) = MatchmakerPublicResponse(
+            matchmakerId = matchmaker.id.value.toString(),
+            userId = matchmaker.userId.value.toString(),
+            level = matchmaker.level.level,
+            commissionRate = matchmaker.level.commissionRate,
+            successfulMatches = matchmaker.stats.successfulMatches,
+            bio = matchmaker.bio,
+            specialties = matchmaker.specialties,
+            isPublicProfile = matchmaker.isPublicProfile,
+            averageRating = matchmaker.averageRating,
+            totalReviews = matchmaker.totalReviews,
+            profilePhotoUrl = matchmaker.profilePhoto?.url,
+        )
+    }
+}

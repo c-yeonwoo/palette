@@ -101,7 +101,7 @@ class OpenAIServiceTest : DescribeSpec({
 
             result.colorType shouldBe "CALM_BLUE"
             result.colorName shouldBe "차분한 블루"
-            result.colorHex shouldBe "#4A90D9"
+            result.colorHex shouldBe "#3B82F6"
             result.generatedIntroduction shouldBe "차분하고 깊이 있는 사람이에요."
         }
 

@@ -13,7 +13,8 @@ import java.util.*
 @Transactional
 class AuthenticationServiceImpl(
     private val userRepository: UserRepository,
-    private val tokenProvider: TokenProvider
+    private val tokenProvider: TokenProvider,
+    private val refreshTokenRepository: RefreshTokenRepository
 ) : AuthenticationService {
 
     override fun authenticateOAuth(oauthUserInfo: OAuthUserInfo): AuthenticationResult {
@@ -76,6 +77,11 @@ class AuthenticationServiceImpl(
         val user = userRepository.findById(userId)
             ?: throw IllegalArgumentException("User not found")
 
+        // 저장된 refresh token과 일치하는지 검증
+        if (!refreshTokenRepository.isValid(userId, refreshToken)) {
+            throw IllegalArgumentException("Refresh token mismatch or already invalidated")
+        }
+
         // 새로운 토큰 생성
         return createAuthToken(user.id)
     }
@@ -105,24 +111,20 @@ class AuthenticationServiceImpl(
     }
 
     override fun logout(userId: UserId) {
-        // TODO: Refresh Token을 Redis에 저장하고 있다면 삭제
-        // 현재는 JWT stateless 방식이므로 클라이언트에서 토큰 삭제로 처리
+        refreshTokenRepository.deleteByUserId(userId)
     }
 
     private fun createNewUser(oauthUserInfo: OAuthUserInfo): User {
         val now = Instant.now()
 
-        // 실명과 생년월일이 필수
-        val realName = oauthUserInfo.realName
-            ?: throw IllegalArgumentException("Real name is required for OAuth registration")
-        val birthDate = oauthUserInfo.birthDate
-            ?: throw IllegalArgumentException("Birth date is required for OAuth registration")
-
-        // 성별 변환 (카카오: male/female -> Gender enum)
+        // 실명/생년월일/성별은 NICE 본인인증 후 업데이트됨.
+        // 비즈니스 앱 심사 전 카카오는 이 정보를 제공하지 않으므로 임시값으로 계정 생성.
+        val realName = oauthUserInfo.realName ?: (oauthUserInfo.name ?: "미인증")
+        val birthDate = oauthUserInfo.birthDate ?: java.time.LocalDate.of(1990, 1, 1)
         val gender = when (oauthUserInfo.gender?.lowercase()) {
             "male" -> Gender.MALE
             "female" -> Gender.FEMALE
-            else -> throw IllegalArgumentException("Gender is required for OAuth registration")
+            else -> Gender.MALE  // NICE 인증 완료 전 임시값 — NICE 완료 후 덮어씀
         }
 
         return User(
@@ -136,6 +138,7 @@ class AuthenticationServiceImpl(
                 realName = realName,
                 email = oauthUserInfo.email,
                 phoneNumber = null,
+                isPhoneVerified = false,
                 contactInfo = null
             ),
             publicInfo = PublicInfo(
@@ -162,6 +165,8 @@ class AuthenticationServiceImpl(
     private fun createAuthToken(userId: UserId): AuthToken {
         val accessToken = tokenProvider.generateAccessToken(userId)
         val refreshToken = tokenProvider.generateRefreshToken(userId)
+
+        refreshTokenRepository.save(userId, refreshToken, tokenProvider.refreshTokenExpirySeconds())
 
         return AuthToken.create(
             accessToken = accessToken,

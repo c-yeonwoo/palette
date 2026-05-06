@@ -11,10 +11,11 @@ data class ProfileGenerationRequest(
     val introMethod: IntroMethod,
     val interviewAnswers: Map<String, String> = emptyMap(),
     val manualAnswers: Map<String, String> = emptyMap(),
+    val datingStyle: Map<String, String> = emptyMap(), // questionKey -> optionKey
     val idealType: IdealTypeContext? = null,
 )
 
-enum class IntroMethod { INTERVIEW, MANUAL }
+enum class IntroMethod { INTERVIEW, MANUAL, DATING_STYLE }
 
 data class IdealTypeContext(
     val personalities: List<String> = emptyList(),
@@ -93,6 +94,16 @@ class OpenAIService(
                     appendLine("- $label: $value")
                 }
             }
+            IntroMethod.DATING_STYLE -> {
+                appendLine("【연애 스타일】")
+                request.datingStyle.forEach { (questionKey, optionKey) ->
+                    val question = DATING_STYLE_LABELS[questionKey]
+                    val option = question?.options?.get(optionKey)
+                    if (question != null && option != null) {
+                        appendLine("- ${question.label}: $option")
+                    }
+                }
+            }
         }
 
         request.idealType?.let { ideal ->
@@ -153,14 +164,69 @@ class OpenAIService(
         internal data class ColorInfo(val name: String, val hex: String, val description: String)
 
         internal val COLOR_TYPE_INFO = mapOf(
-            "WARM_ORANGE" to ColorInfo("따뜻한 오렌지", "#FF8C42", "활발하고 다정한 당신은 주변을 밝게 만드는 에너지가 있어요"),
-            "CALM_BLUE" to ColorInfo("차분한 블루", "#4A90D9", "신중하고 깊이있는 당신은 믿음직한 존재감을 가지고 있어요"),
-            "VIBRANT_RED" to ColorInfo("생동감있는 레드", "#E74C3C", "열정적이고 적극적인 당신은 삶을 가득 채우는 에너지가 넘쳐요"),
-            "SOFT_PINK" to ColorInfo("부드러운 핑크", "#F48FB1", "섬세하고 낭만적인 당신은 감성이 풍부하고 따뜻한 마음을 가졌어요"),
-            "FRESH_GREEN" to ColorInfo("신선한 그린", "#4CAF50", "자연스럽고 편안한 당신은 함께 있으면 마음이 편안해지는 사람이에요"),
-            "ELEGANT_PURPLE" to ColorInfo("고급스러운 퍼플", "#9B59B6", "지적이고 감각적인 당신은 독특한 매력과 깊은 내면을 가지고 있어요"),
-            "BRIGHT_YELLOW" to ColorInfo("밝은 옐로우", "#F1C40F", "긍정적이고 유쾌한 당신은 어디서든 분위기를 밝게 만드는 존재예요"),
-            "SOPHISTICATED_GRAY" to ColorInfo("세련된 그레이", "#7F8C8D", "이성적이고 프로페셔널한 당신은 어떤 상황에도 신뢰를 주는 사람이에요"),
+            "WARM_ORANGE" to ColorInfo("따뜻한 오렌지", "#F97316", "활발하고 다정한 당신은 주변을 밝게 만드는 에너지가 있어요"),
+            "CALM_BLUE" to ColorInfo("차분한 블루", "#3B82F6", "신중하고 깊이있는 당신은 믿음직한 존재감을 가지고 있어요"),
+            "VIBRANT_RED" to ColorInfo("생동감있는 레드", "#EF4444", "열정적이고 적극적인 당신은 삶을 가득 채우는 에너지가 넘쳐요"),
+            "SOFT_PINK" to ColorInfo("부드러운 핑크", "#F9A8D4", "섬세하고 낭만적인 당신은 감성이 풍부하고 따뜻한 마음을 가졌어요"),
+            "FRESH_GREEN" to ColorInfo("신선한 그린", "#22C55E", "자연스럽고 편안한 당신은 함께 있으면 마음이 편안해지는 사람이에요"),
+            "ELEGANT_PURPLE" to ColorInfo("고급스러운 퍼플", "#A855F7", "지적이고 감각적인 당신은 독특한 매력과 깊은 내면을 가지고 있어요"),
+            "BRIGHT_YELLOW" to ColorInfo("밝은 옐로우", "#EAB308", "긍정적이고 유쾌한 당신은 어디서든 분위기를 밝게 만드는 존재예요"),
+            "SOPHISTICATED_GRAY" to ColorInfo("세련된 그레이", "#6B7280", "이성적이고 프로페셔널한 당신은 어떤 상황에도 신뢰를 주는 사람이에요"),
+        )
+
+        internal data class DatingStyleQuestion(val label: String, val options: Map<String, String>)
+
+        internal val DATING_STYLE_LABELS = mapOf(
+            "MEET_FREQUENCY"    to DatingStyleQuestion("만남 빈도", mapOf(
+                "WEEKLY_1_2"         to "주 1~2회",
+                "WEEKEND_TOGETHER"   to "주말은 같이 보내요",
+                "WHENEVER_POSSIBLE"  to "시간 될 때마다"
+            )),
+            "CONTACT_STYLE"     to DatingStyleQuestion("연락 스타일", mapOf(
+                "FREQUENT"       to "자주 연락해요",
+                "DAILY_FEW"      to "하루 몇 번이면 충분",
+                "WHENEVER"       to "생각날 때 연락"
+            )),
+            "DATE_STYLE"        to DatingStyleQuestion("데이트 스타일", mapOf(
+                "OUTDOOR"  to "나들이·액티비티",
+                "INDOOR"   to "집·카페 인도어",
+                "MIX"      to "둘 다 좋아요"
+            )),
+            "DRINKING_DATE"     to DatingStyleQuestion("음주 스타일", mapOf(
+                "ENJOY"      to "술자리 즐겨요",
+                "SOMETIMES"  to "가끔 한 잔",
+                "NO_NEED"    to "없어도 충분해요"
+            )),
+            "OPPOSITE_FRIENDS"  to DatingStyleQuestion("이성 친구", mapOf(
+                "FREE"              to "자유롭게 OK",
+                "SOME_BOUNDARY"     to "어느 정도 선은 있어요",
+                "UNCOMFORTABLE"     to "적극적 연락은 불편해요"
+            )),
+            "LEAD_STYLE"        to DatingStyleQuestion("리드 스타일", mapOf(
+                "LEAD"      to "내가 리드하는 편",
+                "FOLLOW"    to "따라가는 편",
+                "ALTERNATE" to "번갈아가며"
+            )),
+            "CONFLICT_STYLE"    to DatingStyleQuestion("갈등 해결", mapOf(
+                "TALK_NOW"    to "바로 대화해요",
+                "COOL_DOWN"   to "식히고 나서 얘기해요",
+                "LET_GO"      to "웬만하면 넘겨요"
+            )),
+            "AFFECTION_STYLE"   to DatingStyleQuestion("애정 표현", mapOf(
+                "PHYSICAL"  to "스킨십으로",
+                "WORDS"     to "말·문자로",
+                "ACTIONS"   to "챙겨주는 것으로"
+            )),
+            "MARRIAGE_PLAN"     to DatingStyleQuestion("결혼 계획", mapOf(
+                "SERIOUS_FAST"   to "빠르게 진지하게",
+                "SLOW_NATURAL"   to "천천히 자연스럽게",
+                "NOT_YET"        to "아직 생각 중"
+            )),
+            "SNS_PUBLIC"        to DatingStyleQuestion("SNS 공개", mapOf(
+                "LOVE_IT"        to "커플 인증 좋아요",
+                "PRIVATE"        to "우리끼리만",
+                "FOLLOW_PARTNER" to "상대 따라갈게요"
+            )),
         )
 
         private val INTERVIEW_LABELS = mapOf(

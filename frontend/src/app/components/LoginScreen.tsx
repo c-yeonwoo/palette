@@ -11,10 +11,6 @@ export function LoginScreen({ onEmailLogin }: LoginScreenProps) {
     authService.loginWithKakao();
   };
 
-  const handleAppleLogin = () => {
-    authService.loginWithApple();
-  };
-
   const handleEmailLogin = () => {
     if (onEmailLogin) {
       onEmailLogin();
@@ -66,16 +62,6 @@ export function LoginScreen({ onEmailLogin }: LoginScreenProps) {
               <path d="M12 3c-4.97 0-9 3.58-9 8 0 1.75.58 3.36 1.55 4.68L3 21l6.5-3.5c.79.28 1.64.43 2.5.43 4.97 0 9-3.58 9-8s-4.03-8-9-8z"/>
             </svg>
             카카오로 시작하기
-          </Button>
-
-          <Button
-            onClick={handleAppleLogin}
-            className="w-full h-14 bg-white hover:bg-gray-100 text-black shadow-lg"
-          >
-            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-            </svg>
-            Apple로 시작하기
           </Button>
 
           <div className="relative my-6">

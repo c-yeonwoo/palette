@@ -10,7 +10,12 @@ data class Matchmaker(
     val level: MatchmakerLevel,
     val earnings: MatchmakerEarnings,
     val profilePhoto: MatchmakerPhoto?,
-    val metadata: MatchmakerMetadata
+    val metadata: MatchmakerMetadata,
+    val bio: String? = null,
+    val specialties: List<String> = emptyList(),
+    val isPublicProfile: Boolean = false,
+    val averageRating: Double = 0.0,
+    val totalReviews: Int = 0,
 ) {
     fun recordMatchRequest(): Matchmaker {
         return copy(
@@ -71,5 +76,15 @@ data class Matchmaker(
 
     fun canEarnCommission(): Boolean {
         return level.commissionRate > 0
+    }
+
+    fun updatePublicProfile(bio: String?, specialties: List<String>, isPublicProfile: Boolean): Matchmaker {
+        return copy(bio = bio, specialties = specialties, isPublicProfile = isPublicProfile)
+    }
+
+    fun addReview(rating: Int): Matchmaker {
+        val newTotal = totalReviews + 1
+        val newAvg = ((averageRating * totalReviews) + rating) / newTotal
+        return copy(averageRating = newAvg, totalReviews = newTotal)
     }
 }

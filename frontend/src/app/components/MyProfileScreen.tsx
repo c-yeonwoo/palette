@@ -18,7 +18,7 @@ import { api } from "../../lib/api/apiClient";
 import { authService } from "../../lib/auth/authService";
 import { toast } from "sonner";
 import { MatchmakerProfileScreen } from "./MatchmakerProfileScreen";
-import PhoneVerificationModal from "./PhoneVerificationModal";
+import NiceVerificationModal from "./NiceVerificationModal";
 import { CategoryCard } from "./profile/CategoryCard";
 import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
 import { AccentScope } from "../contexts/AccentScope";
@@ -255,12 +255,12 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
     setShowShareMenu(false);
   };
 
-  const handlePhoneVerified = async () => {
+  const handlePhoneVerified = async (_phoneNumber: string, _name: string) => {
     try {
       const userData = await api.get<UserProfile>('/api/v1/auth/me');
       setUserProfile(userData);
       setShowPhoneVerificationModal(false);
-      toast.success('인증이 완료되었습니다');
+      toast.success('본인인증이 완료되었습니다');
     } catch {
       toast.error('정보를 새로고침하는데 실패했습니다');
     }
@@ -799,12 +799,10 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
         </DialogContent>
       </Dialog>
 
-      <PhoneVerificationModal
+      <NiceVerificationModal
         isOpen={showPhoneVerificationModal}
         onClose={() => setShowPhoneVerificationModal(false)}
         onVerified={handlePhoneVerified}
-        userId={userProfile?.userId}
-        initialPhoneNumber={undefined}
       />
 
       {/* ── 완성도 체크리스트 Bottom Sheet ── */}

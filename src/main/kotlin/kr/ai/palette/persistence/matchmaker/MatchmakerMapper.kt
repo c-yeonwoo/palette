@@ -1,11 +1,15 @@
 package kr.ai.palette.persistence.matchmaker
 
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.readValue
 import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.matchmaker.*
 import org.springframework.stereotype.Component
 
 @Component
-class MatchmakerMapper {
+class MatchmakerMapper(
+    private val objectMapper: ObjectMapper
+) {
 
     fun toDomain(entity: MatchmakerEntity): Matchmaker {
         return Matchmaker(
@@ -36,7 +40,12 @@ class MatchmakerMapper {
             metadata = MatchmakerMetadata(
                 createdAt = entity.createdAt,
                 updatedAt = entity.updatedAt
-            )
+            ),
+            bio = entity.bio,
+            specialties = parseSpecialties(entity.specialties),
+            isPublicProfile = entity.isPublicProfile,
+            averageRating = entity.averageRating,
+            totalReviews = entity.totalReviews,
         )
     }
 
@@ -57,7 +66,12 @@ class MatchmakerMapper {
             profilePhotoUrl = domain.profilePhoto?.url,
             profilePhotoUploadedAt = domain.profilePhoto?.uploadedAt,
             createdAt = domain.metadata.createdAt,
-            updatedAt = domain.metadata.updatedAt
+            updatedAt = domain.metadata.updatedAt,
+            bio = domain.bio,
+            specialties = serializeSpecialties(domain.specialties),
+            isPublicProfile = domain.isPublicProfile,
+            averageRating = domain.averageRating,
+            totalReviews = domain.totalReviews,
         )
     }
 
@@ -76,5 +90,25 @@ class MatchmakerMapper {
         entity.profilePhotoUrl = domain.profilePhoto?.url
         entity.profilePhotoUploadedAt = domain.profilePhoto?.uploadedAt
         entity.updatedAt = domain.metadata.updatedAt
+        entity.bio = domain.bio
+        entity.specialties = serializeSpecialties(domain.specialties)
+        entity.isPublicProfile = domain.isPublicProfile
+        entity.averageRating = domain.averageRating
+        entity.totalReviews = domain.totalReviews
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun parseSpecialties(json: String?): List<String> {
+        if (json.isNullOrBlank()) return emptyList()
+        return try {
+            objectMapper.readValue(json, List::class.java) as List<String>
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun serializeSpecialties(list: List<String>): String? {
+        if (list.isEmpty()) return null
+        return try { objectMapper.writeValueAsString(list) } catch (e: Exception) { null }
     }
 }

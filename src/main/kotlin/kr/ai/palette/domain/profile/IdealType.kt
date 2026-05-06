@@ -1,11 +1,12 @@
 package kr.ai.palette.domain.profile
 
 data class IdealType(
-    val datePreferences: List<DatePreference>, // 복수 선택
+    val datePreferences: List<DatePreference>, // 하위호환용 (버킷리스트로 대체됨)
     val importantValues: List<ImportantValue>, // 최대 3개
     val personalities: List<String>, // 최대 5개
     val appearanceStyles: List<String>, // MaleAppearanceStyle or FemaleAppearanceStyle enum values
-    val dealBreakers: List<DealBreaker> // 최대 3개
+    val dealBreakers: List<DealBreaker>, // 최대 3개
+    val bucketList: List<String> = emptyList() // 시스템 키 or "custom:자유입력" 형식, 최대 10개
 )
 
 // 데이트 선호 스타일

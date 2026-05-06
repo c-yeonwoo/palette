@@ -6,11 +6,13 @@ import kr.ai.palette.domain.friendship.FriendshipRepository
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestRepository
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestStatus
 import kr.ai.palette.domain.user.UserRepository
+import kr.ai.palette.persistence.vouch.VouchEntity
+import kr.ai.palette.persistence.vouch.VouchJpaRepository
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
-import java.util.concurrent.ConcurrentHashMap
 
 data class VouchResponse(
     val targetUserId: String,
@@ -24,17 +26,12 @@ data class VouchResponse(
 class VouchController(
     private val userRepository: UserRepository,
     private val friendshipRepository: FriendshipRepository,
-    private val matchmakingRequestRepository: MatchmakingRequestRepository
+    private val matchmakingRequestRepository: MatchmakingRequestRepository,
+    private val vouchJpaRepository: VouchJpaRepository
 ) {
-    companion object {
-        // targetUserId -> Set<voucherId>
-        private val vouches = ConcurrentHashMap<String, MutableSet<String>>()
-    }
 
-    /**
-     * 프로필 사진 보증하기 (1촌 친구만 가능)
-     */
     @PostMapping("/{targetUserId}")
+    @Transactional
     fun vouchForUser(
         @AuthenticationPrincipal authUser: AuthUser,
         @PathVariable targetUserId: UUID
@@ -42,40 +39,38 @@ class VouchController(
         val myId = authUser.userId
         val targetId = UserId(targetUserId)
 
-        // 자기 자신 보증 불가
         if (myId == targetId) {
             return ResponseEntity.badRequest().build()
         }
 
-        // 1촌 친구이거나 매칭이 완료된 경우에만 보증 가능
         val isDirectFriend = friendshipRepository.existsBetweenUsers(myId, targetId)
         val hasCompletedMatch = hasCompletedMatchBetween(myId, targetId)
         if (!isDirectFriend && !hasCompletedMatch) {
             return ResponseEntity.status(403).build()
         }
 
-        val voucherSet = vouches.getOrPut(targetUserId.toString()) { mutableSetOf() }
-        voucherSet.add(myId.value.toString())
+        val myIdStr = myId.value.toString()
+        val targetIdStr = targetUserId.toString()
 
-        return ResponseEntity.ok(buildVouchResponse(targetUserId.toString(), myId.value.toString()))
+        if (!vouchJpaRepository.existsByTargetUserIdAndVoucherId(targetIdStr, myIdStr)) {
+            vouchJpaRepository.save(VouchEntity(targetUserId = targetIdStr, voucherId = myIdStr))
+        }
+
+        return ResponseEntity.ok(buildVouchResponse(targetIdStr, myIdStr))
     }
 
-    /**
-     * 보증 취소
-     */
     @DeleteMapping("/{targetUserId}")
+    @Transactional
     fun unvouchForUser(
         @AuthenticationPrincipal authUser: AuthUser,
         @PathVariable targetUserId: UUID
     ): ResponseEntity<VouchResponse> {
-        val myId = authUser.userId
-        vouches[targetUserId.toString()]?.remove(myId.value.toString())
-        return ResponseEntity.ok(buildVouchResponse(targetUserId.toString(), myId.value.toString()))
+        val myIdStr = authUser.userId.value.toString()
+        val targetIdStr = targetUserId.toString()
+        vouchJpaRepository.deleteByTargetUserIdAndVoucherId(targetIdStr, myIdStr)
+        return ResponseEntity.ok(buildVouchResponse(targetIdStr, myIdStr))
     }
 
-    /**
-     * 보증 현황 조회
-     */
     @GetMapping("/{targetUserId}")
     fun getVouches(
         @AuthenticationPrincipal authUser: AuthUser,
@@ -94,16 +89,16 @@ class VouchController(
     }
 
     private fun buildVouchResponse(targetUserId: String, requesterId: String): VouchResponse {
-        val voucherSet = vouches[targetUserId] ?: emptySet()
-        val voucherNicknames = voucherSet.mapNotNull { voucherId ->
-            runCatching { userRepository.findById(UserId(UUID.fromString(voucherId))) }
+        val vouchers = vouchJpaRepository.findByTargetUserId(targetUserId)
+        val voucherNicknames = vouchers.mapNotNull { vouch ->
+            runCatching { userRepository.findById(UserId(UUID.fromString(vouch.voucherId))) }
                 .getOrNull()?.publicInfo?.nickname
         }
         return VouchResponse(
             targetUserId = targetUserId,
-            vouchCount = voucherSet.size,
+            vouchCount = vouchers.size,
             voucherNicknames = voucherNicknames,
-            isVouchedByMe = voucherSet.contains(requesterId)
+            isVouchedByMe = vouchers.any { it.voucherId == requesterId }
         )
     }
 }

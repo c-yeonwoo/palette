@@ -50,7 +50,9 @@ class SecurityConfig(
                         "/api/v1/ai-interview/questions",
                         "/api/v1/ai-profile/generate",
                         "/api/v1/share/*",
-                        "/api/v1/ai/compatibility"
+                        "/api/v1/ai/compatibility",
+                        // NICE 콜백은 NICE 서버가 호출 — 인증 불필요
+                        "/api/v1/identity/nice/callback"
                     ).permitAll()
                     .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                     .anyRequest().authenticated()
