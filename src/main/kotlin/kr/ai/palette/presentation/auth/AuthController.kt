@@ -262,7 +262,8 @@ data class EmailSignupRequest(
     val nickname: String,
     val phoneNumber: String,
     val birthDate: LocalDate,
-    val gender: Gender
+    val gender: Gender,
+    val betaCode: String? = null,   // 베타 게이트 활성 시 필수
 )
 
 data class EmailLoginRequest(
@@ -278,7 +279,8 @@ data class MatchmakerSignupRequest(
     val phoneNumber: String,
     val birthDate: LocalDate,
     val gender: Gender,
-    val verificationCode: String  // 핸드폰 인증 코드
+    val verificationCode: String,  // 핸드폰 인증 코드
+    val betaCode: String? = null,  // 베타 게이트 활성 시 필수
 )
 
 data class CompleteMatchmakerInfoRequest(
@@ -294,12 +296,21 @@ class EmailAuthController(
     private val passwordEncoder: PasswordEncoder,
     private val tokenProvider: kr.ai.palette.domain.auth.TokenProvider,
     private val phoneVerificationService: PhoneVerificationService,
-    private val refreshTokenRepository: kr.ai.palette.domain.auth.RefreshTokenRepository
+    private val refreshTokenRepository: kr.ai.palette.domain.auth.RefreshTokenRepository,
+    private val betaCodeValidator: kr.ai.palette.infrastructure.beta.BetaCodeValidator,
 ) {
 
     @PostMapping("/signup")
     @Transactional
     fun signup(@RequestBody request: EmailSignupRequest): ResponseEntity<TokenResponse> {
+        // 베타 게이트: body 코드 또는 쿠키 둘 중 하나
+        if (betaCodeValidator.isEnabled &&
+            !betaCodeValidator.validate(request.betaCode) &&
+            !betaCodeValidator.validateFromCookie()
+        ) {
+            throw kr.ai.palette.infrastructure.beta.InvalidBetaCodeException()
+        }
+
         // 이메일 중복 체크
         if (userRepository.existsByEmail(request.email)) {
             return ResponseEntity.badRequest().build()
@@ -374,6 +385,14 @@ class EmailAuthController(
     @PostMapping("/matchmaker/signup")
     @Transactional
     fun matchmakerSignup(@RequestBody request: MatchmakerSignupRequest): ResponseEntity<TokenResponse> {
+        // 베타 게이트
+        if (betaCodeValidator.isEnabled &&
+            !betaCodeValidator.validate(request.betaCode) &&
+            !betaCodeValidator.validateFromCookie()
+        ) {
+            throw kr.ai.palette.infrastructure.beta.InvalidBetaCodeException()
+        }
+
         val verifyResult = phoneVerificationService.verifyCode(request.phoneNumber, request.verificationCode, null)
         if (verifyResult is VerifyCodeResult.Failure) {
             return ResponseEntity.badRequest().build()

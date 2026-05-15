@@ -139,6 +139,18 @@ class GlobalExceptionHandler {
         )
     }
 
+    @ExceptionHandler(kr.ai.palette.infrastructure.beta.InvalidBetaCodeException::class)
+    fun handleInvalidBetaCode(
+        ex: kr.ai.palette.infrastructure.beta.InvalidBetaCodeException
+    ): ResponseEntity<ErrorResponse> {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+            ErrorResponse(
+                code = "INVALID_BETA_CODE",
+                message = ex.message ?: "유효하지 않은 베타 코드입니다"
+            )
+        )
+    }
+
     @ExceptionHandler(Exception::class)
     fun handleGeneral(ex: Exception): ResponseEntity<ErrorResponse> {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(

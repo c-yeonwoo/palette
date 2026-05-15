@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { BetaGateScreen, hasBetaPassed } from "./components/BetaGateScreen";
 import { LoginScreen } from "./components/LoginScreen";
 import { EmailLoginScreen } from "./components/EmailLoginScreen";
 import { EmailSignupScreen } from "./components/EmailSignupScreen";
@@ -171,6 +172,7 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [betaPassed, setBetaPassed] = useState<boolean>(hasBetaPassed());
   const [missingRequiredFields, setMissingRequiredFields] = useState<string[]>([]);
   const [isConvertingToRegular, setIsConvertingToRegular] = useState(false);
   const [userGender, setUserGender] = useState<string | undefined>(undefined);
@@ -771,6 +773,11 @@ export default function App() {
         </div>
       </div>
     );
+  }
+
+  // 베타 게이트 — 로그인 안 된 신규 방문자만 차단 (이미 토큰 있으면 통과)
+  if (!betaPassed && !isLoggedIn) {
+    return <BetaGateScreen onPassed={() => setBetaPassed(true)} />;
   }
 
   return (

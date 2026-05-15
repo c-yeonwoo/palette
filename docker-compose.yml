@@ -1,0 +1,28 @@
+# ── Local dev compose ─────────────────────────────────────────────────────────
+# Usage: docker compose up
+# Backend: http://localhost:8080
+# Frontend: http://localhost:3000
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data  # H2 파일 DB 마운트
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    restart: unless-stopped

@@ -66,6 +66,8 @@ app:
   oauth2:
     redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/redirect}
   base-url: ${APP_BASE_URL:http://localhost:8080}
+  # 베타 게이트 — 값이 있으면 회원가입 시 코드 검증, 빈 값이면 비활성
+  beta-code: ${BETA_CODE:}
 
 # AWS S3 Configuration
 aws:

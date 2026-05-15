@@ -19,6 +19,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 class SecurityConfig(
     private val customOAuth2UserService: CustomOAuth2UserService,
     private val oAuth2AuthenticationSuccessHandler: OAuth2AuthenticationSuccessHandler,
+    private val oAuth2AuthenticationFailureHandler: OAuth2AuthenticationFailureHandler,
     private val jwtAuthenticationFilter: JwtAuthenticationFilter,
     @Value("\${cors.allowed-origins:http://localhost:3000,http://localhost:8080}")
     private val corsAllowedOrigins: String,
@@ -61,6 +62,7 @@ class SecurityConfig(
                 oauth2
                     .userInfoEndpoint { it.userService(customOAuth2UserService) }
                     .successHandler(oAuth2AuthenticationSuccessHandler)
+                    .failureHandler(oAuth2AuthenticationFailureHandler)
             }
             .exceptionHandling { exceptions ->
                 exceptions

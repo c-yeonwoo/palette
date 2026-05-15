@@ -14,7 +14,8 @@ import java.util.*
 class AuthenticationServiceImpl(
     private val userRepository: UserRepository,
     private val tokenProvider: TokenProvider,
-    private val refreshTokenRepository: RefreshTokenRepository
+    private val refreshTokenRepository: RefreshTokenRepository,
+    private val betaCodeValidator: kr.ai.palette.infrastructure.beta.BetaCodeValidator,
 ) : AuthenticationService {
 
     override fun authenticateOAuth(oauthUserInfo: OAuthUserInfo): AuthenticationResult {
@@ -29,7 +30,10 @@ class AuthenticationServiceImpl(
                 // 기존 사용자: 마지막 로그인 업데이트
                 existingUser.updateLogin()
             } else {
-                // 신규 사용자: 자동 회원가입
+                // 신규 OAuth 가입: 베타 게이트 검증 (쿠키)
+                if (betaCodeValidator.isEnabled && !betaCodeValidator.validateFromCookie()) {
+                    throw kr.ai.palette.infrastructure.beta.InvalidBetaCodeException()
+                }
                 createNewUser(oauthUserInfo)
             }
 
@@ -56,6 +60,9 @@ class AuthenticationServiceImpl(
                 isNewUser = existingUser == null,
                 missingRequiredFields = missingFields
             )
+        } catch (e: kr.ai.palette.infrastructure.beta.InvalidBetaCodeException) {
+            // 베타 게이트 실패는 그대로 throw → OAuth FailureHandler에서 별도 처리
+            throw e
         } catch (e: Exception) {
             AuthenticationResult.Failure(
                 reason = AuthenticationFailureReason.NETWORK_ERROR
