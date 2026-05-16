@@ -6,6 +6,7 @@ import kr.ai.palette.domain.friendship.FriendshipRepository
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestRepository
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.UserRepository
+import kr.ai.palette.infrastructure.storage.FileStorageService
 import kr.ai.palette.persistence.feed.CardOpenEntity
 import kr.ai.palette.persistence.feed.CardOpenJpaRepository
 import kr.ai.palette.persistence.feed.FeedHideJpaRepository
@@ -24,6 +25,7 @@ class FeedController(
     private val matchmakingRequestRepository: MatchmakingRequestRepository,
     private val cardOpenJpaRepository: CardOpenJpaRepository,
     private val feedHideRepository: FeedHideJpaRepository,
+    private val fileStorageService: FileStorageService,
 ) {
 
     @GetMapping
@@ -107,7 +109,7 @@ class FeedController(
                     }
 
                     FeedProfileItem(
-                        profile = ProfileResponse.from(profile),
+                        profile = ProfileResponse.from(profile, fileStorageService),
                         mutualFriends = mutualFriendNames,
                         degree = 2,
                         viewCost = 3000,

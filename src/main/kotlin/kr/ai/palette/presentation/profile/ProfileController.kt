@@ -28,7 +28,7 @@ class ProfileController(
         // Update last accessed time
         profileRepository.save(profile.access())
 
-        return ResponseEntity.ok(ProfileResponse.from(profile))
+        return ResponseEntity.ok(ProfileResponse.from(profile, fileStorageService))
     }
 
     @PutMapping
@@ -90,7 +90,7 @@ class ProfileController(
             userRepository.save(updatedUser)
         }
 
-        return ResponseEntity.ok(ProfileResponse.from(savedProfile))
+        return ResponseEntity.ok(ProfileResponse.from(savedProfile, fileStorageService))
     }
 
     @PatchMapping("/settings")
@@ -106,7 +106,7 @@ class ProfileController(
         profile = profile.updateSettings(request.toDomain())
 
         val savedProfile = profileRepository.save(profile)
-        return ResponseEntity.ok(ProfileResponse.from(savedProfile))
+        return ResponseEntity.ok(ProfileResponse.from(savedProfile, fileStorageService))
     }
 
     @PatchMapping("/settings/visibility")
@@ -177,22 +177,22 @@ class ProfileController(
         var profile = profileRepository.findByUserId(authUser.userId)
             ?: Profile.create(authUser.userId)
 
-        // 파일 저장
-        val photoUrl = fileStorageService.storeFile(file)
+        // 파일 저장 — storeFile은 S3 키 반환 (presigned URL 아님)
+        val s3Key = fileStorageService.storeFile(file)
 
         // 기존 사진들 조회하여 다음 displayOrder 결정
         val existingPhotos = profilePhotoRepository.findByProfileId(profile.id)
         val nextDisplayOrder = existingPhotos.size
         val isFirstPhoto = existingPhotos.isEmpty()
 
-        // 새 사진 생성 및 저장
+        // 새 사진 생성 및 저장 (DB에는 키만 저장, url 컬럼도 일관성 위해 키 저장)
         val newPhoto = ProfilePhoto(
             id = ProfilePhotoId(UUID.randomUUID()),
             profileId = profile.id,
-            s3Key = photoUrl,
-            url = photoUrl,
+            s3Key = s3Key,
+            url = s3Key,  // legacy 컬럼 — 조회 시 presigned URL로 변환
             displayOrder = nextDisplayOrder,
-            isPrimary = isFirstPhoto, // 첫 번째 사진만 primary
+            isPrimary = isFirstPhoto,
             trustAnalysis = TrustAnalysis(
                 trustFactor = TrustFactor.UNKNOWN,
                 trustScore = 0
@@ -203,14 +203,14 @@ class ProfileController(
 
         profilePhotoRepository.save(newPhoto)
 
-        // Profile에도 사진 추가하고 metrics 재계산
         profile = profile.addPhoto(newPhoto).recalculateMetrics()
         profileRepository.save(profile)
 
+        // 응답에는 presigned URL 반환
         return ResponseEntity.ok(
             PhotoUploadResponse(
                 photoId = newPhoto.id.value.toString(),
-                photoUrl = photoUrl,
+                photoUrl = fileStorageService.getPresignedDownloadUrl(s3Key),
                 uploadedAt = Instant.now()
             )
         )

@@ -4,6 +4,7 @@ import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.UserRepository
+import kr.ai.palette.infrastructure.storage.FileStorageService
 import kr.ai.palette.persistence.sharelink.ShareLinkEntity
 import kr.ai.palette.persistence.sharelink.ShareLinkJpaRepository
 import org.springframework.http.ResponseEntity
@@ -18,7 +19,8 @@ import java.util.UUID
 class ShareLinkController(
     private val profileRepository: ProfileRepository,
     private val userRepository: UserRepository,
-    private val shareLinkJpaRepository: ShareLinkJpaRepository
+    private val shareLinkJpaRepository: ShareLinkJpaRepository,
+    private val fileStorageService: FileStorageService,
 ) {
 
     @PostMapping("/link")
@@ -94,7 +96,7 @@ class ShareLinkController(
             ShareProfileResponse(
                 nickname = user.publicInfo.nickname,
                 gender = user.publicInfo.gender.name,
-                profile = ProfileResponse.from(profile),
+                profile = ProfileResponse.from(profile, fileStorageService),
                 viewCount = link.viewCount + 1
             )
         )

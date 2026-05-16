@@ -1,6 +1,7 @@
 package kr.ai.palette.presentation.profile
 
 import kr.ai.palette.domain.profile.*
+import kr.ai.palette.infrastructure.storage.FileStorageService
 import java.time.Instant
 
 data class AttachmentProfileDto(
@@ -58,7 +59,7 @@ data class ProfileResponse(
     val settings: ProfileSettingsDto
 ) {
     companion object {
-        fun from(profile: Profile): ProfileResponse {
+        fun from(profile: Profile, storage: FileStorageService? = null): ProfileResponse {
             return ProfileResponse(
                 id = profile.id.value.toString(),
                 userId = profile.userId.value.toString(),
@@ -70,8 +71,10 @@ data class ProfileResponse(
                 introduction = IntroductionDto.from(profile.introduction),
                 idealType = IdealTypeDto.from(profile.idealType),
                 personalityTests = profile.personalityTests.map { PersonalityTestResultDto.from(it) },
-                photos = profile.photos.map { ProfilePhotoDto.from(it) },
-                primaryPhotoUrl = profile.photos.firstOrNull { it.isPrimary }?.url,
+                photos = profile.photos.map { ProfilePhotoDto.from(it, storage) },
+                primaryPhotoUrl = profile.photos.firstOrNull { it.isPrimary }?.url?.let {
+                    storage?.getPresignedDownloadUrl(it) ?: it
+                },
                 colorType = profile.colorType?.let { ColorTypeDto.from(it) },
                 attachmentProfile = profile.attachmentProfile?.let { AttachmentProfileDto.from(it) },
                 metadata = ProfileMetadataDto.from(profile.metadata),
@@ -432,10 +435,12 @@ data class ProfilePhotoDto(
     val isPrimary: Boolean
 ) {
     companion object {
-        fun from(photo: ProfilePhoto): ProfilePhotoDto {
+        fun from(photo: ProfilePhoto, storage: FileStorageService? = null): ProfilePhotoDto {
+            // storage 주어지면 presigned URL로 변환, 아니면 원본 그대로 (legacy 호환)
+            val resolvedUrl = storage?.getPresignedDownloadUrl(photo.url) ?: photo.url
             return ProfilePhotoDto(
                 id = photo.id.value.toString(),
-                url = photo.url,
+                url = resolvedUrl,
                 displayOrder = photo.displayOrder,
                 isPrimary = photo.isPrimary
             )

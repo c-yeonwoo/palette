@@ -39,4 +39,13 @@ class LocalStorageService : FileStorageService {
     override fun getFileUrl(key: String): String {
         return "http://localhost:8080/uploads/$key"
     }
+
+    /** 로컬은 별도 서명 없이 그대로 반환 (개발 편의) */
+    override fun getPresignedDownloadUrl(keyOrUrl: String, ttlSeconds: Long): String {
+        // 이미 풀 URL이면 그대로
+        if (keyOrUrl.startsWith("http://") || keyOrUrl.startsWith("https://")) {
+            return keyOrUrl
+        }
+        return getFileUrl(keyOrUrl)
+    }
 }

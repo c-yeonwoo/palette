@@ -3,6 +3,7 @@ package kr.ai.palette.presentation.profile
 import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.UserRepository
+import kr.ai.palette.infrastructure.storage.FileStorageService
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
@@ -11,7 +12,8 @@ import java.util.UUID
 @RequestMapping("/api/v1")
 class PublicProfileController(
     private val profileRepository: ProfileRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val fileStorageService: FileStorageService,
 ) {
 
     @GetMapping("/profile/public/{userId}")
@@ -19,7 +21,7 @@ class PublicProfileController(
         val profile = profileRepository.findByUserId(UserId(UUID.fromString(userId)))
             ?: return ResponseEntity.notFound().build()
 
-        return ResponseEntity.ok(ProfileResponse.from(profile))
+        return ResponseEntity.ok(ProfileResponse.from(profile, fileStorageService))
     }
 
     @GetMapping("/users/{userId}/public")

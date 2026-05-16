@@ -29,7 +29,7 @@ class MatchmakerController(
         @RequestParam(defaultValue = "20") size: Int,
     ): ResponseEntity<List<MatchmakerPublicResponse>> {
         val matchmakers = matchmakerRepository.findPublicMatchmakers(page, size)
-        return ResponseEntity.ok(matchmakers.map { MatchmakerPublicResponse.from(it) })
+        return ResponseEntity.ok(matchmakers.map { MatchmakerPublicResponse.from(it, fileStorageService) })
     }
 
     @GetMapping("/{matchmakerId}/public")
@@ -41,7 +41,7 @@ class MatchmakerController(
         if (!matchmaker.isPublicProfile) {
             return ResponseEntity.notFound().build()
         }
-        return ResponseEntity.ok(MatchmakerPublicResponse.from(matchmaker))
+        return ResponseEntity.ok(MatchmakerPublicResponse.from(matchmaker, fileStorageService))
     }
 
     @PutMapping("/me/public-profile")
@@ -58,7 +58,7 @@ class MatchmakerController(
             isPublicProfile = request.isPublicProfile
         )
         val saved = matchmakerRepository.save(updated)
-        return ResponseEntity.ok(MatchmakerPublicResponse.from(saved))
+        return ResponseEntity.ok(MatchmakerPublicResponse.from(saved, fileStorageService))
     }
 
     @PostMapping("/{matchmakerId}/reviews")
@@ -145,7 +145,7 @@ class MatchmakerController(
                 successfulMatches = savedMatchmaker.stats.successfulMatches,
                 failedMatches = savedMatchmaker.stats.failedMatches,
                 successRate = savedMatchmaker.stats.getSuccessRate(),
-                profilePhotoUrl = savedMatchmaker.profilePhoto?.url,
+                profilePhotoUrl = savedMatchmaker.profilePhoto?.url?.let { fileStorageService.getPresignedDownloadUrl(it) },
                 createdAt = savedMatchmaker.metadata.createdAt
             )
         )
@@ -188,7 +188,7 @@ class MatchmakerController(
                 successfulMatches = matchmaker.stats.successfulMatches,
                 failedMatches = matchmaker.stats.failedMatches,
                 successRate = matchmaker.stats.getSuccessRate(),
-                profilePhotoUrl = matchmaker.profilePhoto?.url,
+                profilePhotoUrl = matchmaker.profilePhoto?.url?.let { fileStorageService.getPresignedDownloadUrl(it) },
                 createdAt = matchmaker.metadata.createdAt
             )
         )
@@ -327,7 +327,10 @@ data class MatchmakerPublicResponse(
     val profilePhotoUrl: String?,
 ) {
     companion object {
-        fun from(matchmaker: Matchmaker) = MatchmakerPublicResponse(
+        fun from(
+            matchmaker: Matchmaker,
+            storage: FileStorageService? = null,
+        ) = MatchmakerPublicResponse(
             matchmakerId = matchmaker.id.value.toString(),
             userId = matchmaker.userId.value.toString(),
             level = matchmaker.level.level,
@@ -338,7 +341,9 @@ data class MatchmakerPublicResponse(
             isPublicProfile = matchmaker.isPublicProfile,
             averageRating = matchmaker.averageRating,
             totalReviews = matchmaker.totalReviews,
-            profilePhotoUrl = matchmaker.profilePhoto?.url,
+            profilePhotoUrl = matchmaker.profilePhoto?.url?.let {
+                storage?.getPresignedDownloadUrl(it) ?: it
+            },
         )
     }
 }

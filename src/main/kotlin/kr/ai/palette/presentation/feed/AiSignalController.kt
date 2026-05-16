@@ -4,6 +4,7 @@ import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.friendship.FriendshipRepository
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.UserRepository
+import kr.ai.palette.infrastructure.storage.FileStorageService
 import kr.ai.palette.persistence.feed.CardOpenJpaRepository
 import kr.ai.palette.persistence.feed.FeedHideJpaRepository
 import kr.ai.palette.presentation.profile.ProfileResponse
@@ -32,6 +33,7 @@ class AiSignalController(
     private val friendshipRepository: FriendshipRepository,
     private val cardOpenJpaRepository: CardOpenJpaRepository,
     private val feedHideRepository: FeedHideJpaRepository,
+    private val fileStorageService: FileStorageService,
 ) {
     companion object {
         // key: "{userId}:{date}" → 당일 2번째 카드 unlock 여부
@@ -79,7 +81,7 @@ class AiSignalController(
         val recommendations = picked.mapIndexed { index, profile ->
             val isFree = index == 0
             val isUnlocked = isFree || isSecondUnlocked
-            val fullProfile = if (isUnlocked) ProfileResponse.from(profile) else null
+            val fullProfile = if (isUnlocked) ProfileResponse.from(profile, fileStorageService) else null
             val user = userRepository.findById(profile.userId)
             val isOpened = cardOpenJpaRepository.existsByViewerIdAndTargetUserId(
                 currentUserId.value, profile.userId.value
