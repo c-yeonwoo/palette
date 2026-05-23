@@ -15,6 +15,10 @@ services:
       - mysql-data:/var/lib/mysql
     expose:
       - "3306"
+    # 127.0.0.1 바인딩 — EC2 localhost 에서만 접근 가능, 인터넷 X
+    # 로컬에서 DataGrip 등으로 붙으려면 SSH 터널 사용
+    ports:
+      - "127.0.0.1:3306:3306"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost",
