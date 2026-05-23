@@ -8,12 +8,15 @@ import kr.ai.palette.application.notification.PushNotificationService
 import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.persistence.device.DeviceTokenJpaRepository
 import org.slf4j.LoggerFactory
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
+import org.springframework.context.annotation.Primary
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import com.google.firebase.FirebaseApp
 
 @Service
-@ConditionalOnProperty(name = ["push.provider"], havingValue = "fcm")
+@ConditionalOnBean(FirebaseApp::class)   // FcmConfig 활성 시에만 생성
+@Primary                                  // 존재하면 Stub 보다 우선 주입
 class FcmPushNotificationService(
     private val deviceTokenRepository: DeviceTokenJpaRepository
 ) : PushNotificationService {
