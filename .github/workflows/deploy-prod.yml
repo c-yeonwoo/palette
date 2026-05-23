@@ -2,9 +2,10 @@ name: Deploy — Prod
 
 on:
   push:
+    branches: [main]   # main push 시 즉시 배포 (가장 흔한 경로)
     tags:
-      - "v*"           # v1.0.0, v1.2.3 형태 태그 시 실행
-  workflow_dispatch:   # GitHub Actions UI 에서 수동 실행 가능 (디버깅용)
+      - "v*"           # v1.0.0 등 태그 push 시도 배포 (버전 마커 + 롤백용)
+  workflow_dispatch:   # GitHub Actions UI 수동 실행
 
 env:
   REGISTRY: ghcr.io
@@ -24,9 +25,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Extract version tag
+      # 이미지 태그 결정:
+      #   - 태그 push (v0.1.x) → 태그명 그대로 사용
+      #   - main push → main-<sha7> 형식 (예: main-abc1234)
+      #   - workflow_dispatch → manual-<sha7>
+      - name: Extract image tag
         id: tag
-        run: echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            SHORT_SHA=$(git rev-parse --short=7 HEAD)
+            if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+              echo "value=manual-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+            else
+              echo "value=main-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+            fi
+          fi
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
