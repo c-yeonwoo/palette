@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*"           # v1.0.0, v1.2.3 형태 태그 시 실행
+  workflow_dispatch:   # GitHub Actions UI 에서 수동 실행 가능 (디버깅용)
 
 env:
   REGISTRY: ghcr.io
