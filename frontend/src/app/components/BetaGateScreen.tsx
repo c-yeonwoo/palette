@@ -32,12 +32,15 @@ export function BetaGateScreen({ onPassed }: BetaGateScreenProps) {
   }, [onPassed]);
 
   // 마운트 시 한 번만 게이트 상태 확인
+  // ⚠️ requiresAuth=false 필수 — 미로그인 상태에서 호출되는데
+  //    apiClient 기본값(true)이면 토큰 없을 때 '/' 로 리다이렉트시켜서 무한 reload
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const status = await api.get<{ enabled: boolean }>(
-          "/api/v1/auth/beta-code/status"
+          "/api/v1/auth/beta-code/status",
+          { requiresAuth: false }
         );
         if (!cancelled && !status.enabled) {
           // 베타 게이트 비활성 → 바로 통과
@@ -61,7 +64,11 @@ export function BetaGateScreen({ onPassed }: BetaGateScreenProps) {
     }
     setSubmitting(true);
     try {
-      await api.post("/api/v1/auth/beta-code/verify", { code: code.trim() });
+      await api.post(
+        "/api/v1/auth/beta-code/verify",
+        { code: code.trim() },
+        { requiresAuth: false }
+      );
       localStorage.setItem(BETA_PASSED_KEY, "1");
       toast.success("환영합니다! 🎨");
       onPassed();
