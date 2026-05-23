@@ -44,7 +44,7 @@ dependencies {
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
 
-	// AWS S3
+	// AWS S3 (S3Presigner는 s3 모듈에 포함)
 	implementation(platform("software.amazon.awssdk:bom:2.20.26"))
 	implementation("software.amazon.awssdk:s3")
 
@@ -55,7 +55,9 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
 
 	runtimeOnly("com.h2database:h2")
-	runtimeOnly("com.mysql:mysql-connector-j")
+	// MySQL Connector — 8.4 LTS 로 고정
+	// 9.x는 Hibernate 7.x와 호환성 이슈 (SEQUENCES 테이블 조회 실패)
+	runtimeOnly("com.mysql:mysql-connector-j:8.4.0")
 	annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 	testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
 	testImplementation("org.springframework.boot:spring-boot-starter-cache-test")
