@@ -79,9 +79,15 @@ jobs:
             set -e
             cd /opt/palette
 
+            # 1. PROD_ENV_FILE 시크릿으로 .env 갱신
             echo "${{ secrets.PROD_ENV_FILE }}" > .env
-            export IMAGE_TAG=${{ needs.build-push.outputs.tag }}
 
+            # 2. 이번 배포의 IMAGE_TAG 를 .env 에 영구 기록
+            #    (수동 재시작 시에도 정확한 버전이 뜨도록)
+            sed -i '/^IMAGE_TAG=/d' .env
+            echo "IMAGE_TAG=${{ needs.build-push.outputs.tag }}" >> .env
+
+            # 3. pull + restart
             docker compose -f docker-compose.server.yml pull
             docker compose -f docker-compose.server.yml up -d --remove-orphans
             docker image prune -f
