@@ -8,7 +8,7 @@
  * 4. 코드 입력 → `POST /verify` → 성공 시 백엔드 쿠키 + 프론트 localStorage 마커 저장
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { toast } from "sonner";
@@ -24,23 +24,35 @@ export function BetaGateScreen({ onPassed }: BetaGateScreenProps) {
   const [code, setCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // 마운트 시 게이트 상태 확인
+  // onPassed 를 ref 로 보관 (부모 매 렌더마다 새 함수 reference 받아도
+  // useEffect 가 재실행되지 않도록)
+  const onPassedRef = useRef(onPassed);
   useEffect(() => {
+    onPassedRef.current = onPassed;
+  }, [onPassed]);
+
+  // 마운트 시 한 번만 게이트 상태 확인
+  useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         const status = await api.get<{ enabled: boolean }>(
           "/api/v1/auth/beta-code/status"
         );
-        if (!status.enabled) {
+        if (!cancelled && !status.enabled) {
           // 베타 게이트 비활성 → 바로 통과
           localStorage.setItem(BETA_PASSED_KEY, "1");
-          onPassed();
+          onPassedRef.current();
         }
       } catch {
         /* 무시 — 사용자가 직접 입력 가능 */
       }
     })();
-  }, [onPassed]);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSubmit = async () => {
     if (!code.trim()) {
