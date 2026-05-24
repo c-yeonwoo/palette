@@ -30,19 +30,19 @@ const regions = [
   "울산", "세종", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"
 ];
 
-/** 4 mini-steps:
- *  1 → 신원 (이름, 생년월일, 성별)
- *  2 → 외형/성격 (키, 체형, MBTI)
- *  3 → 커리어/위치 (직업, 학력, 지역)
- *  4 → 추가 정보 선택 (전화, 회사, 학교)
+/** 4 mini-steps — step 1, 3 만 필수, 2/4 는 건너뛰기 가능
+ *  1 → 신원 (필수: 이름, 생년월일, 성별)
+ *  2 → 외형/성격 (선택: 키, 체형, MBTI)
+ *  3 → 커리어/위치 (필수: 직업, 지역)
+ *  4 → 추가 정보 (선택: 전화, 회사, 학교)
  */
 type MiniStep = 1 | 2 | 3 | 4;
 
 const MINI_STEP_META: Record<MiniStep, { title: string; subtitle: string; emoji: string }> = {
   1: { title: "나를 소개할게요", subtitle: "이름, 생년월일, 성별", emoji: "👋" },
-  2: { title: "외형과 성격을 알려주세요", subtitle: "키, 체형, MBTI", emoji: "✨" },
-  3: { title: "어디서 무슨 일을 하나요?", subtitle: "직업, 학력, 지역", emoji: "💼" },
-  4: { title: "추가 정보 (선택)", subtitle: "더 많이 알려주면 매칭 확률 UP!", emoji: "🎯" },
+  2: { title: "조금 더 알려주세요", subtitle: "선택사항이에요. 부담없이!", emoji: "✨" },
+  3: { title: "어디서 무슨 일을 하나요?", subtitle: "직업과 지역", emoji: "💼" },
+  4: { title: "마지막 단계예요", subtitle: "다 선택 항목 — 건너뛰셔도 돼요", emoji: "🎯" },
 };
 
 interface UserProfile {
@@ -120,16 +120,14 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
     return "";
   };
 
-  // Per-step validation
+  // Per-step validation — step 2/4 는 선택, 항상 통과 가능
   const isStep1Valid = !!(formData.name && formData.birthYear && formData.birthMonth && formData.birthDay && formData.gender);
-  const isStep2Valid = !!(formData.bodyType && formData.mbtiE && formData.mbtiS && formData.mbtiT && formData.mbtiP);
-  const isStep3Valid = !!(formData.jobCategory && formData.education && formData.region);
+  const isStep3Valid = !!(formData.jobCategory && formData.region);  // 학력 필수에서 제외
 
   const isCurrentStepValid = () => {
     if (miniStep === 1) return isStep1Valid;
-    if (miniStep === 2) return isStep2Valid;
     if (miniStep === 3) return isStep3Valid;
-    return true; // step 4 is optional
+    return true; // step 2, 4 는 모두 선택
   };
 
   const handleBack = () => {
@@ -295,13 +293,17 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
           </div>
         )}
 
-        {/* ──────────── STEP 2: 외형/성격 ──────────── */}
+        {/* ──────────── STEP 2: 외형/성격 (모두 선택) ──────────── */}
         {miniStep === 2 && (
           <div className="space-y-5">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700">
+              💡 이 단계는 <strong>모두 선택사항</strong>이에요. 채울수록 매칭이 더 정확해지지만,
+              지금 부담스러우면 <strong>"건너뛰기"</strong> 버튼을 눌러 다음으로 진행해도 됩니다.
+            </div>
             {/* Height */}
             <div>
               <Label className="mb-2 block">
-                키 <span className="text-primary">*</span>
+                키
                 <span className="text-muted-foreground font-normal"> — {formData.height}cm</span>
               </Label>
               <input
@@ -320,7 +322,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
 
             {/* Body Type */}
             <div>
-              <Label className="mb-2 block">체형 <span className="text-primary">*</span></Label>
+              <Label className="mb-2 block">체형</Label>
               <div className="grid grid-cols-5 gap-2">
                 {bodyTypes.map((type) => (
                   <button
@@ -399,9 +401,9 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
               </div>
             </div>
 
-            {/* Education */}
+            {/* Education (선택) */}
             <div>
-              <Label className="mb-2 block">최종 학력 <span className="text-primary">*</span></Label>
+              <Label className="mb-2 block">최종 학력 <span className="text-muted-foreground text-xs font-normal">(선택)</span></Label>
               <div className="grid grid-cols-5 gap-2">
                 {educationLevels.map((level) => (
                   <button
@@ -534,14 +536,14 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
           )}
         </Button>
 
-        {/* Skip for step 4 */}
-        {miniStep === 4 && (
+        {/* Skip 버튼 — 선택 단계 (2, 4) 에서 노출 */}
+        {(miniStep === 2 || miniStep === 4) && (
           <Button
             variant="ghost"
             onClick={handleNext}
             className="w-full text-muted-foreground text-sm"
           >
-            건너뛰기 (나중에 추가하기)
+            지금은 건너뛰기 (나중에 마이프로필에서 추가)
           </Button>
         )}
       </div>

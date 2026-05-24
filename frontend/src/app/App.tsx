@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { BetaGateScreen, hasBetaPassed } from "./components/BetaGateScreen";
+import { BetaWelcomeIntro, hasIntroSeen } from "./components/BetaWelcomeIntro";
 import { LoginScreen } from "./components/LoginScreen";
 import { EmailLoginScreen } from "./components/EmailLoginScreen";
 import { EmailSignupScreen } from "./components/EmailSignupScreen";
@@ -174,6 +175,8 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [betaPassed, setBetaPassed] = useState<boolean>(hasBetaPassed());
   const handleBetaPassed = useCallback(() => setBetaPassed(true), []);
+  const [introSeen, setIntroSeen] = useState<boolean>(hasIntroSeen());
+  const handleIntroDone = useCallback(() => setIntroSeen(true), []);
   const [missingRequiredFields, setMissingRequiredFields] = useState<string[]>([]);
   const [isConvertingToRegular, setIsConvertingToRegular] = useState(false);
   const [userGender, setUserGender] = useState<string | undefined>(undefined);
@@ -779,6 +782,11 @@ export default function App() {
   // 베타 게이트 — 로그인 안 된 신규 방문자만 차단 (이미 토큰 있으면 통과)
   if (!betaPassed && !isLoggedIn) {
     return <BetaGateScreen onPassed={handleBetaPassed} />;
+  }
+
+  // 베타 코드 통과 후 인트로 (3-slide) — 로그인 안 된 신규에게만 한 번 노출
+  if (betaPassed && !introSeen && !isLoggedIn) {
+    return <BetaWelcomeIntro onDone={handleIntroDone} />;
   }
 
   return (

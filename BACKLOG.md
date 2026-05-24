@@ -14,9 +14,9 @@
 ## 🟠 P1 — 1-2주 내 완료 (높은 우선순위)
 
 ### UX / 온보딩 (베타 이탈 방지 — 최우선)
-- [ ] **온보딩 단축** — BasicInfo 4 미니스텝 → 2 미니스텝 (필수 정보만)
-- [ ] **베타 환영 인트로 3-slide** — 베타 게이트 통과 후 서비스 가치 각인
-- [ ] **빈 피드 가이드** — AI Signal placeholder + step-by-step 안내
+- [x] **온보딩 단축** — BasicInfo step 2/4 선택화, 학력 선택, 건너뛰기 버튼 (2026-05-24)
+- [x] **베타 환영 인트로 3-slide** — 베타 게이트 통과 후 가치 각인 (2026-05-24)
+- [x] **빈 피드 가이드** — AI Signal 항상 표시 + FirstTimeGuide step-by-step (2026-05-24)
 - [ ] **온보딩 진행률 정확히 표시** — 실제 화면 수 또는 예상 소요 시간
 - [ ] **주선 탭 역할 명확화** — 일반 유저 / 주선자 뷰 분리
 
@@ -98,6 +98,7 @@
 
 ## ✅ 완료 (참고용)
 
+- 2026-05-24 — 🎨 **UX P1 3종 fix** (온보딩 단축 + 환영 인트로 + 빈 피드 가이드)
 - 2026-05-24 — 🎉 **베타 로그인 정상 동작** (Redis + OAuth redirect_uri + 휴대폰 인증 다 해결)
 - 2026-05-24 — Redis 컨테이너 docker-compose 에 추가 (refresh token 저장)
 - 2026-05-24 — OAuth redirect_uri 가 localhost 로 가던 버그 (server.forward-headers + nginx X-Forwarded-Host)

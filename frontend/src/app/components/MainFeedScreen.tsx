@@ -380,7 +380,17 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
           hasActiveFilters ? (
             <EmptyState title="조건에 맞는 지인이 없어요" description="필터 조건을 조정해보세요" />
           ) : (
-            <NoFriendsNudge onNavigateToFriends={onNavigateToFriends} />
+            <div className="space-y-5">
+              {/* AI Signal 은 지인 0명이어도 항상 표시 (빈 화면 방지) */}
+              {aiSignal && aiSignal.recommendations.length > 0 && (
+                <AiSignalSection
+                  recommendations={aiSignal.recommendations}
+                  onUnlocked={(updated) => setAiSignal({ recommendations: updated })}
+                  onProfileClick={() => {}}
+                />
+              )}
+              <FirstTimeGuide onNavigateToFriends={onNavigateToFriends} />
+            </div>
           )
         ) : (
           <div className="space-y-5">
@@ -822,6 +832,81 @@ function EmptyState({ title, description }: { title: string; description: string
       </div>
       <h3 className="text-base font-semibold mb-1.5">{title}</h3>
       <p className="text-sm text-muted-foreground max-w-[240px] leading-relaxed">{description}</p>
+    </div>
+  );
+}
+
+/**
+ * 신규 사용자가 처음 메인 피드에 진입했을 때 보이는 step-by-step 가이드.
+ * "앱이 죽은 것 같은" 빈 화면 대신, 무엇을 해야할지 명확히 안내.
+ */
+function FirstTimeGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => void }) {
+  const steps = [
+    {
+      emoji: "🎨",
+      title: "프로필 다듬기",
+      desc: "마이프로필에서 사진을 추가하면 매칭 확률이 올라가요",
+    },
+    {
+      emoji: "👥",
+      title: "지인 연결하기",
+      desc: "친구를 초대하면 친구의 친구까지 소개받을 수 있어요",
+    },
+    {
+      emoji: "✨",
+      title: "AI 시그널 받기",
+      desc: "매일 한 명, AI가 골라준 추천을 무료로 받아보세요",
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* 환영 메시지 */}
+      <div className="bg-gradient-to-br from-orange-50 to-pink-50 rounded-2xl p-5 border border-orange-100">
+        <div className="text-3xl mb-2">🌟</div>
+        <h3 className="text-lg font-bold text-foreground mb-1">Palette에 오신 걸 환영해요</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          지인 네트워크로 신뢰할 수 있는 만남을 만들어가요.
+          <br />
+          아래 단계로 천천히 시작해보세요.
+        </p>
+      </div>
+
+      {/* Step-by-step 카드 */}
+      <div className="space-y-2">
+        {steps.map((s, i) => (
+          <div
+            key={i}
+            className="bg-card border border-border rounded-xl p-4 flex items-start gap-3"
+          >
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-xl">
+              {s.emoji}
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-xs text-muted-foreground font-medium">STEP {i + 1}</span>
+              </div>
+              <p className="text-sm font-semibold text-foreground">{s.title}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{s.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* CTA */}
+      {onNavigateToFriends && (
+        <button
+          onClick={onNavigateToFriends}
+          className="w-full bg-primary text-primary-foreground font-semibold py-3.5 rounded-2xl shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
+        >
+          <span>👥</span>
+          지금 친구 연결하기
+        </button>
+      )}
+
+      <p className="text-xs text-muted-foreground/60 text-center pt-1">
+        베타 기간 동안은 친구 없이도 시드 유저 12명을 둘러볼 수 있어요
+      </p>
     </div>
   );
 }
