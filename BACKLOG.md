@@ -86,6 +86,10 @@
 
 ## ✅ 완료 (참고용)
 
+- 2026-05-24 — 🎉 **베타 로그인 정상 동작** (Redis + OAuth redirect_uri + 휴대폰 인증 다 해결)
+- 2026-05-24 — Redis 컨테이너 docker-compose 에 추가 (refresh token 저장)
+- 2026-05-24 — OAuth redirect_uri 가 localhost 로 가던 버그 (server.forward-headers + nginx X-Forwarded-Host)
+- 2026-05-24 — GlobalExceptionHandler stacktrace 로깅
 - 2026-05-24 — 휴대폰 인증 API permitAll (회원가입 401 fix)
 - 2026-05-24 — Seeder 를 prod 베타 단계에도 활성 (app.seed-enabled 토글)
 - 2026-05-24 — BetaGateScreen placeholder 제거
