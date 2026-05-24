@@ -86,6 +86,10 @@
 
 ## ✅ 완료 (참고용)
 
+- 2026-05-24 — 휴대폰 인증 API permitAll (회원가입 401 fix)
+- 2026-05-24 — Seeder 를 prod 베타 단계에도 활성 (app.seed-enabled 토글)
+- 2026-05-24 — BetaGateScreen placeholder 제거
+- 2026-05-24 — API BASE_URL 상대경로 (도메인 무관 호환)
 - 2026-05-23 — NICE 본인인증 도입 (DEV bypass 모드)
 - 2026-05-23 — 베타 코드 게이트 시스템
 - 2026-05-23 — S3 비공개 버킷 + presigned URL

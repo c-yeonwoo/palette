@@ -52,6 +52,8 @@ class SecurityConfig(
                         "/api/v1/ai-profile/generate",
                         "/api/v1/share/*",
                         "/api/v1/ai/compatibility",
+                        // 회원가입 전 호출 (인증 불필요)
+                        "/api/v1/verification/phone/**",
                         // NICE 콜백은 NICE 서버가 호출 — 인증 불필요
                         "/api/v1/identity/nice/callback"
                     ).permitAll()

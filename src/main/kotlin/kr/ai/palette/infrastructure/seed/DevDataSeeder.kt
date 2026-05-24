@@ -9,7 +9,6 @@ import kr.ai.palette.persistence.user.*
 import org.slf4j.LoggerFactory
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
-import org.springframework.context.annotation.Profile
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -19,17 +18,30 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 /**
- * Dev 환경 전용 목 데이터 시더.
- * 앱 기동 시 DB가 비어있으면 자동 실행.
+ * 베타/개발 환경용 목 데이터 시더.
+ *
+ * 활성 조건:
+ *  - SPRING_PROFILES_ACTIVE = dev | prod (베타 단계엔 prod 도 포함)
+ *  - `app.seed-enabled=true` 설정 시 (default: true)
+ *
+ * 멱등성:
+ *  - 고정 UUID (00000000-0000-0000-0000-000000000001) 의 테스트 계정 존재 시 skip
+ *  - 실 유저 가입 후에도 안전하게 한 번만 실행됨
  *
  * 생성 데이터:
  *  - 로그인 테스트 계정 1명 (dev@palette.kr / devpass123)
- *  - 일반 유저 12명 (남6/여6) — 피드에 노출될 잠재 파트너
+ *  - 일반 유저 12명 (남6/여6) — 피드용
  *  - 주선자 유저 5명 (marketplace mock과 동일)
  *  - 주선 요청 3건 (pending/approved/completed)
+ *
+ * 정식 출시 후엔 application-prod.properties 에서 `app.seed-enabled=false` 로 비활성.
  */
 @Component
-@Profile("dev")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
+    name = ["app.seed-enabled"],
+    havingValue = "true",
+    matchIfMissing = true,
+)
 class DevDataSeeder(
     private val userRepo: UserJpaRepository,
     private val profileRepo: ProfileJpaRepository,
@@ -43,11 +55,14 @@ class DevDataSeeder(
 
     @Transactional
     override fun run(args: ApplicationArguments) {
-        if (userRepo.count() > 0L) {
-            log.info("[DevSeeder] Data already exists — skipping seed")
+        // 멱등성 — 테스트 계정 (고정 UUID) 이 이미 있으면 skip
+        // 실 유저들이 가입한 상태에서도 안전하게 한 번만 실행됨
+        val testAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001")
+        if (userRepo.existsById(testAccountId)) {
+            log.info("[Seeder] Test account exists — skipping seed")
             return
         }
-        log.info("[DevSeeder] Seeding dev mock data...")
+        log.info("[Seeder] Seeding mock data (test accounts + matchmakers + sample requests)...")
 
         val now = Instant.now()
         val me = seedTestAccount(now)
@@ -56,8 +71,8 @@ class DevDataSeeder(
         val matchmakers = seedMatchmakers(matchmakerUsers, now)
         seedMatchmakingRequests(me, regularUsers, matchmakers, now)
 
-        log.info("[DevSeeder] Done — ${userRepo.count()} users created")
-        log.info("[DevSeeder] Login: dev@palette.kr / devpass123")
+        log.info("[Seeder] Done — ${userRepo.count()} users in DB")
+        log.info("[Seeder] Test login: dev@palette.kr / devpass123")
     }
 
     // ── 테스트 로그인 계정 ────────────────────────────────────────────────────

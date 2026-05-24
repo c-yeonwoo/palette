@@ -111,7 +111,6 @@ export function BetaGateScreen({ onPassed }: BetaGateScreenProps) {
             </label>
             <Input
               type="text"
-              placeholder="palette-beta-xxxx"
               value={code}
               onChange={(e) => setCode(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
