@@ -3,6 +3,21 @@
 # 환경별 IMAGE_TAG / SPRING_PROFILES_ACTIVE 는 .env 에서 주입
 
 services:
+  # ── Redis (refresh token 저장) ────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    expose:
+      - "6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   # ── MySQL ─────────────────────────────────────────────────────────────────
   db:
     image: mysql:8.0
@@ -36,10 +51,14 @@ services:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
       MYSQL_HOST: db
       MYSQL_PORT: 3306
+      REDIS_HOST: redis      # docker compose 서비스명
+      REDIS_PORT: 6379
     expose:
       - "8080"
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
@@ -66,3 +85,4 @@ services:
 
 volumes:
   mysql-data:
+  redis-data:
