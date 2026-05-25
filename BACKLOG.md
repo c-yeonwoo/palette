@@ -47,6 +47,15 @@
 
 ## 🟡 P2 — 1개월 내 (중간 우선순위)
 
+### 모바일 앱 출시
+- [ ] **Capacitor 도입** — React 코드 그대로 iOS/Android 패키징
+  - `npm i @capacitor/core @capacitor/ios @capacitor/android`
+  - `npx cap init && npx cap add ios && npx cap add android`
+  - 카메라/푸시/딥링크 플러그인 추가 (App Store 심사 통과용)
+  - Apple Developer Program 가입 ($99/년)
+  - Xcode/Android Studio 빌드 → App Store/Play Store 제출
+- [ ] **PWA 아이콘 정식 디자인** — 현재 placeholder SVG (frontend/public/PWA_ICONS_TODO.md 참조)
+
 ### UX 디테일 (P1 끝난 후)
 - [ ] **사진 검증 안내 vs 실제 동작 일치** — 베타 동안은 검증 미구현 명시 또는 활성화
 - [ ] **AboutMe 수동 작성 부담 완화** — 최소 답변 2개로, AI 보완
@@ -98,6 +107,7 @@
 
 ## ✅ 완료 (참고용)
 
+- 2026-05-24 — 📱 **PWA 설정** (vite-plugin-pwa, "홈 화면에 추가" 가능, manifest + service worker)
 - 2026-05-24 — 🎨 **UX P1 3종 fix** (온보딩 단축 + 환영 인트로 + 빈 피드 가이드)
 - 2026-05-24 — 🎉 **베타 로그인 정상 동작** (Redis + OAuth redirect_uri + 휴대폰 인증 다 해결)
 - 2026-05-24 — Redis 컨테이너 docker-compose 에 추가 (refresh token 저장)

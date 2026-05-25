@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 베이스 (오렌지→핑크 그라데이션) -->
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F97316"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#bg)"/>
+
+  <!-- 팔레트 모양 (간단한 원 + 컬러 닷) -->
+  <ellipse cx="256" cy="280" rx="160" ry="130" fill="#fff" opacity="0.95"/>
+
+  <!-- 팔레트 구멍 (엄지 자리) -->
+  <ellipse cx="340" cy="240" rx="22" ry="30" fill="url(#bg)"/>
+
+  <!-- 컬러 닷 4개 -->
+  <circle cx="190" cy="240" r="22" fill="#F97316"/>
+  <circle cx="250" cy="220" r="22" fill="#3B82F6"/>
+  <circle cx="310" cy="320" r="22" fill="#10B981"/>
+  <circle cx="220" cy="320" r="22" fill="#A855F7"/>
+</svg>
