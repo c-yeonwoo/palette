@@ -157,7 +157,13 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
       onSuccess();
     } catch (error: any) {
       console.error("Signup failed:", error);
-      if (error.status === 400) {
+      const msg = error?.message || "";
+      if (msg.includes("INVALID_BETA_CODE") || msg.includes("베타 코드")) {
+        // 베타 쿠키 만료 — 베타 게이트 다시 보여주기
+        toast.error("베타 코드 인증이 만료됐어요. 다시 입력해주세요.", { duration: 4000 });
+        localStorage.removeItem("palette_beta_passed");
+        setTimeout(() => window.location.reload(), 1500);
+      } else if (error.status === 400) {
         toast.error("이미 사용 중인 이메일 또는 닉네임입니다");
       } else {
         toast.error("회원가입에 실패했습니다. 다시 시도해주세요.");

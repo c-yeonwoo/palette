@@ -194,7 +194,14 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
       onSuccess();
     } catch (error: any) {
       console.error("Signup failed:", error);
-      toast.error(error.message || "회원가입에 실패했습니다");
+      const msg = error?.message || "";
+      if (msg.includes("INVALID_BETA_CODE") || msg.includes("베타 코드")) {
+        toast.error("베타 코드 인증이 만료됐어요. 다시 입력해주세요.", { duration: 4000 });
+        localStorage.removeItem("palette_beta_passed");
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        toast.error(error.message || "회원가입에 실패했습니다");
+      }
     } finally {
       setIsLoading(false);
     }

@@ -59,7 +59,9 @@ class BetaCodeValidator(
 
     companion object {
         const val COOKIE_NAME = "palette_beta_token"
-        const val COOKIE_TTL_SECONDS = 3600 // 1시간
+        // 베타 가입 흐름은 시간이 걸릴 수 있음 (인증/사진 준비 등)
+        // → 베타 기간 전체를 커버할 만큼 길게
+        const val COOKIE_TTL_SECONDS = 60 * 60 * 24 * 30 // 30일
     }
 }
 
