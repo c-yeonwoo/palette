@@ -27,6 +27,11 @@ class NcpSensService(
     private val client: RestClient = restClient.baseUrl("https://sens.apigw.ntruss.com").build()
 
     override fun sendSms(phoneNumber: String, message: String): Boolean {
+        // 자격증명 누락 가드 — 키 없이 활성된 경우 즉시 실패 (로그로 명확히)
+        if (config.accessKey.isBlank() || config.secretKey.isBlank() || config.serviceId.isBlank()) {
+            logger.error("[NCP SENS] 자격증명 누락 — NCP_SENS_ACCESS_KEY / SECRET_KEY / SERVICE_ID 확인 필요")
+            return false
+        }
         return try {
             val timestamp = Instant.now().toEpochMilli().toString()
             val signature = makeSignature(timestamp)

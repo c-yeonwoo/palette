@@ -6,6 +6,7 @@ import kr.ai.palette.domain.verification.PhoneVerification
 import kr.ai.palette.domain.verification.PhoneVerificationRepository
 import kr.ai.palette.infrastructure.sms.SmsService
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.env.Environment
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -13,19 +14,26 @@ import java.util.UUID
 
 /**
  * 핸드폰 인증 서비스
+ *
+ * 베타 단계 동작:
+ *  - app.phone-verification-bypass=true (default) → SMS 안 보내고 "000000" 으로 통과
+ *  - 정식 SMS 발송 활성화 시 false 로 변경
  */
 @Service
 class PhoneVerificationService(
     private val phoneVerificationRepository: PhoneVerificationRepository,
     private val userRepository: UserRepository,
     private val smsService: SmsService,
-    private val environment: Environment
+    private val environment: Environment,
+    @Value("\${app.phone-verification-bypass:true}")
+    private val bypassEnabled: Boolean,
 ) {
     private val logger = LoggerFactory.getLogger(PhoneVerificationService::class.java)
 
-    /** dev/qa 환경 여부 — SMS 발송 및 코드 검증 스킵 */
-    private val isDevOrQa: Boolean
-        get() = environment.activeProfiles.any { it == "dev" || it == "qa" }
+    /** dev/qa 프로파일 또는 베타 bypass 토글 시 SMS/코드검증 스킵 */
+    private val isBypassed: Boolean
+        get() = bypassEnabled ||
+            environment.activeProfiles.any { it == "dev" || it == "qa" }
 
     /**
      * 인증번호를 발송합니다.
@@ -39,11 +47,11 @@ class PhoneVerificationService(
         // 기존 인증 정보 삭제
         phoneVerificationRepository.deleteByPhoneNumber(cleanedPhoneNumber)
 
-        // dev/qa: 고정 코드 000000으로 인증 정보 생성 (SMS 미발송)
-        if (isDevOrQa) {
+        // 베타/dev/qa: SMS 안 보내고 고정 코드 "000000" 으로 인증 정보 저장
+        if (isBypassed) {
             val verification = PhoneVerification.createWithCode(cleanedPhoneNumber, "000000")
             phoneVerificationRepository.save(verification)
-            logger.info("[DEV/QA] Skip SMS for $cleanedPhoneNumber — use code 000000")
+            logger.info("[BYPASS] SMS skipped for $cleanedPhoneNumber — use code 000000")
             return SendVerificationCodeResult.Success(
                 phoneNumber = cleanedPhoneNumber,
                 expiresAt = verification.expiresAt
@@ -79,9 +87,9 @@ class PhoneVerificationService(
     fun verifyCode(phoneNumber: String, code: String, userId: String?): VerifyCodeResult {
         val cleanedPhoneNumber = cleanPhoneNumber(phoneNumber)
 
-        // dev/qa: 코드 검증 없이 바로 통과
-        if (isDevOrQa) {
-            logger.info("[DEV/QA] Auto-pass phone verification for $cleanedPhoneNumber")
+        // 베타/dev/qa: 코드 검증 없이 통과
+        if (isBypassed) {
+            logger.info("[BYPASS] Auto-pass phone verification for $cleanedPhoneNumber")
             if (userId != null) updateUserPhoneVerification(userId, cleanedPhoneNumber)
             phoneVerificationRepository.deleteByPhoneNumber(cleanedPhoneNumber)
             return VerifyCodeResult.Success(phoneNumber = cleanedPhoneNumber)

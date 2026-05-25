@@ -73,7 +73,7 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
       const response = await sendVerificationCode(formData.phoneNumber);
       if (response.success) {
         setVerificationSent(true);
-        toast.success("인증번호가 발송되었습니다");
+        toast.success("[베타] 인증번호: 000000 을 입력해주세요", { duration: 5000 });
       } else {
         toast.error(response.message);
       }
