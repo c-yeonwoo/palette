@@ -93,7 +93,7 @@ export function PublicProfileScreen() {
           // Share link resolution
           const code = shareMatch[1];
           const data = await api.get<{ nickname: string; gender: string; profile: ProfileData; viewCount: number }>(
-            `/api/v1/share/${code}`,
+            `/api/v1/share/v/${code}`,
             { requiresAuth: false }
           );
           setProfile(data.profile);

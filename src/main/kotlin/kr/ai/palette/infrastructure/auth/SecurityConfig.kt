@@ -46,6 +46,8 @@ class SecurityConfig(
                         "/api/v1/auth/email/**",
                         // 토큰 만료 시 refresh — access token 없이 refresh token 만으로 호출
                         "/api/v1/auth/refresh",
+                        // 베타 게이트 — 회원가입 전 코드 검증/상태 조회
+                        "/api/v1/auth/beta-code/**",
                         "/oauth2/**",
                         "/login/**",
                         "/h2-console/**",
@@ -53,7 +55,10 @@ class SecurityConfig(
                         "/api/v1/users/*/public",
                         "/api/v1/ai-interview/questions",
                         "/api/v1/ai-profile/generate",
-                        "/api/v1/share/*",
+                        // 공유 링크 공개 resolve 만 permitAll — POST /link, GET /link/me 같은
+                        // 인증 필수 엔드포인트가 매처에 잡혀 NPE 500 나는 걸 막기 위해
+                        // 공개 경로를 /share/v/{code} 로 분리.
+                        "/api/v1/share/v/*",
                         "/api/v1/ai/compatibility",
                         // 회원가입 전 호출 (인증 불필요)
                         "/api/v1/verification/phone/**",
