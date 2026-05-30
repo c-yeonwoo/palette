@@ -42,7 +42,10 @@ class SecurityConfig(
                         "/",
                         "/error",
                         "/favicon.ico",
-                        "/api/v1/auth/**",
+                        // 회원가입/로그인 (인증 전)
+                        "/api/v1/auth/email/**",
+                        // 토큰 만료 시 refresh — access token 없이 refresh token 만으로 호출
+                        "/api/v1/auth/refresh",
                         "/oauth2/**",
                         "/login/**",
                         "/h2-console/**",
