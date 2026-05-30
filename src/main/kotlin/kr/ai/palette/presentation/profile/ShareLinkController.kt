@@ -66,7 +66,7 @@ class ShareLinkController(
         return ResponseEntity.ok(link.toResponse())
     }
 
-    @GetMapping("/{code}")
+    @GetMapping("/v/{code}")
     @Transactional
     fun resolveShareLink(@PathVariable code: String): ResponseEntity<ShareProfileResponse> {
         val link = shareLinkJpaRepository.findById(code).orElse(null)
