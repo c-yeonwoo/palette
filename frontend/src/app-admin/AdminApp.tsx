@@ -3,6 +3,7 @@ import { AdminLoginScreen } from "./components/AdminLoginScreen";
 import { AdminDashboardScreen } from "./components/AdminDashboardScreen";
 import { AdminUsersScreen } from "./components/AdminUsersScreen";
 import { AdminUserDetailScreen } from "./components/AdminUserDetailScreen";
+import { AdminRecommendationsScreen } from "./components/AdminRecommendationsScreen";
 import { adminAuth, type AdminInfo } from "./lib/adminAuth";
 
 /**
@@ -19,13 +20,15 @@ import { adminAuth, type AdminInfo } from "./lib/adminAuth";
 type Screen =
   | { kind: "dashboard" }
   | { kind: "users" }
-  | { kind: "user-detail"; userId: string };
+  | { kind: "user-detail"; userId: string }
+  | { kind: "recommendations" };
 
 function pathToScreen(path: string): Screen {
   if (path === "/admin" || path === "/admin/") return { kind: "dashboard" };
   if (path === "/admin/users") return { kind: "users" };
   const m = path.match(/^\/admin\/users\/([^/]+)$/);
   if (m) return { kind: "user-detail", userId: m[1] };
+  if (path === "/admin/recommendations") return { kind: "recommendations" };
   return { kind: "dashboard" };
 }
 
@@ -81,5 +84,7 @@ export default function AdminApp() {
           onBack={() => navigate("/admin/users")}
         />
       );
+    case "recommendations":
+      return <AdminRecommendationsScreen onBack={() => navigate("/admin")} />;
   }
 }

@@ -83,6 +83,7 @@ kr.ai.palette/
 - `persistence/vouch/`: `VouchEntity`
 - `persistence/relationship/`: `RelationshipStageEntity`, `PhotoFeedbackEntity`
 - `persistence/ai/`: `UserAiInsightEntity`
+- `persistence/recommendation/`: `DailyRecommendationEntity` — AI 시그널 추천 이력 (ADR 0009)
 
 ---
 
@@ -95,7 +96,8 @@ kr.ai.palette/
 | `/api/v1/auth/beta-code` | `BetaCodeController` | 베타 게이트 status / verify |
 | `/api/v1/admin/auth` | `AdminAuthController` | 운영자 별도 로그인 (role=ADMIN 만 통과) |
 | `/api/v1/admin/users` | `AdminUsersController` | 회원 목록·상세·상태 변경 (SUSPENDED/DORMANT/ACTIVE) |
-| `/api/v1/admin/**` (매칭/CS) | (PR #6+ 예정) | 매칭/CS 관리 — `hasRole("ADMIN")` |
+| `/api/v1/admin/recommendations` | `AdminRecommendationsController` | AI 추천 이력 조회 (일자/viewer/target) — PR #7 |
+| `/api/v1/admin/**` (CS 등) | (PR #8+ 예정) | CS 관리 — `hasRole("ADMIN")` |
 | `/api/v1/profile` | `ProfileController` | 본인 프로필 CRUD, 사진 |
 | `/api/v1/profile/public/*` | `PublicProfileController` | 비공개 토큰 기반 공개 조회 |
 | `/api/v1/share` | `ShareLinkController` | 공유 링크 생성 / 공개 resolve (`/v/{code}`) |
@@ -182,11 +184,16 @@ Admin: `/api/v1/admin/**` → `hasRole("ADMIN")` (단 `/api/v1/admin/auth/login`
 3. 수신자(target)가 `PUT /requests/{id}/target/accept|reject`
 4. 둘 다 통과 → `COMPLETED` → 연락처 교환 + 주선자 포인트 (30~50% 커미션, 레벨별)
 
-### 6.4 AI 시그널 (1+1)
+### 6.4 AI 시그널 (1+1) — Stateful (ADR 0009)
 `GET /api/v1/feed/ai-signal`:
-- 친구 0 + 비시드 사용자 → 빈 결과 (시드 격리)
-- 그 외: 모든 프로필 중 반대 성별 + 매칭/숨김 제외 + 시드 격리 → 일자+UID 시드 랜덤 2명
-- 1번째 무료, 2번째 1,000원 (`POST /unlock`)
+1. (viewer, today KST) 저장된 `DailyRecommendationEntity` 있으면 그대로 반환 — 결정성
+2. 없으면 후보 계산:
+   - 친구 0 + 비시드 viewer → 빈 (시드 격리)
+   - 그 외: 반대 성별 + 매칭/숨김/1·2촌 친구 제외 + 시드 격리 + **60일 추천 이력 제외** → date+UID seed 랜덤 2명
+3. write-through — 결과 영속화 (position 1, 2, source = AUTO)
+4. 응답: 1번째 무료, 2번째 1,000원 (`POST /unlock`)
+
+운영자가 `/api/v1/admin/recommendations` 로 조회. 강제 변경(PIN/REPLACE)은 PR #9 예정.
 
 ---
 

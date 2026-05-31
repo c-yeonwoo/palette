@@ -377,3 +377,26 @@
 
     alter table vouches 
        add constraint UKb2vn2b5n1icx4apr7fork1a4c unique (target_user_id, voucher_id);
+
+    create table daily_recommendations (
+        id bigint not null auto_increment,
+        viewer_user_id BINARY(16) not null,
+        target_user_id BINARY(16) not null,
+        recommended_date date not null,
+        position int not null,
+        source varchar(16) not null default 'AUTO',
+        created_at datetime(6) not null,
+        primary key (id)
+    ) engine=InnoDB;
+
+    alter table daily_recommendations
+       add constraint uk_drec_viewer_date_position unique (viewer_user_id, recommended_date, position);
+
+    create index idx_drec_viewer_date
+       on daily_recommendations (viewer_user_id, recommended_date);
+
+    create index idx_drec_viewer_target
+       on daily_recommendations (viewer_user_id, target_user_id);
+
+    create index idx_drec_date
+       on daily_recommendations (recommended_date);
