@@ -179,6 +179,7 @@ export default function App() {
   const [missingRequiredFields, setMissingRequiredFields] = useState<string[]>([]);
   const [isConvertingToRegular, setIsConvertingToRegular] = useState(false);
   const [userGender, setUserGender] = useState<string | undefined>(undefined);
+  const [userAccountType, setUserAccountType] = useState<"REGULAR" | "MATCHMAKER_ONLY" | undefined>(undefined);
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>(undefined);
   const [selectedMutualFriends, setSelectedMutualFriends] = useState<MutualFriend[]>([]);
@@ -291,9 +292,12 @@ export default function App() {
           if (user) {
             setIsLoggedIn(true);
             setUserGender(user.gender); // Store user gender for profile editing
+            const acctType = (user as { accountType?: string }).accountType as "REGULAR" | "MATCHMAKER_ONLY" | undefined;
+            setUserAccountType(acctType);
             // If profile is completed, go to main feed, otherwise restore or start onboarding
+            // ADR 0014: MATCHMAKER_ONLY 는 mainFeed 가 아닌 ConnectorDashboard 로
             if (user.isProfileCompleted) {
-              setCurrentScreen("mainFeed");
+              setCurrentScreen(acctType === "MATCHMAKER_ONLY" ? "connectorDashboard" : "mainFeed");
             } else {
               const savedStep = localStorage.getItem(ONBOARDING_STEP_KEY);
               const validStep = savedStep && ONBOARDING_SCREENS_SET.has(savedStep as Screen)
@@ -694,8 +698,11 @@ export default function App() {
 
       if (user) {
         setUserGender(user.gender);
+        const acctType = (user as { accountType?: string }).accountType as "REGULAR" | "MATCHMAKER_ONLY" | undefined;
+        setUserAccountType(acctType);
         if (user.isProfileCompleted) {
-          setCurrentScreen("mainFeed");
+          // ADR 0014: MATCHMAKER_ONLY 는 mainFeed 가 아닌 ConnectorDashboard 로
+          setCurrentScreen(acctType === "MATCHMAKER_ONLY" ? "connectorDashboard" : "mainFeed");
           toast.success("로그인되었습니다!");
           return;
         }
@@ -1082,6 +1089,7 @@ export default function App() {
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}
+          accountType={userAccountType}
         />
       )}
 
@@ -1093,16 +1101,25 @@ export default function App() {
 function BottomNavigation({
   currentScreen,
   onNavigate,
+  accountType,
 }: {
   currentScreen: Screen;
   onNavigate: (screen: Screen) => void;
+  accountType?: "REGULAR" | "MATCHMAKER_ONLY";
 }) {
-  const tabs: { screen: Screen; icon: React.ElementType; label: string; matchScreens?: Screen[] }[] = [
-    { screen: "mainFeed", icon: Home, label: "홈" },
-    { screen: "introductionHistory", icon: Clock, label: "소개" },
-    { screen: "connectorDashboard", icon: Heart, label: "주선" },
-    { screen: "myPage", icon: User, label: "나", matchScreens: ["myPage", "myProfile"] },
-  ];
+  // ADR 0014: MATCHMAKER_ONLY 는 일반 데이팅 흐름(홈/소개) 안 씀 → 2탭 단순화
+  const tabs: { screen: Screen; icon: React.ElementType; label: string; matchScreens?: Screen[] }[] =
+    accountType === "MATCHMAKER_ONLY"
+      ? [
+          { screen: "connectorDashboard", icon: Heart, label: "주선 대시보드" },
+          { screen: "myPage", icon: User, label: "나", matchScreens: ["myPage", "myProfile"] },
+        ]
+      : [
+          { screen: "mainFeed", icon: Home, label: "홈" },
+          { screen: "introductionHistory", icon: Clock, label: "소개" },
+          { screen: "connectorDashboard", icon: Heart, label: "주선" },
+          { screen: "myPage", icon: User, label: "나", matchScreens: ["myPage", "myProfile"] },
+        ];
 
   return (
     <div

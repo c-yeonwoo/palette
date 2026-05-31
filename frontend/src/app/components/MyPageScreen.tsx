@@ -171,22 +171,25 @@ export function MyPageScreen({
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* ── 헤더 ── */}
-      <div className="bg-card border-b border-border px-4 pt-safe-top">
-        <div className="max-w-2xl mx-auto py-5">
-          <div className="flex items-center justify-between mb-5">
-            <h1 className="text-lg font-bold">마이페이지</h1>
-            {isMatchmakerOnly && (
-              <button
-                onClick={handleOpenEditDialog}
-                className="p-2 rounded-lg hover:bg-muted transition-colors"
-                aria-label="프로필 수정"
-              >
-                <Edit2 className="w-4 h-4 text-muted-foreground" />
-              </button>
-            )}
-          </div>
+      {/* 통일 헤더 (ADR 0014) */}
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border pt-safe-top">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+          <h1 className="text-base font-bold text-foreground">마이페이지</h1>
+          {isMatchmakerOnly && (
+            <button
+              onClick={handleOpenEditDialog}
+              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors"
+              aria-label="프로필 수정"
+            >
+              <Edit2 className="w-[18px] h-[18px] text-foreground" />
+            </button>
+          )}
+        </div>
+      </header>
 
+      {/* 아바타 + 이름 영역 */}
+      <div className="bg-card border-b border-border px-4">
+        <div className="max-w-2xl mx-auto py-5">
           {/* 아바타 + 이름 */}
           <div className="flex items-center gap-4">
             <div className="relative flex-shrink-0">

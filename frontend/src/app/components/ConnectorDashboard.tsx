@@ -413,16 +413,16 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* ── 헤더 ── */}
-      <div className="flex-shrink-0 bg-card border-b border-border px-4 py-4">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      {/* ── 통일 헤더 (ADR 0014) ── */}
+      <header className="sticky top-0 z-10 flex-shrink-0 bg-background/95 backdrop-blur border-b border-border">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2">
             {onBack && (
-              <button onClick={onBack} className="p-1.5 hover:bg-accent rounded-full transition-colors">
+              <button onClick={onBack} className="p-1.5 hover:bg-muted/50 rounded-full transition-colors -ml-1.5">
                 <ChevronLeft className="w-5 h-5" />
               </button>
             )}
-            <h2 className="text-lg font-semibold">주선 보드</h2>
+            <h1 className="text-base font-bold text-foreground">주선 대시보드</h1>
           </div>
 
           <div className="flex items-center gap-2">
@@ -450,7 +450,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* ── 이번달 요약 + Stats ── */}
       <div className="flex-shrink-0 bg-card border-b border-border px-4 py-3 max-w-2xl w-full mx-auto">

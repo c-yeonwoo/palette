@@ -223,37 +223,40 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
-      <div className="max-w-2xl mx-auto px-6 pt-6 pb-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground tracking-[0.18em] uppercase mb-0.5">팔레트</p>
-            <h1 className="text-[26px] font-bold tracking-tight leading-none">주변 지인</h1>
-          </div>
+      {/* 통일 헤더 — sticky + bg-background/95 + border-b + h-14 (ADR 0014) */}
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+          <h1 className="text-base font-bold text-foreground">주변 지인</h1>
           <div className="flex items-center gap-2">
             <button
               onClick={onNotificationClick}
-              className="relative w-10 h-10 rounded-2xl flex items-center justify-center bg-card shadow-sm text-foreground"
+              className="relative w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors text-foreground"
+              aria-label="알림"
             >
-              <Bell className="w-4 h-4" />
+              <Bell className="w-[18px] h-[18px]" />
               {unreadNotifications > 0 && (
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
               )}
             </button>
-            <button
-              onClick={() => { setPendingFilters({ ...filters }); setShowFilter(true); }}
-              className={`relative w-10 h-10 rounded-2xl flex items-center justify-center transition-colors shadow-sm ${
-                showFilter || hasActiveFilters ? "bg-primary text-primary-foreground" : "bg-card text-foreground"
-              }`}
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-            </button>
+            {userProfile?.accountType !== "MATCHMAKER_ONLY" && (
+              <button
+                onClick={() => { setPendingFilters({ ...filters }); setShowFilter(true); }}
+                className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
+                  showFilter || hasActiveFilters ? "bg-primary text-primary-foreground" : "hover:bg-muted/50 text-foreground"
+                }`}
+                aria-label="필터"
+              >
+                <SlidersHorizontal className="w-[18px] h-[18px]" />
+              </button>
+            )}
           </div>
         </div>
+      </header>
 
-        {/* Active filter chips */}
-        {hasActiveFilters && (
-          <div className="flex gap-1.5 mt-3 overflow-x-auto pb-0.5">
+      {/* Active filter chips — 주선자에게는 숨김 */}
+      {hasActiveFilters && userProfile?.accountType !== "MATCHMAKER_ONLY" && (
+        <div className="max-w-2xl mx-auto px-4 pt-3">
+          <div className="flex gap-1.5 overflow-x-auto pb-0.5">
             {(filters.ageMin || filters.ageMax) && (
               <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
                 {filters.ageMin || "?"}-{filters.ageMax || "?"}세
@@ -276,8 +279,8 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
               초기화
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Filter Panel */}
       {showFilter && (

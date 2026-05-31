@@ -151,26 +151,24 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-card/95 backdrop-blur-sm border-b border-border/40">
-        <div className="max-w-2xl mx-auto px-4 pt-safe-top">
-          <div className="flex items-center justify-between h-14">
-            <div className="flex items-center gap-1">
-              {onBack && (
-                <button onClick={onBack} className="p-1 rounded-full hover:bg-accent transition-colors mr-1">
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-              )}
-              <h1 className="text-base font-bold">소개</h1>
-            </div>
-            {actionNeeded > 0 && (
-              <span className="text-xs font-semibold text-primary bg-primary/10 rounded-full px-2.5 py-1">
-                응답 필요 {actionNeeded}건
-              </span>
+      {/* 통일 헤더 (ADR 0014) */}
+      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border pt-safe-top">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {onBack && (
+              <button onClick={onBack} className="p-1.5 rounded-full hover:bg-muted/50 transition-colors -ml-1.5">
+                <ChevronLeft className="w-5 h-5" />
+              </button>
             )}
+            <h1 className="text-base font-bold text-foreground">소개</h1>
           </div>
+          {actionNeeded > 0 && (
+            <span className="text-xs font-semibold text-primary bg-primary/10 rounded-full px-2.5 py-1">
+              응답 필요 {actionNeeded}건
+            </span>
+          )}
         </div>
-      </div>
+      </header>
 
       {/* Tabs */}
       <div className="max-w-2xl mx-auto flex border-b border-border/40 px-4 bg-background sticky top-14 z-10">
