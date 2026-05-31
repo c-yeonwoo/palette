@@ -68,6 +68,11 @@ class UserEntity(
     @Enumerated(EnumType.STRING)
     var accountType: AccountTypeEntity = AccountTypeEntity.REGULAR,
 
+    // Role (USER / ADMIN — 운영자 접근용)
+    @Column(name = "role", nullable = false, length = 16)
+    @Enumerated(EnumType.STRING)
+    var role: UserRoleEntity = UserRoleEntity.USER,
+
     // Profile Status
     @Column(name = "is_profile_completed", nullable = false)
     var isProfileCompleted: Boolean = false,
@@ -114,7 +119,8 @@ class UserEntity(
         gender = GenderEntity.MALE,
         agreedTermsService = false,
         agreedTermsPrivacy = false,
-        agreedAt = Instant.now()
+        agreedAt = Instant.now(),
+        role = UserRoleEntity.USER,
     )
 
     @PreUpdate
@@ -138,6 +144,11 @@ enum class GenderEntity {
 enum class AccountTypeEntity {
     REGULAR,
     MATCHMAKER_ONLY
+}
+
+enum class UserRoleEntity {
+    USER,
+    ADMIN
 }
 
 enum class ContactMethodEntity {

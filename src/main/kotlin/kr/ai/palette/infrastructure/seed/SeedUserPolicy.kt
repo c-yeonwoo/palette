@@ -24,7 +24,9 @@ class SeedUserPolicy(
 
     fun isSeed(user: User): Boolean {
         val email = user.privateInfo.email ?: return false
-        return email == DEV_EMAIL || email.endsWith(SEED_EMAIL_DOMAIN)
+        return email == DEV_EMAIL ||
+            email == ADMIN_EMAIL ||
+            email.endsWith(SEED_EMAIL_DOMAIN)
     }
 
     fun isSeed(userId: UserId): Boolean {
@@ -43,6 +45,7 @@ class SeedUserPolicy(
 
     companion object {
         private const val DEV_EMAIL = "dev@palette.kr"
+        private const val ADMIN_EMAIL = "admin@palette.kr"
         private const val SEED_EMAIL_DOMAIN = "@dev.palette.kr"
     }
 }

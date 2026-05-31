@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import kr.ai.palette.domain.auth.AuthenticationService
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
 import org.springframework.stereotype.Component
@@ -26,10 +27,12 @@ class JwtAuthenticationFilter(
             if (jwt != null) {
                 val authUser = authenticationService.validateToken(jwt)
 
+                // role 기반 authority 부여 — SecurityConfig 의 hasRole("ADMIN") 매처가 이걸 봄
+                val authorities = listOf(SimpleGrantedAuthority(authUser.role.authorityName()))
                 val authentication = UsernamePasswordAuthenticationToken(
                     authUser,
                     null,
-                    emptyList()
+                    authorities,
                 )
                 authentication.details = WebAuthenticationDetailsSource().buildDetails(request)
 

@@ -11,8 +11,12 @@ data class User(
     val accountType: AccountType,
     val isProfileCompleted: Boolean,
     val termsAgreement: TermsAgreement,
-    val metadata: UserMetadata
+    val metadata: UserMetadata,
+    /** 운영자(/admin) 접근 권한. 기본 USER. ADMIN 은 별도 시드/INSERT로만 부여. */
+    val role: UserRole = UserRole.USER,
 ) {
+    fun isAdmin(): Boolean = role == UserRole.ADMIN
+
     fun canUseMatchingService(): Boolean {
         return accountType == AccountType.REGULAR && isProfileCompleted && !metadata.isDeleted()
     }

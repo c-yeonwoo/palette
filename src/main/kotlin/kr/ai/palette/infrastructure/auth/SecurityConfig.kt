@@ -48,6 +48,8 @@ class SecurityConfig(
                         "/api/v1/auth/refresh",
                         // 베타 게이트 — 회원가입 전 코드 검증/상태 조회
                         "/api/v1/auth/beta-code/**",
+                        // 운영자 로그인 — 인증 전 호출 (이후 /api/v1/admin/** 는 hasRole("ADMIN"))
+                        "/api/v1/admin/auth/login",
                         "/oauth2/**",
                         "/login/**",
                         "/h2-console/**",

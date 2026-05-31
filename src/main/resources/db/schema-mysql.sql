@@ -272,6 +272,7 @@
         gender enum ('FEMALE','MALE') not null,
         oauth_provider enum ('APPLE','GOOGLE','KAKAO','NAVER'),
         preferred_contact_method enum ('KAKAOTALK','PHONE'),
+        role enum ('USER','ADMIN') not null default 'USER',
         primary key (id)
     ) engine=InnoDB;
 
