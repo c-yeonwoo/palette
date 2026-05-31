@@ -21,9 +21,11 @@
 | 용어 | 백엔드 entity | 의미 | 흐름 |
 |------|---------------|------|------|
 | **주선 요청** | `MatchmakingRequest` | 요청자 A 가 주선자 C 를 통해 대상자 B 와 매칭되기를 요청 | A → C → B (2단계 승인: 주선자 → 대상자) |
-| **지인 등록 요청** | `MatchmakerApplication` | X 가 Y 를 자신의 주선자로 등록 / X 가 Y 의 지인 네트워크에 합류 | X → Y (Y 가 수락하면 X 는 Y 의 지인이 됨) |
+| **친구 요청 / 지인 등록 요청** | `Friendship` (status=PENDING) | X 가 Y 와 **양방향 지인 관계** 를 맺기 위해 요청 (친구 코드 또는 검색 기반) | X → Y (Y 수락 시 양쪽 모두 서로의 지인) |
 
-> ⚠️ "주선 요청" 과 "지인 등록 요청" 은 행위 주체·시점·결과가 모두 다름. 절대 혼용 금지.
+> ⚠️ "주선 요청" 과 "친구 요청 / 지인 등록 요청" 은 도메인이 완전히 분리됨. 절대 혼용 금지.
+>
+> ⚠️ ADR 0015 초안에서 "지인 등록 요청 = `MatchmakerApplication`" 으로 정의했으나 — `MatchmakerApplication` entity 는 백엔드에 존재하지 않음. 실제 양방향 친구 관계는 `Friendship` 에서 관리됨 (ADR 0016 에서 정정).
 
 ### "주선 요청" 흐름
 1. 요청자 A 가 프로필 피드에서 대상자 B 발견
@@ -32,11 +34,12 @@
 4. C 가 승인 → B 에게 전달
 5. B 가 승인 → 매칭 성사 (C 에게 커미션)
 
-### "지인 등록 요청" 흐름
-1. X 가 Y 를 자신의 주선자로 등록하고 싶음 (또는 Y 의 지인 네트워크에 들어가고 싶음)
-2. X → Y 에게 "당신의 지인으로 등록해주세요" 요청
-3. Y (주선자) 수락 → X 는 Y 의 지인 목록에 들어감
-4. 이후 Y 는 X 를 다른 지인과 매칭 주선 가능
+### "친구 요청 / 지인 등록 요청" 흐름
+1. X 가 친구 코드 입력 또는 검색으로 Y 의 프로필 발견
+2. X → Y 친구 요청 전송 (`POST /api/v1/friends/request/{targetUserId}`)
+3. Y 의 알림 + `FriendConnectScreen` "받은 친구 요청" 영역에 표시
+4. Y 수락 (`PUT /api/v1/friends/request/{requestId}/accept`) → 양방향 `Friendship` 성립
+5. 이후 X 와 Y 는 서로의 지인 목록에 표시 — X 는 Y 를 주선자로 활용 가능, Y 도 X 를 주선자로 활용 가능 (대칭)
 
 ---
 
@@ -71,7 +74,8 @@
 | `MainFeedScreen` | 지인 네트워크 피드 + AI 추천 (주선 요청 시작점) |
 | `ProfileDetailScreen` | 주선 요청 작성 |
 | `IntroductionHistoryScreen` | 요청자 관점 — 내가 보낸/받은 주선 요청 |
-| `ConnectorDashboard` | 주선자 관점 — 받은 주선 요청 + 지인 등록 요청 + 지인 목록 |
+| `ConnectorDashboard` | 주선자 관점 — **받은 주선 요청 + 지인 목록 + 매칭 이력** (친구 요청은 다루지 않음) |
+| `FriendConnectScreen` | **지인 관리** — 친구 코드 / 검색 / 친구 요청 보내기 + 받은 친구 요청 수락 / 지인 목록 |
 | `MatchmakerRewardScreen` | 주선자 등급, 포인트, 출금, 리워드 안내 |
 | `MyPageScreen` | 자기 프로필 / 설정 |
 
@@ -79,4 +83,5 @@
 
 ## 변경 이력
 
-- 2026-05-31 — 초안 작성. "주선 신청" → "지인 등록 요청" 일괄 변경 (ADR 0015).
+- 2026-05-31 — 초안 작성. "주선 신청" → "지인 등록 요청" UI 어휘 일괄 변경 (ADR 0015).
+- 2026-05-31 — entity 매핑 정정. `MatchmakerApplication` 은 존재하지 않으며 양방향 친구 관계는 `Friendship` 에서 관리됨. ConnectorDashboard 의 application UI 제거, `FriendConnectScreen` 으로 일원화 (ADR 0016).

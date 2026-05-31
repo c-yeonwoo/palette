@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { CheckCircle2, XCircle, Coins, Loader2, ChevronLeft, Award, ChevronRight, Heart } from "lucide-react";
+import { CheckCircle2, XCircle, Coins, Loader2, ChevronLeft, Award, ChevronRight, Users } from "lucide-react";
 import { LevelBar } from "./ui/level-bar";
 import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
@@ -72,21 +72,6 @@ interface ClientMember {
   colorName: string | null;
   photoUrl: string | null;
   joinedAt: string;
-}
-
-interface ClientApplication {
-  id: string;
-  userId: string;
-  name: string;
-  age: number;
-  gender: "MALE" | "FEMALE";
-  region: string;
-  colorType: string | null;
-  colorHex: string | null;
-  colorName: string | null;
-  photoUrl: string | null;
-  message: string | null;
-  appliedAt: string;
 }
 
 interface NudgeProposal {
@@ -166,11 +151,6 @@ const MOCK_MEMBERS: ClientMember[] = [
   { id: "m6", userId: "u6", name: "정수진", age: 30, gender: "FEMALE", region: "서울 강동", colorType: "red", colorHex: "#EF4444", colorName: "생동감있는 레드", photoUrl: null, joinedAt: "2026-04-22" },
 ];
 
-const MOCK_APPLICATIONS: ClientApplication[] = [
-  { id: "a1", userId: "u10", name: "한도현", age: 32, gender: "MALE", region: "서울 성동", colorType: "yellow", colorHex: "#EAB308", colorName: "밝은 옐로우", photoUrl: null, message: "적극적으로 인연을 찾고 있어요!", appliedAt: "2026-05-04" },
-  { id: "a2", userId: "u11", name: "오지민", age: 25, gender: "FEMALE", region: "서울 마포", colorType: "gray", colorHex: "#6B7280", colorName: "세련된 그레이", photoUrl: null, message: "좋은 인연 부탁드립니다 :)", appliedAt: "2026-05-05" },
-];
-
 const MOCK_NUDGES: NudgeProposal[] = [
   {
     id: "n1",
@@ -212,8 +192,6 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
   const [activeMainTab, setActiveMainTab] = useState<MainTab>("members");
   const [memberGender, setMemberGender] = useState<"MALE" | "FEMALE">("MALE");
   const [members, setMembers] = useState<ClientMember[]>([]);
-  const [applications, setApplications] = useState<ClientApplication[]>([]);
-  const [showApplicationSheet, setShowApplicationSheet] = useState(false);
   const [nudges, setNudges] = useState<NudgeProposal[]>([]);
   const [nudgeSource, setNudgeSource] = useState<ClientMember | null>(null);
   const [showNudgeFlow, setShowNudgeFlow] = useState(false);
@@ -240,12 +218,6 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
         if (import.meta.env.DEV) setMembers(MOCK_MEMBERS);
       }
       try {
-        const appsRes = await api.get<{ applications: ClientApplication[] }>('/api/v1/matchmakers/me/applications');
-        setApplications(appsRes.applications);
-      } catch {
-        if (import.meta.env.DEV) setApplications(MOCK_APPLICATIONS);
-      }
-      try {
         const nudgesRes = await api.get<{ nudges: NudgeProposal[] }>('/api/v1/matchmakers/me/nudges');
         setNudges(nudgesRes.nudges);
       } catch {
@@ -258,7 +230,6 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
         setMatchmakerData(MOCK_MATCHMAKER_DATA);
         setRequests(MOCK_REQUESTS);
         setMembers(MOCK_MEMBERS);
-        setApplications(MOCK_APPLICATIONS);
         setNudges(MOCK_NUDGES);
       }
     } finally {
@@ -326,55 +297,6 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
     }
   };
 
-  const handleAcceptApplication = async (app: ClientApplication) => {
-    try {
-      await api.post(`/api/v1/matchmakers/me/applications/${app.id}/accept`, {});
-      setApplications(prev => prev.filter(a => a.id !== app.id));
-      setMembers(prev => [...prev, {
-        id: app.id,
-        userId: app.userId,
-        name: app.name,
-        age: app.age,
-        gender: app.gender,
-        region: app.region,
-        colorType: app.colorType,
-        colorHex: app.colorHex,
-        colorName: app.colorName,
-        photoUrl: app.photoUrl,
-        joinedAt: new Date().toISOString(),
-      }]);
-      toast.success(`${app.name}님을 지인으로 수락했어요!`);
-    } catch {
-      // mock: just update state
-      setApplications(prev => prev.filter(a => a.id !== app.id));
-      setMembers(prev => [...prev, {
-        id: app.id,
-        userId: app.userId,
-        name: app.name,
-        age: app.age,
-        gender: app.gender,
-        region: app.region,
-        colorType: app.colorType,
-        colorHex: app.colorHex,
-        colorName: app.colorName,
-        photoUrl: app.photoUrl,
-        joinedAt: new Date().toISOString(),
-      }]);
-      toast.success(`${app.name}님을 지인으로 수락했어요!`);
-    }
-  };
-
-  const handleRejectApplication = async (app: ClientApplication) => {
-    try {
-      await api.post(`/api/v1/matchmakers/me/applications/${app.id}/reject`, {});
-    } catch {
-      // ignore
-    } finally {
-      setApplications(prev => prev.filter(a => a.id !== app.id));
-      toast.info(`${app.name}님의 지인 등록 요청을 거절했어요.`);
-    }
-  };
-
   const handleNudgeSubmit = async (toMember: ClientMember, message: string) => {
     if (!nudgeSource) return;
     const newNudge: NudgeProposal = {
@@ -436,18 +358,16 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                 Lv.{matchmakerData?.level ?? 1}
               </button>
             )}
-            {/* 지인 등록 요청 알림 벨 */}
-            <button
-              onClick={() => setShowApplicationSheet(true)}
-              className="relative p-2 hover:bg-accent rounded-full transition-colors"
-            >
-              <Heart className="w-5 h-5 text-text-secondary" />
-              {applications.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary rounded-full text-[10px] font-bold text-primary-foreground flex items-center justify-center">
-                  {applications.length}
-                </span>
-              )}
-            </button>
+            {/* 지인 관리 진입점 (ADR 0016) */}
+            {onNavigateToFriends && (
+              <button
+                onClick={onNavigateToFriends}
+                className="p-2 hover:bg-accent rounded-full transition-colors"
+                aria-label="지인 관리"
+              >
+                <Users className="w-5 h-5 text-text-secondary" />
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -558,13 +478,15 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                 <div className="py-16 text-center space-y-3">
                   <div className="text-4xl">👥</div>
                   <p className="font-semibold text-foreground">아직 {memberGender === "MALE" ? "남성" : "여성"} 지인이 없어요</p>
-                  <p className="text-sm text-muted-foreground">알림 벨을 눌러 들어온 지인 등록 요청을 수락해보세요</p>
-                  <button
-                    onClick={() => setShowApplicationSheet(true)}
-                    className="text-sm text-primary font-medium underline underline-offset-4"
-                  >
-                    요청 확인하기
-                  </button>
+                  <p className="text-sm text-muted-foreground">친구 코드로 지인을 초대하거나 받은 친구 요청을 수락해보세요</p>
+                  {onNavigateToFriends && (
+                    <button
+                      onClick={onNavigateToFriends}
+                      className="text-sm text-primary font-medium underline underline-offset-4"
+                    >
+                      지인 관리하기
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-3">
@@ -588,15 +510,15 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                 </div>
               )}
 
-              {/* 지인 등록 요청 유도 배너 */}
-              {applications.length > 0 && (
+              {/* 지인 관리 진입점 (친구 요청 수락은 별도 화면에서) */}
+              {onNavigateToFriends && filteredMembers.length > 0 && (
                 <button
-                  onClick={() => setShowApplicationSheet(true)}
+                  onClick={onNavigateToFriends}
                   className="w-full flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl px-4 py-3"
                 >
                   <div className="flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium text-primary">지인 등록 요청 {applications.length}건 검토 대기</span>
+                    <Users className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium text-primary">지인 초대 / 받은 친구 요청 관리</span>
                   </div>
                   <ChevronRight className="w-4 h-4 text-primary" />
                 </button>
@@ -720,47 +642,6 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
 
         </div>
       </div>
-
-      {/* ── 지인 등록 요청 관리 바텀시트 ── */}
-      {showApplicationSheet && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/40 z-40"
-            onClick={() => setShowApplicationSheet(false)}
-          />
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-overlay max-h-[80vh] flex flex-col">
-            {/* 핸들 */}
-            <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
-              <div className="w-9 h-1 rounded-full bg-border" />
-            </div>
-            {/* 헤더 */}
-            <div className="flex items-center justify-between px-6 py-3 border-b border-border flex-shrink-0">
-              <p className="text-base font-semibold">지인 등록 요청 {applications.length}건</p>
-              <button
-                onClick={() => setShowApplicationSheet(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted"
-              >
-                <XCircle className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </div>
-            {/* 요청 목록 */}
-            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-              {applications.length === 0 ? (
-                <div className="py-12 text-center text-muted-foreground text-sm">새로운 지인 등록 요청이 없어요</div>
-              ) : (
-                applications.map(app => (
-                  <ApplicationCard
-                    key={app.id}
-                    app={app}
-                    onAccept={() => handleAcceptApplication(app)}
-                    onReject={() => handleRejectApplication(app)}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-        </>
-      )}
 
       {/* ── 연결 제안 플로우 시트 ── */}
       {showNudgeFlow && nudgeSource && (
@@ -1316,59 +1197,3 @@ function MemberCard({
   );
 }
 
-// ─── 지인 등록 요청 카드 ───────────────────────────────────────────
-function ApplicationCard({
-  app,
-  onAccept,
-  onReject,
-}: {
-  app: ClientApplication;
-  onAccept: () => void;
-  onReject: () => void;
-}) {
-  return (
-    <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-      {/* 프로필 행 */}
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-lg font-bold text-muted-foreground/60 flex-shrink-0">
-          {app.name.charAt(0)}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-foreground">{app.name}</p>
-            <span className="text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">
-              {app.gender === "MALE" ? "남" : "여"} · {app.age}세
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground mt-0.5">{app.region}</p>
-        </div>
-        <span className="text-xs text-muted-foreground flex-shrink-0">
-          {new Date(app.appliedAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
-        </span>
-      </div>
-
-      {/* 메시지 */}
-      {app.message && (
-        <div className="bg-muted rounded-lg px-3 py-2">
-          <p className="text-xs text-muted-foreground leading-relaxed">"{app.message}"</p>
-        </div>
-      )}
-
-      {/* 수락/거절 */}
-      <div className="flex gap-2 pt-1">
-        <button
-          onClick={onReject}
-          className="flex-1 py-2 rounded-xl text-sm font-medium border border-border text-muted-foreground hover:bg-muted transition-colors"
-        >
-          거절
-        </button>
-        <button
-          onClick={onAccept}
-          className="flex-1 py-2 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
-          지인으로 수락
-        </button>
-      </div>
-    </div>
-  );
-}

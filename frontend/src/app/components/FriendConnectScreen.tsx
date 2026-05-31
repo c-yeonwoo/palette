@@ -173,13 +173,18 @@ export function FriendConnectScreen({ onBack }: FriendConnectScreenProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-background border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <button onClick={onBack} className="p-2 hover:bg-accent rounded-full transition-colors">
+      {/* 통일 헤더 (ADR 0014) */}
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-2">
+          <button onClick={onBack} className="p-1.5 rounded-full hover:bg-muted/50 transition-colors -ml-1.5" aria-label="뒤로">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-lg font-semibold">친구 연결</h1>
+          <h1 className="text-base font-bold text-foreground">지인 관리</h1>
+          {pendingRequests.length > 0 && (
+            <span className="ml-auto text-xs font-semibold text-primary bg-primary/10 rounded-full px-2.5 py-1">
+              받은 요청 {pendingRequests.length}건
+            </span>
+          )}
         </div>
 
         {/* Tabs */}
@@ -196,11 +201,11 @@ export function FriendConnectScreen({ onBack }: FriendConnectScreenProps) {
             >
               {t === "invite" && "초대 코드"}
               {t === "search" && "검색"}
-              {t === "friends" && `친구 목록${pendingRequests.length > 0 ? ` (${pendingRequests.length})` : ""}`}
+              {t === "friends" && `지인 목록${pendingRequests.length > 0 ? ` (${pendingRequests.length})` : ""}`}
             </button>
           ))}
         </div>
-      </div>
+      </header>
 
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         {/* ─────── Invite Code Tab ─────── */}

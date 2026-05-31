@@ -170,6 +170,7 @@ function applyBrandFromLocalStorage() {
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>("login");
+  const [friendConnectFrom, setFriendConnectFrom] = useState<Screen>("myPage");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [betaPassed, setBetaPassed] = useState<boolean>(hasBetaPassed());
@@ -947,7 +948,7 @@ export default function App() {
         <MainFeedScreen
           onProfileClick={handleProfileClick}
           onNotificationClick={navigateToNotifications}
-          onNavigateToFriends={() => setCurrentScreen("friendConnect")}
+          onNavigateToFriends={() => { setFriendConnectFrom(currentScreen); setCurrentScreen("friendConnect"); }}
           unreadNotifications={unreadNotificationCount}
         />
       )}
@@ -963,7 +964,7 @@ export default function App() {
           mutualFriends={selectedMutualFriends}
           degree={selectedDegree}
           viewCost={selectedViewCost}
-          onNavigateToFriends={() => setCurrentScreen("friendConnect")}
+          onNavigateToFriends={() => { setFriendConnectFrom(currentScreen); setCurrentScreen("friendConnect"); }}
         />
       )}
 
@@ -972,7 +973,7 @@ export default function App() {
           // ADR 0014: MATCHMAKER_ONLY 에게는 connectorDashboard 가 홈 — 뒤로가기 없음
           onBack={userAccountType === "MATCHMAKER_ONLY" ? undefined : handleConnectorDashboardBack}
           onNavigateToReward={() => setCurrentScreen("matchmakerReward")}
-          onNavigateToFriends={() => setCurrentScreen("friendConnect")}
+          onNavigateToFriends={() => { setFriendConnectFrom(currentScreen); setCurrentScreen("friendConnect"); }}
           onNavigateToMarketplace={() => setCurrentScreen("matchmakerMarketplace")}
         />
       )}
@@ -1002,7 +1003,7 @@ export default function App() {
           onNavigateToProfile={() => setCurrentScreen("myProfile")}
           onNavigateToConnector={() => setCurrentScreen("connectorDashboard")}
           onConvertToRegular={handleConvertToRegular}
-          onNavigateToFriends={() => setCurrentScreen("friendConnect")}
+          onNavigateToFriends={() => { setFriendConnectFrom(currentScreen); setCurrentScreen("friendConnect"); }}
           onLogout={() => {
             localStorage.removeItem(ONBOARDING_DRAFT_KEY);
             localStorage.removeItem(ONBOARDING_STEP_KEY);
@@ -1015,7 +1016,7 @@ export default function App() {
       {currentScreen === "publicProfile" && <PublicProfileScreen />}
 
       {currentScreen === "friendConnect" && (
-        <FriendConnectScreen onBack={() => setCurrentScreen("myPage")} />
+        <FriendConnectScreen onBack={() => setCurrentScreen(friendConnectFrom)} />
       )}
 
       {currentScreen === "matchmakerReward" && (
