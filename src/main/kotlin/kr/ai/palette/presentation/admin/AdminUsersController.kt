@@ -2,11 +2,18 @@ package kr.ai.palette.presentation.admin
 
 import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.common.UserId
+import kr.ai.palette.domain.friendship.FriendshipRepository
+import kr.ai.palette.domain.matchmaking.MatchmakingRequestRepository
+import kr.ai.palette.domain.matchmaking.MatchmakingRequestStatus
+import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.User
 import kr.ai.palette.domain.user.UserRepository
 import kr.ai.palette.domain.user.UserStatus
 import kr.ai.palette.infrastructure.exception.BusinessRuleViolationException
 import kr.ai.palette.infrastructure.exception.ResourceNotFoundException
+import kr.ai.palette.infrastructure.storage.FileStorageService
+import kr.ai.palette.persistence.recommendation.DailyRecommendationJpaRepository
+import kr.ai.palette.presentation.profile.ProfileResponse
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.transaction.annotation.Transactional
@@ -28,6 +35,11 @@ import java.util.UUID
 @RequestMapping("/api/v1/admin/users")
 class AdminUsersController(
     private val userRepository: UserRepository,
+    private val profileRepository: ProfileRepository,
+    private val friendshipRepository: FriendshipRepository,
+    private val matchmakingRequestRepository: MatchmakingRequestRepository,
+    private val dailyRecommendationRepo: DailyRecommendationJpaRepository,
+    private val fileStorageService: FileStorageService,
 ) {
 
     @GetMapping
@@ -96,6 +108,87 @@ class AdminUsersController(
         val updated = target.changeStatus(newStatus, request.reason, authUser.userId)
         val saved = userRepository.save(updated)
         return ResponseEntity.ok(AdminUserDetail.from(saved))
+    }
+
+    // ── 보강 endpoint (PR #10) ────────────────────────────────────────────
+
+    /** 유저의 1촌 친구 목록 + 각자 색깔/완성도 한 줄 요약 (depth 1) */
+    @GetMapping("/{userId}/friends")
+    fun friends(@PathVariable userId: UUID): ResponseEntity<List<AdminFriendSummary>> {
+        userRepository.findById(UserId(userId))
+            ?: throw ResourceNotFoundException("사용자를 찾을 수 없습니다")
+        val friendIds = friendshipRepository.findFriendIdsByUserId(UserId(userId))
+        val items = friendIds.mapNotNull { fid ->
+            val u = userRepository.findById(fid) ?: return@mapNotNull null
+            val p = profileRepository.findByUserId(fid)
+            AdminFriendSummary(
+                userId = u.id.value.toString(),
+                nickname = u.publicInfo.nickname,
+                realName = u.privateInfo.realName,
+                gender = u.publicInfo.gender.name,
+                age = computeAge(u.publicInfo.birthDate),
+                colorType = p?.colorType?.name,
+                completionRate = p?.metrics?.completionRate ?: 0,
+                status = u.status.name,
+                isDeleted = u.metadata.isDeleted(),
+            )
+        }
+        return ResponseEntity.ok(items)
+    }
+
+    /** 유저의 활동 통계 — 색깔, 프로필 완성도, 매칭 요청, AI 추천 노출 */
+    @GetMapping("/{userId}/stats")
+    fun stats(@PathVariable userId: UUID): ResponseEntity<AdminUserStats> {
+        val user = userRepository.findById(UserId(userId))
+            ?: throw ResourceNotFoundException("사용자를 찾을 수 없습니다")
+        val profile = profileRepository.findByUserId(user.id)
+
+        val sentRequests = matchmakingRequestRepository.findByRequesterId(user.id)
+        val receivedRequests = matchmakingRequestRepository.findByTargetUserId(user.id)
+        val matchedAsMatchmaker = matchmakingRequestRepository.findByMatchmakerId(user.id)
+
+        val sentByStatus = sentRequests.groupBy { it.status }.mapValues { it.value.size }
+        val receivedByStatus = receivedRequests.groupBy { it.status }.mapValues { it.value.size }
+
+        val friendCount = friendshipRepository.findFriendIdsByUserId(user.id).size
+
+        // AI 추천 노출 — 30일 이내 target 으로 노출된 횟수
+        val since = LocalDate.now().minusDays(30)
+        val aiExposures = dailyRecommendationRepo
+            .findByTargetUserIdAndRecommendedDateGreaterThanEqualOrderByRecommendedDateDescPositionAsc(
+                user.id.value, since
+            ).size
+
+        return ResponseEntity.ok(
+            AdminUserStats(
+                colorType = profile?.colorType?.name,
+                profileCompletionRate = profile?.metrics?.completionRate ?: 0,
+                trustScore = profile?.metrics?.trustScore ?: 0,
+                viewCount = profile?.metrics?.viewCount ?: 0,
+                friendCount = friendCount,
+                matchmaking = MatchmakingStatBlock(
+                    sentTotal = sentRequests.size,
+                    sentCompleted = sentByStatus[MatchmakingRequestStatus.COMPLETED] ?: 0,
+                    sentPending = sentByStatus[MatchmakingRequestStatus.PENDING] ?: 0,
+                    receivedTotal = receivedRequests.size,
+                    receivedCompleted = receivedByStatus[MatchmakingRequestStatus.COMPLETED] ?: 0,
+                    receivedPending = receivedByStatus[MatchmakingRequestStatus.PENDING] ?: 0,
+                    matchmakerTotal = matchedAsMatchmaker.size,
+                    matchmakerCompleted = matchedAsMatchmaker.count { it.status == MatchmakingRequestStatus.COMPLETED },
+                ),
+                aiSignal = AiSignalStatBlock(
+                    last30DaysExposures = aiExposures,
+                ),
+            )
+        )
+    }
+
+    /** 운영자 프로필 미리보기 — 일반 사용자에게 보이는 모습과 동일 */
+    @GetMapping("/{userId}/profile")
+    fun profile(@PathVariable userId: UUID): ResponseEntity<ProfileResponse> {
+        val profile = profileRepository.findByUserId(UserId(userId))
+            ?: throw ResourceNotFoundException("프로필이 없습니다 (아직 작성 안 됨)")
+        return ResponseEntity.ok(ProfileResponse.from(profile, fileStorageService))
     }
 
     // ── 내부 헬퍼 ────────────────────────────────────────────────────────────
@@ -208,6 +301,45 @@ data class AdminUserDetail(
 data class ChangeStatusRequest(
     val status: String,
     val reason: String? = null,
+)
+
+// ── 보강 (PR #10) ────────────────────────────────────────────────────────────
+
+data class AdminFriendSummary(
+    val userId: String,
+    val nickname: String,
+    val realName: String,
+    val gender: String,
+    val age: Int,
+    val colorType: String?,
+    val completionRate: Int,
+    val status: String,
+    val isDeleted: Boolean,
+)
+
+data class AdminUserStats(
+    val colorType: String?,
+    val profileCompletionRate: Int,
+    val trustScore: Int,
+    val viewCount: Int,
+    val friendCount: Int,
+    val matchmaking: MatchmakingStatBlock,
+    val aiSignal: AiSignalStatBlock,
+)
+
+data class MatchmakingStatBlock(
+    val sentTotal: Int,
+    val sentCompleted: Int,
+    val sentPending: Int,
+    val receivedTotal: Int,
+    val receivedCompleted: Int,
+    val receivedPending: Int,
+    val matchmakerTotal: Int,
+    val matchmakerCompleted: Int,
+)
+
+data class AiSignalStatBlock(
+    val last30DaysExposures: Int,
 )
 
 private fun computeAge(birthDate: LocalDate): Int {
