@@ -29,10 +29,17 @@ git log origin/main..HEAD --oneline
 
 ## 🔥 P0 — 즉시 대응 (베타 운영 중)
 
-- [ ] **API 500 에러 전체 점검** (현재 진행 중)
-  - 회원가입 흐름
-  - 그 외 영향받은 API 들 파악
-  - 로컬에서 재현 → stacktrace 보고 root cause 잡기
+- [x] **API 500 에러 전체 점검** ✅ PR #1, #2, #3 으로 해소 (auth permitAll + share permitAll + birthDate 검증 + duplicate 메시지)
+- [ ] **사업자 등록 / 결혼중개업 자격증 확인** — **외부 작업 (사용자가 진행)**
+  - 변호사 자문: "지인 네트워크 데이팅" 이 결혼중개업법 적용 대상인가
+  - 보수적 접근: 국내결혼중개업 신고 검토 (신고제, 시·군·구청)
+  - 결정 후 ADR 0008 작성 + `docs/POLICY.md §7` 업데이트
+  - 참조: `docs/POLICY.md §7` (현재 검토 중 상태로 명문화됨)
+- [ ] **결제 PG 실 검증** (베타 → 정식 전환 전 필수)
+  - Toss test 키 → live 키 발급 + 가맹점 등록
+  - AI Signal unlock 의 paymentKey 를 Toss 서버 검증 (현재는 존재만 체크)
+  - 결제 실패 / 환불 흐름 통합 테스트
+  - 참조: `docs/POLICY.md §1, §2`
 
 ---
 
