@@ -10,6 +10,8 @@ interface ProfileGenerationResult {
   colorHex: string;
   colorDescription: string;
   generatedIntroduction: string;
+  colorReasoning?: string;
+  colorKeywords?: string[];
 }
 
 interface AIProfileEnhanceScreenProps {
@@ -248,11 +250,11 @@ export function AIProfileEnhanceScreen({
 
   const handleShare = async () => {
     if (!result) return;
-    const shareText = `나는 Palette에서 "${result.colorName}" 타입이에요! ${COLOR_SHARE_DESC[result.colorType] ?? ""} 성격의 나와 어울리는 사람을 찾고 있어요 🎨`;
+    const shareText = `나는 팔레트에서 "${result.colorName}" 타입이에요! ${COLOR_SHARE_DESC[result.colorType] ?? ""} 성격의 나와 어울리는 사람을 찾고 있어요 🎨`;
 
     if (navigator.share) {
       try {
-        await navigator.share({ text: shareText, title: "내 Palette 색깔 타입" });
+        await navigator.share({ text: shareText, title: "내 팔레트 색깔 타입" });
       } catch {
         // user cancelled
       }
@@ -431,7 +433,7 @@ export function AIProfileEnhanceScreen({
                 onClick={handleFinalComplete}
                 className="w-full h-12 bg-primary text-primary-foreground"
               >
-                Palette 시작하기
+                팔레트 시작하기
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
@@ -491,6 +493,37 @@ export function AIProfileEnhanceScreen({
               </div>
             </div>
 
+            {/* AI 분석 근거 */}
+            {(result.colorReasoning || (result.colorKeywords && result.colorKeywords.length > 0)) && (
+              <div
+                className="bg-card border border-border rounded-2xl p-5"
+                style={{ animation: revealed ? "fadeInUp 0.5s ease 0.2s both" : "none" }}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-base">🔍</span>
+                  <p className="text-sm font-medium">왜 이 색깔로 분석했나요</p>
+                </div>
+                {result.colorReasoning && (
+                  <p className="text-sm text-foreground leading-relaxed mb-3 whitespace-pre-wrap">
+                    {result.colorReasoning}
+                  </p>
+                )}
+                {result.colorKeywords && result.colorKeywords.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border">
+                    <span className="text-xs text-muted-foreground self-center mr-1">핵심 키워드</span>
+                    {result.colorKeywords.map((kw, i) => (
+                      <span
+                        key={i}
+                        className="text-xs px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground border border-border"
+                      >
+                        {kw}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* 생성된 소개글 */}
             {result.generatedIntroduction && (
               <div
@@ -511,7 +544,12 @@ export function AIProfileEnhanceScreen({
                   <Sparkles className="w-4 h-4 text-primary" />
                   <p className="text-sm font-medium">AI가 완성한 소개글</p>
                 </div>
-                <p className="text-sm text-foreground leading-relaxed">{result.generatedIntroduction}</p>
+                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{result.generatedIntroduction}</p>
+                {result.generatedIntroduction && (
+                  <p className="text-xs text-muted-foreground mt-3 text-right">
+                    {result.generatedIntroduction.length}자
+                  </p>
+                )}
               </div>
             )}
 

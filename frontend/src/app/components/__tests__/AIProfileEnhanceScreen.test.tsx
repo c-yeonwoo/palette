@@ -199,11 +199,11 @@ describe('AIProfileEnhanceScreen', () => {
       expect(screen.getByText('프로필 완성!')).toBeInTheDocument();
       expect(screen.getByText('이제 이런 것들을 할 수 있어요')).toBeInTheDocument();
       expect(screen.getByText('매칭 요청을 받아볼 수 있어요')).toBeInTheDocument();
-      expect(screen.getByText('Palette 시작하기')).toBeInTheDocument();
+      expect(screen.getByText('팔레트 시작하기')).toBeInTheDocument();
     });
   });
 
-  it('calls onComplete when "Palette 시작하기" is clicked', async () => {
+  it('calls onComplete when "팔레트 시작하기" is clicked', async () => {
     (api.post as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
 
     render(
@@ -217,8 +217,8 @@ describe('AIProfileEnhanceScreen', () => {
     fireEvent.click(screen.getByText('AI 소개글 & 색깔 타입 생성하기'));
     await waitFor(() => expect(screen.getByText('이 소개글로 완료하기')).toBeInTheDocument());
     fireEvent.click(screen.getByText('이 소개글로 완료하기'));
-    await waitFor(() => expect(screen.getByText('Palette 시작하기')).toBeInTheDocument());
-    fireEvent.click(screen.getByText('Palette 시작하기'));
+    await waitFor(() => expect(screen.getByText('팔레트 시작하기')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('팔레트 시작하기'));
 
     expect(onComplete).toHaveBeenCalledWith(mockResult);
   });

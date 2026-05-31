@@ -48,7 +48,7 @@ export function LoginScreen({ onEmailLogin }: LoginScreenProps) {
               <circle cx="28" cy="46" r="5" fill="#A855F7"/>
             </svg>
           </div>
-          <h1 className="text-white text-[2.5rem] font-bold tracking-tight leading-none">Palette</h1>
+          <h1 className="text-white text-[2.5rem] font-bold tracking-tight leading-none">팔레트</h1>
           <p className="text-white/85 text-base">지인이 보증하는 만남</p>
         </div>
 

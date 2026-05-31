@@ -3,7 +3,12 @@ import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
 import { Badge } from "./ui/badge";
+import { Slider } from "./ui/slider";
 import { Heart, Sparkles, ChevronLeft } from "lucide-react";
+
+// 기본 / 한계 범위
+const AGE_BOUND = { min: 20, max: 60 } as const;
+const HEIGHT_BOUND = { min: 140, max: 200 } as const;
 
 interface IdealTypeScreenProps {
   onNext: (data: any) => void;
@@ -73,10 +78,14 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
   const [selectedDealBreakers, setSelectedDealBreakers] = useState<string[]>(
     initialData?.idealType?.dealBreakers || []
   );
-  const [ageMin, setAgeMin] = useState<string>(initialData?.idealType?.ageMin?.toString() || "");
-  const [ageMax, setAgeMax] = useState<string>(initialData?.idealType?.ageMax?.toString() || "");
-  const [heightMin, setHeightMin] = useState<string>(initialData?.idealType?.heightMin?.toString() || "");
-  const [heightMax, setHeightMax] = useState<string>(initialData?.idealType?.heightMax?.toString() || "");
+  const [ageRange, setAgeRange] = useState<[number, number]>([
+    initialData?.idealType?.ageMin ?? 25,
+    initialData?.idealType?.ageMax ?? 35,
+  ]);
+  const [heightRange, setHeightRange] = useState<[number, number]>([
+    initialData?.idealType?.heightMin ?? 160,
+    initialData?.idealType?.heightMax ?? 180,
+  ]);
 
   const toggleDatePreference = (id: string) => {
     if (selectedDatePreferences.includes(id)) {
@@ -154,55 +163,51 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
           </p>
         </div>
 
-        {/* Age & Height Range */}
-        <div className="bg-card rounded-xl p-6 border border-border space-y-4">
+        {/* Age & Height Range — dual range sliders */}
+        <div className="bg-card rounded-xl p-6 border border-border space-y-6">
           <Label className="text-base font-semibold block">나이 / 키 범위 (선택)</Label>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">나이 범위</p>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  placeholder="최소"
-                  value={ageMin}
-                  onChange={(e) => setAgeMin(e.target.value)}
-                  min="20" max="60"
-                  className="w-full h-10 px-3 rounded-lg border-2 border-border bg-card text-sm focus:border-primary focus:outline-none"
-                />
-                <span className="text-muted-foreground text-sm">~</span>
-                <input
-                  type="number"
-                  placeholder="최대"
-                  value={ageMax}
-                  onChange={(e) => setAgeMax(e.target.value)}
-                  min="20" max="60"
-                  className="w-full h-10 px-3 rounded-lg border-2 border-border bg-card text-sm focus:border-primary focus:outline-none"
-                />
-                <span className="text-sm text-muted-foreground">세</span>
-              </div>
+
+          {/* 나이 */}
+          <div className="space-y-3">
+            <div className="flex items-baseline justify-between">
+              <p className="text-sm text-muted-foreground">나이 범위</p>
+              <p className="text-sm font-semibold text-foreground tabular-nums">
+                {ageRange[0]}세 ~ {ageRange[1]}세
+              </p>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">키 범위</p>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  placeholder="최소"
-                  value={heightMin}
-                  onChange={(e) => setHeightMin(e.target.value)}
-                  min="140" max="220"
-                  className="w-full h-10 px-3 rounded-lg border-2 border-border bg-card text-sm focus:border-primary focus:outline-none"
-                />
-                <span className="text-muted-foreground text-sm">~</span>
-                <input
-                  type="number"
-                  placeholder="최대"
-                  value={heightMax}
-                  onChange={(e) => setHeightMax(e.target.value)}
-                  min="140" max="220"
-                  className="w-full h-10 px-3 rounded-lg border-2 border-border bg-card text-sm focus:border-primary focus:outline-none"
-                />
-                <span className="text-sm text-muted-foreground">cm</span>
-              </div>
+            <Slider
+              min={AGE_BOUND.min}
+              max={AGE_BOUND.max}
+              step={1}
+              value={ageRange}
+              onValueChange={(v) => setAgeRange([v[0], v[1]] as [number, number])}
+              className="py-2"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{AGE_BOUND.min}세</span>
+              <span>{AGE_BOUND.max}세</span>
+            </div>
+          </div>
+
+          {/* 키 */}
+          <div className="space-y-3">
+            <div className="flex items-baseline justify-between">
+              <p className="text-sm text-muted-foreground">키 범위</p>
+              <p className="text-sm font-semibold text-foreground tabular-nums">
+                {heightRange[0]}cm ~ {heightRange[1]}cm
+              </p>
+            </div>
+            <Slider
+              min={HEIGHT_BOUND.min}
+              max={HEIGHT_BOUND.max}
+              step={1}
+              value={heightRange}
+              onValueChange={(v) => setHeightRange([v[0], v[1]] as [number, number])}
+              className="py-2"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{HEIGHT_BOUND.min}cm</span>
+              <span>{HEIGHT_BOUND.max}cm</span>
             </div>
           </div>
         </div>
@@ -244,21 +249,38 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {importantValues.map((value) => (
-              <Badge
-                key={value}
-                onClick={() => toggleImportantValue(value)}
-                className={`cursor-pointer px-4 py-2 transition-all ${
-                  selectedImportantValues.includes(value)
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card border-border text-muted-foreground hover:border-primary/40"
-                }`}
-                variant={selectedImportantValues.includes(value) ? "default" : "outline"}
-              >
-                {value}
-              </Badge>
-            ))}
+            {importantValues.map((value) => {
+              const rank = selectedImportantValues.indexOf(value); // -1 if not selected
+              const isSelected = rank >= 0;
+              return (
+                <Badge
+                  key={value}
+                  onClick={() => toggleImportantValue(value)}
+                  className={`relative cursor-pointer px-4 py-2 transition-all ${
+                    isSelected
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card border-border text-muted-foreground hover:border-primary/40"
+                  }`}
+                  variant={isSelected ? "default" : "outline"}
+                >
+                  {isSelected && (
+                    <span
+                      className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-foreground text-background text-[10px] font-bold flex items-center justify-center shadow-sm"
+                      aria-label={`${rank + 1}순위`}
+                    >
+                      {rank + 1}
+                    </span>
+                  )}
+                  {value}
+                </Badge>
+              );
+            })}
           </div>
+          {selectedImportantValues.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              선택한 순서대로 우선순위가 표시됩니다 (1순위가 가장 중요)
+            </p>
+          )}
         </div>
 
         {/* Question 3: Personality */}
@@ -350,10 +372,10 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
         <Button
           onClick={() => onNext({
             idealType: {
-              ageMin: ageMin ? parseInt(ageMin) : null,
-              ageMax: ageMax ? parseInt(ageMax) : null,
-              heightMin: heightMin ? parseInt(heightMin) : null,
-              heightMax: heightMax ? parseInt(heightMax) : null,
+              ageMin: ageRange[0],
+              ageMax: ageRange[1],
+              heightMin: heightRange[0],
+              heightMax: heightRange[1],
               datePreferences: selectedDatePreferences,
               importantValues: selectedImportantValues,
               personalities: selectedPersonalities,

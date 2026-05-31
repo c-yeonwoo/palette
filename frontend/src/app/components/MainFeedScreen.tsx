@@ -227,7 +227,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
       <div className="max-w-2xl mx-auto px-6 pt-6 pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-xs font-semibold text-muted-foreground tracking-[0.18em] uppercase mb-0.5">Palette</p>
+            <p className="text-xs font-semibold text-muted-foreground tracking-[0.18em] uppercase mb-0.5">팔레트</p>
             <h1 className="text-[26px] font-bold tracking-tight leading-none">주변 지인</h1>
           </div>
           <div className="flex items-center gap-2">
@@ -370,10 +370,10 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
         ) : !isFeedVisible ? (
           <div className="flex flex-col items-center gap-3 py-16 text-center px-4">
             <span className="text-4xl">🙈</span>
-            <p className="font-semibold text-foreground">피드 노출이 꺼져 있어요</p>
+            <p className="font-semibold text-foreground">소개받기가 잠시 멈춰 있어요</p>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              내 프로필이 다른 사람에게 보이지 않아요.<br />
-              내 프로필 → 주선받기 설정에서 켤 수 있어요.
+              내 프로필이 지인의 피드에 보이지 않는 상태예요.<br />
+              내 프로필 → 설정 → 소개받기를 켜면 다시 시작돼요.
             </p>
           </div>
         ) : feedItems.length === 0 ? (
@@ -864,7 +864,7 @@ function FirstTimeGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => v
       {/* 환영 메시지 */}
       <div className="bg-gradient-to-br from-orange-50 to-pink-50 rounded-2xl p-5 border border-orange-100">
         <div className="text-3xl mb-2">🌟</div>
-        <h3 className="text-lg font-bold text-foreground mb-1">Palette에 오신 걸 환영해요</h3>
+        <h3 className="text-lg font-bold text-foreground mb-1">팔레트에 오신 걸 환영해요</h3>
         <p className="text-sm text-muted-foreground leading-relaxed">
           지인 네트워크로 신뢰할 수 있는 만남을 만들어가요.
           <br />
@@ -929,7 +929,7 @@ function NoFriendsNudge({ onNavigateToFriends }: { onNavigateToFriends?: () => v
         친구를 추가하면 주변 지인을 소개받을 수 있어요
       </p>
       <p className="text-xs text-muted-foreground/70 max-w-[240px] mb-8">
-        Palette는 지인 네트워크 기반이라 친구가 많을수록 더 많은 분을 만날 수 있어요
+        팔레트는 지인 네트워크 기반이라 친구가 많을수록 더 많은 분을 만날 수 있어요
       </p>
 
       {onNavigateToFriends && (

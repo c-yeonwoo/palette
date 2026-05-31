@@ -246,7 +246,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
       objectType: 'feed',
       content: {
         title: `${userProfile.nickname}님의 프로필`,
-        description: `Palette에서 확인해보세요`,
+        description: `팔레트에서 확인해보세요`,
         imageUrl: profile.primaryPhotoUrl || 'https://via.placeholder.com/300',
         link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
       },
@@ -665,9 +665,11 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-foreground">피드 노출</p>
+                    <p className="text-sm font-medium text-foreground">소개받기</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {profile.settings.hiddenAt ? "숨김 상태" : "내 프로필이 타인의 피드에 노출되어요"}
+                      {profile.settings.hiddenAt
+                        ? "잠시 멈춤 — 내 프로필이 지인의 피드에 보이지 않아요"
+                        : "지인의 피드에 내 프로필이 노출돼요"}
                     </p>
                   </div>
                   <Switch
@@ -678,7 +680,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
                           '/api/v1/profile/settings/visibility', { visible }
                         );
                         setProfile(prev => prev ? { ...prev, settings: { ...prev.settings, hiddenAt: result.hiddenAt } } : prev);
-                        toast.success(visible ? '피드에 노출됩니다' : '프로필이 숨겨졌습니다');
+                        toast.success(visible ? '소개받기가 시작됐어요' : '소개받기를 잠시 멈췄어요');
                       } catch {
                         toast.error('설정 변경에 실패했습니다');
                       }
@@ -688,7 +690,9 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-foreground">주선받기</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">주선 요청을 받아요</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      지인이 보내는 주선 요청을 받아요
+                    </p>
                   </div>
                   <Switch checked={profile.settings.isAcceptingMatches} onCheckedChange={handleToggleAcceptingMatches} />
                 </div>

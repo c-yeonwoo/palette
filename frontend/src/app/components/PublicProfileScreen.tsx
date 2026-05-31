@@ -143,7 +143,7 @@ export function PublicProfileScreen() {
       {/* Header */}
       <div className="bg-primary shadow-md">
         <div className="max-w-2xl mx-auto px-6 py-12 text-center">
-          <h1 className="text-3xl font-bold mb-2 text-primary-foreground">Palette</h1>
+          <h1 className="text-3xl font-bold mb-2 text-primary-foreground">팔레트</h1>
           <p className="text-primary-foreground/80">나의 색을 찾고, 너의 색과 조화를 이루다</p>
         </div>
       </div>
@@ -401,7 +401,7 @@ export function PublicProfileScreen() {
         <div className="mt-8 bg-secondary rounded-2xl p-8 text-center border border-border">
           <h3 className="text-2xl font-bold mb-2">이 분을 소개받고 싶으신가요?</h3>
           <p className="text-muted-foreground mb-6">
-            Palette에 가입하고 더 많은 프로필을 만나보세요
+            팔레트에 가입하고 더 많은 프로필을 만나보세요
           </p>
           <Button
             size="lg"

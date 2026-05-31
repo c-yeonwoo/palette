@@ -29,7 +29,7 @@ export function InviteShareSheet({
 
   const { allowed } = checkDailyShareLimit();
 
-  const shareMessage = `${myName}님이 당신을 떠올렸어요 💌\n"당신의 색이 궁금해요" — Palette에서 컬러 타입 진단을 해보세요!\n${link}`;
+  const shareMessage = `${myName}님이 당신을 떠올렸어요 💌\n"당신의 색이 궁금해요" — 팔레트에서 컬러 타입 진단을 해보세요!\n${link}`;
 
   const handleCopy = async () => {
     if (!allowed) {

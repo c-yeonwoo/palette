@@ -61,7 +61,8 @@ data class LeagueResponse(
 @RequestMapping("/api/v1/league")
 class LeagueController(
     private val matchmakingRequestRepository: MatchmakingRequestRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val seedUserPolicy: kr.ai.palette.infrastructure.seed.SeedUserPolicy,
 ) {
 
     @GetMapping
@@ -75,10 +76,18 @@ class LeagueController(
         val seasonEnd = currentMonth.atEndOfMonth()
         val daysRemaining = ChronoUnit.DAYS.between(today, seasonEnd).toInt().coerceAtLeast(0)
 
+        // 시드 격리: 일반(non-seed) 가입자에게는 시드 주선자 랭킹 숨김
+        val me = userRepository.findById(myId)
+        val exposeSeed = me?.let { seedUserPolicy.shouldExposeSeedTo(it) } ?: false
+
         // 이번 시즌(이번 달) 성공한 매칭 집계
         val seasonStartDateTime = seasonStart.atStartOfDay()
         val allCompleted = matchmakingRequestRepository.findByStatus(MatchmakingRequestStatus.COMPLETED)
             .filter { it.updatedAt >= seasonStartDateTime }
+            .let { reqs ->
+                if (exposeSeed) reqs
+                else reqs.filter { !seedUserPolicy.isSeed(it.matchmakerId) }
+            }
 
         // 주선자별 성공 횟수
         val matchmakerCounts = allCompleted

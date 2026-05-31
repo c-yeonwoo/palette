@@ -91,7 +91,7 @@ export function BetaGateScreen({ onPassed }: BetaGateScreenProps) {
           {/* 헤더 */}
           <div className="text-center space-y-2">
             <div className="text-4xl">🎨</div>
-            <h1 className="text-2xl font-bold text-foreground">Palette</h1>
+            <h1 className="text-2xl font-bold text-foreground">팔레트</h1>
             <p className="text-sm text-muted-foreground">
               클로즈드 베타 진행 중
             </p>

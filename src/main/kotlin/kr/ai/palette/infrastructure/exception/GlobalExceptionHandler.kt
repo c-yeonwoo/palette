@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.AccessDeniedException
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -79,6 +80,20 @@ class GlobalExceptionHandler {
             ErrorResponse(
                 code = "TYPE_MISMATCH",
                 message = "잘못된 파라미터 형식입니다: ${ex.name}"
+            )
+        )
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException::class)
+    fun handleMessageNotReadable(ex: HttpMessageNotReadableException): ResponseEntity<ErrorResponse> {
+        // JSON 파싱 실패 (필드 누락 / 형식 오류 / 잘못된 enum 값 등) — 500 이 아니라 400 으로 응답
+        log.warn("Message not readable: ${ex.message?.take(200)}")
+        val detail = ex.mostSpecificCause.message?.lineSequence()?.firstOrNull().orEmpty()
+        return ResponseEntity.badRequest().body(
+            ErrorResponse(
+                code = "MALFORMED_REQUEST",
+                message = "요청 본문 형식이 올바르지 않습니다",
+                details = if (detail.isNotBlank()) listOf(detail) else emptyList()
             )
         )
     }

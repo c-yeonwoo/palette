@@ -54,6 +54,10 @@ dependencies {
 	// Redis (Refresh Token 저장)
 	implementation("org.springframework.boot:spring-boot-starter-data-redis")
 
+	// OpenAPI 자동 문서화 (SoT generator — docs/generated/api-spec.md 빌드용)
+	// 런타임에 /v3/api-docs 노출, build 시 추출
+	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
+
 	runtimeOnly("com.h2database:h2")
 	// MySQL Connector — 8.4 LTS 로 고정
 	// 9.x는 Hibernate 7.x와 호환성 이슈 (SEQUENCES 테이블 조회 실패)
