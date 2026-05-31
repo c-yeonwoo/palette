@@ -1,0 +1,87 @@
+# ============================================================================
+# Palette Reviewer (Hermes agent)
+# ============================================================================
+# `ah:needs-review` PR 1건 → review + verdict 별 라벨 전이.
+#
+# verdict 별 처리 (agentic-harness.agents.run_code_reviewer 가 처리):
+#   approve / concerns_noted → `ah:awaiting-human` (사람 merge 결정)
+#   request_changes          → PR close + linked issue 에 `ah:needs-execution`
+#                              재부착 (다음 폴링에 executor 재시도)
+# ============================================================================
+
+name: palette-reviewer
+description: PR 받아 review + inline 코멘트 + verdict 라벨 전이
+
+sandbox: local           # read + comment only — Docker 불필요
+working_dir: /Users/ys.choi/dev-private/palette
+
+env:
+  GITHUB_TOKEN: ${PALETTE_AGENT_PAT}
+  GH_REPO: c-yeonwoo/palette
+  REPO_CWD: /Users/ys.choi/dev-private/palette
+  AGENTIC_HARNESS_DIR: /Users/ys.choi/dev/agentic-harness
+  ANTHROPIC_AUTH_TOKEN: ${ANTHROPIC_AUTH_TOKEN}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+  REVIEWER_MODEL: claude-haiku-4-5
+
+tools:
+  - bash
+
+timeout: 10m
+
+prompt: |
+  너는 Palette 의 코드 리뷰어 shim 이다. ReAct 는 안 쓴다 (단일 LLM call + diff).
+
+  ## 0. 입력 파싱
+  ```bash
+  PR_N=$(echo "$HERMES_INPUT" | jq -r '.number')
+  if [ -z "$PR_N" ] || [ "$PR_N" = "null" ]; then
+    echo "❌ HERMES_INPUT 에 .number 없음" >&2; exit 1
+  fi
+  ```
+
+  ## 1. agentic-harness entrypoint 호출
+  ```bash
+  cd $AGENTIC_HARNESS_DIR
+  source .venv/bin/activate
+
+  python -c "
+  import asyncio, os, sys
+  from pathlib import Path
+  from orchestrator import agents, gh, source_of_truth as sot_mod
+
+  async def main():
+      repo = os.environ['GH_REPO']
+      pr_n = int(os.environ['PR_N'])
+      pr = await gh.get_pr(repo, pr_n)
+      sot = sot_mod.SourceOfTruth.from_cwd(Path(os.environ['REPO_CWD']))
+      bot_user = await gh.whoami()
+      ok = await agents.run_code_reviewer(
+          repo=repo, pr=pr, sot=sot, bot_user=bot_user,
+      )
+      sys.exit(0 if ok else 1)
+
+  asyncio.run(main())
+  " 2>&1
+  EXIT=$?
+  ```
+
+  ## 2. 락 해제
+  agents.run_code_reviewer 가 ah:needs-review 라벨을 제거하고 verdict 별로
+  ah:awaiting-human 부여 (또는 PR close + linked issue 재트리거) 함.
+  PR 에 PM 이 붙인 `ah:in-progress` 만 명시적 제거:
+  ```bash
+  gh pr edit $PR_N --repo $GH_REPO --remove-label "ah:in-progress" || true
+  if [ $EXIT -ne 0 ]; then
+    gh pr edit $PR_N --repo $GH_REPO --add-label "ah:awaiting-human" || true
+  fi
+  exit $EXIT
+  ```
+
+  ## 절대 금지
+  - `gh pr review --approve` 또는 `--request-changes` 를 shim 에서 직접 실행
+    (run_code_reviewer 가 submit_pr_review 로 적절히 처리)
+  - merge / close (verdict=request_changes 시에만 close — 그것도 run_code_reviewer
+    가 함)
+  - 코드 직접 수정
+  - main 브랜치 조작
