@@ -10,8 +10,8 @@
 
 ```
 [사람] 자연어 task — 두 트랙 중 하나로 호출
-   ├─ Claude Code 채팅:   /add-task <설명>           (palette/.claude/commands/add-task.md)
-   └─ Hermes chat:        hermes chat -s palette-po  (palette/.hermes/skills/palette-po/SKILL.md)
+   ├─ Claude Code 채팅:   /add-task <설명>          (palette/.claude/commands/add-task.md)
+   └─ shell (Hermes):     palette-po "<설명>"       (alias for hermes chat -s palette-po)
               ↓ (두 트랙 모두 동일 SOT 보고 동일 issue body 생성)
    gh issue create + ah:needs-execution      # PO 가 호출
               ↓
@@ -37,7 +37,8 @@
 | 경로 | 역할 |
 |------|------|
 | `../.claude/commands/add-task.md` | **PO (Claude Code 트랙)** — `/add-task <자연어>` slash command |
-| `skills/palette-po/SKILL.md`      | **PO (Hermes 트랙)** — `hermes chat -s palette-po` 로 호출 |
+| `skills/palette-po/SKILL.md`      | **PO (Hermes 트랙)** — Hermes skill, frontmatter + instructions |
+| `aliases.sh`                      | shell wrapper — `palette-po`, `palette-tick`, `palette-queue` 함수 |
 | `scripts/palette-pm.sh` | 5분마다 호출. 라벨 폴링 + dispatch + 락 부여 |
 | `scripts/palette-executor.sh` | `agents.run_code_executor()` 실행 wrapper |
 | `scripts/palette-reviewer.sh` | `agents.run_code_reviewer()` 실행 wrapper |
@@ -110,13 +111,17 @@ bash .hermes/cron-setup.sh
 ## Phase C — 한 사이클 검증
 
 ```text
+# 0. shell alias 활성화 (1회 — ~/.zshrc 에 한 줄 추가)
+   echo 'source ~/dev-private/palette/.hermes/aliases.sh' >> ~/.zshrc
+   source ~/.zshrc
+
 # 1. test task — 두 트랙 중 한 가지
 #    A) Claude Code 채팅:  /add-task frontend/README.md 의 develpoment → development 오타 수정
-#    B) Hermes chat:       hermes chat -s palette-po -q "frontend/README.md 의 develpoment → development 오타"
+#    B) shell (Hermes):    palette-po "frontend/README.md 의 develpoment → development 오타"
 #  → 둘 다 PO 가 scope/AC/affected files 채워서 issue 생성 + ah:needs-execution 라벨
 
 # 2. 즉시 1 tick — pm → executor → PR 생성까지 대기 (Hermes gateway 없어도 OK)
-~/.local/bin/hermes cron run palette-pm
+palette-tick                                 # (= ~/.local/bin/hermes cron run palette-pm)
 
 # 3. PR 확인
 gh pr list -R c-yeonwoo/palette --label "ah:needs-review"
