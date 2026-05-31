@@ -3,9 +3,10 @@ import { adminAuth } from "../lib/adminAuth";
 
 interface Props {
   admin: AdminInfo;
+  onNavigate: (to: string) => void;
 }
 
-export function AdminDashboardScreen({ admin }: Props) {
+export function AdminDashboardScreen({ admin, onNavigate }: Props) {
   const logout = () => {
     adminAuth.clear();
     window.location.href = "/admin/login";
@@ -34,30 +35,30 @@ export function AdminDashboardScreen({ admin }: Props) {
       <main className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-foreground">대시보드</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            관리 화면은 단계적으로 추가됩니다 (회원 / 매칭 / CS).
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">관리 화면은 단계적으로 추가됩니다.</p>
         </div>
 
-        {/* 단계별로 채워질 KPI 카드 자리 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
-            { title: "전체 회원", value: "—", hint: "PR #4 — Users 화면" },
-            { title: "진행 중인 매칭", value: "—", hint: "PR #5 — Matchings" },
-            { title: "CS 인입", value: "—", hint: "PR #5 — CS" },
-          ].map((card) => (
-            <div key={card.title} className="rounded-2xl border border-border bg-card p-5">
-              <p className="text-sm text-muted-foreground">{card.title}</p>
-              <p className="text-3xl font-bold mt-2 text-foreground tabular-nums">{card.value}</p>
-              <p className="text-xs text-muted-foreground mt-3">{card.hint}</p>
-            </div>
-          ))}
-        </div>
+          <button
+            onClick={() => onNavigate("/admin/users")}
+            className="text-left rounded-2xl border border-border bg-card p-5 hover:border-foreground/40 transition-colors"
+          >
+            <p className="text-sm text-muted-foreground">회원 관리</p>
+            <p className="text-2xl font-bold mt-2 text-foreground">→</p>
+            <p className="text-xs text-muted-foreground mt-3">목록·검색·차단·휴면</p>
+          </button>
 
-        <div className="mt-12 rounded-2xl border border-dashed border-border bg-muted/40 p-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            이 화면은 PR #3 (인증 기반) 골격입니다. 회원/매칭/CS 관리는 PR #4-#5 에서 추가됩니다.
-          </p>
+          <div className="rounded-2xl border border-border bg-card p-5 opacity-50">
+            <p className="text-sm text-muted-foreground">매칭 관리</p>
+            <p className="text-2xl font-bold mt-2 text-foreground">—</p>
+            <p className="text-xs text-muted-foreground mt-3">PR 예정</p>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-5 opacity-50">
+            <p className="text-sm text-muted-foreground">CS 인입</p>
+            <p className="text-2xl font-bold mt-2 text-foreground">—</p>
+            <p className="text-xs text-muted-foreground mt-3">PR 예정</p>
+          </div>
         </div>
       </main>
     </div>

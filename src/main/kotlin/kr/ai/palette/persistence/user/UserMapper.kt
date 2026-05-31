@@ -53,6 +53,10 @@ class UserMapper {
                 deletedAt = entity.deletedAt
             ),
             role = entity.role.toDomain(),
+            status = entity.status.toDomain(),
+            statusReason = entity.statusReason,
+            statusUpdatedAt = entity.statusUpdatedAt,
+            statusUpdatedBy = entity.statusUpdatedBy?.let { UserId(it) },
         )
     }
 
@@ -82,6 +86,10 @@ class UserMapper {
             lastLoginAt = domain.metadata.lastLoginAt,
             deletedAt = domain.metadata.deletedAt,
             role = domain.role.toEntity(),
+            status = domain.status.toEntity(),
+            statusReason = domain.statusReason,
+            statusUpdatedAt = domain.statusUpdatedAt,
+            statusUpdatedBy = domain.statusUpdatedBy?.value,
         )
     }
 
@@ -108,6 +116,10 @@ class UserMapper {
         entity.lastLoginAt = domain.metadata.lastLoginAt
         entity.deletedAt = domain.metadata.deletedAt
         entity.role = domain.role.toEntity()
+        entity.status = domain.status.toEntity()
+        entity.statusReason = domain.statusReason
+        entity.statusUpdatedAt = domain.statusUpdatedAt
+        entity.statusUpdatedBy = domain.statusUpdatedBy?.value
     }
 }
 
@@ -146,3 +158,6 @@ private fun ContactMethod.toEntity(): ContactMethodEntity {
 
 private fun UserRoleEntity.toDomain(): UserRole = UserRole.valueOf(this.name)
 private fun UserRole.toEntity(): UserRoleEntity = UserRoleEntity.valueOf(this.name)
+
+private fun UserStatusEntity.toDomain(): UserStatus = UserStatus.valueOf(this.name)
+private fun UserStatus.toEntity(): UserStatusEntity = UserStatusEntity.valueOf(this.name)

@@ -94,7 +94,8 @@ kr.ai.palette/
 | `/api/v1/auth/email` | `EmailAuthController` (AuthController.kt) | signup, login, matchmaker/signup |
 | `/api/v1/auth/beta-code` | `BetaCodeController` | 베타 게이트 status / verify |
 | `/api/v1/admin/auth` | `AdminAuthController` | 운영자 별도 로그인 (role=ADMIN 만 통과) |
-| `/api/v1/admin/**` | (PR #4-5 에서 추가) | 회원/매칭/CS 관리 — `hasRole("ADMIN")` |
+| `/api/v1/admin/users` | `AdminUsersController` | 회원 목록·상세·상태 변경 (SUSPENDED/DORMANT/ACTIVE) |
+| `/api/v1/admin/**` (매칭/CS) | (PR #6+ 예정) | 매칭/CS 관리 — `hasRole("ADMIN")` |
 | `/api/v1/profile` | `ProfileController` | 본인 프로필 CRUD, 사진 |
 | `/api/v1/profile/public/*` | `PublicProfileController` | 비공개 토큰 기반 공개 조회 |
 | `/api/v1/share` | `ShareLinkController` | 공유 링크 생성 / 공개 resolve (`/v/{code}`) |
