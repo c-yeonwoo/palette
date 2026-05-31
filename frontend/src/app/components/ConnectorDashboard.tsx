@@ -371,7 +371,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
       // ignore
     } finally {
       setApplications(prev => prev.filter(a => a.id !== app.id));
-      toast.info(`${app.name}님의 신청을 거절했어요.`);
+      toast.info(`${app.name}님의 지인 등록 요청을 거절했어요.`);
     }
   };
 
@@ -436,7 +436,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                 Lv.{matchmakerData?.level ?? 1}
               </button>
             )}
-            {/* 신청 알림 벨 */}
+            {/* 지인 등록 요청 알림 벨 */}
             <button
               onClick={() => setShowApplicationSheet(true)}
               className="relative p-2 hover:bg-accent rounded-full transition-colors"
@@ -558,12 +558,12 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                 <div className="py-16 text-center space-y-3">
                   <div className="text-4xl">👥</div>
                   <p className="font-semibold text-foreground">아직 {memberGender === "MALE" ? "남성" : "여성"} 지인이 없어요</p>
-                  <p className="text-sm text-muted-foreground">신청 벨을 눌러 들어온 신청을 수락해보세요</p>
+                  <p className="text-sm text-muted-foreground">알림 벨을 눌러 들어온 지인 등록 요청을 수락해보세요</p>
                   <button
                     onClick={() => setShowApplicationSheet(true)}
                     className="text-sm text-primary font-medium underline underline-offset-4"
                   >
-                    신청 확인하기
+                    요청 확인하기
                   </button>
                 </div>
               ) : (
@@ -588,7 +588,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                 </div>
               )}
 
-              {/* 신청 유도 배너 (신청 있을 때) */}
+              {/* 지인 등록 요청 유도 배너 */}
               {applications.length > 0 && (
                 <button
                   onClick={() => setShowApplicationSheet(true)}
@@ -596,7 +596,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                 >
                   <div className="flex items-center gap-2">
                     <Heart className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium text-primary">신청 {applications.length}건 검토 대기 중</span>
+                    <span className="text-sm font-medium text-primary">지인 등록 요청 {applications.length}건 검토 대기</span>
                   </div>
                   <ChevronRight className="w-4 h-4 text-primary" />
                 </button>
@@ -699,31 +699,29 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                 </div>
               )}
 
-              {/* 리워드 안내 */}
-              <div className="bg-card rounded-2xl border border-border p-5 space-y-3">
-                <p className="text-sm font-semibold">주선자 리워드 안내</p>
-                <ul className="space-y-2.5 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
-                    <span>수락 즉시: <strong className="text-foreground">감사 포인트 100~500P</strong></span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
-                    <span>매칭 성사 시: <strong className="text-foreground">커미션 30~50%</strong></span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0" />
-                    <span>포인트는 현금 출금 또는 앱 내 사용 가능</span>
-                  </li>
-                </ul>
-              </div>
+              {/* 리워드 안내 진입점 (별도 페이지로 분리 — ADR 0015) */}
+              {onNavigateToReward && (
+                <button
+                  onClick={onNavigateToReward}
+                  className="w-full flex items-center justify-between bg-card border border-border rounded-2xl p-4 hover:bg-muted/30 transition-colors"
+                >
+                  <div className="flex items-center gap-3 text-left">
+                    <Award className="w-5 h-5 text-primary flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold">주선자 리워드 안내</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">감사 포인트, 커미션, 등급 혜택을 확인하세요</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                </button>
+              )}
             </div>
           )}
 
         </div>
       </div>
 
-      {/* ── 신청 관리 바텀시트 ── */}
+      {/* ── 지인 등록 요청 관리 바텀시트 ── */}
       {showApplicationSheet && (
         <>
           <div
@@ -737,7 +735,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
             </div>
             {/* 헤더 */}
             <div className="flex items-center justify-between px-6 py-3 border-b border-border flex-shrink-0">
-              <p className="text-base font-semibold">주선 신청 {applications.length}건</p>
+              <p className="text-base font-semibold">지인 등록 요청 {applications.length}건</p>
               <button
                 onClick={() => setShowApplicationSheet(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-muted"
@@ -745,10 +743,10 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                 <XCircle className="w-4 h-4 text-muted-foreground" />
               </button>
             </div>
-            {/* 신청 목록 */}
+            {/* 요청 목록 */}
             <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
               {applications.length === 0 ? (
-                <div className="py-12 text-center text-muted-foreground text-sm">새로운 신청이 없어요</div>
+                <div className="py-12 text-center text-muted-foreground text-sm">새로운 지인 등록 요청이 없어요</div>
               ) : (
                 applications.map(app => (
                   <ApplicationCard
@@ -1318,7 +1316,7 @@ function MemberCard({
   );
 }
 
-// ─── 신청 카드 ─────────────────────────────────────────────────────
+// ─── 지인 등록 요청 카드 ───────────────────────────────────────────
 function ApplicationCard({
   app,
   onAccept,

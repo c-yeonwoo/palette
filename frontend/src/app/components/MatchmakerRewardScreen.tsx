@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { ArrowLeft, Star, TrendingUp, Wallet, RefreshCw, Award } from "lucide-react";
+import { ChevronLeft, Star, TrendingUp, Wallet, RefreshCw, Award, Coins, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
 
@@ -121,13 +121,13 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Header */}
-      <div className="flex-shrink-0 bg-background border-b border-border z-10">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-3">
-          <button onClick={onBack} className="p-2 hover:bg-accent rounded-full transition-colors">
-            <ArrowLeft className="w-5 h-5" />
+      {/* 통일 헤더 (ADR 0014) */}
+      <header className="sticky top-0 z-10 flex-shrink-0 bg-background/95 backdrop-blur border-b border-border">
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-2">
+          <button onClick={onBack} className="p-1.5 rounded-full hover:bg-muted/50 transition-colors -ml-1.5" aria-label="뒤로">
+            <ChevronLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-lg font-semibold">주선자 등급 & 포인트</h1>
+          <h1 className="text-base font-bold text-foreground">주선자 등급 & 포인트</h1>
         </div>
 
         {/* Tabs */}
@@ -146,7 +146,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
             </button>
           ))}
         </div>
-      </div>
+      </header>
 
       <div className="flex-1 overflow-y-auto">
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
@@ -248,6 +248,49 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
                   </span>
                 </div>
               ))}
+            </div>
+
+            {/* 리워드 안내 (ConnectorDashboard 에서 이전 — ADR 0015) */}
+            <div className="bg-card rounded-2xl border border-border p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <p className="font-semibold">리워드 안내</p>
+              </div>
+              <ul className="space-y-3 text-sm">
+                <li className="flex items-start gap-3">
+                  <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Coins className="w-4 h-4 text-primary" />
+                  </span>
+                  <div>
+                    <p className="font-medium text-foreground">수락 즉시 감사 포인트</p>
+                    <p className="text-muted-foreground text-xs mt-0.5">지인 등록 요청 수락 시 100~500P 적립</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Award className="w-4 h-4 text-primary" />
+                  </span>
+                  <div>
+                    <p className="font-medium text-foreground">매칭 성사 커미션</p>
+                    <p className="text-muted-foreground text-xs mt-0.5">등급별 30~50% 커미션 + 성사 보너스 1,500P</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Wallet className="w-4 h-4 text-primary" />
+                  </span>
+                  <div>
+                    <p className="font-medium text-foreground">현금 출금 가능</p>
+                    <p className="text-muted-foreground text-xs mt-0.5">포인트는 현금 출금하거나 앱 내에서 사용</p>
+                  </div>
+                </li>
+              </ul>
+              <button
+                onClick={() => setActiveTab("points")}
+                className="w-full text-center text-sm font-medium text-primary py-2 border-t border-border pt-3"
+              >
+                포인트 & 출금 보기 →
+              </button>
             </div>
           </>
         )}
