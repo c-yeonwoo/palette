@@ -969,7 +969,8 @@ export default function App() {
 
       {currentScreen === "connectorDashboard" && (
         <ConnectorDashboard
-          onBack={handleConnectorDashboardBack}
+          // ADR 0014: MATCHMAKER_ONLY 에게는 connectorDashboard 가 홈 — 뒤로가기 없음
+          onBack={userAccountType === "MATCHMAKER_ONLY" ? undefined : handleConnectorDashboardBack}
           onNavigateToReward={() => setCurrentScreen("matchmakerReward")}
           onNavigateToFriends={() => setCurrentScreen("friendConnect")}
           onNavigateToMarketplace={() => setCurrentScreen("matchmakerMarketplace")}
