@@ -104,7 +104,6 @@ interface AiSignalRecommendation {
 interface AiSignalResponse {
   recommendations: AiSignalRecommendation[];
   generatedAt: string;
-  isStub: boolean;
 }
 
 interface MainFeedScreenProps {
