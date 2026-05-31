@@ -83,7 +83,7 @@ kr.ai.palette/
 - `persistence/vouch/`: `VouchEntity`
 - `persistence/relationship/`: `RelationshipStageEntity`, `PhotoFeedbackEntity`
 - `persistence/ai/`: `UserAiInsightEntity`
-- `persistence/recommendation/`: `DailyRecommendationEntity` — AI 시그널 추천 이력 (ADR 0009)
+- `persistence/recommendation/`: `DailyRecommendationEntity` (ADR 0009), `AdminBlockedTargetEntity` (ADR 0011)
 
 ---
 
@@ -96,7 +96,7 @@ kr.ai.palette/
 | `/api/v1/auth/beta-code` | `BetaCodeController` | 베타 게이트 status / verify |
 | `/api/v1/admin/auth` | `AdminAuthController` | 운영자 별도 로그인 (role=ADMIN 만 통과) |
 | `/api/v1/admin/users` | `AdminUsersController` | 회원 목록·상세·상태 변경 + 친구·통계·프로필 미리보기 (`/{id}/friends`, `/{id}/stats`, `/{id}/profile`) |
-| `/api/v1/admin/recommendations` | `AdminRecommendationsController` | AI 추천 이력 조회 (일자/viewer/target) |
+| `/api/v1/admin/recommendations` | `AdminRecommendationsController` | AI 추천 이력 조회 + **override (REPLACE/BLOCK)** — ADR 0011 |
 | `/api/v1/admin/**` (CS 등) | (PR #8+ 예정) | CS 관리 — `hasRole("ADMIN")` |
 | `/api/v1/profile` | `ProfileController` | 본인 프로필 CRUD, 사진 |
 | `/api/v1/profile/public/*` | `PublicProfileController` | 비공개 토큰 기반 공개 조회 |

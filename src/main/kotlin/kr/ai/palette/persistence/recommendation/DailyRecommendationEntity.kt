@@ -52,6 +52,16 @@ class DailyRecommendationEntity(
 
     @Column(name = "created_at", nullable = false)
     var createdAt: Instant = Instant.now(),
+
+    /** 운영자 override 시 기록 (REPLACE/PIN). source != AUTO 일 때 채워짐. */
+    @Column(name = "override_reason", length = 500)
+    var overrideReason: String? = null,
+
+    @Column(name = "overridden_by", columnDefinition = "BINARY(16)")
+    var overriddenBy: UUID? = null,
+
+    @Column(name = "overridden_at")
+    var overriddenAt: Instant? = null,
 ) {
     protected constructor() : this(
         viewerUserId = UUID.randomUUID(),

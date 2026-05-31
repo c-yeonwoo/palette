@@ -49,12 +49,12 @@ export function AdminDashboardScreen({ admin, onNavigate }: Props) {
           </button>
 
           <button
-            onClick={() => onNavigate("/admin/recommendations")}
+            onClick={() => onNavigate("/admin/matching")}
             className="text-left rounded-2xl border border-border bg-card p-5 hover:border-foreground/40 transition-colors"
           >
             <p className="text-sm text-muted-foreground">매칭 관리</p>
             <p className="text-2xl font-bold mt-2 text-foreground">→</p>
-            <p className="text-xs text-muted-foreground mt-3">AI 추천 이력 (강제 변경은 PR #9)</p>
+            <p className="text-xs text-muted-foreground mt-3">AI 매칭 (교체·차단) · 주선자 풀</p>
           </button>
 
           <div className="rounded-2xl border border-border bg-card p-5 opacity-50">

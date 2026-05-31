@@ -400,3 +400,25 @@
 
     create index idx_drec_date
        on daily_recommendations (recommended_date);
+
+    alter table daily_recommendations
+        add column override_reason varchar(500),
+        add column overridden_by BINARY(16),
+        add column overridden_at datetime(6);
+
+    create table admin_blocked_targets (
+        id bigint not null auto_increment,
+        viewer_user_id BINARY(16) not null,
+        target_user_id BINARY(16) not null,
+        reason varchar(500) not null,
+        created_by BINARY(16) not null,
+        created_at datetime(6) not null,
+        expires_at date,
+        primary key (id)
+    ) engine=InnoDB;
+
+    alter table admin_blocked_targets
+        add constraint uk_abt_viewer_target unique (viewer_user_id, target_user_id);
+
+    create index idx_abt_viewer
+        on admin_blocked_targets (viewer_user_id);

@@ -8,6 +8,7 @@ import kr.ai.palette.infrastructure.seed.SeedUserPolicy
 import kr.ai.palette.infrastructure.storage.FileStorageService
 import kr.ai.palette.persistence.feed.CardOpenJpaRepository
 import kr.ai.palette.persistence.feed.FeedHideJpaRepository
+import kr.ai.palette.persistence.recommendation.AdminBlockedTargetJpaRepository
 import kr.ai.palette.persistence.recommendation.DailyRecommendationEntity
 import kr.ai.palette.persistence.recommendation.DailyRecommendationJpaRepository
 import kr.ai.palette.persistence.recommendation.RecommendationSourceEntity
@@ -44,6 +45,7 @@ class AiSignalController(
     private val fileStorageService: FileStorageService,
     private val seedUserPolicy: SeedUserPolicy,
     private val dailyRecommendationRepo: DailyRecommendationJpaRepository,
+    private val adminBlockedTargetRepo: AdminBlockedTargetJpaRepository,
 ) {
     companion object {
         // key: "{userId}:{date}" → 당일 2번째 카드 unlock 여부
@@ -122,6 +124,11 @@ class AiSignalController(
             .findRecentlyRecommendedTargetIds(currentUserId.value, since)
             .toSet()
 
+        // 운영자 차단 target 제외 — ADR 0011
+        val blockedTargets = adminBlockedTargetRepo
+            .findActiveBlockedTargetIds(currentUserId.value, today)
+            .toSet()
+
         val currentGender = currentUser.publicInfo.gender
 
         // TODO: vector-similarity (Phase 3). 현재는 date+UID seed 랜덤.
@@ -129,6 +136,7 @@ class AiSignalController(
             val uid = profile.userId.value
             if (uid.toString() in excluded) return@filter false
             if (uid in recentlyRecommended) return@filter false
+            if (uid in blockedTargets) return@filter false
             val user = userRepository.findById(profile.userId) ?: return@filter false
             if (!exposeSeed && seedUserPolicy.isSeed(user)) return@filter false
             user.publicInfo.gender != currentGender

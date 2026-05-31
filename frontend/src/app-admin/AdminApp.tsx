@@ -3,7 +3,7 @@ import { AdminLoginScreen } from "./components/AdminLoginScreen";
 import { AdminDashboardScreen } from "./components/AdminDashboardScreen";
 import { AdminUsersScreen } from "./components/AdminUsersScreen";
 import { AdminUserDetailScreen } from "./components/AdminUserDetailScreen";
-import { AdminRecommendationsScreen } from "./components/AdminRecommendationsScreen";
+import { AdminMatchingScreen } from "./components/AdminMatchingScreen";
 import { adminAuth, type AdminInfo } from "./lib/adminAuth";
 
 /**
@@ -14,6 +14,7 @@ import { adminAuth, type AdminInfo } from "./lib/adminAuth";
  *   /admin/login          → 로그인
  *   /admin/users          → 회원 목록
  *   /admin/users/:userId  → 회원 상세
+ *   /admin/matching       → 매칭 관리 (AI / 주선자 풀 탭)
  *
  * 사용자 앱과 토큰 storage 분리 (adminAuth).
  */
@@ -21,14 +22,14 @@ type Screen =
   | { kind: "dashboard" }
   | { kind: "users" }
   | { kind: "user-detail"; userId: string }
-  | { kind: "recommendations" };
+  | { kind: "matching" };
 
 function pathToScreen(path: string): Screen {
   if (path === "/admin" || path === "/admin/") return { kind: "dashboard" };
   if (path === "/admin/users") return { kind: "users" };
   const m = path.match(/^\/admin\/users\/([^/]+)$/);
   if (m) return { kind: "user-detail", userId: m[1] };
-  if (path === "/admin/recommendations") return { kind: "recommendations" };
+  if (path === "/admin/matching" || path === "/admin/recommendations") return { kind: "matching" };
   return { kind: "dashboard" };
 }
 
@@ -84,7 +85,7 @@ export default function AdminApp() {
           onBack={() => navigate("/admin/users")}
         />
       );
-    case "recommendations":
-      return <AdminRecommendationsScreen onBack={() => navigate("/admin")} />;
+    case "matching":
+      return <AdminMatchingScreen onBack={() => navigate("/admin")} />;
   }
 }
