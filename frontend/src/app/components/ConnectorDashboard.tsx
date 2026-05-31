@@ -348,16 +348,6 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
           </div>
 
           <div className="flex items-center gap-2">
-            {/* 등급 칩 */}
-            {onNavigateToReward && (
-              <button
-                onClick={onNavigateToReward}
-                className="flex items-center gap-1.5 bg-brand-soft border border-primary/20 rounded-full px-3 py-1.5 text-xs font-semibold text-primary"
-              >
-                <Award className="w-3.5 h-3.5" />
-                Lv.{matchmakerData?.level ?? 1}
-              </button>
-            )}
             {/* 지인 관리 진입점 (ADR 0016) */}
             {onNavigateToFriends && (
               <button
@@ -374,7 +364,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
 
       {/* ── 이번달 요약 + Stats ── */}
       <div className="flex-shrink-0 bg-card border-b border-border px-4 py-3 max-w-2xl w-full mx-auto">
-        {/* 이번달 칩 */}
+        {/* 이번달 칩 + 등급 칩 */}
         <div className="flex items-center gap-2 mb-3">
           <span className="text-xs bg-primary/10 text-primary font-semibold px-2.5 py-1 rounded-full">
             이번달 성사 {matchmakerData?.successfulMatches ?? 0}건
@@ -382,6 +372,17 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
           <span className="text-xs text-muted-foreground">
             적립 {((matchmakerData?.totalPoints ?? 0)).toLocaleString()}P
           </span>
+          {onNavigateToReward && (
+            <button
+              onClick={onNavigateToReward}
+              className="ml-auto flex items-center gap-1.5 bg-brand-soft border border-primary/20 rounded-full px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+              aria-label="등급 & 리워드"
+            >
+              <Award className="w-3.5 h-3.5" />
+              Lv.{matchmakerData?.level ?? 1}
+              <ChevronRight className="w-3 h-3 -mr-1" />
+            </button>
+          )}
         </div>
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-3 mb-3">
