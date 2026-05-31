@@ -77,7 +77,7 @@ describe('BasicInfoScreen', () => {
 
     // Should show step 2
     await waitFor(() => {
-      expect(screen.getByText('외형과 성격을 알려주세요')).toBeInTheDocument();
+      expect(screen.getByText('조금 더 알려주세요')).toBeInTheDocument();
       expect(screen.getByText('2/4 단계')).toBeInTheDocument();
     });
   });
@@ -97,7 +97,7 @@ describe('BasicInfoScreen', () => {
     fireEvent.click(screen.getByText('여성'));
     fireEvent.click(screen.getByRole('button', { name: /다음/ }));
 
-    await waitFor(() => expect(screen.getByText('외형과 성격을 알려주세요')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('조금 더 알려주세요')).toBeInTheDocument());
 
     expect(screen.getByText('슬림')).toBeInTheDocument();
     expect(screen.getByText('보통')).toBeInTheDocument();
@@ -118,7 +118,7 @@ describe('BasicInfoScreen', () => {
     fireEvent.click(screen.getByText('남성'));
     fireEvent.click(screen.getByRole('button', { name: /다음/ }));
 
-    await waitFor(() => expect(screen.getByText('외형과 성격을 알려주세요')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('조금 더 알려주세요')).toBeInTheDocument());
 
     fireEvent.click(screen.getByText('E'));
     fireEvent.click(screen.getByText('N'));
@@ -144,7 +144,7 @@ describe('BasicInfoScreen', () => {
     fireEvent.click(screen.getByText('남성'));
     fireEvent.click(screen.getByRole('button', { name: /다음/ }));
 
-    await waitFor(() => expect(screen.getByText('외형과 성격을 알려주세요')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('조금 더 알려주세요')).toBeInTheDocument());
 
     // Step 2
     fireEvent.click(screen.getByText('탄탄'));
@@ -174,7 +174,7 @@ describe('BasicInfoScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: /다음/ }));
 
     // Step 2
-    await waitFor(() => expect(screen.getByText('외형과 성격을 알려주세요')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('조금 더 알려주세요')).toBeInTheDocument());
     fireEvent.click(screen.getByText('슬림'));
     fireEvent.click(screen.getByText('E'));
     fireEvent.click(screen.getByText('N'));
@@ -190,8 +190,8 @@ describe('BasicInfoScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: /다음/ }));
 
     // Step 4
-    await waitFor(() => expect(screen.getByText('추가 정보 (선택)')).toBeInTheDocument());
-    expect(screen.getByText('건너뛰기 (나중에 추가하기)')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('마지막 단계예요')).toBeInTheDocument());
+    expect(screen.getByText('지금은 건너뛰기 (나중에 마이프로필에서 추가)')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('010-1234-5678')).toBeInTheDocument();
   });
 
@@ -209,7 +209,7 @@ describe('BasicInfoScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: /다음/ }));
 
     // Step 2
-    await waitFor(() => expect(screen.getByText('외형과 성격을 알려주세요')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('조금 더 알려주세요')).toBeInTheDocument());
     fireEvent.click(screen.getByText('슬림'));
     fireEvent.click(screen.getByText('E'));
     fireEvent.click(screen.getByText('N'));
