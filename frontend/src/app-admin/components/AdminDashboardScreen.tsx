@@ -48,11 +48,14 @@ export function AdminDashboardScreen({ admin, onNavigate }: Props) {
             <p className="text-xs text-muted-foreground mt-3">목록·검색·차단·휴면</p>
           </button>
 
-          <div className="rounded-2xl border border-border bg-card p-5 opacity-50">
+          <button
+            onClick={() => onNavigate("/admin/recommendations")}
+            className="text-left rounded-2xl border border-border bg-card p-5 hover:border-foreground/40 transition-colors"
+          >
             <p className="text-sm text-muted-foreground">매칭 관리</p>
-            <p className="text-2xl font-bold mt-2 text-foreground">—</p>
-            <p className="text-xs text-muted-foreground mt-3">PR 예정</p>
-          </div>
+            <p className="text-2xl font-bold mt-2 text-foreground">→</p>
+            <p className="text-xs text-muted-foreground mt-3">AI 추천 이력 (강제 변경은 PR #9)</p>
+          </button>
 
           <div className="rounded-2xl border border-border bg-card p-5 opacity-50">
             <p className="text-sm text-muted-foreground">CS 인입</p>
