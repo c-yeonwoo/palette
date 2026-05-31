@@ -101,6 +101,19 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
       return;
     }
 
+    // 생년월일 형식 / 범위 검증 (브라우저 type="date" 가 형식 미준수 입력을 그대로 통과시키는 케이스 방어)
+    const isoDate = /^\d{4}-\d{2}-\d{2}$/;
+    if (!isoDate.test(formData.birthDate)) {
+      toast.error("생년월일 형식이 올바르지 않습니다 (예: 1994-06-22)");
+      return;
+    }
+    const birth = new Date(formData.birthDate);
+    const now = new Date();
+    if (isNaN(birth.getTime()) || birth > now || birth < new Date("1900-01-01")) {
+      toast.error("생년월일을 다시 확인해주세요");
+      return;
+    }
+
     // 핸드폰 인증 확인
     if (!verificationSent) {
       toast.error("인증번호를 발송해주세요");
@@ -178,7 +191,7 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl">이메일로 회원가입</CardTitle>
-          <CardDescription>Palette에 가입하여 새로운 인연을 만나보세요</CardDescription>
+          <CardDescription>팔레트에 가입하여 새로운 인연을 만나보세요</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

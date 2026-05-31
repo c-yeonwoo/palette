@@ -311,19 +311,21 @@ class EmailAuthController(
             throw kr.ai.palette.infrastructure.beta.InvalidBetaCodeException()
         }
 
-        // 이메일 중복 체크
+        // 중복 체크 — 어떤 필드가 충돌하는지 명시적으로 응답 (UX)
         if (userRepository.existsByEmail(request.email)) {
-            return ResponseEntity.badRequest().build()
+            throw kr.ai.palette.infrastructure.exception.DuplicateResourceException(
+                "이미 사용 중인 이메일입니다"
+            )
         }
-
-        // 닉네임 중복 체크
         if (userRepository.existsByNickname(request.nickname)) {
-            return ResponseEntity.badRequest().build()
+            throw kr.ai.palette.infrastructure.exception.DuplicateResourceException(
+                "이미 사용 중인 닉네임입니다"
+            )
         }
-
-        // 핸드폰 번호 중복 체크
         if (userRepository.existsByPhoneNumber(request.phoneNumber)) {
-            return ResponseEntity.badRequest().build()
+            throw kr.ai.palette.infrastructure.exception.DuplicateResourceException(
+                "이미 가입된 휴대폰 번호입니다"
+            )
         }
 
         val now = Instant.now()
@@ -398,19 +400,21 @@ class EmailAuthController(
             return ResponseEntity.badRequest().build()
         }
 
-        // 이메일 중복 체크
+        // 중복 체크 — 어떤 필드가 충돌하는지 명시적으로 응답 (UX)
         if (userRepository.existsByEmail(request.email)) {
-            return ResponseEntity.badRequest().build()
+            throw kr.ai.palette.infrastructure.exception.DuplicateResourceException(
+                "이미 사용 중인 이메일입니다"
+            )
         }
-
-        // 닉네임 중복 체크
         if (userRepository.existsByNickname(request.nickname)) {
-            return ResponseEntity.badRequest().build()
+            throw kr.ai.palette.infrastructure.exception.DuplicateResourceException(
+                "이미 사용 중인 닉네임입니다"
+            )
         }
-
-        // 핸드폰 번호 중복 체크
         if (userRepository.existsByPhoneNumber(request.phoneNumber)) {
-            return ResponseEntity.badRequest().build()
+            throw kr.ai.palette.infrastructure.exception.DuplicateResourceException(
+                "이미 가입된 휴대폰 번호입니다"
+            )
         }
 
         val now = Instant.now()

@@ -52,7 +52,7 @@ export function ShareSheet({
     ? `https://palette.app/color/${colorType}?ref=${userId}`
     : `https://palette.app/color/${colorType}`;
 
-  const shareTitle = `나는 ${desc.title}! — Palette 컬러 타입 진단`;
+  const shareTitle = `나는 ${desc.title}! — 팔레트 컬러 타입 진단`;
   const shareText = `${desc.subtitle}. 나의 컬러를 확인해보세요!`;
 
   /** 이미지 저장 (html-to-image 미설치 → placeholder) */

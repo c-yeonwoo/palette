@@ -261,17 +261,42 @@ export function AIInterviewScreen({ onComplete, onBack }: AIInterviewScreenProps
             <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
 
-          {currentQuestion.inputType === "text" && (
-            <button
-              onClick={() => {
-                setCurrentInput("없어요");
-                setTimeout(handleSubmitAnswer, 0);
-              }}
-              className="w-full text-center text-xs text-muted-foreground py-1"
-            >
-              건너뛰기
-            </button>
-          )}
+          <div className="flex items-center justify-between gap-2 pt-1">
+            {currentQuestion.inputType === "text" && (
+              <button
+                onClick={() => {
+                  setCurrentInput("없어요");
+                  setTimeout(handleSubmitAnswer, 0);
+                }}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                이 질문 건너뛰기
+              </button>
+            )}
+            {/* 최소 3개 답변 후부터 "여기까지만 답변하기" 노출 */}
+            {Object.keys(answers).length >= 3 && currentStep < questions.length - 1 && (
+              <button
+                onClick={() => {
+                  setIsAnalyzing(true);
+                  setTimeout(() => {
+                    setMessages((prev) => [
+                      ...prev,
+                      {
+                        type: "ai",
+                        content: `여기까지 답변 주신 ${Object.keys(answers).length}개로도 충분해요! ✨\n\n이제 AI가 당신만의 소개글과 색깔 타입을 찾아드릴게요.`,
+                      },
+                    ]);
+                    setTimeout(() => {
+                      onComplete(answers);
+                    }, 1500);
+                  }, 400);
+                }}
+                className="text-xs text-primary font-medium hover:underline ml-auto"
+              >
+                여기까지만 답변하기 →
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

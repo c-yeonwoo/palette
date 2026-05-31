@@ -4,6 +4,7 @@ import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.friendship.FriendshipRepository
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.UserRepository
+import kr.ai.palette.infrastructure.seed.SeedUserPolicy
 import kr.ai.palette.infrastructure.storage.FileStorageService
 import kr.ai.palette.persistence.feed.CardOpenJpaRepository
 import kr.ai.palette.persistence.feed.FeedHideJpaRepository
@@ -34,6 +35,7 @@ class AiSignalController(
     private val cardOpenJpaRepository: CardOpenJpaRepository,
     private val feedHideRepository: FeedHideJpaRepository,
     private val fileStorageService: FileStorageService,
+    private val seedUserPolicy: SeedUserPolicy,
 ) {
     companion object {
         // key: "{userId}:{date}" → 당일 2번째 카드 unlock 여부
@@ -60,11 +62,20 @@ class AiSignalController(
             .map { it.targetUserId }.toSet()
         val excluded = firstDegree + secondDegree + hiddenIds + currentUserId.value.toString()
 
+        // 시드 격리: 일반(non-seed) 가입자에게는 시드 유저 추천 안 함 (테스트 계정에만 시드 노출)
+        val exposeSeed = seedUserPolicy.shouldExposeSeedTo(currentUser)
+
+        // 신규 가입자(친구 0 + 비시드)는 추천 자체를 비움 — "깨끗한 시작"
+        if (!exposeSeed && firstDegree.isEmpty()) {
+            return ResponseEntity.ok(AiSignalResponse(emptyList(), today.toString()))
+        }
+
         // TODO: Replace with vector-similarity query (pgvector/Pinecone) in Phase 3
         val candidates = profileRepository.findAll().filter { profile ->
             val uid = profile.userId.value.toString()
             if (uid in excluded) return@filter false
             val user = userRepository.findById(profile.userId) ?: return@filter false
+            if (!exposeSeed && seedUserPolicy.isSeed(user)) return@filter false
             user.publicInfo.gender != currentGender
         }
 

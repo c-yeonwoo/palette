@@ -132,67 +132,68 @@
   --state-danger:  var(--ct-red-500);
   --state-info:    var(--ct-blue-500);
 
-  /* ── Shadow (P7: 5-tier neutral shadow system) ── */
-  --shadow-hairline:   0 0 0 1px hsl(0 0% 0% / 0.06);
-  --shadow-soft:       0 1px 3px hsl(0 0% 0% / 0.06);
-  --shadow-card:       0 2px 8px -2px hsl(0 0% 0% / 0.06), 0 1px 2px hsl(0 0% 0% / 0.04);
-  --shadow-card-hover: 0 8px 24px -8px hsl(0 0% 0% / 0.10), 0 2px 8px -2px hsl(0 0% 0% / 0.06);
-  --shadow-overlay:    0 24px 48px -12px hsl(0 0% 0% / 0.18), 0 8px 16px -8px hsl(0 0% 0% / 0.10);
-  /* back-compat aliases */
+  /* Shadow 5-tier (P8 으로 아래에서 재정의됨). 아래쪽 alias 유지. */
   --shadow-sm: var(--shadow-soft);
   --shadow-md: var(--shadow-card);
   --shadow-lg: var(--shadow-overlay);
 
-  /* ── Radius ── */
-  --radius-sm:   8px;
-  --radius-md:   12px;
-  --radius-lg:   16px;   /* 카드 기본 */
-  --radius-xl:   20px;
-  --radius-2xl:  24px;
+  /* ── Radius (P8: 진중함을 위해 전체 ~25% 축소) ── */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   12px;   /* 카드 기본 */
+  --radius-xl:   14px;
+  --radius-2xl:  18px;
   --radius-pill: 999px;
+
+  /* ── Shadow (P8: 살짝 깊게 — 고급스러운 음영) ── */
+  --shadow-hairline:   0 0 0 1px hsl(30 12% 8% / 0.08);
+  --shadow-soft:       0 1px 4px hsl(30 12% 8% / 0.08);
+  --shadow-card:       0 3px 10px -3px hsl(30 12% 8% / 0.10), 0 1px 3px hsl(30 12% 8% / 0.06);
+  --shadow-card-hover: 0 12px 28px -10px hsl(30 12% 8% / 0.16), 0 3px 10px -3px hsl(30 12% 8% / 0.08);
+  --shadow-overlay:    0 28px 56px -14px hsl(30 12% 8% / 0.24), 0 10px 20px -10px hsl(30 12% 8% / 0.14);
 }
 
 /* ============================================================
    3. SHADCN BRIDGE  (기존 컴포넌트 호환, 가급적 수정 금지)
    ============================================================ */
 :root {
-  --background:        #FCFCFC;
+  --background:        #FAF8F4;   /* P8: warm off-white (종이 같은 느낌) */
   --foreground:        #1A1916;
   --card:              #FFFFFF;
   --card-foreground:   #1A1916;
   --popover:           #FFFFFF;
   --popover-foreground:#1A1916;
-  --primary:           #B5703A;   /* = ct-orange-500 근사치 */
-  --primary-foreground:#FFFFFF;
-  --secondary:         #F0F0F0;
+  --primary:           #2E2A24;   /* P8: Warm Charcoal — 너무 검정 안 되게 살짝 따뜻한 톤 */
+  --primary-foreground:#FAF8F4;
+  --secondary:         #EFEBE4;   /* P8: warm neutral sand (채도 매우 낮음) */
   --secondary-foreground:#1A1916;
-  --muted:             #F5F5F5;
-  --muted-foreground:  #6B6B6B;
-  --accent:            #EBEBEB;   /* shadcn hover bg */
+  --muted:             #F2EEE7;   /* P8: 카드 sunken */
+  --muted-foreground:  #5C564E;   /* P8: warm gray (가독성 충분) */
+  --accent:            #E8E2D7;   /* P8: warm hover bg */
   --accent-foreground: #1A1916;
-  --destructive:       #C0392B;
+  --destructive:       #B23A2C;
   --destructive-foreground:#FFFFFF;
-  --border:            #EDEDED;
+  --border:            #E3DCCF;   /* P8: subtle warm border */
   --input:             transparent;
   --input-background:  #FFFFFF;
-  --switch-background: #C9C5BD;
+  --switch-background: #C9C0AE;
   --font-weight-medium:500;
   --font-weight-normal:400;
-  --ring:              #B5703A;
+  --ring:              #2E2A24;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.600 0.118 184.704);
   --chart-3: oklch(0.398 0.070 227.392);
   --chart-4: oklch(0.828 0.189  84.429);
   --chart-5: oklch(0.769 0.188  70.080);
-  --radius:            0.9rem;
+  --radius:            0.75rem;   /* P8: 0.9rem → 0.75rem (살짝 squared) */
   --sidebar:           #FFFFFF;
   --sidebar-foreground:#1A1916;
-  --sidebar-primary:   #B5703A;
-  --sidebar-primary-foreground:#FFFFFF;
-  --sidebar-accent:    #EBEBEB;
+  --sidebar-primary:   #2E2A24;
+  --sidebar-primary-foreground:#FAF8F4;
+  --sidebar-accent:    #E8E2D7;
   --sidebar-accent-foreground: #1A1916;
   --sidebar-border:    rgba(26, 25, 22, 0.09);
-  --sidebar-ring:      #B5703A;
+  --sidebar-ring:      #2E2A24;
 }
 
 .dark {
@@ -203,21 +204,21 @@
   --card-foreground:   #F0EDE8;
   --popover:           #1E1D1A;
   --popover-foreground:#F0EDE8;
-  --primary:           #C8834E;
-  --primary-foreground:#FFFFFF;
+  --primary:           #F0EDE8;   /* P8: dark mode — 밝은 페이퍼톤 primary */
+  --primary-foreground:#141412;
   --secondary:         #2A2925;
   --secondary-foreground:#F0EDE8;
   --muted:             #252420;
   --muted-foreground:  #7A766F;
   --accent:            #2E2C28;
   --accent-foreground: #F0EDE8;
-  --destructive:       #E74C3C;
+  --destructive:       #D74A3C;
   --destructive-foreground:#FFFFFF;
   --border:            rgba(240, 237, 232, 0.08);
   --input:             rgba(240, 237, 232, 0.06);
   --input-background:  #252420;
   --switch-background: #3A3830;
-  --ring:              #C8834E;
+  --ring:              #F0EDE8;
   --font-weight-medium:500;
   --font-weight-normal:400;
   --chart-1: oklch(0.488 0.243 264.376);
@@ -227,12 +228,12 @@
   --chart-5: oklch(0.645 0.246  16.439);
   --sidebar:           #1E1D1A;
   --sidebar-foreground:#F0EDE8;
-  --sidebar-primary:   #C8834E;
-  --sidebar-primary-foreground:#FFFFFF;
+  --sidebar-primary:   #F0EDE8;
+  --sidebar-primary-foreground:#141412;
   --sidebar-accent:    #2A2925;
   --sidebar-accent-foreground: #F0EDE8;
   --sidebar-border:    rgba(240, 237, 232, 0.08);
-  --sidebar-ring:      #C8834E;
+  --sidebar-ring:      #F0EDE8;
 
   /* semantic overrides for dark */
   --surface:           16 5% 12%;

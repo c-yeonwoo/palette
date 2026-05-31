@@ -1078,7 +1078,7 @@ export function AiHubScreen({
         {/* AI Guide */}
         <div className="px-4">
           <div className="rounded-2xl bg-card border border-border/60 p-4 space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Palette AI 가이드</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">팔레트 AI 가이드</p>
             {[
               { icon: "🎨", title: "컬러 타입", desc: "AI 인터뷰로 결정된 내 성격 색상이 매칭 기준이 돼요" },
               { icon: "✨", title: "AI 시그널", desc: "매일 1장 무료 — 컬러 유사도 기반 추천 프로필" },

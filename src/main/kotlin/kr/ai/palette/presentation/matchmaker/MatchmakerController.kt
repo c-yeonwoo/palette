@@ -2,6 +2,7 @@ package kr.ai.palette.presentation.matchmaker
 
 import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.matchmaker.*
+import kr.ai.palette.infrastructure.seed.SeedUserPolicy
 import kr.ai.palette.infrastructure.storage.FileStorageService
 import kr.ai.palette.persistence.matchmaker.MatchmakerReviewEntity
 import kr.ai.palette.persistence.matchmaker.MatchmakerReviewJpaRepository
@@ -20,16 +21,23 @@ class MatchmakerController(
     private val matchmakerRepository: MatchmakerRepository,
     private val fileStorageService: FileStorageService,
     private val userRepository: kr.ai.palette.domain.user.UserRepository,
-    private val matchmakerReviewJpaRepository: MatchmakerReviewJpaRepository
+    private val matchmakerReviewJpaRepository: MatchmakerReviewJpaRepository,
+    private val seedUserPolicy: SeedUserPolicy,
 ) {
 
     @GetMapping("/marketplace")
     fun getMarketplace(
+        @AuthenticationPrincipal authUser: AuthUser?,
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int,
     ): ResponseEntity<List<MatchmakerPublicResponse>> {
         val matchmakers = matchmakerRepository.findPublicMatchmakers(page, size)
-        return ResponseEntity.ok(matchmakers.map { MatchmakerPublicResponse.from(it, fileStorageService) })
+        // 시드 격리: 일반(non-seed) 가입자에게는 시드 주선자를 마켓플레이스에 노출 안 함
+        val viewer = authUser?.let { userRepository.findById(it.userId) }
+        val exposeSeed = viewer?.let { seedUserPolicy.shouldExposeSeedTo(it) } ?: false
+        val filtered = if (exposeSeed) matchmakers
+        else matchmakers.filter { !seedUserPolicy.isSeed(it.userId) }
+        return ResponseEntity.ok(filtered.map { MatchmakerPublicResponse.from(it, fileStorageService) })
     }
 
     @GetMapping("/{matchmakerId}/public")

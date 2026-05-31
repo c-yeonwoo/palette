@@ -66,6 +66,10 @@ data class GenerateResponse(
     val colorHex: String,
     val colorDescription: String,
     val generatedIntroduction: String,
+    /** 왜 이 색깔로 분석했는지 — 사용자 답변에서 근거를 인용한 짧은 단락 */
+    val colorReasoning: String = "",
+    /** 색깔 분석에 사용된 핵심 키워드 (UI 칩) */
+    val colorKeywords: List<String> = emptyList(),
 )
 
 private fun ProfileGenerationResult.toResponse() = GenerateResponse(
@@ -74,4 +78,6 @@ private fun ProfileGenerationResult.toResponse() = GenerateResponse(
     colorHex = colorHex,
     colorDescription = colorDescription,
     generatedIntroduction = generatedIntroduction,
+    colorReasoning = colorReasoning,
+    colorKeywords = colorKeywords,
 )

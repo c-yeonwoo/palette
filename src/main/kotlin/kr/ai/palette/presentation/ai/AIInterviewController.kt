@@ -114,17 +114,10 @@ class AIInterviewController(
                 hint = "외모, 성격, 분위기 뭐든 자유롭게",
                 inputType = "text",
             ),
-            InterviewQuestion(
-                id = "dealBreaker",
-                step = 9,
-                category = "이상형",
-                question = "절대 안 되는 것(Deal breaker)이 있나요? 🚫",
-                hint = "없으면 '없어요'라고 하셔도 돼요",
-                inputType = "text",
-            ),
+            // Deal breaker 질문은 이상형 설정의 Q5 와 중복이라 제거 (2026-05 UX)
             InterviewQuestion(
                 id = "motto",
-                step = 10,
+                step = 9,
                 category = "가치관",
                 question = "나의 인생 좌우명이나 요즘 마음에 두는 말은? 🌈",
                 hint = "짧은 문장이나 단어도 좋아요",

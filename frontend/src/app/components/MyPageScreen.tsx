@@ -326,7 +326,7 @@ export function MyPageScreen({
           </div>
         </section>
 
-        <p className="text-center text-xs text-muted-foreground py-2">Palette v0.1.0</p>
+        <p className="text-center text-xs text-muted-foreground py-2">팔레트 v0.1.0</p>
       </div>
 
       {/* 회원탈퇴 다이얼로그 */}

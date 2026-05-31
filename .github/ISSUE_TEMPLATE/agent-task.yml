@@ -1,0 +1,98 @@
+name: 🤖 Agent Task
+description: Hermes 워커가 작업할 issue (executor 가 자동으로 PR 생성)
+title: "[agent] "
+labels: ["agent:ready"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > 이 템플릿은 **Hermes 워커가 받을 issue** 형식입니다.
+        > 본문이 충분하면 워커가 코드 변경 → 테스트 → PR 까지 자동.
+        > 본문이 모호하거나 scope 가 크면 워커가 `agent:needs_human` 라벨로 escalate.
+
+  - type: textarea
+    id: intent
+    attributes:
+      label: 의도 (왜)
+      description: 이 변경이 왜 필요한지. 사용자 가치, 버그, 개선 목적 등.
+      placeholder: |
+        예) AI 인터뷰 화면에서 사용자가 답변 도중 그만 두고 싶을 때
+        skip 보다 "여기까지만 답변하기" 가 자연스러움.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: 영향 범위 (어떤 파일/도메인)
+      description: 어느 파일, 디렉토리, 도메인을 건드릴지. **scope 가 너무 크면 (>10 파일 또는 2개 도메인) 분할 권장.**
+      placeholder: |
+        예)
+        - frontend/src/app/components/AIInterviewScreen.tsx
+        - src/main/kotlin/.../AIInterviewController.kt (질문 목록)
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 완료 기준 (검증 가능한 조건)
+      description: 무엇이 되면 완료인가. 워커 + 사람 모두 확인할 수 있게 구체적으로.
+      placeholder: |
+        예)
+        - [ ] 3개 이상 답변 후 "여기까지만 답변하기" 버튼 노출
+        - [ ] 클릭 시 현재 답변으로 onComplete 호출
+        - [ ] AI 인터뷰 질문 9개 (dealBreaker 제거)
+        - [ ] 기존 "건너뛰기" 는 "이 질문 건너뛰기" 로 라벨 변경
+    validations:
+      required: true
+
+  - type: textarea
+    id: non_goal
+    attributes:
+      label: Non-goal (이번에 하지 않을 것)
+      description: 같이 손대지 않을 부분. scope 폭발 방지.
+      placeholder: |
+        예)
+        - 인터뷰 UX 전반 재설계 (별도 issue)
+        - 백엔드 인터뷰 답변 저장 변경
+    validations:
+      required: false
+
+  - type: textarea
+    id: verification
+    attributes:
+      label: 검증 방법 (어떤 테스트)
+      description: 워커가 commit 전에 실행할 명령. CONVENTIONS §5 참조.
+      value: |
+        - 백엔드 변경: `./gradlew test`
+        - 프론트 변경: `cd frontend && npx vitest run`
+        - 둘 다: 둘 다
+    validations:
+      required: true
+
+  - type: textarea
+    id: sot_refs
+    attributes:
+      label: 관련 SoT / ADR / BACKLOG
+      description: 참조할 결정 이유 / 컨벤션 / 큰 그림 문서.
+      placeholder: |
+        예)
+        - docs/ARCHITECTURE.md §4 (API 표면)
+        - docs/CONVENTIONS.md §2.1 (디자인 토큰)
+        - docs/DECISIONS/0001-mono-charcoal-design.md
+        - BACKLOG.md P1 §UX 디테일
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: agent_ok
+    attributes:
+      label: 워커 진행 동의
+      options:
+        - label: scope 가 명확하고 한 PR 로 끝낼 수 있음 (>10 파일이면 분할)
+          required: true
+        - label: 완료 기준이 검증 가능 (테스트 가능)
+          required: true
+        - label: 시크릿 / 운영 변경 / 데이터 마이그레이션 없음 (있으면 사람이 직접)
+          required: true
