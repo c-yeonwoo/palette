@@ -51,7 +51,8 @@ class UserMapper {
                 updatedAt = entity.updatedAt,
                 lastLoginAt = entity.lastLoginAt,
                 deletedAt = entity.deletedAt
-            )
+            ),
+            role = entity.role.toDomain(),
         )
     }
 
@@ -79,7 +80,8 @@ class UserMapper {
             createdAt = domain.metadata.createdAt,
             updatedAt = domain.metadata.updatedAt,
             lastLoginAt = domain.metadata.lastLoginAt,
-            deletedAt = domain.metadata.deletedAt
+            deletedAt = domain.metadata.deletedAt,
+            role = domain.role.toEntity(),
         )
     }
 
@@ -105,6 +107,7 @@ class UserMapper {
         entity.updatedAt = domain.metadata.updatedAt
         entity.lastLoginAt = domain.metadata.lastLoginAt
         entity.deletedAt = domain.metadata.deletedAt
+        entity.role = domain.role.toEntity()
     }
 }
 
@@ -140,3 +143,6 @@ private fun ContactMethodEntity.toDomain(): ContactMethod {
 private fun ContactMethod.toEntity(): ContactMethodEntity {
     return ContactMethodEntity.valueOf(this.name)
 }
+
+private fun UserRoleEntity.toDomain(): UserRole = UserRole.valueOf(this.name)
+private fun UserRole.toEntity(): UserRoleEntity = UserRoleEntity.valueOf(this.name)

@@ -66,13 +66,47 @@ class DevDataSeeder(
 
         val now = Instant.now()
         val me = seedTestAccount(now)
+        seedAdminAccount(now)
         val regularUsers = seedRegularUsers(now)
         val matchmakerUsers = seedMatchmakerUsers(now)
         val matchmakers = seedMatchmakers(matchmakerUsers, now)
         seedMatchmakingRequests(me, regularUsers, matchmakers, now)
 
         log.info("[Seeder] Done — ${userRepo.count()} users in DB")
-        log.info("[Seeder] Test login: dev@palette.kr / devpass123")
+        log.info("[Seeder] User login : dev@palette.kr / devpass123")
+        log.info("[Seeder] Admin login: admin@palette.kr / adminpass123 (role=ADMIN)")
+    }
+
+    // ── 운영자 시드 계정 ─────────────────────────────────────────────────────
+    private fun seedAdminAccount(now: Instant) {
+        val adminId = UUID.fromString("00000000-0000-0000-0000-0000000000ad")
+        if (userRepo.existsById(adminId)) return
+        val admin = UserEntity(
+            id = adminId,
+            oauthProvider = null,
+            oauthId = null,
+            password = passwordEncoder.encode("adminpass123"),
+            realName = "관리자",
+            email = "admin@palette.kr",
+            phoneNumber = "01000000000",
+            isPhoneVerified = true,
+            kakaoTalkId = null,
+            preferredContactMethod = null,
+            nickname = "팔레트 운영자",
+            birthDate = LocalDate.of(1990, 1, 1),
+            gender = GenderEntity.MALE,
+            accountType = AccountTypeEntity.REGULAR,
+            isProfileCompleted = false,    // 운영자는 일반 서비스 안 씀
+            agreedTermsService = true,
+            agreedTermsPrivacy = true,
+            agreedMarketing = false,
+            agreedAt = now,
+            createdAt = now,
+            updatedAt = now,
+            lastLoginAt = now,
+            role = kr.ai.palette.persistence.user.UserRoleEntity.ADMIN,
+        )
+        userRepo.save(admin)
     }
 
     // ── 테스트 로그인 계정 ────────────────────────────────────────────────────

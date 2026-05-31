@@ -113,7 +113,8 @@ class AuthenticationServiceImpl(
             userId = user.id,
             nickname = user.publicInfo.nickname,
             accountType = user.accountType,
-            isProfileCompleted = user.isProfileCompleted
+            isProfileCompleted = user.isProfileCompleted,
+            role = user.role,
         )
     }
 

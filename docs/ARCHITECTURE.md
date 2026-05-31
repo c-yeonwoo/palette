@@ -93,6 +93,8 @@ kr.ai.palette/
 | `/api/v1/auth` | `AuthController` | refresh, me, logout, withdraw, account-type, basic-info |
 | `/api/v1/auth/email` | `EmailAuthController` (AuthController.kt) | signup, login, matchmaker/signup |
 | `/api/v1/auth/beta-code` | `BetaCodeController` | 베타 게이트 status / verify |
+| `/api/v1/admin/auth` | `AdminAuthController` | 운영자 별도 로그인 (role=ADMIN 만 통과) |
+| `/api/v1/admin/**` | (PR #4-5 에서 추가) | 회원/매칭/CS 관리 — `hasRole("ADMIN")` |
 | `/api/v1/profile` | `ProfileController` | 본인 프로필 CRUD, 사진 |
 | `/api/v1/profile/public/*` | `PublicProfileController` | 비공개 토큰 기반 공개 조회 |
 | `/api/v1/share` | `ShareLinkController` | 공유 링크 생성 / 공개 resolve (`/v/{code}`) |
@@ -127,6 +129,7 @@ kr.ai.palette/
 - `/api/v1/auth/email/**` (signup, login)
 - `/api/v1/auth/refresh`
 - `/api/v1/auth/beta-code/**`
+- `/api/v1/admin/auth/login` (운영자 로그인 — 이후 admin API 는 hasRole)
 - `/oauth2/**`, `/login/**`, `/h2-console/**`
 - `/api/v1/profile/public/**`, `/api/v1/users/*/public`
 - `/api/v1/ai-interview/questions`, `/api/v1/ai-profile/generate`, `/api/v1/ai/compatibility`
@@ -136,7 +139,12 @@ kr.ai.palette/
 
 **그 외 모두** `authenticated()`.
 
-Admin: `/api/v1/admin/**` → `hasRole("ADMIN")`.
+Admin: `/api/v1/admin/**` → `hasRole("ADMIN")` (단 `/api/v1/admin/auth/login` 은 permitAll).
+권한 부여 흐름:
+1. JWT → `AuthenticationServiceImpl.validateToken()` 이 `AuthUser(role=user.role)` 반환
+2. `JwtAuthenticationFilter` 가 `SimpleGrantedAuthority("ROLE_" + role.name)` 부여
+3. `hasRole("ADMIN")` 매처가 통과 결정
+→ ADR `0006-admin-role-and-auth.md` 참조.
 
 ### 5.2 JWT
 - HMAC-SHA512, `JWT_SECRET` 환경변수 (base64 32+ bytes)
@@ -203,7 +211,8 @@ Admin: `/api/v1/admin/**` → `hasRole("ADMIN")`.
 
 ```
 frontend/src/
-├── app/
+├── main.tsx                 # 진입점 — pathname 으로 사용자 앱 / 운영자 앱 분기
+├── app/                     # 사용자 앱
 │   ├── App.tsx              # 라우팅 (state 기반, React Router 없음)
 │   └── components/
 │       ├── ui/              # shadcn/ui 원시 컴포넌트
@@ -215,9 +224,17 @@ frontend/src/
 │       ├── ConnectorDashboard.tsx, MatchmakerMarketplaceScreen.tsx
 │       ├── LeagueScreen.tsx, NotificationScreen.tsx, AiHubScreen.tsx
 │       └── (그 외 약 80+ tsx)
+├── app-admin/               # 운영자 앱 (/admin/* 라우트, ADR 0006)
+│   ├── AdminApp.tsx
+│   ├── components/
+│   │   ├── AdminLoginScreen.tsx
+│   │   └── AdminDashboardScreen.tsx
+│   └── lib/
+│       ├── adminAuth.ts     # 별도 token storage (palette.admin.*)
+│       └── adminApi.ts      # admin 전용 API client
 ├── lib/
-│   ├── api/                 # apiClient, phoneVerification, ...
-│   ├── auth/                # authService, tokenStorage
+│   ├── api/                 # apiClient (사용자 앱), phoneVerification, ...
+│   ├── auth/                # authService, tokenStorage (사용자 앱)
 │   ├── config/              # api.config.ts (BASE_URL)
 │   └── feature-flags.ts
 └── styles/
@@ -226,8 +243,12 @@ frontend/src/
     └── fonts.css            # Pretendard
 ```
 
-라우팅: `App.tsx` 의 `currentScreen` state 기반 (React Router 미사용).
-API client: `lib/api/apiClient.ts` — JWT 자동 첨부, 401 시 refresh.
+라우팅:
+- `main.tsx` 가 `window.location.pathname.startsWith("/admin")` 으로 진입점 분기
+- 사용자 앱: `App.tsx` 의 `currentScreen` state 기반
+- 운영자 앱: `AdminApp.tsx` 의 pathname 기반 (`/admin/login` vs `/admin`)
+
+API client: 사용자 `lib/api/apiClient.ts` / 운영자 `app-admin/lib/adminApi.ts` — 토큰 storage 분리.
 
 ---
 
