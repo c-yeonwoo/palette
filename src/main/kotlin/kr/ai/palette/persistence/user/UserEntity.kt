@@ -73,6 +73,20 @@ class UserEntity(
     @Enumerated(EnumType.STRING)
     var role: UserRoleEntity = UserRoleEntity.USER,
 
+    // Status (ACTIVE / SUSPENDED / DORMANT) — 탈퇴는 deletedAt
+    @Column(name = "status", nullable = false, length = 16)
+    @Enumerated(EnumType.STRING)
+    var status: UserStatusEntity = UserStatusEntity.ACTIVE,
+
+    @Column(name = "status_reason", length = 500)
+    var statusReason: String? = null,
+
+    @Column(name = "status_updated_at")
+    var statusUpdatedAt: Instant? = null,
+
+    @Column(name = "status_updated_by", columnDefinition = "BINARY(16)")
+    var statusUpdatedBy: UUID? = null,
+
     // Profile Status
     @Column(name = "is_profile_completed", nullable = false)
     var isProfileCompleted: Boolean = false,
@@ -121,6 +135,7 @@ class UserEntity(
         agreedTermsPrivacy = false,
         agreedAt = Instant.now(),
         role = UserRoleEntity.USER,
+        status = UserStatusEntity.ACTIVE,
     )
 
     @PreUpdate
@@ -149,6 +164,12 @@ enum class AccountTypeEntity {
 enum class UserRoleEntity {
     USER,
     ADMIN
+}
+
+enum class UserStatusEntity {
+    ACTIVE,
+    SUSPENDED,
+    DORMANT
 }
 
 enum class ContactMethodEntity {
