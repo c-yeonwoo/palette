@@ -384,7 +384,7 @@ class DevDataSeeder(
             requesterMessage = "지수씨 소개 부탁드려요! 취향이 잘 맞을 것 같아요.",
             matchmakerDecidedAt = null, matchmakerMessage = null, matchmakerApproved = null,
             targetDecidedAt = null, targetMessage = null, targetAccepted = null,
-            status = "PENDING_MATCHMAKER",
+            status = "PENDING",
             createdAt = ldt.minusDays(2), updatedAt = ldt.minusDays(2),
         ))
 
@@ -398,7 +398,7 @@ class DevDataSeeder(
             matchmakerDecidedAt = ldt.minusDays(1), matchmakerApproved = true,
             matchmakerMessage = "하은씨한테 먼저 물어볼게요! 좋은 인연 될 것 같아요.",
             targetDecidedAt = null, targetMessage = null, targetAccepted = null,
-            status = "PENDING_TARGET",
+            status = "MATCHMAKER_APPROVED",
             createdAt = ldt.minusDays(3), updatedAt = ldt.minusDays(1),
         ))
 
