@@ -16,7 +16,11 @@ data class MatchmakingRequest(
     val targetUserDecision: TargetUserDecision?, // 피주선자의 수락/거절 결정
     val status: MatchmakingRequestStatus,
     val createdAt: LocalDateTime,
-    val updatedAt: LocalDateTime
+    val updatedAt: LocalDateTime,
+    /** 운영자 메모 — 분쟁 대응 / 강제 변경 사유 기록 (ADR 0012) */
+    val adminNote: String? = null,
+    val adminLastUpdatedAt: LocalDateTime? = null,
+    val adminLastUpdatedBy: UserId? = null,
 ) {
     companion object {
         fun create(
@@ -104,8 +108,42 @@ data class MatchmakingRequest(
     fun isTerminal(): Boolean = status in setOf(
         MatchmakingRequestStatus.COMPLETED,
         MatchmakingRequestStatus.REJECTED_BY_MATCHMAKER,
-        MatchmakingRequestStatus.REJECTED_BY_TARGET
+        MatchmakingRequestStatus.REJECTED_BY_TARGET,
+        MatchmakingRequestStatus.CANCELLED_BY_ADMIN,
     )
+
+    /**
+     * 운영자가 매칭 요청을 강제 변경 — 분쟁 대응 / 정책 위반 시 사용.
+     * note 는 필수 (audit 단서).
+     * ADR: docs/DECISIONS/0012-admin-matching-pool.md
+     */
+    fun adminOverride(
+        newStatus: MatchmakingRequestStatus,
+        note: String,
+        operatorId: UserId,
+    ): MatchmakingRequest {
+        require(note.isNotBlank()) { "운영자 변경 사유(note)는 필수입니다" }
+        val now = LocalDateTime.now()
+        return copy(
+            status = newStatus,
+            updatedAt = now,
+            adminNote = note.take(1000),
+            adminLastUpdatedAt = now,
+            adminLastUpdatedBy = operatorId,
+        )
+    }
+
+    /** 운영자 메모만 갱신 (status 변경 없음) */
+    fun adminAttachNote(note: String, operatorId: UserId): MatchmakingRequest {
+        require(note.isNotBlank()) { "메모는 비워둘 수 없습니다" }
+        val now = LocalDateTime.now()
+        return copy(
+            adminNote = note.take(1000),
+            adminLastUpdatedAt = now,
+            adminLastUpdatedBy = operatorId,
+            updatedAt = now,
+        )
+    }
 }
 
 enum class MatchmakingRequestStatus {
@@ -113,5 +151,6 @@ enum class MatchmakingRequestStatus {
     MATCHMAKER_APPROVED,        // 주선자 승인 완료, 피주선자 응답 대기
     REJECTED_BY_MATCHMAKER,     // 주선자 거절 (종료)
     COMPLETED,                  // 매칭 성사 (피주선자 수락)
-    REJECTED_BY_TARGET          // 피주선자 거절 (종료)
+    REJECTED_BY_TARGET,         // 피주선자 거절 (종료)
+    CANCELLED_BY_ADMIN          // 운영자 강제 취소 (분쟁/정책 위반 — ADR 0012)
 }

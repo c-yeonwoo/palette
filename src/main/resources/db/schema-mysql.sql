@@ -422,3 +422,8 @@
 
     create index idx_abt_viewer
         on admin_blocked_targets (viewer_user_id);
+
+    alter table matchmaking_requests
+        add column admin_note text,
+        add column admin_last_updated_at datetime(6),
+        add column admin_last_updated_by BINARY(16);

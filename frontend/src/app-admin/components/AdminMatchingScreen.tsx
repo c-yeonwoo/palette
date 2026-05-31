@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AdminRecommendationsScreen } from "./AdminRecommendationsScreen";
+import { AdminMatchingPoolScreen } from "./AdminMatchingPoolScreen";
 
 type Tab = "ai" | "pool";
 
@@ -41,16 +42,7 @@ export function AdminMatchingScreen({ onBack }: Props) {
 
       {tab === "ai" && <AdminRecommendationsScreen onBack={onBack} embedded />}
 
-      {tab === "pool" && (
-        <main className="max-w-6xl mx-auto px-6 py-12">
-          <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-12 text-center">
-            <p className="text-sm font-medium text-foreground">주선자 매칭 풀</p>
-            <p className="text-xs text-muted-foreground mt-2">
-              MatchmakingRequest 전체 조회 + 운영자 강제 변경 — 다음 PR 에서 추가됩니다.
-            </p>
-          </div>
-        </main>
-      )}
+      {tab === "pool" && <AdminMatchingPoolScreen />}
     </div>
   );
 }

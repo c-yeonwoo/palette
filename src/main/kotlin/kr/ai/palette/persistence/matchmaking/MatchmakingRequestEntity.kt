@@ -61,5 +61,15 @@ class MatchmakingRequestEntity(
     val createdAt: LocalDateTime,
 
     @Column(name = "updated_at", nullable = false)
-    val updatedAt: LocalDateTime
+    val updatedAt: LocalDateTime,
+
+    // 운영자 메모 / 강제 변경 audit (ADR 0012)
+    @Column(name = "admin_note", columnDefinition = "TEXT")
+    val adminNote: String? = null,
+
+    @Column(name = "admin_last_updated_at")
+    val adminLastUpdatedAt: LocalDateTime? = null,
+
+    @Column(name = "admin_last_updated_by", columnDefinition = "BINARY(16)")
+    val adminLastUpdatedBy: UUID? = null,
 )

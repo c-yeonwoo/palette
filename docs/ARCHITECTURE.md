@@ -96,8 +96,9 @@ kr.ai.palette/
 | `/api/v1/auth/beta-code` | `BetaCodeController` | 베타 게이트 status / verify |
 | `/api/v1/admin/auth` | `AdminAuthController` | 운영자 별도 로그인 (role=ADMIN 만 통과) |
 | `/api/v1/admin/users` | `AdminUsersController` | 회원 목록·상세·상태 변경 + 친구·통계·프로필 미리보기 (`/{id}/friends`, `/{id}/stats`, `/{id}/profile`) |
-| `/api/v1/admin/recommendations` | `AdminRecommendationsController` | AI 추천 이력 조회 + **override (REPLACE/BLOCK)** — ADR 0011 |
-| `/api/v1/admin/**` (CS 등) | (PR #8+ 예정) | CS 관리 — `hasRole("ADMIN")` |
+| `/api/v1/admin/recommendations` | `AdminRecommendationsController` | AI 추천 이력 조회 + override (REPLACE/BLOCK) — ADR 0011 |
+| `/api/v1/admin/matchmaking` | `AdminMatchmakingController` | 주선자 매칭 풀 — 강제 status 변경 + 운영자 메모 — ADR 0012 |
+| `/api/v1/admin/**` (CS 등) | (예정) | CS 관리 — `hasRole("ADMIN")` |
 | `/api/v1/profile` | `ProfileController` | 본인 프로필 CRUD, 사진 |
 | `/api/v1/profile/public/*` | `PublicProfileController` | 비공개 토큰 기반 공개 조회 |
 | `/api/v1/share` | `ShareLinkController` | 공유 링크 생성 / 공개 resolve (`/v/{code}`) |

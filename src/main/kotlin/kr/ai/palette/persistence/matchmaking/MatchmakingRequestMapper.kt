@@ -39,7 +39,10 @@ class MatchmakingRequestMapper {
             targetUserDecision = targetUserDecision,
             status = MatchmakingRequestStatus.valueOf(entity.status),
             createdAt = entity.createdAt,
-            updatedAt = entity.updatedAt
+            updatedAt = entity.updatedAt,
+            adminNote = entity.adminNote,
+            adminLastUpdatedAt = entity.adminLastUpdatedAt,
+            adminLastUpdatedBy = entity.adminLastUpdatedBy?.let { UserId(it) },
         )
     }
 
@@ -61,7 +64,10 @@ class MatchmakingRequestMapper {
             // Status and timestamps
             status = domain.status.name,
             createdAt = domain.createdAt,
-            updatedAt = domain.updatedAt
+            updatedAt = domain.updatedAt,
+            adminNote = domain.adminNote,
+            adminLastUpdatedAt = domain.adminLastUpdatedAt,
+            adminLastUpdatedBy = domain.adminLastUpdatedBy?.value,
         )
     }
 }
