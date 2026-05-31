@@ -216,6 +216,28 @@ class AuthController(
         val updatedUser = user.copy(accountType = request.accountType)
         userRepository.save(updatedUser)
 
+        // ADR 0013: MATCHMAKER_ONLY 로 전환 시 Matchmaker entity 자동 생성
+        // (별도 입력 단계 없이 회원가입 데이터로 곧장 주선자 활동 가능)
+        if (request.accountType == AccountType.MATCHMAKER_ONLY &&
+            !matchmakerRepository.existsByUserId(authUser.userId)
+        ) {
+            val now = Instant.now()
+            matchmakerRepository.save(
+                kr.ai.palette.domain.matchmaker.Matchmaker(
+                    id = kr.ai.palette.domain.matchmaker.MatchmakerId(UUID.randomUUID()),
+                    userId = authUser.userId,
+                    stats = kr.ai.palette.domain.matchmaker.MatchmakerStats.initial(),
+                    level = kr.ai.palette.domain.matchmaker.MatchmakerLevel.initial(),
+                    earnings = kr.ai.palette.domain.matchmaker.MatchmakerEarnings.initial(),
+                    profilePhoto = null,
+                    metadata = kr.ai.palette.domain.matchmaker.MatchmakerMetadata(
+                        createdAt = now,
+                        updatedAt = now
+                    )
+                )
+            )
+        }
+
         return ResponseEntity.ok().build()
     }
 }

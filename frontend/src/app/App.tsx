@@ -5,7 +5,7 @@ import { LoginScreen } from "./components/LoginScreen";
 import { EmailLoginScreen } from "./components/EmailLoginScreen";
 import { EmailSignupScreen } from "./components/EmailSignupScreen";
 import { MatchmakerSignupScreen } from "./components/MatchmakerSignupScreen";
-import { MatchmakerInfoScreen } from "./components/MatchmakerInfoScreen";
+// MatchmakerInfoScreen 은 ADR 0013 에서 제거됨 — 회원가입 데이터로 충분
 import { OAuth2RedirectHandler } from "./components/OAuth2RedirectHandler";
 import { RequiredInfoScreen } from "./components/RequiredInfoScreen";
 import { AccountTypeSelectionScreen } from "./components/AccountTypeSelectionScreen";
@@ -49,7 +49,6 @@ type Screen =
   | "emailLogin"
   | "emailSignup"
   | "matchmakerSignup"
-  | "matchmakerInfo"
   | "oauth2Redirect"
   | "requiredInfo"
   | "accountTypeSelection"
@@ -399,8 +398,12 @@ export default function App() {
       // 일반 회원: 프로필 작성으로 이동
       setCurrentScreen("basicInfo");
     } else {
-      // 주선자 전용: 정보 입력 화면으로 이동
-      setCurrentScreen("matchmakerInfo");
+      // 주선자 전용: 회원가입 단계에서 이미 닉네임/휴대폰 받았으므로
+      // 추가 입력 단계 없이 곧장 대시보드로 (ADR 0013)
+      // - 백엔드에서 PATCH /auth/account-type 시 Matchmaker entity 자동 생성
+      // - 프로필 사진 등 주선자 전용 입력은 대시보드에서 나중에
+      setCurrentScreen("connectorDashboard");
+      toast.success("주선자 등록이 완료되었습니다!");
     }
   };
 
@@ -739,17 +742,8 @@ export default function App() {
     }
   };
 
-  const handleMatchmakerInfoComplete = async () => {
-
-    try {
-      // 주선자 정보 입력 완료 후 주선자 대시보드로 이동
-      setCurrentScreen("connectorDashboard");
-      toast.success("주선자 등록이 완료되었습니다!");
-    } catch (error) {
-      console.error('Error after matchmaker info complete:', error);
-      setCurrentScreen("connectorDashboard");
-    }
-  };
+  // matchmakerInfo 화면은 ADR 0013 에서 제거됨. 회원가입 단계의 정보로 충분.
+  // 기존 onComplete 핸들러는 호출 경로가 없어 제거.
 
   const handleProfileClick = (item: any) => {
     setSelectedUserId(item.profile.userId);
@@ -822,12 +816,7 @@ export default function App() {
         />
       )}
 
-      {currentScreen === "matchmakerInfo" && (
-        <MatchmakerInfoScreen
-          onBack={() => setCurrentScreen("accountTypeSelection")}
-          onComplete={handleMatchmakerInfoComplete}
-        />
-      )}
+      {/* matchmakerInfo 화면은 ADR 0013 에서 제거 — 회원가입 데이터로 충분 */}
 
       {currentScreen === "oauth2Redirect" && (
         <OAuth2RedirectHandler
@@ -1089,7 +1078,7 @@ export default function App() {
       )}
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding/detail screens */}
-      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "matchmakerInfo", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "matchDetail", "photoVerify", "colorTest", "inviteHub"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "matchDetail", "photoVerify", "colorTest", "inviteHub"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}

@@ -167,8 +167,10 @@ Admin: `/api/v1/admin/**` → `hasRole("ADMIN")` (단 `/api/v1/admin/auth/login`
 1. 베타 게이트: `POST /api/v1/auth/beta-code/verify` → 쿠키 발급 (TTL 30d)
 2. 휴대폰 인증: `POST /api/v1/verification/phone/send` → `verify` (베타: `000000` bypass)
 3. `POST /api/v1/auth/email/signup` → User 생성, JWT 발급
-4. 프로필 작성 4단계 (BasicInfo → PhotoUpload → AboutMe → IdealType)
-5. `POST /api/v1/ai-profile/generate` → 색깔 + 소개글 (OpenAI, dummy key 시 stub)
+4. AccountType 선택:
+   - REGULAR → 프로필 작성 4단계 (BasicInfo → PhotoUpload → AboutMe → IdealType)
+   - MATCHMAKER_ONLY → 곧장 ConnectorDashboard (`/auth/account-type` PATCH 시 Matchmaker entity 자동 생성, ADR 0013)
+5. (REGULAR 만) `POST /api/v1/ai-profile/generate` → 색깔 + 소개글
 6. User.isProfileCompleted = true
 
 ### 6.2 피드 (2촌 기반)
