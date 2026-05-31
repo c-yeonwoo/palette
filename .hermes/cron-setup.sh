@@ -14,25 +14,26 @@ if [ ! -x "$HERMES" ]; then
   exit 1
 fi
 
-# ~/.hermes/scripts/ 에 symlink — Hermes cron 은 그 디렉토리 안의 script 만 받음
+# ~/.hermes/scripts/ 에 **실제 파일 복사** (Hermes 가 symlink path traversal 차단함)
+# palette repo 의 원본이 변경될 때마다 이 스크립트 재실행해서 sync.
 HERMES_SCRIPT_DIR="$HOME/.hermes/scripts"
 mkdir -p "$HERMES_SCRIPT_DIR"
 for s in palette-pm.sh palette-executor.sh palette-reviewer.sh; do
   src="$SCRIPT_DIR/scripts/$s"
   dst="$HERMES_SCRIPT_DIR/$s"
-  ln -sf "$src" "$dst"
-  echo "  symlink: $dst → $src"
+  cp "$src" "$dst"
+  chmod +x "$dst"
+  echo "  copy: $src → $dst"
 done
 
 # 기존 job 있으면 pass (idempotent)
 if "$HERMES" cron list 2>&1 | grep -q "palette-pm"; then
-  echo "  palette-pm cron 이미 등록됨 (skip)"
+  echo "  palette-pm cron 이미 등록됨 (skip — 재등록하려면 hermes cron remove palette-pm 먼저)"
   exit 0
 fi
 
-# 5분마다 — --no-agent: LLM 안 쓰고 script 만 실행 (watchdog 패턴)
-# --workdir 로 CLAUDE.md 자동 주입 (사실 --no-agent 면 무의미하지만 명시)
-"$HERMES" cron create '5m' \
+# Hermes schedule syntax: 'every 5m' (반복). 단순 '5m' 은 once-only (Repeat 0/1).
+"$HERMES" cron create 'every 5m' \
   --no-agent \
   --script "palette-pm.sh" \
   --workdir "$WORKDIR" \
@@ -42,4 +43,8 @@ fi
 echo ""
 echo "✅ palette-pm cron 등록 완료. 확인:"
 echo "   $HERMES cron list"
-echo "   $HERMES cron run palette-pm    # 즉시 1회 실행 (테스트용)"
+echo "   $HERMES cron run palette-pm    # 다음 scheduler tick 에 1회 실행"
+echo ""
+echo "⚠ Hermes gateway 미설치 시 cron 은 manual trigger 만 — 자동 5분 주기는 안 돕니다."
+echo "  $HERMES status  로 gateway 상태 확인."
+echo "  설치:  $HERMES gateway install   # launchd 서비스로 등록"

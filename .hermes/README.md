@@ -137,6 +137,10 @@ gh pr list -R c-yeonwoo/palette --label "ah:needs-review"
 | 증상 | 원인 / 대응 |
 |------|-------------|
 | `hermes cron list` 에 palette-pm 없음 | `bash .hermes/cron-setup.sh` 재실행 |
+| `Failed to create job: Script path escapes...` | Hermes 가 symlink path-traversal 차단. `cron-setup.sh` 가 cp 로 복사 (sync 필요 시 재실행) |
+| `5m` 으로 등록했는데 "Repeat 0/1" | Hermes 의 once-mode. `'every 5m'` 으로 등록 필요 (cron-setup.sh 가 이미 처리) |
+| `Gateway is not running — cron jobs will NOT fire` | `~/.local/bin/hermes gateway install` 로 launchd 등록. 미설치 시 `hermes cron run palette-pm` 으로 manual trigger 만 가능 |
+| gh API 403/404 (라벨/PR) | `gh auth status` 가 c-yeonwoo 또는 PAT 쓰는 계정인지 확인. nick603 은 palette 에 read-only |
 | Python `ModuleNotFoundError: orchestrator` | `~/dev/agentic-harness/.venv` 미설치 또는 `pip install -e .` 누락 |
 | LLM 401 | `ANTHROPIC_AUTH_TOKEN` 와 `ANTHROPIC_API_KEY` 헷갈림. `sk-ant-oat...` 는 auth_token 으로 |
 | PR fuzzy edit 실패 | `_fuzzy_replace` 도 실패 시 issue 에 ❌ 댓글 부착됨. 사람이 수정 또는 라벨 다시 부착 |
