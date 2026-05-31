@@ -216,11 +216,7 @@ class AiSignalController(
 
 data class AiSignalResponse(
     val recommendations: List<AiSignalRecommendation>,
-    val generatedAt: String,
-    /**
-     * TODO: true → 실제 벡터 유사도 미구현 상태. false → 실제 AI 추천
-     */
-    val isStub: Boolean = true
+    val generatedAt: String
 )
 
 data class AiSignalRecommendation(
