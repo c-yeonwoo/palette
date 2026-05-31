@@ -14,8 +14,7 @@ if [ ! -x "$HERMES" ]; then
   exit 1
 fi
 
-# ~/.hermes/scripts/ 에 **실제 파일 복사** (Hermes 가 symlink path traversal 차단함)
-# palette repo 의 원본이 변경될 때마다 이 스크립트 재실행해서 sync.
+# [1] ~/.hermes/scripts/ 에 cron 스크립트 복사 (Hermes 가 symlink path traversal 차단)
 HERMES_SCRIPT_DIR="$HOME/.hermes/scripts"
 mkdir -p "$HERMES_SCRIPT_DIR"
 for s in palette-pm.sh palette-executor.sh palette-reviewer.sh; do
@@ -23,8 +22,15 @@ for s in palette-pm.sh palette-executor.sh palette-reviewer.sh; do
   dst="$HERMES_SCRIPT_DIR/$s"
   cp "$src" "$dst"
   chmod +x "$dst"
-  echo "  copy: $src → $dst"
+  echo "  script: $src → $dst"
 done
+
+# [2] ~/.hermes/skills/devops/ 에 palette-po SKILL.md 복사 (Hermes skill 등록)
+HERMES_SKILLS_DIR="$HOME/.hermes/skills/devops/palette-po"
+mkdir -p "$HERMES_SKILLS_DIR"
+cp "$SCRIPT_DIR/skills/palette-po/SKILL.md" "$HERMES_SKILLS_DIR/SKILL.md"
+echo "  skill:  $SCRIPT_DIR/skills/palette-po/SKILL.md → $HERMES_SKILLS_DIR/SKILL.md"
+echo "         (확인: hermes skills list | grep palette)"
 
 # 기존 job 있으면 pass (idempotent)
 if "$HERMES" cron list 2>&1 | grep -q "palette-pm"; then
