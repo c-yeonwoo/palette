@@ -21,6 +21,14 @@ REPO="${PALETTE_REPO:-c-yeonwoo/palette}"
 AH_DIR="${AGENTIC_HARNESS_DIR:-$HOME/dev/agentic-harness}"
 REPO_CWD="${PALETTE_REPO_CWD:-$HOME/dev-private/palette}"
 
+# .env 자동 로드 (cron 으로 호출 시 shell env 비어있음 — 토큰을 .env 에 두고 source)
+# 우선순위: agentic-harness/.env (ANTHROPIC_*, GH_TOKEN 등) → palette/.env (있으면)
+for env_file in "$AH_DIR/.env" "$REPO_CWD/.env"; do
+  if [ -f "$env_file" ]; then
+    set -a; . "$env_file"; set +a
+  fi
+done
+
 # agentic-harness venv 점검
 if [ ! -d "$AH_DIR/.venv" ]; then
   echo "❌ $AH_DIR/.venv 없음 — bootstrap 미수행" >&2

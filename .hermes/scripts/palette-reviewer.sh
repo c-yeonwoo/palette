@@ -17,6 +17,13 @@ REPO="${PALETTE_REPO:-c-yeonwoo/palette}"
 AH_DIR="${AGENTIC_HARNESS_DIR:-$HOME/dev/agentic-harness}"
 REPO_CWD="${PALETTE_REPO_CWD:-$HOME/dev-private/palette}"
 
+# .env 자동 로드 (cron 으로 호출 시 shell env 비어있음)
+for env_file in "$AH_DIR/.env" "$REPO_CWD/.env"; do
+  if [ -f "$env_file" ]; then
+    set -a; . "$env_file"; set +a
+  fi
+done
+
 if [ ! -d "$AH_DIR/.venv" ]; then
   echo "❌ $AH_DIR/.venv 없음 — bootstrap 미수행" >&2
   gh pr edit "$PR_N" --repo "$REPO" \

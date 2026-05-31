@@ -24,6 +24,15 @@ REPO="${PALETTE_REPO:-c-yeonwoo/palette}"
 WIP_CAP="${PALETTE_WIP_CAP:-5}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# .env 자동 로드 (cron 으로 호출 시 shell env 비어있음 — PAT 등)
+AH_DIR="${AGENTIC_HARNESS_DIR:-$HOME/dev/agentic-harness}"
+REPO_CWD="${PALETTE_REPO_CWD:-$HOME/dev-private/palette}"
+for env_file in "$AH_DIR/.env" "$REPO_CWD/.env"; do
+  if [ -f "$env_file" ]; then
+    set -a; . "$env_file"; set +a
+  fi
+done
+
 # 0. WIP 가드 ---------------------------------------------------------------
 WIP_ISS=$(gh issue list --repo "$REPO" --label "ah:in-progress" --state open --json number | jq length)
 WIP_PR=$(gh pr list --repo "$REPO" --label "ah:in-progress" --state open --json number | jq length)
