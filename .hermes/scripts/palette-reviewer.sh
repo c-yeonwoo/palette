@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# ============================================================================
+# Palette Reviewer — PR 번호 받아 agentic-harness.run_code_reviewer 호출
+# ============================================================================
+# 호출:
+#   bash palette-reviewer.sh <pr_number>
+#
+# 책임 분리:
+#   diff + linked issue + verdict 판정 + 라벨 전이 모두
+#   agentic-harness 의 agents.run_code_reviewer() 가 처리.
+#   request_changes 시 PR close + linked issue 재트리거도 자동.
+# ============================================================================
+set -euo pipefail
+
+PR_N="${1:?need PR number}"
+REPO="${PALETTE_REPO:-c-yeonwoo/palette}"
+AH_DIR="${AGENTIC_HARNESS_DIR:-$HOME/dev/agentic-harness}"
+REPO_CWD="${PALETTE_REPO_CWD:-$HOME/dev-private/palette}"
+
+if [ ! -d "$AH_DIR/.venv" ]; then
+  echo "❌ $AH_DIR/.venv 없음 — bootstrap 미수행" >&2
+  gh pr edit "$PR_N" --repo "$REPO" \
+    --remove-label "ah:in-progress" --add-label "ah:awaiting-human" || true
+  gh pr comment "$PR_N" --repo "$REPO" \
+    --body "❌ palette-reviewer: agentic-harness venv 미설치 — 사람 확인" || true
+  exit 1
+fi
+
+set +e
+"$AH_DIR/.venv/bin/python" - <<PYEOF
+import asyncio, os, sys
+from pathlib import Path
+sys.path.insert(0, os.environ['AH_DIR'])
+from orchestrator import agents, gh, source_of_truth as sot_mod
+
+async def main():
+    repo = os.environ['REPO']
+    pr_n = int(os.environ['PR_N'])
+    pr = await gh.get_pr(repo, pr_n)
+    sot = sot_mod.SourceOfTruth.from_cwd(Path(os.environ['REPO_CWD']))
+    bot_user = await gh.whoami()
+    ok = await agents.run_code_reviewer(
+        repo=repo, pr=pr, sot=sot, bot_user=bot_user,
+    )
+    sys.exit(0 if ok else 1)
+
+asyncio.run(main())
+PYEOF
+EXIT=$?
+set -e
+
+# 락 해제 (verdict 별 라벨은 run_code_reviewer 가 부여함) ---------------------
+gh pr edit "$PR_N" --repo "$REPO" --remove-label "ah:in-progress" 2>/dev/null || true
+if [ "$EXIT" -ne 0 ]; then
+  gh pr edit "$PR_N" --repo "$REPO" --add-label "ah:awaiting-human" || true
+fi
+
+exit "$EXIT"

@@ -59,8 +59,8 @@ fi
 
 echo ""
 echo "셋업 완료. 다음 단계:"
-echo "  1) Hermes 설치  — curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash"
-echo "  2) agent 등록   — hermes agent add .hermes/agents/palette-{pm,executor,reviewer}.yml"
-echo "  3) PM 시작      — hermes agent start palette-pm"
-echo "  4) test task    — gh issue create -R $REPO --title '...' --label 'ah:needs-execution'"
-echo "  5) 흐름 추적    — gh issue list -R $REPO --label 'ah:needs-execution'"
+echo "  1) Hermes cron 등록  — bash .hermes/cron-setup.sh"
+echo "  2) 동작 확인         — ~/.local/bin/hermes cron list   # palette-pm 보이는지"
+echo "  3) 즉시 1 tick       — ~/.local/bin/hermes cron run palette-pm"
+echo "  4) test task         — gh issue create -R $REPO --title '...' --label 'ah:needs-execution'"
+echo "  5) 흐름 추적         — gh issue list -R $REPO --label 'ah:needs-execution,ah:needs-review,ah:in-progress'"
