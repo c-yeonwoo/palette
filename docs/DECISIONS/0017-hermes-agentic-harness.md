@@ -52,15 +52,23 @@ cron job: 1개 (palette-pm, `5m`, `--no-agent`, workdir=palette repo)
 | `ah:awaiting-human`  | 사람 결정 대기 |
 | `ah:in-progress`     | 워커 점유 락 (자동 부여/해제) |
 
-### 4. 흐름
+### 4. 흐름 (PO → cron → executor → reviewer)
 
-1. `gh issue create + ah:needs-execution`
-2. Hermes cron (5m) → `palette-pm.sh` → 큐 스캔 (PR 우선) → 락 부여 → executor/reviewer 호출
-3. executor → ReAct → worktree + push → `gh pr create --label ah:needs-review`
-4. 다음 tick → reviewer → verdict
+0. **사람**이 `/add-task <자연어>` (Claude Code slash command, palette/.claude/commands/add-task.md)
+1. **PO skill** (= Claude Code LLM 단계) 가 palette SOT 읽고 scope/AC/affected files/hints 채워
+   `gh issue create + ah:needs-execution` 호출 (= `ah add-task` CLI 와 같은 역할)
+2. **Hermes cron** (5m) → `palette-pm.sh` → 큐 스캔 (PR 우선) → 락 부여 → executor/reviewer 호출
+3. **executor** → ReAct → worktree + push → `gh pr create --label ah:needs-review`
+4. 다음 tick → **reviewer** → verdict
    - approve/concerns_noted → `ah:awaiting-human` (사람 merge)
    - request_changes → PR close + linked issue 에 `ah:needs-execution` 재부착 (재시도)
-5. 사람 merge → `Closes #N` 으로 issue 자동 close
+5. 사람 **merge** → `Closes #N` 으로 issue 자동 close
+
+PO 분리의 이유:
+- 사람의 어수선한 자연어를 잘 정리된 issue 로 변환하는 작업은 LLM 가치 큼 (executor 시간 절약)
+- 사람이 `gh issue create` 직접 치면 그 변환이 빠짐 → 다이어그램의 `po skill` 박스가 비어버림
+- LLM 단계 = Claude Code slash command (현 세션의 컨텍스트 활용)
+- Hermes 안에도 PO 가 들어갈 수 있지만 (skill) 현 트랙은 Claude Code 안
 
 ### 5. WIP / 안전 정책
 
