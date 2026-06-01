@@ -12,6 +12,7 @@ import { CheckCircle2, XCircle, Coins, Loader2, ChevronLeft, Award, ChevronRight
 import { LevelBar } from "./ui/level-bar";
 import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
+import { isMockdataUser } from "../../lib/mockdata-guard";
 import { MessageModal } from "./MessageModal";
 import { getCompatibilityDeterministic, COLOR_META, type ColorType } from "../../lib/colorCompatibility";
 
@@ -176,6 +177,8 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
   const [matchmakerData, setMatchmakerData] = useState<MatchmakerData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [requests, setRequests] = useState<MatchRequest[]>([]);
+  const [canShowMock, setCanShowMock] = useState(false);
+  const [checkedMockPolicy, setCheckedMockPolicy] = useState(false);
 
   // Modal state
   const [showMessageModal, setShowMessageModal] = useState(false);
@@ -203,6 +206,12 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
   const fetchData = async () => {
     try {
       setIsLoading(true);
+      // 먼저 사용자 정보 확인 — mockdata 판별
+      const me = await api.get<{ email?: string; nickname?: string }>('/api/v1/auth/me');
+      const isMock = isMockdataUser(me);
+      setCanShowMock(isMock);
+      setCheckedMockPolicy(true);
+
       const [matchmakerRes, requestsResponse] = await Promise.all([
         api.get<MatchmakerData>('/api/v1/matchmakers/me'),
         api.get<{ requests: MatchRequest[]; totalCount: number }>('/api/v1/matchmaking/requests')
@@ -210,37 +219,48 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
       setMatchmakerData(matchmakerRes);
       setRequests(requestsResponse.requests);
 
-      // Load members and applications (with mock fallback in dev only)
+      // Load members and applications (with mock fallback only for mockdata users in DEV)
       try {
         const membersRes = await api.get<{ members: ClientMember[] }>('/api/v1/matchmakers/me/members');
         setMembers(membersRes.members);
       } catch {
-        if (import.meta.env.DEV) setMembers(MOCK_MEMBERS);
+        if (import.meta.env.DEV && isMock) setMembers(MOCK_MEMBERS);
       }
       try {
         const nudgesRes = await api.get<{ nudges: NudgeProposal[] }>('/api/v1/matchmakers/me/nudges');
         setNudges(nudgesRes.nudges);
       } catch {
-        if (import.meta.env.DEV) setNudges(MOCK_NUDGES);
+        if (import.meta.env.DEV && isMock) setNudges(MOCK_NUDGES);
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
-      // Use mock data as fallback when API is unavailable (dev only)
-      if (import.meta.env.DEV) {
+      // Use mock data as fallback only for mockdata users in DEV
+      if (import.meta.env.DEV && canShowMock) {
         setMatchmakerData(MOCK_MATCHMAKER_DATA);
         setRequests(MOCK_REQUESTS);
         setMembers(MOCK_MEMBERS);
         setNudges(MOCK_NUDGES);
       }
+      setCheckedMockPolicy(true);
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !checkedMockPolicy) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!canShowMock) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 text-center">
+        <p className="text-base font-semibold text-foreground">주선 데이터가 아직 없어요</p>
+        <p className="text-sm text-muted-foreground mt-2">실제 주선 요청이 생기면 이 화면에서 확인할 수 있어요.</p>
+        <button onClick={onBack} className="mt-5 text-sm text-primary font-medium">뒤로 가기</button>
       </div>
     );
   }
