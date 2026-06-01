@@ -3,7 +3,7 @@
  * 발신자별 좌/우 정렬 + 채널 라벨 칩 + 컬러 타입 점
  */
 import { Lock } from "lucide-react";
-import type { Message } from "../../../data/mock-conversations";
+import type { Message } from "../../../lib/conversation-visibility";
 import { getChannelLabel } from "../../../lib/conversation-visibility";
 import { cn } from "../ui/utils";
 
