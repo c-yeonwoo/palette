@@ -30,8 +30,8 @@ human → task queue → [palette-po (이 skill)] → github issue + ah:needs-ex
 ## Prerequisites
 
 - `gh` CLI 인증 완료 (`gh auth status`) — c-yeonwoo/palette 에 **write 권한 필요**
-- 환경변수 `PALETTE_AGENT_PAT` 가 있으면 그것을, 없으면 `gh` 가 인증된 계정 사용
-- palette repo 가 `~/dev-private/palette` 에 clone 되어 있어야 SOT 읽기 가능
+- 환경변수 `PROJECT_AGENT_PAT` 가 있으면 그것을, 없으면 `gh` 가 인증된 계정 사용
+- palette repo 가 `/Users/ys.choi/dev-private/palette` 에 clone 되어 있어야 SOT 읽기 가능
 
 ## Inputs
 
@@ -45,10 +45,10 @@ human → task queue → [palette-po (이 skill)] → github issue + ah:needs-ex
 ### 1. SOT 가벼운 스캔
 
 다음 파일들의 헤더만 읽어 컨텍스트 잡기 (full read 금지 — 토큰 절약):
-- `~/dev-private/palette/docs/GLOSSARY.md` — 도메인 용어
-- `~/dev-private/palette/docs/ARCHITECTURE.md` — 패키지 구조
-- `~/dev-private/palette/docs/CONVENTIONS.md` — 절대 룰
-- `~/dev-private/palette/docs/DECISIONS/` 의 최근 3개 ADR title
+- `/Users/ys.choi/dev-private/palette/docs/GLOSSARY.md` — 도메인 용어
+- `/Users/ys.choi/dev-private/palette/docs/ARCHITECTURE.md` — 패키지 구조
+- `/Users/ys.choi/dev-private/palette/docs/CONVENTIONS.md` — 절대 룰
+- `/Users/ys.choi/dev-private/palette/docs/DECISIONS/` 의 최근 3개 ADR title
 
 ### 2. Scope 판정
 
@@ -118,7 +118,7 @@ EOF
 ### 6. 권한 오류 시 (HTTP 403/404)
 
 `gh CLI` 가 read-only 계정으로 인증된 경우:
-- 안내: `export PALETTE_AGENT_PAT=ghp_...` 필요
+- 안내: `export PROJECT_AGENT_PAT=ghp_...` 필요
 - 또는 `gh auth switch` 로 write 권한 계정 사용
 - Issue body 는 출력만 하고 실제 create 는 보류
 

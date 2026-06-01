@@ -88,7 +88,7 @@
 
 ```bash
 # 1. 환경변수
-export PALETTE_AGENT_PAT="ghp_..."            # repo + write + pr 권한
+export PROJECT_AGENT_PAT="ghp_..."            # repo + write + pr 권한
 export ANTHROPIC_AUTH_TOKEN="sk-ant-oat..."   # 또는 ANTHROPIC_API_KEY
 
 # 2. agentic-harness venv 점검 (없으면 setup)
@@ -112,7 +112,7 @@ bash .hermes/cron-setup.sh
 
 ```text
 # 0. shell alias 활성화 (1회 — ~/.zshrc 에 한 줄 추가)
-   echo 'source ~/dev-private/palette/.hermes/aliases.sh' >> ~/.zshrc
+   echo 'source /Users/ys.choi/dev-private/palette/.hermes/aliases.sh' >> ~/.zshrc
    source ~/.zshrc
 
 # 1. test task — 두 트랙 중 한 가지
@@ -138,7 +138,7 @@ gh pr list -R c-yeonwoo/palette --label "ah:needs-review"
 
 ## WIP / 안전 정책
 
-- 동시 `ah:in-progress` ≤ **5** (pm 가드, `PALETTE_WIP_CAP` 로 override)
+- 동시 `ah:in-progress` ≤ **5** (pm 가드, `PROJECT_WIP_CAP` 로 override)
 - stale 30분 → `ah:awaiting-human` 으로 escalate (TODO)
 - 재진입 cap 없음 — 사람이 라벨 떼서 멈춤
 
