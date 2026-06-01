@@ -24,6 +24,16 @@ for env_file in "$AH_DIR/.env" "$REPO_CWD/.env"; do
   fi
 done
 
+# PAT 별칭 정규화 — PALETTE_AGENT_PAT > GH_TOKEN > GITHUB_TOKEN
+if [ -n "${PALETTE_AGENT_PAT:-}" ]; then
+  export GH_TOKEN="$PALETTE_AGENT_PAT"
+  export GITHUB_TOKEN="$PALETTE_AGENT_PAT"
+fi
+
+# 빈 env 가드 — Anthropic SDK 가 ANTHROPIC_BASE_URL="" 자동 사용해 connection error
+[ -z "${ANTHROPIC_BASE_URL:-}" ] && unset ANTHROPIC_BASE_URL || true
+[ -z "${ANTHROPIC_AUTH_TOKEN:-}" ] && unset ANTHROPIC_AUTH_TOKEN || true
+
 if [ ! -d "$AH_DIR/.venv" ]; then
   echo "❌ $AH_DIR/.venv 없음 — bootstrap 미수행" >&2
   gh pr edit "$PR_N" --repo "$REPO" \
@@ -33,8 +43,10 @@ if [ ! -d "$AH_DIR/.venv" ]; then
   exit 1
 fi
 
+export AH_DIR REPO REPO_CWD PR_N
+
 set +e
-"$AH_DIR/.venv/bin/python" - <<PYEOF
+"$AH_DIR/.venv/bin/python" - <<'PYEOF'
 import asyncio, os, sys
 from pathlib import Path
 sys.path.insert(0, os.environ['AH_DIR'])
@@ -44,7 +56,7 @@ async def main():
     repo = os.environ['REPO']
     pr_n = int(os.environ['PR_N'])
     pr = await gh.get_pr(repo, pr_n)
-    sot = sot_mod.SourceOfTruth.from_cwd(Path(os.environ['REPO_CWD']))
+    sot = await sot_mod.discover(Path(os.environ['REPO_CWD']))
     bot_user = await gh.whoami()
     ok = await agents.run_code_reviewer(
         repo=repo, pr=pr, sot=sot, bot_user=bot_user,

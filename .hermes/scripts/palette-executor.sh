@@ -16,7 +16,8 @@
 # ============================================================================
 set -euo pipefail
 
-ISSUE_N="${1:?need issue number}"
+TARGET_N="${1:?need number}"
+KIND="${2:-issue}"          # 'issue' (default, 신규) | 'pr' (amend mode)
 REPO="${PALETTE_REPO:-c-yeonwoo/palette}"
 AH_DIR="${AGENTIC_HARNESS_DIR:-$HOME/dev/agentic-harness}"
 REPO_CWD="${PALETTE_REPO_CWD:-$HOME/dev-private/palette}"
@@ -29,19 +30,32 @@ for env_file in "$AH_DIR/.env" "$REPO_CWD/.env"; do
   fi
 done
 
+# PAT 별칭 정규화 — PALETTE_AGENT_PAT > GH_TOKEN > GITHUB_TOKEN
+if [ -n "${PALETTE_AGENT_PAT:-}" ]; then
+  export GH_TOKEN="$PALETTE_AGENT_PAT"
+  export GITHUB_TOKEN="$PALETTE_AGENT_PAT"
+fi
+
+# 빈 env 가드 — Anthropic SDK 가 ANTHROPIC_BASE_URL="" 자동 사용해 connection error
+[ -z "${ANTHROPIC_BASE_URL:-}" ] && unset ANTHROPIC_BASE_URL || true
+[ -z "${ANTHROPIC_AUTH_TOKEN:-}" ] && unset ANTHROPIC_AUTH_TOKEN || true
+
 # agentic-harness venv 점검
 if [ ! -d "$AH_DIR/.venv" ]; then
   echo "❌ $AH_DIR/.venv 없음 — bootstrap 미수행" >&2
-  gh issue edit "$ISSUE_N" --repo "$REPO" \
+  gh "$KIND" edit "$TARGET_N" --repo "$REPO" \
     --remove-label "ah:in-progress" --add-label "ah:awaiting-human" || true
-  gh issue comment "$ISSUE_N" --repo "$REPO" \
+  gh "$KIND" comment "$TARGET_N" --repo "$REPO" \
     --body "❌ palette-executor: agentic-harness venv 미설치 — 사람 확인" || true
   exit 1
 fi
 
 # entrypoint 실행 -----------------------------------------------------------
+# python child process 가 받을 수 있도록 명시적 export
+export AH_DIR REPO REPO_CWD TARGET_N KIND
+
 set +e
-"$AH_DIR/.venv/bin/python" - <<PYEOF
+"$AH_DIR/.venv/bin/python" - <<'PYEOF'
 import asyncio, os, sys
 from pathlib import Path
 sys.path.insert(0, os.environ['AH_DIR'])
@@ -49,17 +63,24 @@ from orchestrator import agents, gh, source_of_truth as sot_mod
 
 async def main():
     repo = os.environ['REPO']
-    issue_n = int(os.environ['ISSUE_N'])
-    issue = await gh.get_issue(repo, issue_n)
-    sot = sot_mod.SourceOfTruth.from_cwd(Path(os.environ['REPO_CWD']))
+    target_n = int(os.environ['TARGET_N'])
+    kind = os.environ.get('KIND', 'issue')
+    sot = await sot_mod.discover(Path(os.environ['REPO_CWD']))
     bot_user = await gh.whoami()
-    ok = await agents.run_code_executor(
-        repo=repo,
-        issue=issue,
-        sot=sot,
-        bot_user=bot_user,
-        repo_cwd=Path(os.environ['REPO_CWD']),
-    )
+    repo_cwd = Path(os.environ['REPO_CWD'])
+
+    if kind == 'pr':
+        # amend mode — PR 의 branch 에 추가 commit
+        pr = await gh.get_pr(repo, target_n)
+        ok = await agents.run_code_executor_amend(
+            repo=repo, pr=pr, sot=sot, bot_user=bot_user, repo_cwd=repo_cwd,
+        )
+    else:
+        # 신규 mode — issue → 새 PR
+        issue = await gh.get_issue(repo, target_n)
+        ok = await agents.run_code_executor(
+            repo=repo, issue=issue, sot=sot, bot_user=bot_user, repo_cwd=repo_cwd,
+        )
     sys.exit(0 if ok else 1)
 
 asyncio.run(main())
@@ -67,10 +88,10 @@ PYEOF
 EXIT=$?
 set -e
 
-# 락 해제 (성공 시 agents.run_code_executor 가 ah:needs-execution 제거함 — 락만) -
-gh issue edit "$ISSUE_N" --repo "$REPO" --remove-label "ah:in-progress" 2>/dev/null || true
+# 락 해제 (성공 시 agents.run_code_executor* 가 라벨 swap 처리 — 락만) ---
+gh "$KIND" edit "$TARGET_N" --repo "$REPO" --remove-label "ah:in-progress" 2>/dev/null || true
 if [ "$EXIT" -ne 0 ]; then
-  gh issue edit "$ISSUE_N" --repo "$REPO" --add-label "ah:awaiting-human" || true
+  gh "$KIND" edit "$TARGET_N" --repo "$REPO" --add-label "ah:awaiting-human" || true
 fi
 
 exit "$EXIT"

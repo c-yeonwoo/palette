@@ -61,7 +61,8 @@ cron job: 1개 (palette-pm, `5m`, `--no-agent`, workdir=palette repo)
 3. **executor** → ReAct → worktree + push → `gh pr create --label ah:needs-review`
 4. 다음 tick → **reviewer** → verdict
    - approve/concerns_noted → `ah:awaiting-human` (사람 merge)
-   - request_changes → PR close + linked issue 에 `ah:needs-execution` 재부착 (재시도)
+   - request_changes → **PR 유지** + `ah:needs-review` 제거 + `ah:needs-execution` 부착
+     → 다음 tick 에서 executor amend mode 가 같은 branch 에 추가 commit (PoC 검증됨)
 5. 사람 **merge** → `Closes #N` 으로 issue 자동 close
 
 PO 분리의 이유:
@@ -83,10 +84,33 @@ PO 분리의 이유:
 - agentic-harness 가 검증한 모든 핵심 결정 (ReAct, fuzzy edit, SOT, Closes #N, OAuth token) 그대로 준수
 - palette 베타 운영 중인데 main 직접 push 의 위험은 reviewer + 사람 merge 단계에서 차단
 
+## PoC 결과 (Phase C / D)
+
+**검증된 흐름 (사람 개입: PO 자연어 입력 + 최종 merge 만)**:
+- ✅ Hermes cron `every 5m` + `--no-agent --script` watchdog
+- ✅ PO 자연어 → issue 분할 (Hermes skill `palette-po`, sonnet-4-5)
+- ✅ executor 신규 PR (ReAct 8 iter + edit action + worktree + `Closes #N`)
+- ✅ reviewer approve → `ah:awaiting-human` → 사람 merge → issue 자동 close (#10 / PR #12)
+- ✅ reviewer request_changes → **PR 유지 + 라벨 swap** (수정된 새 흐름)
+- ✅ executor amend mode (existing_branch 체크아웃 + 추가 commit, PoC 동작 확인)
+- ✅ executor 실패 시 atomicity (edit 매칭 실패 → push 안 됨 + `ah:awaiting-human` escalate)
+- ✅ rate limit / connection error 처리 (자동 retry + sliding window)
+
+**cost / latency (1 사이클 평균)**:
+- PO: $0.10 (~30초)
+- executor: $0.30~$0.40 (~5분)
+- reviewer: $0.02~$0.04 (~15초)
+- 총: **~$0.5 / 사이클**, **~6분**
+
+**핵심 설계 결정 정정**:
+- 핵심 결정 #7 ("request_changes → PR close + issue 재트리거") 폐기 →
+  "PR 유지 + 라벨 swap + amend mode" 로 변경 (사용자 지적: review thread / git history 보존)
+
 ## Follow-up
 
-- Phase B — 환경 점검 + cron 등록 + smoke test (`hermes cron run palette-pm`)
-- Phase C — 한 사이클 검증 (작은 test task → PR → merge → close)
-- Phase D — 비용 / latency / 안정성 보고. 본 프로젝트 확대 권장 여부
-- 추후: PO agent (사람 자연어 → issue 생성) 를 Hermes chat 또는 skill 로
+- agentic-harness 정식 git 저장소화 (현재 로컬 작업본) + 변경 사항 commit
+- LLM edit 매칭 실패 시 자동 retry (`max_iterations` 안에서 prompt 보정 후 재시도)
+- amend mode 의 prompt 강화 — reviewer comment 의 file:line 매핑 더 정확히
+- gateway install — `hermes gateway install` 로 5분 자동 활성
 - 추후: sot-manager (merge 후 ARCHITECTURE 자동 갱신) — agentic-harness Phase 3
+- 추후: issue-finder (코드베이스 자동 스캔 → issue 생성) — agentic-harness Phase 2

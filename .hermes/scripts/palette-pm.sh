@@ -33,6 +33,17 @@ for env_file in "$AH_DIR/.env" "$REPO_CWD/.env"; do
   fi
 done
 
+# PAT 별칭 정규화 — PALETTE_AGENT_PAT > GH_TOKEN > GITHUB_TOKEN.
+# .env 의 빈 줄 (GH_TOKEN=) 이 inherited 환경을 덮어쓸 수 있어 명시적 우선순위.
+if [ -n "${PALETTE_AGENT_PAT:-}" ]; then
+  export GH_TOKEN="$PALETTE_AGENT_PAT"
+  export GITHUB_TOKEN="$PALETTE_AGENT_PAT"
+fi
+
+# 빈 env 가드 — Anthropic SDK 가 ANTHROPIC_BASE_URL="" 을 자동 사용해 connection error 유발
+[ -z "${ANTHROPIC_BASE_URL:-}" ] && unset ANTHROPIC_BASE_URL || true
+[ -z "${ANTHROPIC_AUTH_TOKEN:-}" ] && unset ANTHROPIC_AUTH_TOKEN || true
+
 # 0. WIP 가드 ---------------------------------------------------------------
 WIP_ISS=$(gh issue list --repo "$REPO" --label "ah:in-progress" --state open --json number | jq length)
 WIP_PR=$(gh pr list --repo "$REPO" --label "ah:in-progress" --state open --json number | jq length)
@@ -41,37 +52,50 @@ if [ "$WIP" -ge "$WIP_CAP" ]; then
   echo "WIP=$WIP >= $WIP_CAP, skip"; exit 0
 fi
 
-# 1. 큐 스캔 (PR 우선) -------------------------------------------------------
-TARGET_KIND=""; TARGET_NUM=""; WORKER=""
+# 1. 큐 스캔 (우선순위) ------------------------------------------------------
+#   1) PR ah:needs-review            (reviewer)
+#   2) PR ah:needs-execution         (executor amend — reviewer 가 changes 요구)
+#   3) issue ah:needs-execution      (executor new — 신규 task)
+TARGET_KIND=""; TARGET_NUM=""; WORKER=""; AMEND=""
 
-PR_NUM=$(gh pr list --repo "$REPO" --label "ah:needs-review" --state open \
+PR_REVIEW=$(gh pr list --repo "$REPO" --label "ah:needs-review" --state open \
         --json number,createdAt --jq 'sort_by(.createdAt) | .[0].number // empty')
-if [ -n "$PR_NUM" ]; then
-  TARGET_KIND=pr; TARGET_NUM="$PR_NUM"; WORKER="palette-reviewer"
+PR_AMEND=$(gh pr list --repo "$REPO" --label "ah:needs-execution" --state open \
+        --json number,createdAt --jq 'sort_by(.createdAt) | .[0].number // empty')
+ISS_NEW=$(gh issue list --repo "$REPO" --label "ah:needs-execution" --state open \
+        --json number,createdAt --jq 'sort_by(.createdAt) | .[0].number // empty')
+
+if [ -n "$PR_REVIEW" ]; then
+  TARGET_KIND=pr;    TARGET_NUM="$PR_REVIEW"; WORKER="palette-reviewer"
+elif [ -n "$PR_AMEND" ]; then
+  TARGET_KIND=pr;    TARGET_NUM="$PR_AMEND";  WORKER="palette-executor"; AMEND="1"
+elif [ -n "$ISS_NEW" ]; then
+  TARGET_KIND=issue; TARGET_NUM="$ISS_NEW";   WORKER="palette-executor"
 else
-  ISS_NUM=$(gh issue list --repo "$REPO" --label "ah:needs-execution" --state open \
-            --json number,createdAt --jq 'sort_by(.createdAt) | .[0].number // empty')
-  if [ -z "$ISS_NUM" ]; then
-    # idle — Hermes cron --no-agent 는 empty stdout 이면 silent 전달 안 함
-    exit 0
-  fi
-  TARGET_KIND=issue; TARGET_NUM="$ISS_NUM"; WORKER="palette-executor"
+  exit 0   # idle — Hermes cron --no-agent 는 empty stdout 이면 silent
 fi
 
 # 2. 락 부여 ----------------------------------------------------------------
 SUBCMD="$([ "$TARGET_KIND" = "pr" ] && echo pr || echo issue)"
-QUEUE_LABEL="$([ "$TARGET_KIND" = "pr" ] && echo ah:needs-review || echo ah:needs-execution)"
+# 큐 라벨: PR review → needs-review, PR amend / issue new → needs-execution
+if [ "$WORKER" = "palette-reviewer" ]; then
+  QUEUE_LABEL="ah:needs-review"
+else
+  QUEUE_LABEL="ah:needs-execution"
+fi
 
 gh "$SUBCMD" edit "$TARGET_NUM" --repo "$REPO" \
   --remove-label "$QUEUE_LABEL" --add-label "ah:in-progress" >/dev/null
 gh "$SUBCMD" comment "$TARGET_NUM" --repo "$REPO" \
-  --body "🤖 palette-pm · $(date -Iseconds) · dispatch → $WORKER" >/dev/null
+  --body "🤖 palette-pm · $(date -Iseconds) · dispatch → $WORKER$([ -n "$AMEND" ] && echo ' (amend)')" >/dev/null
 
-# 3. 워커 호출 (foreground — 한 tick 안에 처리, timeout 은 Hermes 가 관리) ----
-echo "dispatched #$TARGET_NUM → $WORKER (WIP $((WIP+1))/$WIP_CAP)"
+# 3. 워커 호출 (foreground — 한 tick 안에 처리) ------------------------------
+echo "dispatched #$TARGET_NUM → $WORKER$([ -n "$AMEND" ] && echo ' (amend)') (WIP $((WIP+1))/$WIP_CAP)"
 
 if [ "$WORKER" = "palette-executor" ]; then
-  exec bash "$SCRIPT_DIR/palette-executor.sh" "$TARGET_NUM"
+  # AMEND 면 두 번째 인자 'pr' 로, 신규면 'issue'
+  KIND="$([ -n "$AMEND" ] && echo pr || echo issue)"
+  exec bash "$SCRIPT_DIR/palette-executor.sh" "$TARGET_NUM" "$KIND"
 else
   exec bash "$SCRIPT_DIR/palette-reviewer.sh" "$TARGET_NUM"
 fi
