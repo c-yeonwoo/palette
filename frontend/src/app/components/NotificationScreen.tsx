@@ -27,11 +27,7 @@ import {
   X as XIcon,
 } from "lucide-react";
 import { cn } from "./ui/utils";
-import {
-  MOCK_NOTIFICATIONS,
-  type AppNotification,
-  type NotificationCategory,
-} from "../../data/mock-notifications";
+import type { AppNotification, NotificationCategory } from "../../types/notification";
 import {
   CATEGORY_LABELS,
   filterByCategory,
@@ -77,7 +73,7 @@ const CATEGORY_ICON_COLOR: Record<NotificationCategory, string> = {
 
 export function NotificationScreen({ onBack, onOpenMatch }: NotificationScreenProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
-  const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
   const markRead = useCallback((id: string) => {
     setNotifications((prev) =>
