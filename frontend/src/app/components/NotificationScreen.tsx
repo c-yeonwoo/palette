@@ -8,7 +8,7 @@
  *   - 빈 상태 Empty State
  *   - 읽지 않은 배지 (탭별 카운트)
  */
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   ArrowLeft,
   Bell,
@@ -38,6 +38,8 @@ import {
   formatRelativeTime,
   countUnread,
 } from "../../lib/notifications";
+import { api } from "../../lib/api/apiClient";
+import { isMockdataUser } from "../../lib/mockdata-guard";
 import { getColorTypeMeta } from "../../lib/colorTypes";
 
 interface NotificationScreenProps {
@@ -77,7 +79,19 @@ const CATEGORY_ICON_COLOR: Record<NotificationCategory, string> = {
 
 export function NotificationScreen({ onBack, onOpenMatch }: NotificationScreenProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
-  const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const me = await api.get<{ email?: string; nickname?: string }>("/api/v1/auth/me");
+        setNotifications(isMockdataUser(me) ? MOCK_NOTIFICATIONS : []);
+      } catch {
+        setNotifications([]);
+      }
+    };
+    init();
+  }, []);
 
   const markRead = useCallback((id: string) => {
     setNotifications((prev) =>

@@ -8,7 +8,7 @@
  *   - 주선자 카드 (레벨 배지, 컬러 원, 성사율, 별점, 커미션, 전문분야 칩)
  *   - 현재 모집 마감인 주선자 시각적 구분
  */
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   ArrowLeft,
   Search,
@@ -25,6 +25,8 @@ import {
   LEVEL_META,
   type MarketplaceMatchmaker,
 } from "../../data/mock-marketplace";
+import { api } from "../../lib/api/apiClient";
+import { isMockdataUser } from "../../lib/mockdata-guard";
 
 type SortKey = "success" | "rating" | "recent";
 
@@ -47,6 +49,22 @@ export function MatchmakerMarketplaceScreen({
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [sort, setSort] = useState<SortKey>("success");
   const [showFilter, setShowFilter] = useState(false);
+  const [canShowMock, setCanShowMock] = useState(false);
+  const [checkedMockPolicy, setCheckedMockPolicy] = useState(false);
+
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const me = await api.get<{ email?: string; nickname?: string }>("/api/v1/auth/me");
+        setCanShowMock(isMockdataUser(me));
+      } catch {
+        setCanShowMock(false);
+      } finally {
+        setCheckedMockPolicy(true);
+      }
+    };
+    check();
+  }, []);
 
   const filtered = useMemo(() => {
     let list = [...MOCK_MARKETPLACE];
@@ -86,6 +104,20 @@ export function MatchmakerMarketplaceScreen({
     m.totalRequests > 0
       ? Math.round((m.successfulMatches / m.totalRequests) * 100)
       : 0;
+
+  if (!checkedMockPolicy) {
+    return <div className="min-h-screen bg-background" />;
+  }
+
+  if (!canShowMock) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 text-center">
+        <p className="text-base font-semibold text-text-primary">주선자 데이터가 아직 없어요</p>
+        <p className="text-sm text-text-tertiary mt-2">실제 주선자 데이터가 준비되면 이 화면에서 확인할 수 있어요.</p>
+        <button onClick={onBack} className="mt-5 text-sm text-brand font-medium">뒤로 가기</button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">

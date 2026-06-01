@@ -9,7 +9,7 @@
  * 우상단: SafetyMenu (F03)
  * Sticky Bottom: MatchActionBar (F01) + F13 PaywallSheet
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,6 +31,8 @@ import { getVisibleProfile } from "../../lib/profile-visibility";
 import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
 import { useTickets } from "../../lib/tickets";
 import { MOCK_MATCHES } from "../../data/mock-matches";
+import { api } from "../../lib/api/apiClient";
+import { isMockdataUser } from "../../lib/mockdata-guard";
 import { cn } from "./ui/utils";
 
 interface MatchDetailScreenProps {
@@ -42,12 +44,43 @@ interface MatchDetailScreenProps {
 type Tab = "profile" | "chat";
 
 export function MatchDetailScreen({ matchId, onBack, onNavigateToChat }: MatchDetailScreenProps) {
+  const [canShowMock, setCanShowMock] = useState<boolean>(false);
+  const [checkedMockPolicy, setCheckedMockPolicy] = useState(false);
+
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const me = await api.get<{ email?: string; nickname?: string }>("/api/v1/auth/me");
+        setCanShowMock(isMockdataUser(me));
+      } catch {
+        setCanShowMock(false);
+      } finally {
+        setCheckedMockPolicy(true);
+      }
+    };
+    check();
+  }, []);
+
+  if (!checkedMockPolicy) {
+    return <div className="min-h-screen bg-background" />;
+  }
+
+  if (!canShowMock) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 text-center">
+        <p className="text-base font-semibold text-text-primary">매칭 데이터가 아직 없어요</p>
+        <p className="text-sm text-text-tertiary mt-2">실제 매칭이 생성되면 이 화면에서 확인할 수 있어요.</p>
+        <button onClick={onBack} className="mt-5 text-sm text-brand font-medium">뒤로 가기</button>
+      </div>
+    );
+  }
+
   const match = MOCK_MATCHES.find((m) => m.matchId === (matchId ?? "match-001")) ?? MOCK_MATCHES[0];
   const { balance, spend, earn } = useTickets();
 
   const [tab, setTab] = useState<Tab>("profile");
   const [paywallOpen, setPaywallOpen] = useState(false);
-  const [localStatus, setLocalStatus] = useState<MatchDetail["status"]>(match.status);
+  const [localStatus, setLocalStatus] = useState<typeof match.status>(match.status);
 
   const visCtx = {
     viewerId: "me-001",
