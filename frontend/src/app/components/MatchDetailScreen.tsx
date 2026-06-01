@@ -30,7 +30,7 @@ import { calculateMatchScore } from "../../lib/match-score";
 import { getVisibleProfile } from "../../lib/profile-visibility";
 import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
 import { useTickets } from "../../lib/tickets";
-import { MOCK_MATCHES } from "../../data/mock-matches";
+// Mock data 제거 — API 연동 시 여기서 실제 데이터 사용
 import { cn } from "./ui/utils";
 
 interface MatchDetailScreenProps {
@@ -42,7 +42,20 @@ interface MatchDetailScreenProps {
 type Tab = "profile" | "chat";
 
 export function MatchDetailScreen({ matchId, onBack, onNavigateToChat }: MatchDetailScreenProps) {
-  const match = MOCK_MATCHES.find((m) => m.matchId === (matchId ?? "match-001")) ?? MOCK_MATCHES[0];
+  // TODO: API 호출로 매칭 데이터 로드
+  // 임시: 빈 값으로 처리하여 empty state 표시
+  const match = null as any;
+  
+  if (!match) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center">
+        <div className="text-center">
+          <p className="text-body text-text-tertiary">아직 매칭이 없어요</p>
+          <p className="text-caption text-text-tertiary mt-1">지인을 소개받거나 주선자를 찾아보세요</p>
+        </div>
+      </div>
+    );
+  }
   const { balance, spend, earn } = useTickets();
 
   const [tab, setTab] = useState<Tab>("profile");
