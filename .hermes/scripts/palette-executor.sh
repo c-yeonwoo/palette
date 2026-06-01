@@ -7,7 +7,7 @@
 #
 # 의존:
 #   - ~/dev/agentic-harness/.venv (pip install -e .)
-#   - PALETTE_AGENT_PAT (GH token), ANTHROPIC_AUTH_TOKEN or ANTHROPIC_API_KEY
+#   - PROJECT_AGENT_PAT (GH token), ANTHROPIC_AUTH_TOKEN or ANTHROPIC_API_KEY
 #
 # 책임 분리:
 #   ReAct + edit + worktree + push + PR + Closes #N + cost 추적 모두
@@ -18,12 +18,21 @@ set -euo pipefail
 
 TARGET_N="${1:?need number}"
 KIND="${2:-issue}"          # 'issue' (default, 신규) | 'pr' (amend mode)
-PROJECT_NAME="${PROJECT_NAME:-$(basename "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)")}"   # e.g. palette
+# cron에서는 스크립트가 ~/.hermes/scripts 에서 실행될 수 있으므로 PWD/스크립트경로만으로 추론하면 오동작.
+# 우선순위: PROJECT_NAME env > PROJECT_REPO_CWD basename > script filename slug > PWD basename
+SCRIPT_BASE="$(basename "${BASH_SOURCE[0]}")"
+INFER_SLUG=""
+case "$SCRIPT_BASE" in
+  *-pm.sh) INFER_SLUG="${SCRIPT_BASE%-pm.sh}" ;;
+  *-executor.sh) INFER_SLUG="${SCRIPT_BASE%-executor.sh}" ;;
+  *-reviewer.sh) INFER_SLUG="${SCRIPT_BASE%-reviewer.sh}" ;;
+esac
+PROJECT_NAME="${PROJECT_NAME:-$(basename "${PROJECT_REPO_CWD:-${INFER_SLUG:-$PWD}}")}"   # e.g. palette
 PROJECT_SLUG="${PROJECT_NAME// /-}"
 PROJECT_UPPER="$(printf '%s' "$PROJECT_NAME" | tr '[:lower:]-' '[:upper:]_')"
-REPO="${PROJECT_REPO:-${PALETTE_REPO:-c-yeonwoo/${PROJECT_SLUG}}}"
+REPO="${PROJECT_REPO:-c-yeonwoo/${PROJECT_SLUG}}"
 AH_DIR="${AGENTIC_HARNESS_DIR:-$HOME/dev-private/agentic-harness}"
-REPO_CWD="${PROJECT_REPO_CWD:-${PALETTE_REPO_CWD:-$HOME/dev-private/${PROJECT_SLUG}}}"
+REPO_CWD="${PROJECT_REPO_CWD:-$HOME/dev-private/${PROJECT_SLUG}}"
 
 # .env 자동 로드 (cron 으로 호출 시 shell env 비어있음 — 토큰을 .env 에 두고 source)
 # 우선순위: agentic-harness/.env (ANTHROPIC_*, GH_TOKEN 등) → palette/.env (있으면)
@@ -33,15 +42,19 @@ for env_file in "$AH_DIR/.env" "$REPO_CWD/.env"; do
   fi
 done
 
-# PAT 별칭 정규화 — <PROJECT>_AGENT_PAT > PROJECT_AGENT_PAT > PALETTE_AGENT_PAT > GH_TOKEN > GITHUB_TOKEN
+# PAT 별칭 정규화 — <PROJECT>_AGENT_PAT > PROJECT_AGENT_PAT > PROJECT_AGENT_PAT > GH_TOKEN > GITHUB_TOKEN
 TOKEN_VAR_NAME="${PROJECT_UPPER}_AGENT_PAT"
-PROJECT_PAT="${!TOKEN_VAR_NAME:-${PROJECT_AGENT_PAT:-${PALETTE_AGENT_PAT:-}}}"
+PROJECT_PAT="${!TOKEN_VAR_NAME:-${PROJECT_AGENT_PAT:-${PROJECT_AGENT_PAT:-}}}"
 if [ -n "${PROJECT_PAT:-}" ]; then
   export GH_TOKEN="$PROJECT_PAT"
   export GITHUB_TOKEN="$PROJECT_PAT"
 fi
 
-# 빈 env 가드 — Anthropic SDK 가 ANTHROPIC_BASE_URL="" 자동 사용해 connection error
+# provider/model 기본값: codex 통일
+export LLM_PROVIDER="${LLM_PROVIDER:-openai}"
+export EXECUTOR_MODEL="${EXECUTOR_MODEL:-gpt-5.3-codex}"
+
+# 빈 env 가드 — Anthropic fallback 사용 시만 의미
 [ -z "${ANTHROPIC_BASE_URL:-}" ] && unset ANTHROPIC_BASE_URL || true
 [ -z "${ANTHROPIC_AUTH_TOKEN:-}" ] && unset ANTHROPIC_AUTH_TOKEN || true
 

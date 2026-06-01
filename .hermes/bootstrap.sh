@@ -3,7 +3,7 @@
 # 라벨 컨벤션: ah: prefix 4개 (agentic-harness 와 호환)
 set -euo pipefail
 
-REPO="${PALETTE_REPO:-c-yeonwoo/palette}"
+REPO="${PROJECT_REPO:-c-yeonwoo/palette}"
 
 echo "=== [1/4] gh CLI 인증 확인 ==="
 if ! gh auth status >/dev/null 2>&1; then
@@ -38,7 +38,7 @@ fi
 echo ""
 echo "=== [4/4] 환경변수 점검 ==="
 MISSING=0
-for v in PALETTE_AGENT_PAT; do
+for v in PROJECT_AGENT_PAT; do
   if [ -z "${!v:-}" ]; then
     echo "  ❌ $v 미설정 — export $v=ghp_..."
     MISSING=1
@@ -60,7 +60,7 @@ fi
 echo ""
 echo "셋업 완료. 다음 단계:"
 echo "  1) Hermes cron 등록     — bash .hermes/cron-setup.sh"
-echo "  2) shell alias 활성화   — echo 'source ~/dev-private/palette/.hermes/aliases.sh' >> ~/.zshrc && source ~/.zshrc"
+echo "  2) shell alias 활성화   — echo 'source /Users/ys.choi/dev-private/palette/.hermes/aliases.sh' >> ~/.zshrc && source ~/.zshrc"
 echo "  3) 동작 확인           — palette-help"
 echo "  4) test task           — palette-po '<자연어 task>'  # 또는 Claude Code 에서 /add-task"
 echo "  5) 즉시 1 tick         — palette-tick"

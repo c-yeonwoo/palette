@@ -10,7 +10,7 @@ HERMES_BIN="${HERMES_BIN:-$HOME/.local/bin/hermes}"
 PROJECT_NAME="${PROJECT_NAME:-$(basename "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)")}"   # e.g. palette
 PROJECT_SLUG="${PROJECT_NAME// /-}"
 PROJECT_PO_SKILL="${PROJECT_PO_SKILL:-${PROJECT_SLUG}-po}"
-PROJECT_REPO="${PROJECT_REPO:-${PALETTE_REPO:-c-yeonwoo/${PROJECT_SLUG}}}"
+PROJECT_REPO="${PROJECT_REPO:-${PROJECT_REPO:-c-yeonwoo/${PROJECT_SLUG}}}"
 PROJECT_PM_JOB="${PROJECT_PM_JOB:-${PROJECT_SLUG}-pm}"
 
 # 동적 함수 생성: <project>-po / <project>-tick / <project>-queue / <project>-help
