@@ -19,12 +19,12 @@ import {
 } from "lucide-react";
 import { cn } from "./ui/utils";
 import { getColorTypeMeta } from "../../lib/colorTypes";
+import { EmptyState } from "./ui/empty-state";
 import {
-  MOCK_MARKETPLACE,
   SPECIALTY_FILTER_OPTIONS,
   LEVEL_META,
   type MarketplaceMatchmaker,
-} from "../../data/mock-marketplace";
+} from "../../types/marketplace";
 
 type SortKey = "success" | "rating" | "recent";
 
@@ -47,9 +47,10 @@ export function MatchmakerMarketplaceScreen({
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [sort, setSort] = useState<SortKey>("success");
   const [showFilter, setShowFilter] = useState(false);
+  const [marketplaceData, setMarketplaceData] = useState<MarketplaceMatchmaker[]>([]);
 
   const filtered = useMemo(() => {
-    let list = [...MOCK_MARKETPLACE];
+    let list = [...marketplaceData];
 
     // 검색어
     if (query.trim()) {
