@@ -20,26 +20,35 @@
 # ============================================================================
 set -euo pipefail
 
-PROJECT_NAME="${PROJECT_NAME:-$(basename "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)")}"   # e.g. palette
+# cron에서는 스크립트가 ~/.hermes/scripts 에서 실행될 수 있으므로 PWD/스크립트경로만으로 추론하면 오동작.
+# 우선순위: PROJECT_NAME env > PROJECT_REPO_CWD basename > script filename slug > PWD basename
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_BASE="$(basename "${BASH_SOURCE[0]}")"
+INFER_SLUG=""
+case "$SCRIPT_BASE" in
+  *-pm.sh) INFER_SLUG="${SCRIPT_BASE%-pm.sh}" ;;
+  *-executor.sh) INFER_SLUG="${SCRIPT_BASE%-executor.sh}" ;;
+  *-reviewer.sh) INFER_SLUG="${SCRIPT_BASE%-reviewer.sh}" ;;
+esac
+PROJECT_NAME="${PROJECT_NAME:-$(basename "${PROJECT_REPO_CWD:-${INFER_SLUG:-$PWD}}")}"   # e.g. palette
 PROJECT_SLUG="${PROJECT_NAME// /-}"
 PROJECT_UPPER="$(printf '%s' "$PROJECT_NAME" | tr '[:lower:]-' '[:upper:]_')"
-REPO="${PROJECT_REPO:-${PALETTE_REPO:-c-yeonwoo/${PROJECT_SLUG}}}"
-WIP_CAP="${PROJECT_WIP_CAP:-${PALETTE_WIP_CAP:-5}}"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO="${PROJECT_REPO:-c-yeonwoo/${PROJECT_SLUG}}"
+WIP_CAP="${PROJECT_WIP_CAP:-5}"
 
 # .env 자동 로드 (cron 으로 호출 시 shell env 비어있음 — PAT 등)
 AH_DIR="${AGENTIC_HARNESS_DIR:-$HOME/dev-private/agentic-harness}"
-REPO_CWD="${PROJECT_REPO_CWD:-${PALETTE_REPO_CWD:-$HOME/dev-private/${PROJECT_SLUG}}}"
+REPO_CWD="${PROJECT_REPO_CWD:-$HOME/dev-private/${PROJECT_SLUG}}"
 for env_file in "$AH_DIR/.env" "$REPO_CWD/.env"; do
   if [ -f "$env_file" ]; then
     set -a; . "$env_file"; set +a
   fi
 done
 
-# PAT 별칭 정규화 — <PROJECT>_AGENT_PAT > PROJECT_AGENT_PAT > PALETTE_AGENT_PAT > GH_TOKEN > GITHUB_TOKEN.
+# PAT 별칭 정규화 — <PROJECT>_AGENT_PAT > PROJECT_AGENT_PAT > PROJECT_AGENT_PAT > GH_TOKEN > GITHUB_TOKEN.
 # .env 의 빈 줄 (GH_TOKEN=) 이 inherited 환경을 덮어쓸 수 있어 명시적 우선순위.
 TOKEN_VAR_NAME="${PROJECT_UPPER}_AGENT_PAT"
-PROJECT_PAT="${!TOKEN_VAR_NAME:-${PROJECT_AGENT_PAT:-${PALETTE_AGENT_PAT:-}}}"
+PROJECT_PAT="${!TOKEN_VAR_NAME:-${PROJECT_AGENT_PAT:-${PROJECT_AGENT_PAT:-}}}"
 if [ -n "${PROJECT_PAT:-}" ]; then
   export GH_TOKEN="$PROJECT_PAT"
   export GITHUB_TOKEN="$PROJECT_PAT"
