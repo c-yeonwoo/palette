@@ -1,4 +1,4 @@
-# Palette × Hermes Agent — 자동 작업 하네스
+# Project × Hermes Agent — 자동 작업 하네스 (현재 예시: palette)
 
 > palette 레포 위에 도는 라벨 기반 agentic coding 하네스.
 > Hermes cron 이 5분마다 watchdog script 실행 → 라벨 큐 보고 executor/reviewer dispatch.
@@ -22,7 +22,7 @@
    │  → palette-reviewer.sh <pr_num>
    │     └─ python -c "agents.run_code_reviewer(...)"
    │        ├─ verdict=approve|concerns_noted → ah:awaiting-human
-   │        └─ verdict=request_changes       → PR close + linked issue 재트리거
+   │        └─ verdict=request_changes       → PR 유지 + ah:needs-execution (amend 큐)
    │
    └─ ah:needs-execution issue 큐
       → palette-executor.sh <issue_num>
@@ -63,7 +63,7 @@
 3. **ReAct + edit action 필수** — 500줄+ 파일에 `replace` 금지. `old_str` 1회 매칭, 실패 시 whitespace fuzzy fallback.
 4. **plan 은 PR description 에만** — issue 엔 "PR 생성됨" 링크 + cost 한 줄.
 5. **`Closes #N` 자동 추가** — merge 시 issue 자동 close.
-6. **reviewer request_changes → PR close + issue 재트리거** — 무한 루프 cap 없음, 사람이 라벨 떼서 멈춤.
+6. **reviewer request_changes → PR 유지 + ah:needs-execution(amend)** — 무한 루프 cap 없음, 사람이 PR 라벨 떼서 멈춤.
 7. **`claude-haiku-4-5` 기본**.
 8. **OAuth token** (`sk-ant-oat...`) → `auth_token` (api_key 로 보내면 401).
 
@@ -117,7 +117,7 @@ bash .hermes/cron-setup.sh
 
 # 1. test task — 두 트랙 중 한 가지
 #    A) Claude Code 채팅:  /add-task frontend/README.md 의 develpoment → development 오타 수정
-#    B) shell (Hermes):    palette-po "frontend/README.md 의 develpoment → development 오타"
+#    B) shell (Hermes):    PROJECT_NAME=palette palette-po "frontend/README.md 의 develpoment → development 오타"
 #  → 둘 다 PO 가 scope/AC/affected files 채워서 issue 생성 + ah:needs-execution 라벨
 
 # 2. 즉시 1 tick — pm → executor → PR 생성까지 대기 (Hermes gateway 없어도 OK)
