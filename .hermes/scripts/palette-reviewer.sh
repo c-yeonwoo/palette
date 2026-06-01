@@ -14,7 +14,7 @@ set -euo pipefail
 
 PR_N="${1:?need PR number}"
 REPO="${PALETTE_REPO:-c-yeonwoo/palette}"
-AH_DIR="${AGENTIC_HARNESS_DIR:-$HOME/dev/agentic-harness}"
+AH_DIR="${AGENTIC_HARNESS_DIR:-$HOME/dev-private/agentic-harness}"
 REPO_CWD="${PALETTE_REPO_CWD:-$HOME/dev-private/palette}"
 
 # .env 자동 로드 (cron 으로 호출 시 shell env 비어있음)

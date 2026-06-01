@@ -25,7 +25,7 @@ WIP_CAP="${PALETTE_WIP_CAP:-5}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # .env 자동 로드 (cron 으로 호출 시 shell env 비어있음 — PAT 등)
-AH_DIR="${AGENTIC_HARNESS_DIR:-$HOME/dev/agentic-harness}"
+AH_DIR="${AGENTIC_HARNESS_DIR:-$HOME/dev-private/agentic-harness}"
 REPO_CWD="${PALETTE_REPO_CWD:-$HOME/dev-private/palette}"
 for env_file in "$AH_DIR/.env" "$REPO_CWD/.env"; do
   if [ -f "$env_file" ]; then

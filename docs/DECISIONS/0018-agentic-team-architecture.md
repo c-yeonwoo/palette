@@ -52,9 +52,9 @@ ADR 0017 (PoC) 에서는 둘이 섞여 있었으나, **agent-harness 가 platfor
 
 ### 1. agent-harness 를 별도 git repo / platform 으로 분리
 
-- 위치: `~/dev/agentic-harness/` (별도 GitHub repo: `c-yeonwoo/agentic-harness`)
+- 위치: `~/dev-private/agentic-harness/` (별도 GitHub repo: `c-yeonwoo/agentic-harness`)
 - 책임: platform 차원의 모든 결정 (라벨 / ReAct / edit / amend / SoT 발견 / retry / cost / caching)
-- palette 는 import 만 — `.hermes/scripts/*.sh` 가 `~/dev/agentic-harness/orchestrator/agents.py` 의 함수 호출
+- palette 는 import 만 — `.hermes/scripts/*.sh` 가 `~/dev-private/agentic-harness/orchestrator/agents.py` 의 함수 호출
 
 ### 2. palette 는 첫 use case 로 platform 도입
 
@@ -85,13 +85,13 @@ ADR 0017 (PoC) 에서는 둘이 섞여 있었으나, **agent-harness 가 platfor
 palette-pm.sh
   bash → python -c "from orchestrator import agents; agents.run_code_executor(...)"
                                                                    ↑
-                                                  ~/dev/agentic-harness/orchestrator/
+                                                  ~/dev-private/agentic-harness/orchestrator/
 ```
 
 platform 의 Python 모듈 path 가 palette 의 .hermes/scripts 에서 import. 그래서:
 - agent-harness 의 venv 가 palette repo 와 별개 (각자 자기 .venv)
 - palette/.hermes/scripts/palette-executor.sh 가 `$AH_DIR/.venv/bin/python` 으로 실행
-- 두 repo 간 의존성은 path 만 (시스템 환경변수 `AGENTIC_HARNESS_DIR` 또는 hardcoded `~/dev/agentic-harness`)
+- 두 repo 간 의존성은 path 만 (시스템 환경변수 `AGENTIC_HARNESS_DIR` 또는 hardcoded `~/dev-private/agentic-harness`)
 
 ### 5. 다음 세션 첫 작업
 

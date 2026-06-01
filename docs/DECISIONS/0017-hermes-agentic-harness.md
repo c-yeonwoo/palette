@@ -8,7 +8,7 @@
 
 ## 컨텍스트
 
-별도 세션에서 만든 `~/dev/agentic-harness/` 가 GitHub 라벨 기반 agentic coding 흐름을
+별도 세션에서 만든 `~/dev-private/agentic-harness/` 가 GitHub 라벨 기반 agentic coding 흐름을
 잘 처리함 (ReAct + edit action + worktree + PR + cost 추적). 다만 자체 daemon
 (`ah run`) 의 launchd lifecycle 관리 부담 때문에 사내 platform "Hermes" 위로
 한 사이클 옮겨 적합성 검증하려 함.
@@ -32,7 +32,7 @@ Phase A 처음 가정한 `hermes agent add <yaml>` 식 multi-agent 모델은 실
 | cron 스케줄 / process lifecycle | **Hermes** (`hermes cron`) |
 | LLM tool-loop (ReAct) / edit / worktree / PR / Closes #N / cost / SOT 4-tier | **agentic-harness** (그대로 import) |
 
-Hermes 가 사라져도 `cd ~/dev/agentic-harness && ah run` 로 폴백 가능.
+Hermes 가 사라져도 `cd ~/dev-private/agentic-harness && ah run` 로 폴백 가능.
 
 ### 2. 구조
 
