@@ -27,11 +27,36 @@ import {
   X as XIcon,
 } from "lucide-react";
 import { cn } from "./ui/utils";
-import {
-  MOCK_NOTIFICATIONS,
-  type AppNotification,
-  type NotificationCategory,
-} from "../../data/mock-notifications";
+import type { NotificationCategory } from "../../lib/notifications";
+
+// Mock notifications 제거 — API 연동 시 여기서 실제 데이터 사용
+export type NotificationAction =
+  | "match_received"
+  | "match_accepted"
+  | "match_rejected"
+  | "match_completed"
+  | "matchmaker_request"
+  | "matchmaker_approved"
+  | "matchmaker_rejected"
+  | "points_earned"
+  | "verify_reminder"
+  | "service_notice"
+  | "event";
+
+export interface AppNotification {
+  id: string;
+  category: NotificationCategory;
+  action: NotificationAction;
+  title: string;
+  body: string;
+  avatarColor?: string;
+  read: boolean;
+  createdAt: string;
+  meta?: {
+    matchId?: string;
+    userId?: string;
+  };
+}
 import {
   CATEGORY_LABELS,
   filterByCategory,
@@ -77,7 +102,7 @@ const CATEGORY_ICON_COLOR: Record<NotificationCategory, string> = {
 
 export function NotificationScreen({ onBack, onOpenMatch }: NotificationScreenProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
-  const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]); // 빈 배열로 시작 (API 연동 전)
 
   const markRead = useCallback((id: string) => {
     setNotifications((prev) =>
