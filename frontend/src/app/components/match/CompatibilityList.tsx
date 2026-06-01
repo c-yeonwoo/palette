@@ -3,7 +3,7 @@
  * variant: "common" → 초록 체크 / "different" → 오렌지 다이아몬드
  */
 import { CheckCircle2, Diamond } from "lucide-react";
-import type { CompatibilityPoint } from "../../../data/mock-matches";
+import type { CompatibilityPoint } from "../../../types/match";
 import { cn } from "../ui/utils";
 
 interface CompatibilityListProps {

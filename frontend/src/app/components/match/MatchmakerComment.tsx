@@ -2,7 +2,7 @@
  * MatchmakerComment — F01 주선자 한마디 카드
  */
 import { Quote } from "lucide-react";
-import type { MatchmakerInfo, MatchmakerTier } from "../../../data/mock-matches";
+import type { MatchmakerInfo, MatchmakerTier } from "../../../types/match";
 import { cn } from "../ui/utils";
 
 const TIER_COLORS: Record<MatchmakerTier, string> = {

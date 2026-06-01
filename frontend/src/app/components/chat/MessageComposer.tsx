@@ -5,7 +5,7 @@
 import { useState, useRef } from "react";
 import { Send, AlertTriangle } from "lucide-react";
 import { checkMessage } from "../../../lib/content-guard";
-import type { Channel } from "../../../data/mock-conversations";
+import type { Channel } from "../../../types/conversation";
 import { cn } from "../ui/utils";
 
 const PLACEHOLDERS: Record<Channel, string> = {

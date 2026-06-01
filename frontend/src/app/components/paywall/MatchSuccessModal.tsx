@@ -5,7 +5,7 @@
 import { Heart } from "lucide-react";
 import { Dialog, DialogContent } from "../ui/dialog";
 import { Button } from "../ui/button";
-import type { MatchDetail } from "../../../data/mock-matches";
+import type { MatchDetail } from "../../../types/match";
 import { getColorTypeMeta } from "../../../lib/colorTypes";
 
 interface MatchSuccessModalProps {
