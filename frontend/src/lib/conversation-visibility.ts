@@ -6,7 +6,7 @@
  *   matchmaker_to_user   → 주선자 + 특정 당사자만 (상대 못 봄)
  *   user_to_matchmaker   → 당사자 + 주선자만 (상대 못 봄)
  */
-import type { Channel, Message, SenderRole } from "../data/mock-conversations";
+import type { Channel, Message, SenderRole } from "../types/conversation";
 
 export type ViewerRole = "me" | "partner" | "matchmaker";
 

@@ -4,7 +4,7 @@
  * 무료/유료/상호매칭 여부에 따라 프로필 필드를 마스킹.
  * F01 매칭 페이지에서 사용.
  */
-import type { MatchProfile } from "../data/mock-matches";
+import type { MatchProfile } from "../types/match";
 
 export interface VisibilityContext {
   viewerId: string;

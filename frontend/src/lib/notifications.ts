@@ -1,7 +1,7 @@
 /**
  * notifications.ts — F06 알림 유틸리티
  */
-import type { AppNotification, NotificationCategory, NotificationAction } from "../data/mock-notifications";
+import type { AppNotification, NotificationCategory, NotificationAction } from "../types/notification";
 
 export type { AppNotification, NotificationCategory, NotificationAction };
 
