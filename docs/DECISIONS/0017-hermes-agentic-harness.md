@@ -1,4 +1,6 @@
-# 0017 — Hermes Agent (cron) × agentic-harness 결합 PoC
+# 0017 — agentic-harness platform 도입 (palette = 첫 use case)
+
+> **scope 정정**: 본 ADR 은 palette 가 외부 platform [`agentic-harness`](https://github.com/c-yeonwoo/agentic-harness) 의 첫 use case 임을 선언. platform 의 구체적 결정 (라벨 컨벤션, ReAct, edit action, SoT 4-tier, amend mode 등) 은 platform 의 [`docs/ARCHITECTURE.md`](../../../../dev/agentic-harness/docs/ARCHITECTURE.md) 에서 관리. palette 는 그 결정들을 따름 + project-specific 보강만 (palette-po skill, palette-pm.sh, .hermes/agent-context.md).
 
 - **상태**: Phase A2 (scaffold) — Phase B/C 미수행
 - **결정일**: 2026-05-31
