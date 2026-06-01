@@ -8,13 +8,9 @@ import { MessageBubble } from "./MessageBubble";
 import { MessageComposer } from "./MessageComposer";
 import { ChannelSelector } from "./ChannelSelector";
 import { filterVisibleMessages } from "../../../lib/conversation-visibility";
-import {
-  getMessagesForMatch,
-  type Channel,
-  type Message,
-} from "../../../data/mock-conversations";
 import { getColorTypeMeta } from "../../../lib/colorTypes";
-import type { MatchDetail } from "../../../data/mock-matches";
+import type { MatchDetail } from "../../../types/match";
+import type { Channel, Message } from "../../../types/conversation";
 import { cn } from "../ui/utils";
 
 const VIEWER_ID = "me-001"; // mock: 현재 사용자
@@ -26,9 +22,7 @@ interface ChatThreadProps {
 }
 
 export function ChatThread({ match, isMatchmaker = false, className }: ChatThreadProps) {
-  const [messages, setMessages] = useState<Message[]>(() =>
-    getMessagesForMatch(match.matchId),
-  );
+  const [messages, setMessages] = useState<Message[]>([]);
   const [channel, setChannel] = useState<Channel>("public");
   const bottomRef = useRef<HTMLDivElement>(null);
 
