@@ -4,6 +4,7 @@ import { Input } from "./ui/input";
 import { ChevronLeft, Star, TrendingUp, Wallet, RefreshCw, Award, Coins, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
+import { isMockdataUser } from "../../lib/mockdata-guard";
 
 interface MatchmakerData {
   matchmakerId: string;
@@ -40,6 +41,8 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [showWithdrawForm, setShowWithdrawForm] = useState(false);
   const [activeTab, setActiveTab] = useState<"level" | "points">("level");
+  const [canShowMock, setCanShowMock] = useState(false);
+  const [checkedMockPolicy, setCheckedMockPolicy] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -64,13 +67,20 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
   const loadData = async () => {
     setIsLoading(true);
     try {
+      // 먼저 사용자 정보 확인 — mockdata 판별
+      const me = await api.get<{ email?: string; nickname?: string }>("/api/v1/auth/me");
+      const isMock = isMockdataUser(me);
+      setCanShowMock(isMock);
+      setCheckedMockPolicy(true);
+
       const res = await api.get<MatchmakerData>("/api/v1/matchmakers/me");
       setData(res);
     } catch {
-      // API 미연결 시 dev 환경에서만 mock 데이터로 fallback
-      if (import.meta.env.DEV) {
+      // API 미연결 시 dev 환경 + mockdata 사용자만 mock 데이터로 fallback
+      if (import.meta.env.DEV && canShowMock) {
         setData(MOCK_DATA);
       }
+      setCheckedMockPolicy(true);
     } finally {
       setIsLoading(false);
     }
@@ -101,7 +111,25 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
     }
   };
 
-  if (isLoading || !data) {
+  if (isLoading || !checkedMockPolicy) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!canShowMock) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 text-center">
+        <p className="text-base font-semibold text-foreground">데이터가 아직 없어요</p>
+        <p className="text-sm text-muted-foreground mt-2">주선 활동을 시작하면 이 화면에서 확인할 수 있어요.</p>
+        <button onClick={onBack} className="mt-5 text-sm text-primary font-medium">뒤로 가기</button>
+      </div>
+    );
+  }
+
+  if (!data) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" />
