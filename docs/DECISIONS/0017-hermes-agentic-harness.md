@@ -131,9 +131,40 @@ PO 분리의 이유:
 
 ## Follow-up
 
+### 다음 세션 — LLM provider 교체 (Anthropic → OpenAI)
+
+**핵심**: agentic-harness 구조 (PO + executor + reviewer + 라벨 큐 + ReAct + edit + git_apply + SoT 4-tier) **그대로 유지**. **LLM 호출 layer 만 swap**.
+
+사유: Anthropic haiku 의 multi-edit reasoning 한계 (본 ADR 의 PoC 결과 — PR #14 폐기). sonnet upgrade 직전 OpenAI 로 결정.
+
+#### Transition plan
+
+1. **`claude.py` → `llm.py` rename 또는 dual-support** — `LLM_PROVIDER=openai|anthropic` 환경변수 분기
+2. **API 매핑** (Anthropic → OpenAI):
+   | Anthropic | OpenAI |
+   |-----------|--------|
+   | `client.messages.create(system=, messages=, tools=)` | `client.chat.completions.create(messages=[{role: system}, ...], tools=)` |
+   | response `content` (text + tool_use blocks) | `choices[0].message.content` + `tool_calls[]` |
+   | `tool_result` content block | `tool` role message + `tool_call_id` |
+   | `stop_reason = "tool_use"` / `"end_turn"` | `finish_reason = "tool_calls"` / `"stop"` |
+   | `cache_control: {type: "ephemeral"}` | 자동 (system + user prefix auto-cache, 1024+ tokens) |
+   | `usage.cache_read_input_tokens` | `usage.prompt_tokens_details.cached_tokens` |
+3. **`code_tools.py` 의 `TOOL_SCHEMAS`** — Anthropic `input_schema` → OpenAI `function.parameters` 래핑 (`{type: "function", function: {name, description, parameters}}`)
+4. **`_PRICING` 에 OpenAI 모델 추가** — gpt-4o, gpt-5, o1, o3 등
+5. **`.env`**:
+   ```
+   LLM_PROVIDER=openai
+   OPENAI_API_KEY=sk-...
+   EXECUTOR_MODEL=gpt-5         # 또는 gpt-4o, o1
+   REVIEWER_MODEL=gpt-4o-mini    # reviewer 작은 모델 OK
+   ```
+6. **검증** — issue #11 (mock 데이터 제거) 로 1 사이클 (PO → executor → PR → reviewer → merge)
+7. **본 ADR 의 "OAuth token (sk-ant-oat...)" 항목 폐기** — OpenAI 전환 시 무관
+
+### 그 외 follow-up
+
 - agentic-harness 정식 git 저장소화 (현재 로컬 작업본)
-- **LLM edit retry loop** — 매칭 실패 시 read_file → re-plan 자동 재시도 (max 2~3회)
-- **sonnet 으로 executor upgrade 검토** — 4 파일 이상 변경 또는 amend mode 시 sonnet 자동 선택
+- **LLM edit retry loop** — 매칭 실패 시 read_file → re-plan 자동 재시도 (cap = 1 회 이미 적용됨)
 - amend mode 의 prompt 강화 — reviewer comment 의 file:line 매핑 명시
 - gateway install — `hermes gateway install` 로 5분 자동 활성
 - 추후: sot-manager (merge 후 ARCHITECTURE 자동 갱신) — agentic-harness Phase 3
