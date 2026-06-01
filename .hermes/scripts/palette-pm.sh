@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ============================================================================
-# Palette PM — 라벨 큐 스캔 + 1건 dispatch (Hermes cron --no-agent 로 호출됨)
+# Project PM — 라벨 큐 스캔 + 1건 dispatch (Hermes cron --no-agent 로 호출됨)
 # ============================================================================
 # 사용:
 #   hermes cron create '5m' --no-agent \
-#     --script palette-pm.sh \
-#     --workdir /Users/ys.choi/dev-private/palette \
-#     --name palette-pm
+#     --script <project>-pm.sh \
+#     --workdir /Users/ys.choi/dev-private/<project> \
+#     --name <project>-pm
 #
 # 동작:
 #   1) ah:in-progress 카운트 (WIP)
@@ -20,24 +20,29 @@
 # ============================================================================
 set -euo pipefail
 
-REPO="${PALETTE_REPO:-c-yeonwoo/palette}"
-WIP_CAP="${PALETTE_WIP_CAP:-5}"
+PROJECT_NAME="${PROJECT_NAME:-$(basename "$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)")}"   # e.g. palette
+PROJECT_SLUG="${PROJECT_NAME// /-}"
+PROJECT_UPPER="$(printf '%s' "$PROJECT_NAME" | tr '[:lower:]-' '[:upper:]_')"
+REPO="${PROJECT_REPO:-${PALETTE_REPO:-c-yeonwoo/${PROJECT_SLUG}}}"
+WIP_CAP="${PROJECT_WIP_CAP:-${PALETTE_WIP_CAP:-5}}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # .env 자동 로드 (cron 으로 호출 시 shell env 비어있음 — PAT 등)
 AH_DIR="${AGENTIC_HARNESS_DIR:-$HOME/dev-private/agentic-harness}"
-REPO_CWD="${PALETTE_REPO_CWD:-$HOME/dev-private/palette}"
+REPO_CWD="${PROJECT_REPO_CWD:-${PALETTE_REPO_CWD:-$HOME/dev-private/${PROJECT_SLUG}}}"
 for env_file in "$AH_DIR/.env" "$REPO_CWD/.env"; do
   if [ -f "$env_file" ]; then
     set -a; . "$env_file"; set +a
   fi
 done
 
-# PAT 별칭 정규화 — PALETTE_AGENT_PAT > GH_TOKEN > GITHUB_TOKEN.
+# PAT 별칭 정규화 — <PROJECT>_AGENT_PAT > PROJECT_AGENT_PAT > PALETTE_AGENT_PAT > GH_TOKEN > GITHUB_TOKEN.
 # .env 의 빈 줄 (GH_TOKEN=) 이 inherited 환경을 덮어쓸 수 있어 명시적 우선순위.
-if [ -n "${PALETTE_AGENT_PAT:-}" ]; then
-  export GH_TOKEN="$PALETTE_AGENT_PAT"
-  export GITHUB_TOKEN="$PALETTE_AGENT_PAT"
+TOKEN_VAR_NAME="${PROJECT_UPPER}_AGENT_PAT"
+PROJECT_PAT="${!TOKEN_VAR_NAME:-${PROJECT_AGENT_PAT:-${PALETTE_AGENT_PAT:-}}}"
+if [ -n "${PROJECT_PAT:-}" ]; then
+  export GH_TOKEN="$PROJECT_PAT"
+  export GITHUB_TOKEN="$PROJECT_PAT"
 fi
 
 # 빈 env 가드 — Anthropic SDK 가 ANTHROPIC_BASE_URL="" 을 자동 사용해 connection error 유발
@@ -66,11 +71,11 @@ ISS_NEW=$(gh issue list --repo "$REPO" --label "ah:needs-execution" --state open
         --json number,createdAt --jq 'sort_by(.createdAt) | .[0].number // empty')
 
 if [ -n "$PR_REVIEW" ]; then
-  TARGET_KIND=pr;    TARGET_NUM="$PR_REVIEW"; WORKER="palette-reviewer"
+  TARGET_KIND=pr;    TARGET_NUM="$PR_REVIEW"; WORKER="${PROJECT_SLUG}-reviewer"
 elif [ -n "$PR_AMEND" ]; then
-  TARGET_KIND=pr;    TARGET_NUM="$PR_AMEND";  WORKER="palette-executor"; AMEND="1"
+  TARGET_KIND=pr;    TARGET_NUM="$PR_AMEND";  WORKER="${PROJECT_SLUG}-executor"; AMEND="1"
 elif [ -n "$ISS_NEW" ]; then
-  TARGET_KIND=issue; TARGET_NUM="$ISS_NEW";   WORKER="palette-executor"
+  TARGET_KIND=issue; TARGET_NUM="$ISS_NEW";   WORKER="${PROJECT_SLUG}-executor"
 else
   exit 0   # idle — Hermes cron --no-agent 는 empty stdout 이면 silent
 fi
@@ -78,7 +83,7 @@ fi
 # 2. 락 부여 ----------------------------------------------------------------
 SUBCMD="$([ "$TARGET_KIND" = "pr" ] && echo pr || echo issue)"
 # 큐 라벨: PR review → needs-review, PR amend / issue new → needs-execution
-if [ "$WORKER" = "palette-reviewer" ]; then
+if [ "$WORKER" = "${PROJECT_SLUG}-reviewer" ]; then
   QUEUE_LABEL="ah:needs-review"
 else
   QUEUE_LABEL="ah:needs-execution"
@@ -87,15 +92,15 @@ fi
 gh "$SUBCMD" edit "$TARGET_NUM" --repo "$REPO" \
   --remove-label "$QUEUE_LABEL" --add-label "ah:in-progress" >/dev/null
 gh "$SUBCMD" comment "$TARGET_NUM" --repo "$REPO" \
-  --body "🤖 palette-pm · $(date -Iseconds) · dispatch → $WORKER$([ -n "$AMEND" ] && echo ' (amend)')" >/dev/null
+  --body "🤖 ${PROJECT_SLUG}-pm · $(date -Iseconds) · dispatch → $WORKER$([ -n "$AMEND" ] && echo ' (amend)')" >/dev/null
 
 # 3. 워커 호출 (foreground — 한 tick 안에 처리) ------------------------------
 echo "dispatched #$TARGET_NUM → $WORKER$([ -n "$AMEND" ] && echo ' (amend)') (WIP $((WIP+1))/$WIP_CAP)"
 
-if [ "$WORKER" = "palette-executor" ]; then
+if [ "$WORKER" = "${PROJECT_SLUG}-executor" ]; then
   # AMEND 면 두 번째 인자 'pr' 로, 신규면 'issue'
   KIND="$([ -n "$AMEND" ] && echo pr || echo issue)"
-  exec bash "$SCRIPT_DIR/palette-executor.sh" "$TARGET_NUM" "$KIND"
+  exec bash "$SCRIPT_DIR/${PROJECT_SLUG}-executor.sh" "$TARGET_NUM" "$KIND"
 else
-  exec bash "$SCRIPT_DIR/palette-reviewer.sh" "$TARGET_NUM"
+  exec bash "$SCRIPT_DIR/${PROJECT_SLUG}-reviewer.sh" "$TARGET_NUM"
 fi
