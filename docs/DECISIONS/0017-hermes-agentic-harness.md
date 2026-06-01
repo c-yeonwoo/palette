@@ -106,11 +106,24 @@ PO 분리의 이유:
 - 핵심 결정 #7 ("request_changes → PR close + issue 재트리거") 폐기 →
   "PR 유지 + 라벨 swap + amend mode" 로 변경 (사용자 지적: review thread / git history 보존)
 
+## PoC 추가 발견 (1차 종료 시점)
+
+**해결된 것**:
+- ✅ **prompt caching** — `system=[{..., "cache_control": {"type": "ephemeral"}}]` 적용. 단 model **alias 안 됨**, full name 필수 (`claude-haiku-4-5-20251001`). cache hit 확인 (cr=4202)
+- ✅ **SoT 가 docs/* 안 봄 → 정정** — `source_of_truth.py` 가 이제 `docs/ARCHITECTURE.md` (fallback), `docs/CONVENTIONS.md` / `GLOSSARY.md` / `POLICY.md` / `PRD.md` / `RUNBOOK.md` 풀 inline + `docs/DECISIONS/*.md` 17개 요약 + `.hermes/agent-context.md` 자동 발견
+- ✅ **request_changes → PR 유지 + amend mode** — close 안 함, 라벨 swap, existing_branch 추가 commit
+
+**남은 한계 (LLM 자체)**:
+- ⚠️ **multi-edit 매칭 실패** — LLM 이 같은 영역 여러 edit 만들 때 순서 의존성 무시 또는 outdated reference. prompt 강화 + caching + SoT 보강 적용 후에도 같은 패턴 반복.
+  - 진짜 해결책: agents.py 에 edit 실패 시 read_file → re-plan retry loop, 또는 model upgrade to sonnet
+  - 현재 atomicity 는 유지 (실패 시 push 안 됨, awaiting-human escalate)
+
 ## Follow-up
 
-- agentic-harness 정식 git 저장소화 (현재 로컬 작업본) + 변경 사항 commit
-- LLM edit 매칭 실패 시 자동 retry (`max_iterations` 안에서 prompt 보정 후 재시도)
-- amend mode 의 prompt 강화 — reviewer comment 의 file:line 매핑 더 정확히
+- agentic-harness 정식 git 저장소화 (현재 로컬 작업본)
+- **LLM edit retry loop** — 매칭 실패 시 read_file → re-plan 자동 재시도 (max 2~3회)
+- **sonnet 으로 executor upgrade 검토** — 4 파일 이상 변경 또는 amend mode 시 sonnet 자동 선택
+- amend mode 의 prompt 강화 — reviewer comment 의 file:line 매핑 명시
 - gateway install — `hermes gateway install` 로 5분 자동 활성
 - 추후: sot-manager (merge 후 ARCHITECTURE 자동 갱신) — agentic-harness Phase 3
 - 추후: issue-finder (코드베이스 자동 스캔 → issue 생성) — agentic-harness Phase 2
