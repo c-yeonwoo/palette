@@ -19,12 +19,41 @@ import {
 } from "lucide-react";
 import { cn } from "./ui/utils";
 import { getColorTypeMeta } from "../../lib/colorTypes";
-import {
-  MOCK_MARKETPLACE,
-  SPECIALTY_FILTER_OPTIONS,
-  LEVEL_META,
-  type MarketplaceMatchmaker,
-} from "../../data/mock-marketplace";
+// Mock marketplace 제거 — API 연동 시 여기서 실제 데이터 사용
+// import MOCK_MARKETPLACE from "../../data/mock-marketplace"; // 삭제됨
+
+// 타입 정의
+export type MatchmakerLevel = 1 | 2 | 3 | 4 | 5;
+export interface MarketplaceMatchmaker {
+  id: string;
+  nickname: string;
+  colorType: string;
+  level: MatchmakerLevel;
+  commissionRate: number;
+  successfulMatches: number;
+  totalRequests: number;
+  averageRating: number;
+  totalReviews: number;
+  bio: string;
+  specialties: string[];
+  lastActiveAt: string;
+  accepting: boolean;
+}
+
+const SPECIALTY_FILTER_OPTIONS = [
+  "IT/개발", "금융/보험", "의료", "교육", "공무원", "전문직",
+  "20대", "30대", "40대이상",
+  "서울", "경기", "지방",
+  "결혼목적", "진지한연애", "자연스럽게",
+];
+
+const LEVEL_META: Record<MatchmakerLevel, { name: string; emoji: string }> = {
+  1: { name: "씨앗",   emoji: "🌱" },
+  2: { name: "새싹",   emoji: "🌿" },
+  3: { name: "꽃",     emoji: "🌸" },
+  4: { name: "나무",   emoji: "🌳" },
+  5: { name: "숲",     emoji: "🌲" },
+};
 
 type SortKey = "success" | "rating" | "recent";
 
@@ -49,7 +78,7 @@ export function MatchmakerMarketplaceScreen({
   const [showFilter, setShowFilter] = useState(false);
 
   const filtered = useMemo(() => {
-    let list = [...MOCK_MARKETPLACE];
+    let list: MarketplaceMatchmaker[] = []; // 빈 배열로 시작 (API 연동 전)
 
     // 검색어
     if (query.trim()) {
