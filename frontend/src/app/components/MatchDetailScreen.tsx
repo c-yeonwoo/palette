@@ -30,10 +30,12 @@ import { calculateMatchScore } from "../../lib/match-score";
 import { getVisibleProfile } from "../../lib/profile-visibility";
 import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
 import { useTickets } from "../../lib/tickets";
-import { MOCK_MATCHES } from "../../data/mock-matches";
+import { EmptyState } from "./ui/empty-state";
 import { cn } from "./ui/utils";
+import type { MatchDetail } from "../../types/match";
 
 interface MatchDetailScreenProps {
+  match?: MatchDetail | null;
   matchId?: string;
   onBack: () => void;
   onNavigateToChat?: () => void;
@@ -41,8 +43,32 @@ interface MatchDetailScreenProps {
 
 type Tab = "profile" | "chat";
 
-export function MatchDetailScreen({ matchId, onBack, onNavigateToChat }: MatchDetailScreenProps) {
-  const match = MOCK_MATCHES.find((m) => m.matchId === (matchId ?? "match-001")) ?? MOCK_MATCHES[0];
+export function MatchDetailScreen({ match: matchProp, matchId, onBack, onNavigateToChat }: MatchDetailScreenProps) {
+  const match = matchProp;
+
+  // 데이터가 없으면 빈 상태 표시
+  if (!match) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-border-subtle">
+          <button
+            onClick={onBack}
+            className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-surface-sunken"
+            aria-label="뒤로가기"
+          >
+            <ArrowLeft className="w-5 h-5 text-text-primary" />
+          </button>
+        </div>
+        <div className="flex-1 flex items-center justify-center px-4">
+          <EmptyState
+            icon={<Heart />}
+            title="매칭을 불러올 수 없어요"
+            body="나중에 다시 시도해주세요."
+          />
+        </div>
+      </div>
+    );
+  }
   const { balance, spend, earn } = useTickets();
 
   const [tab, setTab] = useState<Tab>("profile");
