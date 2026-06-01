@@ -113,10 +113,13 @@ PO 분리의 이유:
 - ✅ **SoT 가 docs/* 안 봄 → 정정** — `source_of_truth.py` 가 이제 `docs/ARCHITECTURE.md` (fallback), `docs/CONVENTIONS.md` / `GLOSSARY.md` / `POLICY.md` / `PRD.md` / `RUNBOOK.md` 풀 inline + `docs/DECISIONS/*.md` 17개 요약 + `.hermes/agent-context.md` 자동 발견
 - ✅ **request_changes → PR 유지 + amend mode** — close 안 함, 라벨 swap, existing_branch 추가 commit
 
-**남은 한계 (LLM 자체)**:
-- ⚠️ **multi-edit 매칭 실패** — LLM 이 같은 영역 여러 edit 만들 때 순서 의존성 무시 또는 outdated reference. prompt 강화 + caching + SoT 보강 적용 후에도 같은 패턴 반복.
-  - 진짜 해결책: agents.py 에 edit 실패 시 read_file → re-plan retry loop, 또는 model upgrade to sonnet
-  - 현재 atomicity 는 유지 (실패 시 push 안 됨, awaiting-human escalate)
+**남은 한계 (LLM 자체) — 해결책 적용됨**:
+- ⚠️ **multi-edit 매칭 실패** — LLM 이 같은 영역 여러 edit 만들 때 순서 의존성 무시 또는 outdated reference.
+- ✅ **해결책: 라벨 기반 self-heal retry loop** 적용 — `git_apply.py` 에 `EditApplyError` 도입:
+  - executor (issue / PR amend 둘 다) 가 잡으면 ❌ 코멘트 (파일/edit index/old_str preview) + `ah:needs-execution` 라벨 다시 부착
+  - 다음 palette-pm tick 에 자동 재dispatch → 같은 PR/issue 의 그 ❌ 코멘트가 SOT context 로 들어가 LLM 이 read_file 로 정확한 현재 상태 확인 후 plan 재생성
+  - 무한 루프 방지: 사람이 라벨 떼서 멈춤 (핵심 결정 #7 그대로)
+- 현재 atomicity 유지 (실패 시 push 안 됨), retry 흐름이 라벨로 표현됨
 
 ## Follow-up
 
