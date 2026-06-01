@@ -1,0 +1,6 @@
+sot:
+  inline_docs:
+    - POLICY.md
+    - CONVENTIONS.md
+    - RUNBOOK.md
+  max_inline_chars: 4000
