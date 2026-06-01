@@ -117,9 +117,17 @@ PO 분리의 이유:
 - ⚠️ **multi-edit 매칭 실패** — LLM 이 같은 영역 여러 edit 만들 때 순서 의존성 무시 또는 outdated reference.
 - ✅ **해결책: 라벨 기반 self-heal retry loop** 적용 — `git_apply.py` 에 `EditApplyError` 도입:
   - executor (issue / PR amend 둘 다) 가 잡으면 ❌ 코멘트 (파일/edit index/old_str preview) + `ah:needs-execution` 라벨 다시 부착
-  - 다음 palette-pm tick 에 자동 재dispatch → 같은 PR/issue 의 그 ❌ 코멘트가 SOT context 로 들어가 LLM 이 read_file 로 정확한 현재 상태 확인 후 plan 재생성
-  - 무한 루프 방지: 사람이 라벨 떼서 멈춤 (핵심 결정 #7 그대로)
-- 현재 atomicity 유지 (실패 시 push 안 됨), retry 흐름이 라벨로 표현됨
+  - 다음 palette-pm tick 에 자동 재dispatch
+- ✅ **retry cap = 1회** (amend mode) — 두 번째 amend 시도에서 또 edit 매칭 실패 (총 `❌ edit 매칭 실패` 코멘트 2회+) 면 자동 retry 중단:
+  - `ah:needs-execution` 제거 + `ah:awaiting-human` 부여 + 🛑 코멘트
+  - 무한 루프 + LLM 한계 반복 방지
+- ✅ **retry hint** — retry #1 시 user_msg 에 강한 신호:
+  - 직전 ❌ 코멘트 원문 inline (어떤 file / edit / old_str 실패)
+  - "read_file 로 PR branch 의 현재 정확한 내용 확인 (추측 X)"
+  - "직전과 같은 old_str 절대 금지"
+  - "same area 여러 edit → single edit 으로 합치기 (순서 의존성 회피)"
+  - "SoT 의 CONVENTIONS / GLOSSARY / ADR 참고해서 도메인 정합성 유지"
+- atomicity 유지 (실패 시 push 안 됨), retry 흐름이 라벨로 표현됨
 
 ## Follow-up
 
