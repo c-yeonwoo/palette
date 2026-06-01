@@ -5,6 +5,7 @@ import { DailyMatchBanner } from "./DailyMatchBanner";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { getCompatibilityDeterministic, COLOR_META, type ColorType } from "../../lib/colorCompatibility";
+import { isMockdataUser } from "../../lib/mockdata-guard";
 
 interface ProfilePhoto {
   id: string;
@@ -383,7 +384,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
             <EmptyState title="조건에 맞는 지인이 없어요" description="필터 조건을 조정해보세요" />
           ) : (
             <div className="space-y-5">
-              {/* AI Signal 은 지인 0명이어도 항상 표시 (빈 화면 방지) */}
+              {/* AI Signal 이 있으면 표시 (비시드 사용자도 보기 가능) */}
               {aiSignal && aiSignal.recommendations.length > 0 && (
                 <AiSignalSection
                   recommendations={aiSignal.recommendations}
@@ -391,7 +392,12 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
                   onProfileClick={() => {}}
                 />
               )}
-              <FirstTimeGuide onNavigateToFriends={onNavigateToFriends} />
+              {/* 비시드 사용자의 경우 FirstTimeGuide 대신 작은 empty state */}
+              {userProfile && !isMockdataUser(userProfile) ? (
+                <EmptyState title="지인을 추가해보세요" description="초대 코드로 첫 지인을 연결하면 더 많은 추천을 받을 수 있어요" />
+              ) : (
+                <FirstTimeGuide onNavigateToFriends={onNavigateToFriends} />
+              )}
             </div>
           )
         ) : (
