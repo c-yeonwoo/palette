@@ -101,10 +101,32 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
     }
   };
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // API 실패/빈 응답 시 mock 으로 채우지 않고 안내 노출
+  if (!data) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background px-6 text-center">
+        <Wallet className="w-10 h-10 text-muted-foreground" />
+        <div className="space-y-1">
+          <p className="font-semibold text-foreground">등급 정보를 불러오지 못했어요</p>
+          <p className="text-sm text-muted-foreground">잠시 후 다시 시도해주세요</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={loadData} className="gap-2">
+            <RefreshCw className="w-4 h-4" />
+            다시 시도
+          </Button>
+          <Button variant="ghost" onClick={onBack}>
+            돌아가기
+          </Button>
+        </div>
       </div>
     );
   }

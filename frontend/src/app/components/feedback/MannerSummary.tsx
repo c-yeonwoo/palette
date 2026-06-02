@@ -12,7 +12,6 @@ import {
   KEYWORD_META,
   POSITIVE_KEYWORDS,
   NEGATIVE_KEYWORDS,
-  MOCK_FEEDBACKS,
   calcMannerScore,
   hasMannerBadge,
   type MeetFeedback,
@@ -24,7 +23,7 @@ interface MannerSummaryProps {
 }
 
 export function MannerSummary({
-  feedbacks = MOCK_FEEDBACKS,
+  feedbacks = [],
   isSelf = true,
 }: MannerSummaryProps) {
   const score = calcMannerScore(feedbacks);

@@ -8,7 +8,6 @@
 import { Trophy, TrendingUp, Users } from "lucide-react";
 import { cn } from "../ui/utils";
 import {
-  MOCK_FEEDBACKS,
   OVERALL_META,
   type MeetFeedback,
   type OverallRating,
@@ -19,7 +18,7 @@ interface MatchmakerInsightsProps {
 }
 
 export function MatchmakerInsights({
-  feedbacks = MOCK_FEEDBACKS,
+  feedbacks = [],
 }: MatchmakerInsightsProps) {
   const total = feedbacks.length;
   if (total === 0) {

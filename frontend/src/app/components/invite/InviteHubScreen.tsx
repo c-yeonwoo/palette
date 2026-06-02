@@ -14,10 +14,7 @@ import { Button } from "../ui/button";
 import { InviteShareSheet } from "./InviteShareSheet";
 import { RewardLadder } from "./RewardLadder";
 import { getMyInviteCode, buildInviteLink } from "../../../lib/invite-code";
-import {
-  MOCK_INVITES,
-  type Invite,
-} from "../../../lib/invite-rewards";
+import { type Invite } from "../../../lib/invite-rewards";
 import { cn } from "../ui/utils";
 
 interface InviteHubScreenProps {
@@ -26,7 +23,7 @@ interface InviteHubScreenProps {
 
 export function InviteHubScreen({ onBack }: InviteHubScreenProps) {
   const [showShare, setShowShare] = useState(false);
-  const [invites] = useState<Invite[]>(MOCK_INVITES);
+  const [invites] = useState<Invite[]>([]);
 
   const code = getMyInviteCode();
 
