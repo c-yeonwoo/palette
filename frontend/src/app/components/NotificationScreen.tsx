@@ -44,6 +44,8 @@ interface NotificationScreenProps {
   onBack: () => void;
   /** 딥링크: 매칭 상세 열기 */
   onOpenMatch?: (matchId: string) => void;
+  /** 데모(시드) 계정일 때만 mock 알림 노출 (lib/mock-account.ts) */
+  isMockData?: boolean;
 }
 
 type TabKey = "all" | NotificationCategory;
@@ -75,9 +77,13 @@ const CATEGORY_ICON_COLOR: Record<NotificationCategory, string> = {
   system:     "hsl(var(--text-secondary))",
 };
 
-export function NotificationScreen({ onBack, onOpenMatch }: NotificationScreenProps) {
+export function NotificationScreen({ onBack, onOpenMatch, isMockData = false }: NotificationScreenProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
-  const [notifications, setNotifications] = useState<AppNotification[]>(MOCK_NOTIFICATIONS);
+  // 일반 가입 유저는 빈 상태로 시작 — 데모(시드) 계정만 mock 알림 노출
+  // (알림 조회 백엔드 API 미구현, MVP 제한 — 별도 issue)
+  const [notifications, setNotifications] = useState<AppNotification[]>(
+    isMockData ? MOCK_NOTIFICATIONS : [],
+  );
 
   const markRead = useCallback((id: string) => {
     setNotifications((prev) =>

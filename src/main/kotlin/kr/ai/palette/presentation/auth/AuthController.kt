@@ -26,6 +26,7 @@ class AuthController(
     private val matchmakerRepository: kr.ai.palette.domain.matchmaker.MatchmakerRepository,
     private val userWithdrawalService: UserWithdrawalService,
     private val phoneVerificationService: PhoneVerificationService,
+    private val seedUserPolicy: kr.ai.palette.infrastructure.seed.SeedUserPolicy,
 ) {
 
     @PostMapping("/refresh")
@@ -59,7 +60,9 @@ class AuthController(
                 birthDate = user.publicInfo.birthDate.toString(),
                 gender = user.publicInfo.gender.name,
                 phoneNumber = user.privateInfo.phoneNumber,
-                isPhoneVerified = user.privateInfo.isPhoneVerified
+                isPhoneVerified = user.privateInfo.isPhoneVerified,
+                // ADR 0003: 시드(데모) 계정 여부 — frontend mock 데이터 노출 가드의 단일 소스
+                isMockDataAccount = seedUserPolicy.isSeed(user)
             )
         )
     }
@@ -264,7 +267,8 @@ data class UserResponse(
     val birthDate: String,
     val gender: String,
     val phoneNumber: String?,
-    val isPhoneVerified: Boolean
+    val isPhoneVerified: Boolean,
+    val isMockDataAccount: Boolean
 )
 
 data class UpdateBasicInfoRequest(

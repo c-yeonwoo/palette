@@ -11,6 +11,11 @@ export interface AuthUser {
   nickname: string;
   accountType: 'REGULAR' | 'MATCHMAKER';
   isProfileCompleted: boolean;
+  /**
+   * 데모(시드) 계정 여부 — backend `SeedUserPolicy.isSeed(user)` 결과.
+   * frontend mock 데이터 노출 가드의 단일 소스 (lib/mock-account.ts 참조).
+   */
+  isMockDataAccount?: boolean;
 }
 
 export interface RefreshTokenResponse {
