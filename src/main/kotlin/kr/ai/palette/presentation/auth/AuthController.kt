@@ -26,6 +26,7 @@ class AuthController(
     private val matchmakerRepository: kr.ai.palette.domain.matchmaker.MatchmakerRepository,
     private val userWithdrawalService: UserWithdrawalService,
     private val phoneVerificationService: PhoneVerificationService,
+    private val seedUserPolicy: kr.ai.palette.infrastructure.seed.SeedUserPolicy,
 ) {
 
     @PostMapping("/refresh")
@@ -59,7 +60,9 @@ class AuthController(
                 birthDate = user.publicInfo.birthDate.toString(),
                 gender = user.publicInfo.gender.name,
                 phoneNumber = user.privateInfo.phoneNumber,
-                isPhoneVerified = user.privateInfo.isPhoneVerified
+                isPhoneVerified = user.privateInfo.isPhoneVerified,
+                // ADR 0003: 시드(데모) 계정 여부 — frontend mock 데이터 노출 가드의 단일 소스
+                isMockDataAccount = seedUserPolicy.isSeed(user)
             )
         )
     }
@@ -85,7 +88,9 @@ class AuthController(
 
         // MATCHMAKER_ONLY를 REGULAR로 변경
         if (user.accountType != AccountType.MATCHMAKER_ONLY) {
-            return ResponseEntity.badRequest().build()
+            throw kr.ai.palette.infrastructure.exception.BusinessRuleViolationException(
+                "MATCHMAKER_ONLY 계정만 REGULAR로 전환할 수 있습니다"
+            )
         }
 
         val updatedUser = User(
@@ -117,7 +122,9 @@ class AuthController(
     ): ResponseEntity<Unit> {
         val verifyResult = phoneVerificationService.verifyCode(request.phoneNumber, request.verificationCode, null)
         if (verifyResult is VerifyCodeResult.Failure) {
-            return ResponseEntity.badRequest().build()
+            throw kr.ai.palette.infrastructure.exception.BusinessRuleViolationException(
+                "휴대폰 인증 코드가 올바르지 않습니다"
+            )
         }
 
         val user = userRepository.findById(authUser.userId)
@@ -126,13 +133,17 @@ class AuthController(
         // 닉네임 중복 체크 (기존 닉네임과 다른 경우만)
         if (request.nickname != user.publicInfo.nickname &&
             userRepository.existsByNickname(request.nickname)) {
-            return ResponseEntity.badRequest().build()
+            throw kr.ai.palette.infrastructure.exception.DuplicateResourceException(
+                "이미 사용 중인 닉네임입니다"
+            )
         }
 
         // 핸드폰 번호 중복 체크 (기존 번호와 다른 경우만)
         if (request.phoneNumber != user.privateInfo.phoneNumber &&
             userRepository.existsByPhoneNumber(request.phoneNumber)) {
-            return ResponseEntity.badRequest().build()
+            throw kr.ai.palette.infrastructure.exception.DuplicateResourceException(
+                "이미 가입된 휴대폰 번호입니다"
+            )
         }
 
         // 사용자 정보 업데이트
@@ -179,7 +190,9 @@ class AuthController(
         // 닉네임 중복 체크 (변경하는 경우만)
         if (request.nickname != null && request.nickname != user.publicInfo.nickname) {
             if (userRepository.existsByNickname(request.nickname)) {
-                return ResponseEntity.badRequest().build()
+                throw kr.ai.palette.infrastructure.exception.DuplicateResourceException(
+                    "이미 사용 중인 닉네임입니다"
+                )
             }
         }
 
@@ -264,7 +277,8 @@ data class UserResponse(
     val birthDate: String,
     val gender: String,
     val phoneNumber: String?,
-    val isPhoneVerified: Boolean
+    val isPhoneVerified: Boolean,
+    val isMockDataAccount: Boolean
 )
 
 data class UpdateBasicInfoRequest(
@@ -419,7 +433,9 @@ class EmailAuthController(
 
         val verifyResult = phoneVerificationService.verifyCode(request.phoneNumber, request.verificationCode, null)
         if (verifyResult is VerifyCodeResult.Failure) {
-            return ResponseEntity.badRequest().build()
+            throw kr.ai.palette.infrastructure.exception.BusinessRuleViolationException(
+                "휴대폰 인증 코드가 올바르지 않습니다"
+            )
         }
 
         // 중복 체크 — 어떤 필드가 충돌하는지 명시적으로 응답 (UX)

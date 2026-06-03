@@ -23,11 +23,15 @@ interface ChatThreadProps {
   match: MatchDetail;
   isMatchmaker?: boolean;
   className?: string;
+  /** 데모(시드) 계정일 때만 mock 메시지 노출 (lib/mock-account.ts) */
+  isMockData?: boolean;
 }
 
-export function ChatThread({ match, isMatchmaker = false, className }: ChatThreadProps) {
+export function ChatThread({ match, isMatchmaker = false, className, isMockData = false }: ChatThreadProps) {
+  // 일반 가입 유저는 빈 대화로 시작 — 데모(시드) 계정만 mock 메시지 노출
+  // (채팅 백엔드 미구현, MVP 제한 — 별도 issue)
   const [messages, setMessages] = useState<Message[]>(() =>
-    getMessagesForMatch(match.matchId),
+    isMockData ? getMessagesForMatch(match.matchId) : [],
   );
   const [channel, setChannel] = useState<Channel>("public");
   const bottomRef = useRef<HTMLDivElement>(null);
