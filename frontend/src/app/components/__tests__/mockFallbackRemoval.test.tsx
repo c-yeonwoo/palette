@@ -38,8 +38,16 @@ describe('MatchmakerInsights — mock feedbacks default 제거', () => {
 });
 
 describe('MannerSummary — mock feedbacks default 제거', () => {
-  it('feedbacks 미전달 시에도 mock 데이터 없이 렌더링된다 (throw 하지 않음)', () => {
-    const { container } = render(<MannerSummary />);
-    expect(container).toBeTruthy();
+  it('feedbacks 미전달 시 mock 후기 대신 빈 상태를 보여준다', () => {
+    render(<MannerSummary />);
+    // mock default 가 사라졌으므로 점수/칭찬 UI 대신 빈 상태 안내가 노출되어야 한다
+    expect(screen.getByText('아직 받은 후기가 없어요')).toBeInTheDocument();
+    expect(screen.queryByText('매너 점수')).not.toBeInTheDocument();
+  });
+
+  it('feedbacks 가 주입되면 빈 상태가 아니라 매너 점수를 렌더링한다', () => {
+    render(<MannerSummary feedbacks={MOCK_FEEDBACKS} />);
+    expect(screen.queryByText('아직 받은 후기가 없어요')).not.toBeInTheDocument();
+    expect(screen.getByText('매너 점수')).toBeInTheDocument();
   });
 });
