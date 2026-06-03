@@ -18,6 +18,7 @@ import {
   X as XIcon,
 } from "lucide-react";
 import { cn } from "./ui/utils";
+import { EmptyState, EmptyIllustration } from "./ui/empty-state";
 import { getColorTypeMeta } from "../../lib/colorTypes";
 import {
   MOCK_MARKETPLACE,
@@ -51,13 +52,12 @@ export function MatchmakerMarketplaceScreen({
   const [sort, setSort] = useState<SortKey>("success");
   const [showFilter, setShowFilter] = useState(false);
 
-  // 일반 가입 유저는 빈 풀 — 데모(시드) 계정만 mock 주선자 노출
-  // (마켓플레이스 백엔드 연동 전, MVP 제한 — 별도 issue)
-  const source = isMockData ? MOCK_MARKETPLACE : [];
   const hasSearch = query.trim().length > 0 || activeFilter !== null;
 
   const filtered = useMemo(() => {
-    let list = [...source];
+    // 일반 가입 유저는 빈 풀 — 데모(시드) 계정만 mock 주선자 노출
+    // (마켓플레이스 백엔드 연동 전, MVP 제한 — 별도 issue)
+    let list = isMockData ? [...MOCK_MARKETPLACE] : [];
 
     // 검색어
     if (query.trim()) {
@@ -195,15 +195,17 @@ export function MatchmakerMarketplaceScreen({
       <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-3 pt-1">
         {filtered.length === 0 ? (
           hasSearch ? (
-            <div className="text-center py-20 text-text-tertiary">
-              <p className="text-body-sm">검색 결과가 없어요</p>
-              <p className="text-caption mt-1">다른 키워드로 검색해보세요</p>
-            </div>
+            <EmptyState
+              illustration={<EmptyIllustration name="magnifier" />}
+              title="검색 결과가 없어요"
+              description="다른 키워드로 검색해보세요"
+            />
           ) : (
-            <div className="text-center py-20 text-text-tertiary">
-              <p className="text-body-sm text-text-secondary">아직 추천할 주선자가 없어요</p>
-              <p className="text-caption mt-1">지인 네트워크가 넓어지면 어울리는 주선자를 소개해 드릴게요.</p>
-            </div>
+            <EmptyState
+              illustration={<EmptyIllustration name="telescope" />}
+              title="아직 추천할 주선자가 없어요"
+              description="지인 네트워크가 넓어지면 어울리는 주선자를 소개해 드릴게요."
+            />
           )
         ) : (
           filtered.map((m) => (
