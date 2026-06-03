@@ -14,10 +14,7 @@ import { Button } from "../ui/button";
 import { InviteShareSheet } from "./InviteShareSheet";
 import { RewardLadder } from "./RewardLadder";
 import { getMyInviteCode, buildInviteLink } from "../../../lib/invite-code";
-import {
-  MOCK_INVITES,
-  type Invite,
-} from "../../../lib/invite-rewards";
+import { type Invite } from "../../../lib/invite-rewards";
 import { cn } from "../ui/utils";
 
 interface InviteHubScreenProps {
@@ -26,7 +23,10 @@ interface InviteHubScreenProps {
 
 export function InviteHubScreen({ onBack }: InviteHubScreenProps) {
   const [showShare, setShowShare] = useState(false);
-  const [invites] = useState<Invite[]>(MOCK_INVITES);
+  // TODO(#25 follow-up): 초대 목록 실데이터 연동 필요. mock default 제거 후 현재는 빈 배열로만
+  //   유지되어 진행 현황/보상 사다리/히스토리가 항상 빈 상태로 렌더된다. 초대 조회 API
+  //   (GET /api/v1/friends/invites 등) 연동 시 setInvites 추가 + useEffect fetch 로 채울 것.
+  const [invites] = useState<Invite[]>([]);
 
   const code = getMyInviteCode();
 

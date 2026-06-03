@@ -12,7 +12,6 @@ import { cn } from "../ui/utils";
 import {
   calculateCompletion,
   getNextActions,
-  MOCK_COMPLETION_INPUT,
   type ProfileCompletionInput,
 } from "../../../lib/profile-completion";
 import { getColorTypeMeta } from "../../../lib/colorTypes";
@@ -30,20 +29,11 @@ const STROKE = 8;
 const CIRCUMFERENCE = 2 * Math.PI * DONUT_R;
 
 export function CompletionMeter({
-  input = MOCK_COMPLETION_INPUT,
+  input,
   onAction,
 }: CompletionMeterProps) {
-  const breakdown = calculateCompletion(input);
-  const { total } = breakdown;
-  const nextActions = getNextActions(input);
   const prevRef = useRef(0);
-
-  const colorType = getMyColorType();
-  const meta = getColorTypeMeta(colorType);
-  const accentHsl = `hsl(${meta.h} ${meta.s}% ${meta.l}%)`;
-
-  const dashOffset = CIRCUMFERENCE * (1 - total / 100);
-  const isHighAchiever = total >= 80;
+  const total = input ? calculateCompletion(input).total : 0;
 
   // confetti on first reaching 80%
   useEffect(() => {
@@ -52,6 +42,25 @@ export function CompletionMeter({
     }
     prevRef.current = total;
   }, [total]);
+
+  // 데이터 미전달 시 빈 상태 (mock 주입 안 함)
+  if (!input) {
+    return (
+      <div className="bg-surface shadow-card rounded-2xl p-5 text-center text-text-tertiary">
+        <p className="text-body-sm">프로필 완성도를 불러올 수 없어요</p>
+        <p className="text-caption mt-1">프로필을 채우면 완성도가 표시돼요</p>
+      </div>
+    );
+  }
+
+  const nextActions = getNextActions(input);
+
+  const colorType = getMyColorType();
+  const meta = getColorTypeMeta(colorType);
+  const accentHsl = `hsl(${meta.h} ${meta.s}% ${meta.l}%)`;
+
+  const dashOffset = CIRCUMFERENCE * (1 - total / 100);
+  const isHighAchiever = total >= 80;
 
   return (
     <div className="bg-surface shadow-card rounded-2xl p-5">
