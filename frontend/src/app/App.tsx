@@ -297,7 +297,7 @@ export default function App() {
             setIsLoggedIn(true);
             setUserGender(user.gender); // Store user gender for profile editing
             setIsMockAccount(isMockDataAccount(user));
-            const acctType = (user as { accountType?: string }).accountType as "REGULAR" | "MATCHMAKER_ONLY" | undefined;
+            const acctType = user.accountType;
             setUserAccountType(acctType);
             // If profile is completed, go to main feed, otherwise restore or start onboarding
             // ADR 0014: MATCHMAKER_ONLY 는 mainFeed 가 아닌 ConnectorDashboard 로
@@ -704,7 +704,7 @@ export default function App() {
       if (user) {
         setUserGender(user.gender);
         setIsMockAccount(isMockDataAccount(user));
-        const acctType = (user as { accountType?: string }).accountType as "REGULAR" | "MATCHMAKER_ONLY" | undefined;
+        const acctType = user.accountType;
         setUserAccountType(acctType);
         if (user.isProfileCompleted) {
           // ADR 0014: MATCHMAKER_ONLY 는 mainFeed 가 아닌 ConnectorDashboard 로

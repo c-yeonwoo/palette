@@ -176,7 +176,7 @@ export function NotificationScreen({ onBack, onOpenMatch, isMockData = false }: 
       {/* ── 목록 ── */}
       <div className="flex-1 overflow-y-auto">
         {filtered.length === 0 ? (
-          <EmptyState tab={activeTab} />
+          <NotificationEmptyState tab={activeTab} />
         ) : (
           <ul className="divide-y divide-border-subtle">
             {filtered.map((notif) => (
@@ -281,7 +281,7 @@ function NotificationItem({
 
 /* ── 빈 상태 ───────────────────────────────────────────────── */
 
-function EmptyState({ tab }: { tab: TabKey }) {
+function NotificationEmptyState({ tab }: { tab: TabKey }) {
   const label = tab === "all" ? "알림" : CATEGORY_LABELS[tab as NotificationCategory];
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-24 px-8 text-center">

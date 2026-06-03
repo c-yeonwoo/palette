@@ -9,11 +9,20 @@ import { tokenStorage, type AuthTokens } from './tokenStorage';
 export interface AuthUser {
   userId: string;
   nickname: string;
-  accountType: 'REGULAR' | 'MATCHMAKER';
+  /** backend AccountType enum: REGULAR 또는 MATCHMAKER_ONLY */
+  accountType: 'REGULAR' | 'MATCHMAKER_ONLY';
   isProfileCompleted: boolean;
+  canAccessMatchingService: boolean;
+  canAccessMatchmakerService: boolean;
+  realName: string;
+  birthDate: string;
+  gender: string;
+  phoneNumber?: string;
+  isPhoneVerified: boolean;
   /**
    * 데모(시드) 계정 여부 — backend `SeedUserPolicy.isSeed(user)` 결과.
    * frontend mock 데이터 노출 가드의 단일 소스 (lib/mock-account.ts 참조).
+   * 구버전 backend 호환: 필드 없으면 false (lib/mock-account.ts 의 isMockDataAccount() 참조).
    */
   isMockDataAccount?: boolean;
 }
