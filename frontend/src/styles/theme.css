@@ -100,7 +100,7 @@
   /* ── Surface ── */
   --surface:          0 0% 100%;
   --surface-elevated: 0 0% 100%;
-  --surface-sunken:   0 0% 97%;
+  --surface-sunken:   0 0% 98.5%;   /* P9: 97 → 98.5 (덜 칙칙) */
 
   /* ── Border ── */
   --border-subtle:    0 0% 93%;
@@ -162,23 +162,23 @@
    3. SHADCN BRIDGE  (기존 컴포넌트 호환, 가급적 수정 금지)
    ============================================================ */
 :root {
-  --background:        #FAF8F4;   /* P8: warm off-white (종이 같은 느낌) */
+  --background:        #FFFFFF;   /* P9: 순백 (베이지 회색기 제거 — 칙칙함 해소) */
   --foreground:        #1A1916;
   --card:              #FFFFFF;
   --card-foreground:   #1A1916;
   --popover:           #FFFFFF;
   --popover-foreground:#1A1916;
   --primary:           #2E2A24;   /* P8: Warm Charcoal — 너무 검정 안 되게 살짝 따뜻한 톤 */
-  --primary-foreground:#FAF8F4;
-  --secondary:         #EFEBE4;   /* P8: warm neutral sand (채도 매우 낮음) */
+  --primary-foreground:#FFFFFF;
+  --secondary:         #F4F4F2;   /* P9: 거의 흰색 중립 (모래색 → 밝게) */
   --secondary-foreground:#1A1916;
-  --muted:             #F2EEE7;   /* P8: 카드 sunken */
-  --muted-foreground:  #5C564E;   /* P8: warm gray (가독성 충분) */
-  --accent:            #E8E2D7;   /* P8: warm hover bg */
+  --muted:             #F6F6F4;   /* P9: 거의 흰색 (베이지회색 → 깔끔) */
+  --muted-foreground:  #6B6862;   /* 중립 gray (가독성) */
+  --accent:            #F0F0EE;   /* P9: 밝은 hover bg */
   --accent-foreground: #1A1916;
   --destructive:       #B23A2C;
   --destructive-foreground:#FFFFFF;
-  --border:            #E3DCCF;   /* P8: subtle warm border */
+  --border:            #EAEAE6;   /* P9: 중립 밝은 border (누런기 제거) */
   --input:             transparent;
   --input-background:  #FFFFFF;
   --switch-background: #C9C0AE;
