@@ -1,0 +1,12 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Palette 앱아이콘 — 두 색이 만나 제3의 색 (지인이 그려주는 인연) -->
+  <rect width="512" height="512" rx="114" fill="#F4EFE7"/>
+  <defs>
+    <clipPath id="ic-left"><circle cx="206" cy="256" r="116"/></clipPath>
+  </defs>
+  <circle cx="206" cy="256" r="116" fill="#E0795C"/>   <!-- terracotta -->
+  <circle cx="306" cy="256" r="116" fill="#4E79A8"/>   <!-- dusty blue -->
+  <g clip-path="url(#ic-left)">
+    <circle cx="306" cy="256" r="116" fill="#7C5C75"/> <!-- 교집합 = plum (섞임) -->
+  </g>
+</svg>

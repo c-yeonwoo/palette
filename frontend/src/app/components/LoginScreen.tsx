@@ -31,17 +31,30 @@ export function LoginScreen({ onEmailLogin }: LoginScreenProps) {
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center gap-8 px-6 max-w-md w-full">
-        {/* Wordmark + slogan — 절제된 luxe brand */}
-        <div className="text-center space-y-3">
-          <h1
-            className="text-white text-[2.75rem] font-semibold uppercase tracking-[0.32em] leading-none"
-            style={{ textIndent: '0.32em' }}  /* letter-spacing 마지막 글자 뒤 공백 보정 — 중앙정렬 시각 균형 */
-          >
-            Palette
-          </h1>
-          <p className="text-white/80 text-[0.95rem] tracking-wide">
-            지인이 그려주는 인연
-          </p>
+        {/* 심볼 마크 + Wordmark + slogan — 두 색이 만나 제3의 색 (지인이 그려주는 인연) */}
+        <div className="text-center flex flex-col items-center gap-5">
+          {/* Palette 심볼 — 두 원의 겹침 */}
+          <svg width="64" height="64" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Palette">
+            <defs>
+              <clipPath id="login-mark-left"><circle cx="206" cy="256" r="116" /></clipPath>
+            </defs>
+            <circle cx="206" cy="256" r="116" fill="#E0795C" />
+            <circle cx="306" cy="256" r="116" fill="#4E79A8" />
+            <g clipPath="url(#login-mark-left)">
+              <circle cx="306" cy="256" r="116" fill="#7C5C75" />
+            </g>
+          </svg>
+          <div className="space-y-3">
+            <h1
+              className="text-white text-[2.75rem] font-semibold uppercase tracking-[0.32em] leading-none"
+              style={{ textIndent: '0.32em' }}  /* letter-spacing 마지막 글자 뒤 공백 보정 — 중앙정렬 시각 균형 */
+            >
+              Palette
+            </h1>
+            <p className="text-white/80 text-[0.95rem] tracking-wide">
+              지인이 그려주는 인연
+            </p>
+          </div>
         </div>
 
         {/* Login Buttons */}

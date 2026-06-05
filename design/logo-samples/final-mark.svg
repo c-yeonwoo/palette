@@ -1,0 +1,11 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Palette 심볼 마크 (배경 투명) — 로그인 화면 등 인라인용 -->
+  <defs>
+    <clipPath id="mk-left"><circle cx="206" cy="256" r="116"/></clipPath>
+  </defs>
+  <circle cx="206" cy="256" r="116" fill="#E0795C"/>
+  <circle cx="306" cy="256" r="116" fill="#4E79A8"/>
+  <g clip-path="url(#mk-left)">
+    <circle cx="306" cy="256" r="116" fill="#7C5C75"/>
+  </g>
+</svg>

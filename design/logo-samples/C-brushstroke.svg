@@ -1,0 +1,23 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 컨셉 C: 붓터치 한 획 — 두 색이 이어지는 연결(∞/sweep). 손으로 그린 인연 -->
+  <defs>
+    <linearGradient id="sweep" x1="120" y1="200" x2="392" y2="320" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E07A5F"/>     <!-- terracotta -->
+      <stop offset="50%" stop-color="#C98A6B"/>
+      <stop offset="100%" stop-color="#4F7CAC"/>    <!-- dusty blue -->
+    </linearGradient>
+  </defs>
+  <!-- 배경: warm cream -->
+  <rect width="512" height="512" rx="116" fill="#F4EFE7"/>
+  <!-- 무한대(∞) 형상의 한 붓획 — 두 점(사람)이 끊김 없이 이어짐 -->
+  <path
+    d="M 168 256
+       C 168 196, 256 196, 256 256
+       C 256 316, 344 316, 344 256
+       C 344 196, 256 196, 256 256
+       C 256 316, 168 316, 168 256 Z"
+    stroke="url(#sweep)"
+    stroke-width="34"
+    stroke-linecap="round"
+    fill="none"/>
+</svg>

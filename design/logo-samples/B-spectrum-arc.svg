@@ -1,0 +1,18 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 컨셉 B: 팔레트 메타포 — 8 color types 가 하나의 호(arc)를 이룬다 -->
+  <!-- 배경: warm charcoal (luxury 톤) -->
+  <rect width="512" height="512" rx="116" fill="#2E2A24"/>
+  <!-- 호(arc)를 따라 8개 색 점. 중앙이 크고 양끝이 작아 부드러운 흐름 -->
+  <!-- 호 중심 (256, 360), 반지름 150, 위쪽 반원에 분포 -->
+  <g>
+    <!-- 왼쪽 끝(작게) → 중앙(크게) → 오른쪽 끝(작게) -->
+    <circle cx="120" cy="300" r="15" fill="#9CA3AF"/>   <!-- gray -->
+    <circle cx="142" cy="232" r="19" fill="#A855F7"/>   <!-- purple -->
+    <circle cx="186" cy="184" r="23" fill="#4F7CAC"/>   <!-- blue -->
+    <circle cx="246" cy="164" r="26" fill="#52A37C"/>   <!-- green -->
+    <circle cx="308" cy="172" r="26" fill="#EAB308"/>   <!-- yellow -->
+    <circle cx="362" cy="208" r="23" fill="#E07A5F"/>   <!-- orange -->
+    <circle cx="396" cy="262" r="19" fill="#D9536B"/>   <!-- red -->
+    <circle cx="412" cy="326" r="15" fill="#E89BB0"/>   <!-- pink -->
+  </g>
+</svg>

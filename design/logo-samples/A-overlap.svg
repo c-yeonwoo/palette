@@ -1,0 +1,10 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 컨셉 A: 두 색의 겹침 — 지인 + 나, 두 색이 만나 제3의 색을 만든다 -->
+  <!-- 배경: warm cream rounded square (iOS 앱아이콘 톤) -->
+  <rect width="512" height="512" rx="116" fill="#F4EFE7"/>
+  <!-- 두 원이 살짝 겹침. opacity 로 overlap 영역이 자연히 깊어짐 -->
+  <g style="mix-blend-mode: multiply">
+    <circle cx="206" cy="256" r="118" fill="#E07A5F"/>   <!-- terracotta (warm) -->
+    <circle cx="306" cy="256" r="118" fill="#4F7CAC"/>   <!-- dusty blue (cool) -->
+  </g>
+</svg>

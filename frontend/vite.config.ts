@@ -23,8 +23,8 @@ export default defineConfig({
         name: 'Palette — 지인이 보증하는 만남',
         short_name: 'Palette',
         description: '나의 색을 찾고, 너의 색과 조화를 이루다 — 지인 네트워크 기반 데이팅',
-        theme_color: '#F97316',     // orange-500 — 메인 색
-        background_color: '#ffffff',
+        theme_color: '#E0795C',     // terracotta — brand 심볼 색
+        background_color: '#F4EFE7', // warm cream — 앱아이콘 배경과 동일
         display: 'standalone',       // 브라우저 UI 숨김 (앱처럼)
         orientation: 'portrait',
         scope: '/',
