@@ -112,9 +112,10 @@
   --text-tertiary:    var(--warm-500);
 
   /* ── Gold (서비스 메인 시그니처 — 로고 #C9A86A) ── */
-  --gold:             39 48% 48%;     /* #BD9244 — 흰 배경 대비 OK */
-  --gold-foreground:  30 12% 12%;     /* gold 위 charcoal 텍스트 (대비 5.0:1 — 명품 쇼핑백 톤) */
-  --gold-soft:        39 42% 94%;     /* 연한 배경 (칩/hover) */
+  --gold:             39 48% 48%;     /* #BD9244 — 흰 배경 대비 OK (포인트/active) */
+  --gold-foreground:  30 12% 12%;     /* gold solid 위 charcoal */
+  --gold-soft:        39 46% 92%;     /* 연한 채움 배경 (버튼/칩) */
+  --gold-strong:      37 60% 30%;     /* #7A5A1E — gold-soft 위 텍스트 (대비 5+, 폰트 안 진하게) */
 
   /* ── Brand (시스템 메인 액센트 — P9: orange → gold 전환. 런타임 불변) ── */
   --brand:            var(--gold);
@@ -314,6 +315,7 @@
   --color-gold:                 hsl(var(--gold));
   --color-gold-foreground:      hsl(var(--gold-foreground));
   --color-gold-soft:            hsl(var(--gold-soft));
+  --color-gold-strong:          hsl(var(--gold-strong));
 
   /* ── P1 신규: User Accent (P3 AccentScope가 --accent-h/s/l 교체) ── */
   --color-user-accent:          hsl(var(--user-accent));

@@ -442,7 +442,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
           >
             {label}
             {badge > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-brand text-brand-foreground rounded-full">
+              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-brand-soft text-gold-strong rounded-full">
                 {badge}
               </span>
             )}
@@ -465,7 +465,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                     onClick={() => setMemberGender(g)}
                     className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                       memberGender === g
-                        ? "bg-brand text-brand-foreground shadow-sm"
+                        ? "bg-brand-soft text-gold-strong shadow-sm"
                         : "bg-muted text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -788,7 +788,7 @@ function RequestCard({
             </Button>
             <Button
               size="sm"
-              className="flex-1 bg-brand text-brand-foreground"
+              className="flex-1 bg-brand-soft text-gold-strong"
               onClick={(e) => { e.stopPropagation(); onApprove(); }}
             >
               <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
@@ -1090,7 +1090,7 @@ function NudgeFlowSheet({
 
               <button
                 onClick={() => setStep(3)}
-                className="w-full py-3 rounded-xl bg-brand text-brand-foreground text-sm font-semibold"
+                className="w-full py-3 rounded-xl bg-brand-soft text-gold-strong text-sm font-semibold"
               >
                 다음 — 최종 확인
               </button>
@@ -1139,7 +1139,7 @@ function NudgeFlowSheet({
 
               <button
                 onClick={() => onSubmit(selected, message)}
-                className="w-full py-3.5 rounded-xl bg-brand text-brand-foreground text-sm font-bold"
+                className="w-full py-3.5 rounded-xl bg-brand-soft text-gold-strong text-sm font-bold"
               >
                 제안하기 — 50P 차감
               </button>
@@ -1174,7 +1174,7 @@ function MemberCard({
           </div>
         )}
         {hasActiveNudge && (
-          <span className="absolute top-2 left-2 bg-brand text-brand-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+          <span className="absolute top-2 left-2 bg-brand-soft text-gold-strong text-[9px] font-bold px-1.5 py-0.5 rounded-full">
             제안중
           </span>
         )}
