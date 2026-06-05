@@ -50,3 +50,6 @@ application-secret.yml
 
 # H2 로컬 DB
 /data/
+
+# Hermes 런타임 캐시
+.hermes/cache/
