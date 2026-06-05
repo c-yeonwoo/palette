@@ -491,15 +491,21 @@ function ProfileCard({
           <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
         )}
 
-        {/* Diagonal Wipe Transition */}
+        {/* Gold 가림막 — 탭하면 부드럽게 fade out (reveal) */}
         {!revealed && (
-          <div className="absolute inset-0" style={{
-            backgroundImage: "url('/paint-overlay.png')",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 0% 0%)",
-            animation: peeling ? "diagonal-wipe 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards" : "none",
-          }} />
+          <div
+            className="absolute inset-0 transition-opacity duration-700 flex items-center justify-center"
+            style={{
+              opacity: peeling ? 0 : 1,
+              background:
+                "radial-gradient(120% 120% at 30% 20%, hsl(var(--gold) / 0.30), transparent 55%)," +
+                "linear-gradient(150deg, hsl(28 14% 16%), hsl(30 16% 10%))",
+            }}
+          >
+            <span className="text-[11px] tracking-wide" style={{ color: "hsl(var(--gold))" }}>
+              {peeling ? "여는 중…" : "탭해서 열기"}
+            </span>
+          </div>
         )}
 
 
@@ -729,62 +735,85 @@ function AiSignalCard({
       return;
     }
     if (peeling) return;
+    // 플립 시작 → 0.7s 후 revealed (플립 완료). 한 번 더 탭하면 상세로.
     setPeeling(true);
     timerRef.current = setTimeout(() => {
       setRevealed(true);
       setPeeling(false);
       api.post(`/api/v1/feed/open/${profile.userId}`, {}).catch(() => {});
-    }, 1200);
+    }, 720);
   };
 
+  // 플립 여부: peeling(진행 중) 또는 revealed(완료) 면 뒷면(프로필)이 앞으로
+  const flipped = peeling || revealed;
 
   return (
     <div onClick={handleClick} className="flex-shrink-0 w-36 cursor-pointer select-none">
-      <div className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-muted shadow-sm">
-        {profile.primaryPhotoUrl ? (
-          <img src={profile.primaryPhotoUrl} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-muted via-accent to-muted/60 flex items-center justify-center">
-            <span className="text-4xl opacity-20 select-none">👤</span>
+      <div className="relative aspect-[3/4]" style={{ perspective: "1000px" }}>
+        <div
+          className="relative w-full h-full transition-transform duration-700"
+          style={{
+            transformStyle: "preserve-3d",
+            transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
+            transitionTimingFunction: "cubic-bezier(0.4, 0.0, 0.2, 1)",
+          }}
+        >
+          {/* ── 앞면 (물감 질감 + gold + 티저) — 잠긴 상태 ── */}
+          <div
+            className="absolute inset-0 rounded-2xl overflow-hidden shadow-sm flex flex-col items-center justify-center gap-2"
+            style={{
+              backfaceVisibility: "hidden",
+              WebkitBackfaceVisibility: "hidden",
+              background:
+                "radial-gradient(120% 120% at 30% 20%, hsl(var(--gold) / 0.32), transparent 55%)," +
+                "radial-gradient(120% 120% at 75% 80%, hsl(var(--gold) / 0.22), transparent 50%)," +
+                "linear-gradient(150deg, hsl(28 14% 16%), hsl(30 16% 10%))",
+            }}
+          >
+            <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "hsl(var(--gold) / 0.25)" }}>
+              <Sparkles className="w-4 h-4" style={{ color: "hsl(var(--gold))" }} />
+            </div>
+            <div className="text-center px-2">
+              {rec.teaserAge && <p className="text-white/90 text-xs font-semibold">{rec.teaserAge}세</p>}
+              {rec.teaserLocation && <p className="text-white/60 text-[11px]">{rec.teaserLocation}</p>}
+            </div>
+            <span className="text-[10px] tracking-wide" style={{ color: "hsl(var(--gold))" }}>
+              {peeling ? "여는 중…" : "탭해서 열기"}
+            </span>
+            <div className="absolute top-2 left-2">
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5"
+                style={{ background: "hsl(var(--gold) / 0.9)", color: "hsl(var(--gold-foreground))" }}>
+                <Sparkles className="w-2.5 h-2.5" /> AI
+              </span>
+            </div>
           </div>
-        )}
-        {revealed && <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />}
 
-        {/* Diagonal Wipe Transition */}
-        {!revealed && (
-          <div className="absolute inset-0" style={{
-            backgroundImage: "url('/paint-overlay.png')",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 0% 0%)",
-            animation: peeling ? "diagonal-wipe 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards" : "none",
-          }} />
-        )}
-
-        {/* AI badge */}
-        <div className="absolute top-2 left-2 z-10">
-          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/90 text-primary-foreground flex items-center gap-0.5">
-            <Sparkles className="w-2.5 h-2.5" /> AI
-          </span>
+          {/* ── 뒷면 (프로필 사진) — 공개 상태 ── */}
+          <div
+            className="absolute inset-0 rounded-2xl overflow-hidden shadow-sm bg-muted"
+            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+          >
+            {profile.primaryPhotoUrl ? (
+              <img src={profile.primaryPhotoUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-muted via-accent to-muted/60" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            {rec.isFree && (
+              <div className="absolute top-2 right-2">
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-500/90 text-white">FREE</span>
+              </div>
+            )}
+            <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2.5">
+              {profile.basicInfo.height && (
+                <p className="text-white text-xs font-semibold">{profile.basicInfo.height}cm</p>
+              )}
+              {(job || location) && (
+                <p className="text-white/70 text-xs">{[job, location].filter(Boolean).join(" · ")}</p>
+              )}
+            </div>
+          </div>
         </div>
-        {rec.isFree && (
-          <div className="absolute top-2 right-2 z-10">
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-500/90 text-white">FREE</span>
-          </div>
-        )}
-
-
-        {/* 공개 후 하단 정보 */}
-        {revealed && (
-          <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2.5">
-            {profile.basicInfo.height && (
-              <p className="text-white text-xs font-semibold">{profile.basicInfo.height}cm</p>
-            )}
-            {(job || location) && (
-              <p className="text-white/70 text-xs">{[job, location].filter(Boolean).join(" · ")}</p>
-            )}
-          </div>
-        )}
       </div>
       <p className="text-xs text-muted-foreground mt-1.5 px-0.5 truncate">{rec.reason}</p>
     </div>

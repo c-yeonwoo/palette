@@ -362,15 +362,18 @@ function PaintCard({
 
         {!revealed && (
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 transition-opacity duration-700 flex items-center justify-center"
             style={{
-              backgroundImage: "url('/paint-overlay.png')",
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%, 0% 0%)",
-              animation: peeling ? "diagonal-wipe 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards" : "none",
+              opacity: peeling ? 0 : 1,
+              background:
+                "radial-gradient(120% 120% at 30% 20%, hsl(var(--gold) / 0.30), transparent 55%)," +
+                "linear-gradient(150deg, hsl(28 14% 16%), hsl(30 16% 10%))",
             }}
-          />
+          >
+            <span className="text-[11px] tracking-wide" style={{ color: "hsl(var(--gold))" }}>
+              {peeling ? "여는 중…" : "탭해서 열기"}
+            </span>
+          </div>
         )}
 
         <div className="absolute top-2 left-2 z-10">
