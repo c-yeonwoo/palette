@@ -116,6 +116,11 @@
   --brand-foreground: 0 0% 100%;
   --brand-soft:       var(--ct-orange-50);
 
+  /* ── Gold (프리미엄 시그니처 — 로고 #C9A86A. 포인트/강조용) ── */
+  --gold:             39 45% 60%;     /* #C9A86A */
+  --gold-foreground:  30 12% 12%;     /* charcoal 위 텍스트 */
+  --gold-soft:        39 40% 92%;     /* 연한 배경 */
+
   /* ── User Accent (장식 전용, P3 AccentScope가 런타임 교체) ──
      기본값: 브랜드 오렌지와 동일
      교체 예) --accent-h:212; --accent-s:78%; --accent-l:56%  */
@@ -137,13 +142,13 @@
   --shadow-md: var(--shadow-card);
   --shadow-lg: var(--shadow-overlay);
 
-  /* ── Radius (P8: 진중함을 위해 전체 ~25% 축소) ── */
-  --radius-sm:   6px;
-  --radius-md:   10px;
-  --radius-lg:   12px;   /* 카드 기본 */
-  --radius-xl:   14px;
-  --radius-2xl:  18px;
-  --radius-pill: 999px;
+  /* ── Radius (P9: 프리미엄 — 더 각지게. 둥글둥글 = 캐주얼 → 절제된 모서리) ── */
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;    /* 카드 기본 — 12 → 8 */
+  --radius-xl:   10px;   /* 14 → 10 */
+  --radius-2xl:  12px;   /* 18 → 12 */
+  --radius-pill: 999px;  /* 아바타/칩만 (유지) */
 
   /* ── Shadow (P8: 살짝 깊게 — 고급스러운 음영) ── */
   --shadow-hairline:   0 0 0 1px hsl(30 12% 8% / 0.08);
@@ -185,7 +190,7 @@
   --chart-3: oklch(0.398 0.070 227.392);
   --chart-4: oklch(0.828 0.189  84.429);
   --chart-5: oklch(0.769 0.188  70.080);
-  --radius:            0.75rem;   /* P8: 0.9rem → 0.75rem (살짝 squared) */
+  --radius:            0.5rem;    /* P9: 0.75rem → 0.5rem (프리미엄 — 더 각지게) */
   --sidebar:           #FFFFFF;
   --sidebar-foreground:#1A1916;
   --sidebar-primary:   #2E2A24;
@@ -304,6 +309,11 @@
   --color-brand:                hsl(var(--brand));
   --color-brand-foreground:     hsl(var(--brand-foreground));
   --color-brand-soft:           hsl(var(--brand-soft));
+
+  /* ── P9 신규: Gold (프리미엄 시그니처 — bg-gold / text-gold / border-gold) ── */
+  --color-gold:                 hsl(var(--gold));
+  --color-gold-foreground:      hsl(var(--gold-foreground));
+  --color-gold-soft:            hsl(var(--gold-soft));
 
   /* ── P1 신규: User Accent (P3 AccentScope가 --accent-h/s/l 교체) ── */
   --color-user-accent:          hsl(var(--user-accent));
