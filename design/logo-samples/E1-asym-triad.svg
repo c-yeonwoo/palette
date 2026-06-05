@@ -1,0 +1,14 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- E1: 비대칭 삼각 — 정삼각(share) 탈피. 주선자(gold)가 크고 위, 두 사람은 아래 비대칭 -->
+  <rect width="512" height="512" rx="114" fill="#2E2A24"/>
+  <!-- 한 획의 유려한 곡선이 세 점을 비대칭으로 휘감음 (닫히지 않음 = 열린 인연) -->
+  <path d="M 150 300
+           C 150 200, 250 150, 300 180
+           C 360 215, 360 300, 320 330
+           C 285 356, 200 350, 175 318"
+        stroke="#A89C86" stroke-width="13" stroke-linecap="round" fill="none" opacity="0.6"/>
+  <!-- 노드 3개: 크기 차등 (주선자 큼) + 비대칭 -->
+  <circle cx="300" cy="178" r="40" fill="#E0B341"/>   <!-- 주선자 (큰 gold) -->
+  <circle cx="150" cy="300" r="30" fill="#E0795C"/>   <!-- 나 -->
+  <circle cx="322" cy="330" r="26" fill="#6E97C4"/>   <!-- 상대 (작게, 멀리) -->
+</svg>

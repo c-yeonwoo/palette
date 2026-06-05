@@ -1,0 +1,21 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- E3: 매듭처럼 한 번 꼬여 세 점을 엮음 — share 의 단순 삼각이 아니라 '엮인 인연' -->
+  <rect width="512" height="512" rx="114" fill="#2E2A24"/>
+  <defs>
+    <linearGradient id="e3g" x1="160" y1="180" x2="350" y2="340" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E0B341"/>
+      <stop offset="50%" stop-color="#E0795C"/>
+      <stop offset="100%" stop-color="#6E97C4"/>
+    </linearGradient>
+  </defs>
+  <!-- 한 획이 세 점을 지나며 한 번 교차(꼬임) — overhand knot 느낌 -->
+  <path d="M 256 175
+           C 340 185, 350 280, 280 300
+           C 210 320, 168 270, 215 235
+           C 262 200, 350 250, 330 330"
+        stroke="url(#e3g)" stroke-width="22" stroke-linecap="round" fill="none"/>
+  <!-- 세 노드 (곡선 위 강조점) -->
+  <circle cx="256" cy="175" r="20" fill="#E0B341"/>
+  <circle cx="200" cy="262" r="20" fill="#E0795C"/>
+  <circle cx="330" cy="330" r="20" fill="#6E97C4"/>
+</svg>

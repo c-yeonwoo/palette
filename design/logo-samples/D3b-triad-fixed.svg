@@ -1,0 +1,14 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- D3b: 세 노드가 하나의 곡선 삼각으로 엮임 — 나·주선자·상대 (지인 주선의 3자) -->
+  <rect width="512" height="512" rx="114" fill="#2E2A24"/>
+  <!-- 세 점을 모두 지나는 둥근 삼각 connection (closed loop) -->
+  <path d="M 256 170
+           Q 360 215 348 322
+           Q 256 360 164 322
+           Q 152 215 256 170 Z"
+        stroke="#B8B0A0" stroke-width="14" stroke-linejoin="round" fill="none" opacity="0.5"/>
+  <!-- 세 노드 (곡선 위에 정확히 얹힘) -->
+  <circle cx="256" cy="170" r="33" fill="#E0B341"/>   <!-- 주선자 (top, gold) -->
+  <circle cx="164" cy="322" r="33" fill="#E0795C"/>   <!-- 나 -->
+  <circle cx="348" cy="322" r="33" fill="#6E97C4"/>   <!-- 상대 -->
+</svg>

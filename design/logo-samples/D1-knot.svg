@@ -1,0 +1,18 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- D1: 매듭(knot) — 두 곡선이 엮여 하나의 연속된 고리. 지인 네트워크가 엮이다 -->
+  <rect width="512" height="512" rx="114" fill="#2E2A24"/>
+  <defs>
+    <linearGradient id="knot-g" x1="160" y1="160" x2="352" y2="352" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#E0795C"/>
+      <stop offset="100%" stop-color="#6E97C4"/>
+    </linearGradient>
+  </defs>
+  <!-- 단순 trinity/overhand 느낌의 매듭 — 한 획으로 엮인 곡선 -->
+  <path
+    d="M 256 150
+       C 340 150, 360 250, 300 290
+       C 240 330, 180 300, 200 240
+       C 220 180, 320 200, 330 290
+       C 340 370, 220 390, 190 320"
+    stroke="url(#knot-g)" stroke-width="26" stroke-linecap="round" fill="none"/>
+</svg>

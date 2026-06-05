@@ -1,0 +1,12 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- E2: 열린 호 위의 세 점 — 닫힌 삼각(share) 대신 부드러운 호. 두 점은 호 위, 주선자는 호를 잇는 매개 -->
+  <rect width="512" height="512" rx="114" fill="#2E2A24"/>
+  <!-- 큰 열린 호 (위로 볼록) — 양 끝에 두 사람 -->
+  <path d="M 158 318 Q 256 168 354 318"
+        stroke="#A89C86" stroke-width="14" stroke-linecap="round" fill="none" opacity="0.55"/>
+  <!-- 주선자 → 두 사람으로 내려오는 짧은 매개선 (살짝) -->
+  <path d="M 256 214 L 256 250" stroke="#E0B341" stroke-width="14" stroke-linecap="round" opacity="0.7"/>
+  <circle cx="256" cy="206" r="34" fill="#E0B341"/>   <!-- 주선자 (정점) -->
+  <circle cx="158" cy="318" r="30" fill="#E0795C"/>   <!-- 나 -->
+  <circle cx="354" cy="318" r="30" fill="#6E97C4"/>   <!-- 상대 -->
+</svg>

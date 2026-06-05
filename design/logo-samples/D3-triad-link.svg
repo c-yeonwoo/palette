@@ -1,0 +1,11 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- D3: 세 노드의 매듭 — 나 · 지인(주선자) · 상대. 1-2촌 네트워크 삼각 연결 -->
+  <rect width="512" height="512" rx="114" fill="#2E2A24"/>
+  <!-- 세 점을 잇는 곡선 (삼각 — 주선자가 가운데) -->
+  <path d="M 170 320 Q 256 130 342 320 Q 256 380 170 320 Z"
+        stroke="#C9C2B4" stroke-width="15" stroke-linejoin="round" fill="none" opacity="0.55"/>
+  <!-- 세 노드 -->
+  <circle cx="170" cy="320" r="34" fill="#E0795C"/>   <!-- 나 -->
+  <circle cx="256" cy="166" r="34" fill="#E0B341"/>   <!-- 주선자 (가운데 위, warm gold) -->
+  <circle cx="342" cy="320" r="34" fill="#6E97C4"/>   <!-- 상대 -->
+</svg>

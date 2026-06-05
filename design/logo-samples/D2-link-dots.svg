@@ -1,0 +1,10 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- D2: 두 점을 잇는 곡선 — 지인이 둘을 연결(소개). 점=사람, 선=인연 -->
+  <rect width="512" height="512" rx="114" fill="#2E2A24"/>
+  <!-- 부드러운 S 곡선이 두 점을 연결 -->
+  <path d="M 176 200 C 256 280, 256 232, 336 312"
+        stroke="#E6E1D6" stroke-width="18" stroke-linecap="round" fill="none" opacity="0.9"/>
+  <!-- 두 노드 (서로 다른 색 = 다른 개성) -->
+  <circle cx="176" cy="200" r="38" fill="#E0795C"/>
+  <circle cx="336" cy="312" r="38" fill="#6E97C4"/>
+</svg>
