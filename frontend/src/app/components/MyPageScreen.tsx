@@ -3,9 +3,8 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { ChevronRight, UserCircle, HeartHandshake, LogOut, Users, Camera, Edit2, Loader2, UserPlus, Shield, Trash2 } from "lucide-react";
+import { ChevronRight, UserCircle, HeartHandshake, LogOut, Users, Camera, Edit2, Loader2, UserPlus, Shield, Trash2, Sparkles } from "lucide-react";
 import { SectionHeader } from "./ui/section-header";
-import { StatBlock } from "./ui/stat-block";
 import { ListRow } from "./ui/list-row";
 import { api } from "../../lib/api/apiClient";
 import { tokenStorage } from "../../lib/auth/tokenStorage";
@@ -29,6 +28,8 @@ interface MatchmakerData {
 interface ProfileData {
   primaryPhotoUrl: string | null;
   metrics?: { trustScore: number; completionRate: number };
+  colorType?: { name: string | null; hex: string | null; description: string | null } | null;
+  settings?: { isAcceptingMatches: boolean };
 }
 
 export function MyPageScreen({
@@ -163,8 +164,9 @@ export function MyPageScreen({
   const displayName = user?.nickname || user?.realName || "사용자";
   const isMatchmakerOnly = user?.accountType === "MATCHMAKER_ONLY";
   const isMatchmaker = user?.canAccessMatchmakerService;
-  const trustScore = profile?.metrics?.trustScore ?? null;
   const completionRate = profile?.metrics?.completionRate ?? null;
+  const colorType = profile?.colorType ?? null;
+  const isAcceptingMatches = profile?.settings?.isAcceptingMatches;
   const profileSubtitle = completionRate !== null
     ? `프로필 완성도 ${completionRate}%`
     : "프로필 보기 및 수정";
@@ -218,6 +220,11 @@ export function MyPageScreen({
                     인증 필요
                   </span>
                 )}
+                {completionRate !== null && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-secondary text-muted-foreground font-medium">
+                    완성도 {completionRate}%
+                  </span>
+                )}
               </div>
               {user?.email && (
                 <p className="text-xs text-muted-foreground mt-1 truncate">{user.email}</p>
@@ -225,14 +232,60 @@ export function MyPageScreen({
             </div>
           </div>
 
-          {/* 통계 — 프로필 신뢰점수만 (주선자 레벨/포인트는 대시보드·리워드로 위임, 중복 제거) */}
-          {trustScore !== null && (
-            <div className="mt-4 bg-surface-sunken rounded-xl overflow-hidden grid grid-cols-2 divide-x divide-border-subtle">
-              <StatBlock value={trustScore} label="신뢰 점수" emphasis className="py-4" />
-              {completionRate !== null && (
-                <StatBlock value={`${completionRate}%`} label="프로필 완성도" className="py-4" />
-              )}
-            </div>
+          {/* 나의 색 — Palette 시그니처 정체성 (탭 → 프로필) */}
+          {profile && colorType?.hex && (
+            <button
+              onClick={onNavigateToProfile}
+              className="mt-4 w-full flex items-center gap-3.5 bg-surface-sunken rounded-2xl px-4 py-3.5 text-left transition-colors hover:bg-accent"
+            >
+              <span
+                className="w-11 h-11 rounded-full flex-shrink-0 ring-2 ring-white shadow-sm"
+                style={{ backgroundColor: colorType.hex }}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[11px] font-medium text-muted-foreground">나의 색</span>
+                <span className="block text-sm font-bold text-foreground truncate">{colorType.name ?? "내 색깔"}</span>
+                {colorType.description && (
+                  <span className="block text-xs text-muted-foreground truncate mt-0.5">{colorType.description}</span>
+                )}
+              </span>
+              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            </button>
+          )}
+
+          {/* 아직 색이 없으면 — AI 프로필로 찾기 유도 */}
+          {profile && !colorType?.hex && (
+            <button
+              onClick={onNavigateToProfile}
+              className="mt-4 w-full flex items-center gap-3 bg-brand-soft rounded-2xl px-4 py-3.5 text-left transition-colors hover:brightness-[0.98]"
+            >
+              <span className="w-9 h-9 rounded-full bg-card flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-4 h-4 text-primary" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold text-gold-strong">나의 색 찾기</span>
+                <span className="block text-xs text-gold-strong/70 truncate">AI 프로필로 당신만의 색을 발견하세요</span>
+              </span>
+              <ChevronRight className="w-4 h-4 text-gold-strong flex-shrink-0" />
+            </button>
+          )}
+
+          {/* 소개받기 상태 — 가장 행동가능한 정보 (탭 → 프로필에서 토글) */}
+          {profile && typeof isAcceptingMatches === "boolean" && (
+            <button
+              onClick={onNavigateToProfile}
+              className="mt-2.5 w-full flex items-center justify-between bg-surface-sunken rounded-2xl px-4 py-3 text-left transition-colors hover:bg-accent"
+            >
+              <span className="flex items-center gap-2.5">
+                <span className={`w-2 h-2 rounded-full ${isAcceptingMatches ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+                <span className="text-sm font-medium text-foreground">
+                  {isAcceptingMatches ? "소개받는 중" : "소개받기 잠시 멈춤"}
+                </span>
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {isAcceptingMatches ? "프로필이 노출돼요" : "프로필 숨김"}
+              </span>
+            </button>
           )}
         </div>
       </div>
