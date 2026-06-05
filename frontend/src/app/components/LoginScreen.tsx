@@ -33,7 +33,10 @@ export function LoginScreen({ onEmailLogin }: LoginScreenProps) {
       <div className="relative z-10 flex flex-col items-center gap-8 px-6 max-w-md w-full">
         {/* Wordmark + slogan — 절제된 luxe brand */}
         <div className="text-center space-y-3">
-          <h1 className="text-white text-[2.75rem] font-semibold uppercase tracking-[0.32em] leading-none pr-[-0.32em]">
+          <h1
+            className="text-white text-[2.75rem] font-semibold uppercase tracking-[0.32em] leading-none"
+            style={{ textIndent: '0.32em' }}  /* letter-spacing 마지막 글자 뒤 공백 보정 — 중앙정렬 시각 균형 */
+          >
             Palette
           </h1>
           <p className="text-white/80 text-[0.95rem] tracking-wide">
