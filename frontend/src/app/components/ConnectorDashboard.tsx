@@ -375,7 +375,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
           {onNavigateToReward && (
             <button
               onClick={onNavigateToReward}
-              className="ml-auto flex items-center gap-1.5 bg-brand-soft border border-primary/20 rounded-full px-3 py-1 text-xs font-semibold text-primary hover:bg-brand-soft transition-colors"
+              className="ml-auto flex items-center gap-1.5 bg-brand-soft border border-brand/25 rounded-full px-3 py-1 text-xs font-semibold text-primary hover:bg-brand-soft transition-colors"
               aria-label="등급 & 리워드"
             >
               <Award className="w-3.5 h-3.5" />
@@ -442,7 +442,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
           >
             {label}
             {badge > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-primary text-primary-foreground rounded-full">
+              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-brand text-brand-foreground rounded-full">
                 {badge}
               </span>
             )}
@@ -465,7 +465,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                     onClick={() => setMemberGender(g)}
                     className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                       memberGender === g
-                        ? "bg-primary text-primary-foreground shadow-sm"
+                        ? "bg-brand text-brand-foreground shadow-sm"
                         : "bg-muted text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -515,7 +515,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
               {onNavigateToFriends && filteredMembers.length > 0 && (
                 <button
                   onClick={onNavigateToFriends}
-                  className="w-full flex items-center justify-between bg-primary/5 border border-primary/20 rounded-xl px-4 py-3"
+                  className="w-full flex items-center justify-between bg-primary/5 border border-brand/25 rounded-xl px-4 py-3"
                 >
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-primary" />
@@ -716,7 +716,7 @@ function RequestCard({
   if (isPending) {
     // ── 블라인드 수락 카드 ──────────────────────────────
     return (
-      <Card className="overflow-hidden border-primary/20 shadow-sm">
+      <Card className="overflow-hidden border-brand/25 shadow-sm">
         {/* Points banner */}
         <div className="bg-primary/5 border-b border-primary/10 px-4 py-3 flex items-center justify-between">
           <div>
@@ -788,7 +788,7 @@ function RequestCard({
             </Button>
             <Button
               size="sm"
-              className="flex-1 bg-primary text-primary-foreground"
+              className="flex-1 bg-brand text-brand-foreground"
               onClick={(e) => { e.stopPropagation(); onApprove(); }}
             >
               <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
@@ -1020,7 +1020,7 @@ function NudgeFlowSheet({
                       className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-colors text-left ${
                         alreadyNudged
                           ? "border-border bg-muted/50 opacity-50 cursor-not-allowed"
-                          : "border-border bg-card hover:border-primary/40 hover:bg-primary/5"
+                          : "border-border bg-card hover:border-brand/40 hover:bg-primary/5"
                       }`}
                     >
                       <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-base font-bold text-muted-foreground/60 flex-shrink-0">
@@ -1090,7 +1090,7 @@ function NudgeFlowSheet({
 
               <button
                 onClick={() => setStep(3)}
-                className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold"
+                className="w-full py-3 rounded-xl bg-brand text-brand-foreground text-sm font-semibold"
               >
                 다음 — 최종 확인
               </button>
@@ -1100,7 +1100,7 @@ function NudgeFlowSheet({
           {/* ── Step 3: 최종 확인 ── */}
           {step === 3 && selected && (
             <div className="space-y-5">
-              <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5 space-y-4">
+              <div className="bg-primary/5 border border-brand/25 rounded-2xl p-5 space-y-4">
                 <p className="text-sm font-semibold text-center">이렇게 연결 제안할게요</p>
                 <div className="flex items-center justify-center gap-4">
                   <div className="text-center">
@@ -1139,7 +1139,7 @@ function NudgeFlowSheet({
 
               <button
                 onClick={() => onSubmit(selected, message)}
-                className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-bold"
+                className="w-full py-3.5 rounded-xl bg-brand text-brand-foreground text-sm font-bold"
               >
                 제안하기 — 50P 차감
               </button>
@@ -1174,7 +1174,7 @@ function MemberCard({
           </div>
         )}
         {hasActiveNudge && (
-          <span className="absolute top-2 left-2 bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+          <span className="absolute top-2 left-2 bg-brand text-brand-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full">
             제안중
           </span>
         )}
