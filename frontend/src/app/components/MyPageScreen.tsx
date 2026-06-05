@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { ChevronRight, UserCircle, HeartHandshake, LogOut, Users, Camera, Edit2, Loader2, UserPlus, Shield, Trash2, Coins } from "lucide-react";
+import { ChevronRight, UserCircle, HeartHandshake, LogOut, Users, Camera, Edit2, Loader2, UserPlus, Shield, Trash2 } from "lucide-react";
 import { SectionHeader } from "./ui/section-header";
 import { StatBlock } from "./ui/stat-block";
 import { ListRow } from "./ui/list-row";
@@ -225,22 +225,13 @@ export function MyPageScreen({
             </div>
           </div>
 
-          {/* 통계 — P2 StatBlock */}
-          {(trustScore !== null || matchmaker?.level) && (
-            <div className="mt-4 bg-surface-sunken rounded-xl overflow-hidden">
-              <div className="grid divide-x divide-border-subtle"
-                style={{ gridTemplateColumns: `repeat(${[trustScore !== null, !!matchmaker?.level, matchmaker?.totalPoints !== undefined].filter(Boolean).length}, 1fr)` }}
-              >
-                {trustScore !== null && (
-                  <StatBlock value={trustScore} label="신뢰 점수" emphasis className="py-4" />
-                )}
-                {matchmaker?.level && (
-                  <StatBlock value={`Lv.${matchmaker.level}`} label="주선자 레벨" className="py-4" />
-                )}
-                {matchmaker?.totalPoints !== undefined && (
-                  <StatBlock value={`${(matchmaker.totalPoints ?? 0).toLocaleString()}P`} label="포인트" icon={<Coins className="w-3.5 h-3.5" />} className="py-4" />
-                )}
-              </div>
+          {/* 통계 — 프로필 신뢰점수만 (주선자 레벨/포인트는 대시보드·리워드로 위임, 중복 제거) */}
+          {trustScore !== null && (
+            <div className="mt-4 bg-surface-sunken rounded-xl overflow-hidden grid grid-cols-2 divide-x divide-border-subtle">
+              <StatBlock value={trustScore} label="신뢰 점수" emphasis className="py-4" />
+              {completionRate !== null && (
+                <StatBlock value={`${completionRate}%`} label="프로필 완성도" className="py-4" />
+              )}
             </div>
           )}
         </div>
@@ -282,7 +273,11 @@ export function MyPageScreen({
               <MenuItem
                 icon={<HeartHandshake className="w-4 h-4" />}
                 title="주선자 대시보드"
-                subtitle="주선 요청 관리 및 수익 확인"
+                subtitle={
+                  matchmaker?.level
+                    ? `Lv.${matchmaker.level} · ${(matchmaker.totalPoints ?? 0).toLocaleString()}P`
+                    : "주선 요청 관리 및 수익 확인"
+                }
                 onClick={onNavigateToConnector}
               />
             )}
