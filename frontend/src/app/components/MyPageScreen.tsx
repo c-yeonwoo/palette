@@ -210,11 +210,11 @@ export function MyPageScreen({
             <div className="flex-1 min-w-0">
               <p className="text-lg font-bold truncate">{displayName}</p>
               <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-primary/10 text-primary">
+                <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-brand-soft text-primary">
                   {isMatchmakerOnly ? "주선자 전용" : "일반 회원"}
                 </span>
                 {!user?.phoneNumber && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-brand-soft text-primary font-medium">
                     인증 필요
                   </span>
                 )}
@@ -249,7 +249,7 @@ export function MyPageScreen({
       {/* 핸드폰 인증 배너 */}
       {!user?.phoneNumber && isMatchmaker && (
         <div className="max-w-2xl mx-auto px-4 mt-3">
-          <div className="bg-primary/10 border border-primary/20 rounded-2xl px-4 py-3 flex items-center gap-2">
+          <div className="bg-brand-soft border border-primary/20 rounded-2xl px-4 py-3 flex items-center gap-2">
             <Shield className="w-4 h-4 text-primary flex-shrink-0" />
             <p className="text-xs text-primary">핸드폰 인증 후 주선 서비스를 이용할 수 있어요</p>
           </div>

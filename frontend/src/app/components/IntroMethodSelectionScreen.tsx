@@ -40,7 +40,7 @@ export function IntroMethodSelectionScreen({
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="font-semibold text-foreground">AI 인터뷰로 빠르게 작성</h3>
-                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">추천</span>
+                <span className="text-xs bg-brand-soft text-primary px-2 py-0.5 rounded-full font-medium">추천</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 AI와 채팅하듯 10개 질문에 답하면 끝이에요. 어렵지 않게 나를 표현할 수 있어요.

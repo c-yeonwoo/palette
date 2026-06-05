@@ -368,7 +368,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                 )}
               </div>
               {formData.mbtiE && formData.mbtiS && formData.mbtiT && formData.mbtiP && (
-                <div className="mt-3 text-center bg-primary/10 rounded-lg py-2">
+                <div className="mt-3 text-center bg-brand-soft rounded-lg py-2">
                   <p className="text-sm font-bold text-primary">
                     {formData.mbtiE}{formData.mbtiS}{formData.mbtiT}{formData.mbtiP}
                   </p>

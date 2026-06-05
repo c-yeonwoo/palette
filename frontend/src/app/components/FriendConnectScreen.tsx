@@ -181,7 +181,7 @@ export function FriendConnectScreen({ onBack }: FriendConnectScreenProps) {
           </button>
           <h1 className="text-base font-bold text-foreground">지인 관리</h1>
           {pendingRequests.length > 0 && (
-            <span className="ml-auto text-xs font-semibold text-primary bg-primary/10 rounded-full px-2.5 py-1">
+            <span className="ml-auto text-xs font-semibold text-primary bg-brand-soft rounded-full px-2.5 py-1">
               받은 요청 {pendingRequests.length}건
             </span>
           )}
@@ -214,7 +214,7 @@ export function FriendConnectScreen({ onBack }: FriendConnectScreenProps) {
             {/* My code section */}
             <div className="bg-card rounded-2xl p-5 border border-border space-y-4">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-brand-soft rounded-full flex items-center justify-center">
                   <UserPlus className="w-4 h-4 text-primary" />
                 </div>
                 <div>
@@ -312,7 +312,7 @@ export function FriendConnectScreen({ onBack }: FriendConnectScreenProps) {
                     className="bg-card rounded-xl p-4 border border-border flex items-center justify-between"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                      <div className="w-10 h-10 bg-brand-soft rounded-full flex items-center justify-center">
                         <span className="text-sm font-medium text-primary">
                           {user.nickname.charAt(0)}
                         </span>
@@ -391,7 +391,7 @@ export function FriendConnectScreen({ onBack }: FriendConnectScreenProps) {
                         className="bg-card rounded-xl p-4 border border-primary/30 flex items-center justify-between"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                          <div className="w-10 h-10 bg-brand-soft rounded-full flex items-center justify-center">
                             <span className="text-sm font-medium text-primary">
                               {req.nickname.charAt(0)}
                             </span>

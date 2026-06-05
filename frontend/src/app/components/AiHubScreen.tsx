@@ -431,7 +431,7 @@ function AiSignalSection({
   return (
     <div className="px-4 mb-6">
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+        <div className="w-6 h-6 rounded-lg bg-brand-soft flex items-center justify-center">
           <Sparkles className="w-3.5 h-3.5 text-primary" />
         </div>
         <p className="text-sm font-semibold">오늘의 AI 시그널</p>
@@ -1014,7 +1014,7 @@ export function AiHubScreen({
       <div className="sticky top-0 z-20 bg-card/95 backdrop-blur-sm border-b border-border/40">
         <div className="px-4 pt-safe-top pb-0">
           <div className="flex items-center gap-2 h-14">
-            <div className="w-7 h-7 rounded-xl bg-primary/10 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-xl bg-brand-soft flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-primary" />
             </div>
             <h1 className="text-base font-bold">AI 허브</h1>

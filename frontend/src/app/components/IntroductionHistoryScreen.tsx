@@ -163,7 +163,7 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
             <h1 className="text-base font-bold text-foreground">소개</h1>
           </div>
           {actionNeeded > 0 && (
-            <span className="text-xs font-semibold text-primary bg-primary/10 rounded-full px-2.5 py-1">
+            <span className="text-xs font-semibold text-primary bg-brand-soft rounded-full px-2.5 py-1">
               응답 필요 {actionNeeded}건
             </span>
           )}
@@ -256,7 +256,7 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
                             </p>
                           </div>
                           {(request.offeredPoints ?? 0) > 0 && request.myRole === "requester" && (
-                            <span className="text-xs font-bold text-primary bg-primary/10 rounded-full px-2 py-0.5">
+                            <span className="text-xs font-bold text-primary bg-brand-soft rounded-full px-2 py-0.5">
                               {request.offeredPoints}P 제안
                             </span>
                           )}

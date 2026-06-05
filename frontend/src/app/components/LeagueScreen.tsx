@@ -99,7 +99,7 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
             </div>
             <button
               onClick={onNavigateToMatchmaker}
-              className="text-xs font-bold text-primary bg-primary/10 rounded-xl px-3 py-1.5 flex-shrink-0"
+              className="text-xs font-bold text-primary bg-brand-soft rounded-xl px-3 py-1.5 flex-shrink-0"
             >
               시작하기
             </button>
@@ -214,7 +214,7 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
                   key={entry.rank}
                   className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${
                     entry.isMe
-                      ? "bg-primary/10 border border-primary/30"
+                      ? "bg-brand-soft border border-primary/30"
                       : "bg-muted/30"
                   }`}
                 >

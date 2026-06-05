@@ -143,7 +143,7 @@ export function MatchmakerPublicProfileScreen({
         {matchmaker.specialties.length > 0 && (
           <div className="flex flex-wrap justify-center gap-1.5 mt-3">
             {matchmaker.specialties.map((sp) => (
-              <span key={sp} className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+              <span key={sp} className="text-xs px-2 py-0.5 rounded-full bg-brand-soft text-primary font-medium">
                 {sp}
               </span>
             ))}

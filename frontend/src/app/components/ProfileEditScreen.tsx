@@ -509,7 +509,7 @@ function Section({
           {!isOpen && completionText && (
             <span className={`text-xs px-2 py-px rounded-full font-medium ${
               isDone
-                ? "bg-primary/10 text-primary"
+                ? "bg-brand-soft text-primary"
                 : "bg-muted text-muted-foreground"
             }`}>
               {completionText}
@@ -573,7 +573,7 @@ function ProfileLevelBanner({
             style={{ backgroundColor: colorType.hex }}
           />
         ) : (
-          <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center flex-shrink-0">
+          <div className="w-9 h-9 rounded-full bg-brand-soft border border-primary/30 flex items-center justify-center flex-shrink-0">
             <Sparkles className="w-4 h-4 text-primary" />
           </div>
         )}
@@ -599,7 +599,7 @@ function ProfileLevelBanner({
         <div className="relative group flex-shrink-0">
           <button
             type="button"
-            className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+            className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-brand-soft hover:text-primary transition-colors"
           >
             <span className="text-xs font-bold">?</span>
           </button>
@@ -947,7 +947,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                 </div>
                 <div
                   className={`relative aspect-video rounded-xl border-2 overflow-hidden cursor-pointer transition-all ${
-                    video ? "border-primary bg-primary/10" : "border-dashed border-border hover:border-primary/50 bg-muted"
+                    video ? "border-primary bg-brand-soft" : "border-dashed border-border hover:border-primary/50 bg-muted"
                   }`}
                 >
                   {video ? (
@@ -1451,7 +1451,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                   {(profile.introduction.interests ?? []).map((interest) => (
                     <span
                       key={interest}
-                      className="inline-flex items-center gap-1 pl-3 pr-2 py-1 rounded-full border border-border bg-primary/10 text-primary text-xs font-medium"
+                      className="inline-flex items-center gap-1 pl-3 pr-2 py-1 rounded-full border border-border bg-brand-soft text-primary text-xs font-medium"
                     >
                       {interest}
                       <button

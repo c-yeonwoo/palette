@@ -1159,17 +1159,21 @@ function BottomNavigation({
               className="flex flex-col items-center justify-center gap-0 px-3 py-1.5 min-w-[52px] transition-all"
             >
               <div
-                className="w-8 h-6 rounded-xl flex items-center justify-center transition-all duration-200"
-                style={active ? { background: "hsl(var(--brand) / 0.10)" } : undefined}
+                className="w-11 h-7 rounded-full flex items-center justify-center transition-all duration-200"
+                style={active ? { background: "hsl(var(--brand) / 0.16)" } : undefined}
               >
                 <Icon
-                  className="w-[18px] h-[18px] transition-colors duration-200"
+                  className="w-[19px] h-[19px] transition-colors duration-200"
                   style={{ color: active ? "hsl(var(--brand))" : "hsl(var(--text-tertiary))" }}
+                  strokeWidth={active ? 2.4 : 2}
                 />
               </div>
               <span
-                className="text-[10px] font-medium transition-colors duration-200"
-                style={{ color: active ? "hsl(var(--brand))" : "hsl(var(--text-tertiary))" }}
+                className="text-[10px] transition-colors duration-200 mt-0.5"
+                style={{
+                  color: active ? "hsl(var(--brand))" : "hsl(var(--text-tertiary))",
+                  fontWeight: active ? 700 : 500,
+                }}
               >
                 {label}
               </span>

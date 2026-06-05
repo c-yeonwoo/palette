@@ -248,7 +248,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
                   key={info.level}
                   className={`flex items-center justify-between rounded-xl px-4 py-3 transition-colors ${
                     info.level === data.level
-                      ? "bg-primary/10 border border-primary/30"
+                      ? "bg-brand-soft border border-primary/30"
                       : "bg-muted/50"
                   }`}
                 >
@@ -284,7 +284,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
               </div>
               <ul className="space-y-3 text-sm">
                 <li className="flex items-start gap-3">
-                  <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="w-8 h-8 rounded-full bg-brand-soft flex items-center justify-center flex-shrink-0">
                     <Coins className="w-4 h-4 text-primary" />
                   </span>
                   <div>
@@ -293,7 +293,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="w-8 h-8 rounded-full bg-brand-soft flex items-center justify-center flex-shrink-0">
                     <Award className="w-4 h-4 text-primary" />
                   </span>
                   <div>
@@ -302,7 +302,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <span className="w-8 h-8 rounded-full bg-brand-soft flex items-center justify-center flex-shrink-0">
                     <Wallet className="w-4 h-4 text-primary" />
                   </span>
                   <div>

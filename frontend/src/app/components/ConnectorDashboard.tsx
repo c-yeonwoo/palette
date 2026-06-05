@@ -366,7 +366,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
       <div className="flex-shrink-0 bg-card border-b border-border px-4 py-3 max-w-2xl w-full mx-auto">
         {/* 이번달 칩 + 등급 칩 */}
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs bg-primary/10 text-primary font-semibold px-2.5 py-1 rounded-full">
+          <span className="text-xs bg-brand-soft text-primary font-semibold px-2.5 py-1 rounded-full">
             이번달 성사 {matchmakerData?.successfulMatches ?? 0}건
           </span>
           <span className="text-xs text-muted-foreground">
@@ -375,7 +375,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
           {onNavigateToReward && (
             <button
               onClick={onNavigateToReward}
-              className="ml-auto flex items-center gap-1.5 bg-brand-soft border border-primary/20 rounded-full px-3 py-1 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+              className="ml-auto flex items-center gap-1.5 bg-brand-soft border border-primary/20 rounded-full px-3 py-1 text-xs font-semibold text-primary hover:bg-brand-soft transition-colors"
               aria-label="등급 & 리워드"
             >
               <Award className="w-3.5 h-3.5" />
@@ -884,7 +884,7 @@ function RequestDetailModal({
           {/* Request Flow */}
           <div className="flex items-center justify-center gap-3 py-4">
             <div className="text-center">
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center border-2 border-border mx-auto mb-2">
+              <div className="w-12 h-12 rounded-full bg-brand-soft flex items-center justify-center border-2 border-border mx-auto mb-2">
                 <span className="text-lg font-semibold text-primary">
                   {request.requesterRealName?.charAt(0) || "?"}
                 </span>

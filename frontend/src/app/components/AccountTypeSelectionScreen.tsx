@@ -77,7 +77,7 @@ export function AccountTypeSelectionScreen({ onComplete, onBack, mode = "post-au
             onClick={() => setSelectedType("REGULAR")}
           >
             <CardHeader>
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-brand-soft flex items-center justify-center mb-4">
                 <Heart className="w-6 h-6 text-primary" />
               </div>
               <CardTitle>일반 회원</CardTitle>

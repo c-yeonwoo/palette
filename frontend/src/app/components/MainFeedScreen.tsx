@@ -257,20 +257,20 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
         <div className="max-w-2xl mx-auto px-4 pt-3">
           <div className="flex gap-1.5 overflow-x-auto pb-0.5">
             {(filters.ageMin || filters.ageMax) && (
-              <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
+              <span className="text-xs bg-brand-soft text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
                 {filters.ageMin || "?"}-{filters.ageMax || "?"}세
               </span>
             )}
             {(filters.heightMin || filters.heightMax) && (
-              <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
+              <span className="text-xs bg-brand-soft text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
                 {filters.heightMin || "?"}-{filters.heightMax || "?"}cm
               </span>
             )}
             {filters.region && (
-              <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">{filters.region}</span>
+              <span className="text-xs bg-brand-soft text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">{filters.region}</span>
             )}
             {filters.jobCategory && (
-              <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
+              <span className="text-xs bg-brand-soft text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
                 {JOB_CATEGORIES.find(j => j.value === filters.jobCategory)?.label}
               </span>
             )}
@@ -559,7 +559,7 @@ function RelationshipBadge({ degree, mutualFriends }: { degree?: number; mutualF
   if (degree === 1) {
     return (
       <div className="flex items-center gap-1 min-w-0">
-        <span className="flex-shrink-0 text-xs font-bold bg-primary/10 text-primary rounded-full px-1.5 py-0.5 leading-none">
+        <span className="flex-shrink-0 text-xs font-bold bg-brand-soft text-primary rounded-full px-1.5 py-0.5 leading-none">
           1촌
         </span>
         <p className="text-xs text-muted-foreground truncate">직접 연결</p>
@@ -634,7 +634,7 @@ function AiSignalSection({
   return (
     <div className="px-4 mb-5">
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+        <div className="w-6 h-6 rounded-lg bg-brand-soft flex items-center justify-center">
           <Sparkles className="w-3.5 h-3.5 text-primary" />
         </div>
         <p className="text-sm font-semibold">색깔로 찾은 인연</p>
@@ -881,7 +881,7 @@ function FirstTimeGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => v
             key={i}
             className="bg-card border border-border rounded-xl p-4 flex items-start gap-3"
           >
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-xl">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-soft flex items-center justify-center text-xl">
               {s.emoji}
             </div>
             <div className="flex-1">

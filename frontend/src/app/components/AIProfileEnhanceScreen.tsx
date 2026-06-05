@@ -347,7 +347,7 @@ export function AIProfileEnhanceScreen({
             {isGenerating ? (
               /* 단계별 로딩 UI */
               <div className="space-y-6 py-2">
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <div className="w-20 h-20 rounded-full bg-brand-soft flex items-center justify-center mx-auto">
                   <span className="text-4xl animate-bounce">{LOADING_STEPS[loadingStepIdx].emoji}</span>
                 </div>
                 <div className="space-y-2">
