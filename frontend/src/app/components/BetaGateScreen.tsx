@@ -70,7 +70,7 @@ export function BetaGateScreen({ onPassed }: BetaGateScreenProps) {
         { requiresAuth: false }
       );
       localStorage.setItem(BETA_PASSED_KEY, "1");
-      toast.success("환영합니다! 🎨");
+      toast.success("환영합니다");
       onPassed();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);

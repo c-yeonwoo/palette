@@ -1332,7 +1332,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                           },
                         } : prev
                       );
-                      toast.success(`✨ 소개글 완성! 색깔 타입: ${data.colorName}`);
+                      toast.success(`소개글 완성 · 색깔 타입 ${data.colorName}`);
                     } catch {
                       toast.error('AI 생성에 실패했어요');
                     } finally {

@@ -129,7 +129,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
       const reader = new FileReader();
       reader.onload = (ev) => setVideo(ev.target?.result as string);
       reader.readAsDataURL(file);
-      toast.success("동영상이 추가됐어요! 신뢰도 +50점 🎉");
+      toast.success("동영상이 추가됐어요 · 신뢰도 +50점");
     };
     e.target.value = "";
   };

@@ -94,7 +94,7 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
   const handleTargetAccept = async (requestId: string) => {
     try {
       await api.put(`/api/v1/matchmaking/requests/${requestId}/target/accept`, { message: null });
-      toast.success("매칭을 수락했습니다! 🎉");
+      toast.success("매칭을 수락했습니다");
       fetchData();
     } catch {
       toast.error("수락에 실패했습니다");

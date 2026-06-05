@@ -26,11 +26,11 @@ interface MatchmakerRewardScreenProps {
 }
 
 const LEVEL_INFO = [
-  { level: 1, minMatches: 0, maxMatches: 2, commission: 30, label: "씨앗", emoji: "🌱" },
-  { level: 2, minMatches: 3, maxMatches: 5, commission: 35, label: "새싹", emoji: "🌿" },
-  { level: 3, minMatches: 6, maxMatches: 10, commission: 40, label: "나무", emoji: "🌳" },
-  { level: 4, minMatches: 11, maxMatches: 20, commission: 45, label: "열매", emoji: "🍎" },
-  { level: 5, minMatches: 21, maxMatches: Infinity, commission: 50, label: "숲", emoji: "🌲" },
+  { level: 1, minMatches: 0, maxMatches: 2, commission: 30, label: "씨앗" },
+  { level: 2, minMatches: 3, maxMatches: 5, commission: 35, label: "새싹" },
+  { level: 3, minMatches: 6, maxMatches: 10, commission: 40, label: "나무" },
+  { level: 4, minMatches: 11, maxMatches: 20, commission: 45, label: "열매" },
+  { level: 5, minMatches: 21, maxMatches: Infinity, commission: 50, label: "숲" },
 ];
 
 export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) {
@@ -182,7 +182,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
                 <div>
                   <p className="text-sm opacity-80">현재 등급</p>
                   <p className="text-3xl font-bold mt-1">
-                    {currentLevelInfo.emoji} Lv.{data.level} {currentLevelInfo.label}
+                    Lv.{data.level} <span className="font-medium opacity-90">{currentLevelInfo.label}</span>
                   </p>
                 </div>
                 <div className="text-right">
@@ -196,7 +196,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
                 <>
                   <div className="flex justify-between text-sm opacity-80 mb-1">
                     <span>Lv.{data.level}</span>
-                    <span>Lv.{data.level + 1} {nextLevelInfo.emoji}</span>
+                    <span>Lv.{data.level + 1} {nextLevelInfo.label}</span>
                   </div>
                   <div className="w-full bg-white/30 rounded-full h-2">
                     <div
@@ -253,7 +253,11 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-lg">{info.emoji}</span>
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold tabular-nums ${
+                      info.level === data.level
+                        ? "bg-gold text-gold-foreground"
+                        : "bg-muted text-muted-foreground"
+                    }`}>{info.level}</span>
                     <div>
                       <p className={`text-sm font-medium ${info.level === data.level ? "text-primary" : ""}`}>
                         Lv.{info.level} {info.label}

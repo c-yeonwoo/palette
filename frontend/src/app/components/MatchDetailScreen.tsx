@@ -273,7 +273,7 @@ export function MatchDetailScreen({ matchId, onBack, onNavigateToChat, isMockDat
         balance={balance}
         onEarn={(trigger) => {
           earn(trigger);
-          toast.success("매칭권을 받았어요! 🎉");
+          toast.success("매칭권을 받았어요");
         }}
         onPurchase={() => toast.info("결제 기능은 곧 오픈돼요!")}
       />
