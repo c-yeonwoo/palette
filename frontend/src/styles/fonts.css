@@ -2,3 +2,19 @@
   font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont,
     'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
 }
+
+/* ── P9 프리미엄 typography ──
+   본문은 Pretendard(sans) 유지 — 한글 가독성. 영문 brand / 큰 숫자 강조에만 serif. */
+
+/* serif display — 영문 헤드라인 / 통계 숫자 강조용 (.font-display) */
+.font-display {
+  font-family: 'Didot', 'Bodoni 72', 'Hoefler Text', Georgia, 'Times New Roman',
+    'Nanum Myeongjo', 'Apple SD Gothic Neo', serif;
+  letter-spacing: 0.01em;
+}
+
+/* 큰 숫자 정렬 (포인트/통계 — 등급/리워드 등) */
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* 헤드라인 미세 정제 — 너무 벌어지지 않게 (프리미엄 = 조밀하고 단정) */
+h1, h2, h3 { letter-spacing: -0.01em; }
