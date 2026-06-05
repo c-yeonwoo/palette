@@ -1,41 +1,47 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+// ── 초기 진입 경로만 eager (첫 페인트 깜빡임 방지) ──
 import { BetaGateScreen, hasBetaPassed } from "./components/BetaGateScreen";
 import { BetaWelcomeIntro, hasIntroSeen } from "./components/BetaWelcomeIntro";
 import { LoginScreen } from "./components/LoginScreen";
-import { EmailLoginScreen } from "./components/EmailLoginScreen";
-import { EmailSignupScreen } from "./components/EmailSignupScreen";
-import { MatchmakerSignupScreen } from "./components/MatchmakerSignupScreen";
-// MatchmakerInfoScreen 은 ADR 0013 에서 제거됨 — 회원가입 데이터로 충분
 import { OAuth2RedirectHandler } from "./components/OAuth2RedirectHandler";
-import { RequiredInfoScreen } from "./components/RequiredInfoScreen";
-import { AccountTypeSelectionScreen } from "./components/AccountTypeSelectionScreen";
-import { BasicInfoScreen } from "./components/BasicInfoScreen";
-import { PhotoUploadScreen } from "./components/PhotoUploadScreen";
-import { AboutMeScreen } from "./components/AboutMeScreen";
-import { IdealTypeScreen } from "./components/IdealTypeScreen";
-import { AIProfileEnhanceScreen } from "./components/AIProfileEnhanceScreen";
-import { AIInterviewScreen } from "./components/AIInterviewScreen";
-import { IntroMethodSelectionScreen } from "./components/IntroMethodSelectionScreen";
-import { MyProfileScreen } from "./components/MyProfileScreen";
-import { ProfileEditScreen } from "./components/ProfileEditScreen";
-import { ProfileDetailScreen } from "./components/ProfileDetailScreen";
-import { MainFeedScreen, type MutualFriend } from "./components/MainFeedScreen";
-import { IntroductionHistoryScreen } from "./components/IntroductionHistoryScreen";
-import { ConnectorDashboard } from "./components/ConnectorDashboard";
-import { MatchmakerMarketplaceScreen } from "./components/MatchmakerMarketplaceScreen";
-import { MatchmakerPublicProfileScreen } from "./components/MatchmakerPublicProfileScreen";
-import { DesignSystemScreen } from "./components/DesignSystemScreen";
-import { MyPageScreen } from "./components/MyPageScreen";
-import { PublicProfileScreen } from "./components/PublicProfileScreen";
-import { FriendConnectScreen } from "./components/FriendConnectScreen";
-import { MatchmakerRewardScreen } from "./components/MatchmakerRewardScreen";
-import { NotificationScreen } from "./components/NotificationScreen";
-import { LeagueScreen } from "./components/LeagueScreen";
-import { AiHubScreen } from "./components/AiHubScreen";
-import { MatchDetailScreen } from "./components/MatchDetailScreen";
-import { PhotoVerifyScreen } from "./components/PhotoVerifyScreen";
-import { ColorTestScreen } from "./components/ColorTestScreen";
-import { InviteHubScreen } from "./components/invite/InviteHubScreen";
+import type { MutualFriend } from "./components/MainFeedScreen";
+// MatchmakerInfoScreen 은 ADR 0013 에서 제거됨 — 회원가입 데이터로 충분
+
+// ── 나머지 화면은 route-level code splitting (lazy) — 첫 bundle 크기 ↓ (ADR 0019) ──
+// named export → default 로 래핑
+const EmailLoginScreen = lazy(() => import("./components/EmailLoginScreen").then(m => ({ default: m.EmailLoginScreen })));
+const EmailSignupScreen = lazy(() => import("./components/EmailSignupScreen").then(m => ({ default: m.EmailSignupScreen })));
+const MatchmakerSignupScreen = lazy(() => import("./components/MatchmakerSignupScreen").then(m => ({ default: m.MatchmakerSignupScreen })));
+const RequiredInfoScreen = lazy(() => import("./components/RequiredInfoScreen").then(m => ({ default: m.RequiredInfoScreen })));
+const AccountTypeSelectionScreen = lazy(() => import("./components/AccountTypeSelectionScreen").then(m => ({ default: m.AccountTypeSelectionScreen })));
+const BasicInfoScreen = lazy(() => import("./components/BasicInfoScreen").then(m => ({ default: m.BasicInfoScreen })));
+const PhotoUploadScreen = lazy(() => import("./components/PhotoUploadScreen").then(m => ({ default: m.PhotoUploadScreen })));
+const AboutMeScreen = lazy(() => import("./components/AboutMeScreen").then(m => ({ default: m.AboutMeScreen })));
+const IdealTypeScreen = lazy(() => import("./components/IdealTypeScreen").then(m => ({ default: m.IdealTypeScreen })));
+const AIProfileEnhanceScreen = lazy(() => import("./components/AIProfileEnhanceScreen").then(m => ({ default: m.AIProfileEnhanceScreen })));
+const AIInterviewScreen = lazy(() => import("./components/AIInterviewScreen").then(m => ({ default: m.AIInterviewScreen })));
+const IntroMethodSelectionScreen = lazy(() => import("./components/IntroMethodSelectionScreen").then(m => ({ default: m.IntroMethodSelectionScreen })));
+const MyProfileScreen = lazy(() => import("./components/MyProfileScreen").then(m => ({ default: m.MyProfileScreen })));
+const ProfileEditScreen = lazy(() => import("./components/ProfileEditScreen").then(m => ({ default: m.ProfileEditScreen })));
+const ProfileDetailScreen = lazy(() => import("./components/ProfileDetailScreen").then(m => ({ default: m.ProfileDetailScreen })));
+const MainFeedScreen = lazy(() => import("./components/MainFeedScreen").then(m => ({ default: m.MainFeedScreen })));
+const IntroductionHistoryScreen = lazy(() => import("./components/IntroductionHistoryScreen").then(m => ({ default: m.IntroductionHistoryScreen })));
+const ConnectorDashboard = lazy(() => import("./components/ConnectorDashboard").then(m => ({ default: m.ConnectorDashboard })));
+const MatchmakerMarketplaceScreen = lazy(() => import("./components/MatchmakerMarketplaceScreen").then(m => ({ default: m.MatchmakerMarketplaceScreen })));
+const MatchmakerPublicProfileScreen = lazy(() => import("./components/MatchmakerPublicProfileScreen").then(m => ({ default: m.MatchmakerPublicProfileScreen })));
+const DesignSystemScreen = lazy(() => import("./components/DesignSystemScreen").then(m => ({ default: m.DesignSystemScreen })));
+const MyPageScreen = lazy(() => import("./components/MyPageScreen").then(m => ({ default: m.MyPageScreen })));
+const PublicProfileScreen = lazy(() => import("./components/PublicProfileScreen").then(m => ({ default: m.PublicProfileScreen })));
+const FriendConnectScreen = lazy(() => import("./components/FriendConnectScreen").then(m => ({ default: m.FriendConnectScreen })));
+const MatchmakerRewardScreen = lazy(() => import("./components/MatchmakerRewardScreen").then(m => ({ default: m.MatchmakerRewardScreen })));
+const NotificationScreen = lazy(() => import("./components/NotificationScreen").then(m => ({ default: m.NotificationScreen })));
+const LeagueScreen = lazy(() => import("./components/LeagueScreen").then(m => ({ default: m.LeagueScreen })));
+const AiHubScreen = lazy(() => import("./components/AiHubScreen").then(m => ({ default: m.AiHubScreen })));
+const MatchDetailScreen = lazy(() => import("./components/MatchDetailScreen").then(m => ({ default: m.MatchDetailScreen })));
+const PhotoVerifyScreen = lazy(() => import("./components/PhotoVerifyScreen").then(m => ({ default: m.PhotoVerifyScreen })));
+const ColorTestScreen = lazy(() => import("./components/ColorTestScreen").then(m => ({ default: m.ColorTestScreen })));
+const InviteHubScreen = lazy(() => import("./components/invite/InviteHubScreen").then(m => ({ default: m.InviteHubScreen })));
+
 import { Toaster } from "./components/ui/sonner";
 import { Button } from "./components/ui/button";
 import { Home, User, Clock, Trophy, Sparkles, Heart } from "lucide-react";
@@ -44,6 +50,15 @@ import { authService } from "../lib/auth/authService";
 import { tokenStorage } from "../lib/auth/tokenStorage";
 import { api } from "../lib/api/apiClient";
 import { isMockDataAccount } from "../lib/mock-account";
+
+/** lazy 화면 로딩 중 fallback — 경량 spinner (브랜드 톤) */
+function ScreenFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="w-7 h-7 rounded-full border-2 border-muted border-t-primary animate-spin" />
+    </div>
+  );
+}
 
 type Screen =
   | "login"
@@ -798,6 +813,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Suspense fallback={<ScreenFallback />}>
       {currentScreen === "login" && (
         <LoginScreen
           onEmailLogin={handleEmailLogin}
@@ -1093,6 +1109,7 @@ export default function App() {
           onSkip={() => setCurrentScreen("myPage")}
         />
       )}
+      </Suspense>
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding/detail screens */}
       {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "matchDetail", "photoVerify", "colorTest", "inviteHub"].includes(currentScreen) && (

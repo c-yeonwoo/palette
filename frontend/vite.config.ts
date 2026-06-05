@@ -60,6 +60,18 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    // vendor chunk 분리 — React 등은 별도 chunk 로 (코드 변경 시 재다운 X, 영구 캐시)
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'ui-vendor': ['lucide-react', 'sonner'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 700,
+  },
   resolve: {
     alias: {
       // Alias @ to the src directory
