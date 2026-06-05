@@ -131,25 +131,17 @@ function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
   return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
 }
 
-/** Apply brand color from HSL values to all relevant CSS custom properties */
-function applyBrandFromHsl(h: number, s: number, l: number, hex?: string) {
+/** P9: 프로필 컬러는 **장식 전용** --user-accent 에만 적용.
+ *  --brand(gold) / --primary(charcoal) 는 서비스 메인색이라 절대 덮어쓰지 않음.
+ *  (이전엔 프로필색이 --brand/--primary 를 교체해 gold 지배력을 흐림 — 제거) */
+function applyBrandFromHsl(h: number, s: number, l: number, _hex?: string) {
   const root = document.documentElement;
   const softL = Math.min(Math.max(l + 35, 90), 97);
-  const fgLight = l > 62 ? '0 0% 10%' : '0 0% 100%';
-  // shadcn/ui primary (hex-based, derive if not provided)
-  if (hex) {
-    root.style.setProperty('--primary', hex);
-    root.style.setProperty('--ring', hex);
-    const r = parseInt(hex.slice(1, 3), 16) / 255;
-    const g = parseInt(hex.slice(3, 5), 16) / 255;
-    const bv = parseInt(hex.slice(5, 7), 16) / 255;
-    const luminance = 0.299 * r + 0.587 * g + 0.114 * bv;
-    root.style.setProperty('--primary-foreground', luminance > 0.62 ? '#1A1916' : '#FFFFFF');
-  }
-  // --brand (HSL triplet: "h s% l%") used by BottomNavigation, brand buttons, etc.
-  root.style.setProperty('--brand', `${h} ${s}% ${l}%`);
-  root.style.setProperty('--brand-foreground', fgLight);
-  root.style.setProperty('--brand-soft', `${h} ${s}% ${softL}%`);
+  root.style.setProperty('--accent-h', `${h}`);
+  root.style.setProperty('--accent-s', `${s}%`);
+  root.style.setProperty('--accent-l', `${l}%`);
+  root.style.setProperty('--user-accent', `${h} ${s}% ${l}%`);
+  root.style.setProperty('--user-accent-soft', `${h} ${s}% ${softL}%`);
 }
 
 /** Apply brand color from hex */
