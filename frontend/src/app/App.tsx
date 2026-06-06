@@ -505,11 +505,16 @@ export default function App() {
     setCurrentScreen("aiProfileEnhance");
   };
 
-  const handleAIProfileComplete = async (result: { colorType: string; colorName: string; colorHex: string; colorDescription: string; generatedIntroduction: string }) => {
+  const handleAIProfileComplete = async (result: { colorType: string; colorName: string; colorHex: string; colorDescription: string; generatedIntroduction: string; colorReasoning?: string; personalitySummary?: string; idealTypeInsight?: string }) => {
     try {
-      // colorType 저장
+      // colorType + AI 분석(근거/성향/이상형) 저장
       try {
-        await api.post("/api/v1/ai-interview/complete", { colorType: result.colorType });
+        await api.post("/api/v1/ai-interview/complete", {
+          colorType: result.colorType,
+          colorReasoning: result.colorReasoning,
+          personalitySummary: result.personalitySummary,
+          idealTypeInsight: result.idealTypeInsight,
+        });
       } catch (e) {
         console.warn("컬러 타입 저장 실패 (무시하고 계속)", e);
       }

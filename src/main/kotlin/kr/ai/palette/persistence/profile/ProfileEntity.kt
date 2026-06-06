@@ -126,6 +126,16 @@ class ProfileEntity(
     @Column(name = "color_type", length = 30)
     var colorType: String?,
 
+    // ColorType AI 분석 (ADR 0023 후속 — 근거/성향/이상형)
+    @Column(name = "color_reasoning", columnDefinition = "TEXT")
+    var colorReasoning: String? = null,
+
+    @Column(name = "color_personality_summary", columnDefinition = "TEXT")
+    var colorPersonalitySummary: String? = null,
+
+    @Column(name = "color_ideal_type_insight", columnDefinition = "TEXT")
+    var colorIdealTypeInsight: String? = null,
+
     // ProfileMetadata
     @Column(name = "created_at", nullable = false)
     var createdAt: Instant,

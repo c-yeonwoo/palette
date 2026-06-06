@@ -14,6 +14,9 @@ interface ColorTypeData {
   name: string | null;
   hex: string | null;
   description: string | null;
+  reasoning?: string | null;
+  personalitySummary?: string | null;
+  idealTypeInsight?: string | null;
 }
 
 interface ColorDetailScreenProps {
@@ -49,6 +52,10 @@ export function ColorDetailScreen({ onBack, onNavigateToProfile }: ColorDetailSc
   const personality = meta?.personality ?? null;
   const keywords = typeMeta?.keywords ?? null;
   const description = colorType?.description ?? null;
+  // AI 분석 (없으면 정적 fallback)
+  const reasoning = colorType?.reasoning?.trim() || description;
+  const personalityText = colorType?.personalitySummary?.trim() || (personality ? `${personality} 사람` : null);
+  const idealInsight = colorType?.idealTypeInsight?.trim() || null;
 
   return (
     <div
@@ -107,21 +114,31 @@ export function ColorDetailScreen({ onBack, onNavigateToProfile }: ColorDetailSc
             )}
           </div>
 
-          {/* AI 설명 */}
-          {description && (
+          {/* 이 색을 고른 근거 */}
+          {reasoning && (
             <div className="bg-card rounded-2xl border border-border/60 shadow-card p-5 mb-4">
               <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-2">
-                <Sparkles className="w-3.5 h-3.5" style={{ color: hex }} /> AI가 본 나의 색
+                <Sparkles className="w-3.5 h-3.5" style={{ color: hex }} /> AI가 이 색을 고른 이유
               </p>
-              <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{description}</p>
+              <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{reasoning}</p>
             </div>
           )}
 
-          {/* 성격 */}
-          {personality && (
+          {/* 성향 요약 */}
+          {personalityText && (
+            <div className="bg-card rounded-2xl border border-border/60 shadow-card p-5 mb-4">
+              <p className="text-xs font-semibold text-muted-foreground mb-2">나의 성향</p>
+              <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{personalityText}</p>
+            </div>
+          )}
+
+          {/* 원하는 이상형 유추 */}
+          {idealInsight && (
             <div className="bg-card rounded-2xl border border-border/60 shadow-card p-5">
-              <p className="text-xs font-semibold text-muted-foreground mb-1.5">이런 사람이에요</p>
-              <p className="text-sm font-medium text-foreground">{personality} 사람</p>
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground mb-2">
+                <Sparkles className="w-3.5 h-3.5" style={{ color: hex }} /> 이런 인연과 잘 맞아요
+              </p>
+              <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{idealInsight}</p>
             </div>
           )}
         </div>

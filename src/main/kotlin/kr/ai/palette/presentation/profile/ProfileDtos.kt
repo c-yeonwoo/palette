@@ -90,7 +90,10 @@ data class ColorTypeDto(
     val key: String?,
     val name: String?,
     val hex: String?,
-    val description: String?
+    val description: String?,
+    val reasoning: String? = null,
+    val personalitySummary: String? = null,
+    val idealTypeInsight: String? = null,
 ) {
     companion object {
         private val ENUM_TO_KEY = mapOf(
@@ -109,7 +112,10 @@ data class ColorTypeDto(
             key  = ct.type?.name?.let { ENUM_TO_KEY[it] },
             name = ct.name,
             hex  = ct.hex,
-            description = ct.description
+            description = ct.description,
+            reasoning = ct.reasoning,
+            personalitySummary = ct.personalitySummary,
+            idealTypeInsight = ct.idealTypeInsight,
         )
     }
 }

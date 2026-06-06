@@ -11,6 +11,8 @@ interface ProfileGenerationResult {
   colorDescription: string;
   generatedIntroduction: string;
   colorReasoning?: string;
+  personalitySummary?: string;
+  idealTypeInsight?: string;
   colorKeywords?: string[];
 }
 

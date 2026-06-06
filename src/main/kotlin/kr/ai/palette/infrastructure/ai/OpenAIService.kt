@@ -32,6 +32,10 @@ data class ProfileGenerationResult(
     val generatedIntroduction: String,
     /** 왜 이 색깔로 분석했는지 — 사용자 답변에서 근거를 인용한 짧은 단락 */
     val colorReasoning: String = "",
+    /** 답변에서 드러난 성격·연애 성향 요약 */
+    val personalitySummary: String = "",
+    /** 답변/이상형 정보로 유추한, 어울리는 상대상(원하는 이상형) */
+    val idealTypeInsight: String = "",
     /** 답변에서 핵심으로 본 키워드들 (UI 칩으로 표시 가능) */
     val colorKeywords: List<String> = emptyList(),
 )
@@ -66,7 +70,7 @@ class OpenAIService(
                 mapOf("role" to "user", "content" to userPrompt),
             ),
             "response_format" to mapOf("type" to "json_object"),
-            "max_tokens" to 1500,  // 500자+ 소개글 + 근거 + 키워드 수용
+            "max_tokens" to 2000,  // 500자+ 소개글 + 근거/성향/이상형 3분석 + 키워드 수용
             "temperature" to 0.8,
         )
 
@@ -138,6 +142,8 @@ class OpenAIService(
             colorDescription = colorInfo.description,
             generatedIntroduction = (map["introduction"] as? String)?.trim() ?: "",
             colorReasoning = (map["colorReasoning"] as? String)?.trim().orEmpty(),
+            personalitySummary = (map["personalitySummary"] as? String)?.trim().orEmpty(),
+            idealTypeInsight = (map["idealTypeInsight"] as? String)?.trim().orEmpty(),
             colorKeywords = keywords,
         )
     }
@@ -184,6 +190,20 @@ class OpenAIService(
             if (it.length < 500) "$it\n\n오늘 하루도 마음에 드는 무언가를 발견하셨길 바라요. 짧게라도 인사 나눌 수 있다면 기쁠 것 같습니다." else it
         }
 
+        val ideal = request.idealType
+        val personalitySummary = if (cited.isNotEmpty()) {
+            "답변 전반에서 사람과 일상을 가까이 두는 따뜻하고 활발한 결이 보여요. " +
+                "관계에선 솔직하게 마음을 표현하면서도 상대를 편하게 배려하는 타입으로 읽혀요."
+        } else {
+            "답변이 더 모이면 성향을 정확히 요약해 드릴게요."
+        }
+        val idealTypeInsight = buildString {
+            append("대화가 편하고 일상의 작은 순간을 함께 즐길 수 있는 분과 잘 어울려요.")
+            ideal?.personalities?.takeIf { it.isNotEmpty() }?.let {
+                append(" 특히 ${it.joinToString(", ")} 같은 성향의 상대에게 끌리실 것 같아요.")
+            }
+        }
+
         return ProfileGenerationResult(
             colorType = "WARM_ORANGE",
             colorName = color.name,
@@ -191,6 +211,8 @@ class OpenAIService(
             colorDescription = color.description,
             generatedIntroduction = intro,
             colorReasoning = reasoning,
+            personalitySummary = personalitySummary,
+            idealTypeInsight = idealTypeInsight,
             colorKeywords = keywords,
         )
     }
@@ -198,12 +220,14 @@ class OpenAIService(
     companion object {
         private const val SYSTEM_PROMPT = """
 당신은 데이팅 앱 "팔레트"의 프로필 작성 AI입니다.
-사용자의 자기소개와 이상형 정보를 분석하여 네 가지를 반환합니다.
+사용자의 자기소개와 이상형 정보를 분석하여 아래 항목을 반환합니다.
 
 [반환 형식] 반드시 아래 JSON 형식만 출력하세요. 다른 텍스트 없이:
 {
   "colorType": "<색깔 타입 (영문 enum)>",
   "colorReasoning": "<왜 이 색깔로 분석했는지 — 사용자 답변에서 근거를 직접 인용하며 설명. 2-3문장, 150자 내외>",
+  "personalitySummary": "<이 사람의 성격·연애 성향 요약 — 답변에서 드러난 특징. 2-3문장, 150자 내외>",
+  "idealTypeInsight": "<어떤 이상형을 원하는지 유추 — 답변과 이상형 정보를 근거로 어울리는 상대상을 추론. 2-3문장, 150자 내외>",
   "colorKeywords": ["<핵심 키워드 3-5개>"],
   "introduction": "<자기소개글 (500자 이상)>"
 }
@@ -219,10 +243,21 @@ class OpenAIService(
 - BRIGHT_YELLOW: 긍정적이고 유쾌함, 어디서든 분위기를 밝게 만듦
 - SOPHISTICATED_GRAY: 이성적이고 프로페셔널, 어떤 상황에도 신뢰를 줌
 
-[colorReasoning 작성 기준]
+[colorReasoning 작성 기준 — 이 색을 고른 "근거"]
 - 사용자가 직접 쓴 표현을 따옴표로 인용해서 근거 제시 (예: "주말엔 친구들과 맛집을 다닌다" 라고 답하신 부분에서…)
 - 어떤 답변 속 어떤 단어가 이 색깔의 어떤 특성과 닿아있는지 명확히
 - "당신은 ~~한 사람이에요" 단정 금지, "~한 모습이 보여요" "~가 드러나요" 처럼 추론 형식
+- 150자 내외 2-3문장
+
+[personalitySummary 작성 기준 — "성향 요약"]
+- 답변에서 읽히는 성격·연애 성향을 압축 요약 (예: 다가가는 방식, 대화 스타일, 관계에서 중요시하는 것)
+- 색깔 특성과 일관되게, 답변 근거에 기반 (지어내지 말 것)
+- "~한 편으로 보여요" 추론 형식, 150자 내외 2-3문장
+
+[idealTypeInsight 작성 기준 — "원하는 이상형 유추"]
+- 사용자의 답변 + 이상형 정보(선호 성격/데이트/가치/절대 안 되는 것)를 근거로 "어떤 상대와 잘 맞을지" 추론
+- 이상형 정보가 있으면 그것을 우선 반영하고, 없으면 자기소개 답변에서 결을 추론
+- 외모 조건보다 성향·관계 방식 위주로, 단정이 아닌 "~한 분과 잘 어울릴 것 같아요" 형식
 - 150자 내외 2-3문장
 
 [colorKeywords 작성 기준]

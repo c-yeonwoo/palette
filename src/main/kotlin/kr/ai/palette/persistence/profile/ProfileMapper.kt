@@ -90,7 +90,15 @@ class ProfileMapper(
                     ColorTypeEnum.SOPHISTICATED_GRAY to Triple("세련된 그레이", "#6B7280", "이성적이고 프로페셔널한 당신은 어떤 상황에도 신뢰를 주는 사람이에요")
                 )
                 val triple = info[enumVal]
-                ColorType(type = enumVal, name = triple?.first, hex = triple?.second, description = triple?.third)
+                ColorType(
+                    type = enumVal,
+                    name = triple?.first,
+                    hex = triple?.second,
+                    description = triple?.third,
+                    reasoning = entity.colorReasoning,
+                    personalitySummary = entity.colorPersonalitySummary,
+                    idealTypeInsight = entity.colorIdealTypeInsight,
+                )
             },
             attachmentProfile = if (entity.attachmentContactAnxiety != null) {
                 AttachmentProfile(
@@ -157,6 +165,9 @@ class ProfileMapper(
             bucketList = serializeBucketList(profile.idealType.bucketList),
             personalityTests = serializedTests,
             colorType = profile.colorType?.type?.name,
+            colorReasoning = profile.colorType?.reasoning,
+            colorPersonalitySummary = profile.colorType?.personalitySummary,
+            colorIdealTypeInsight = profile.colorType?.idealTypeInsight,
             createdAt = profile.metadata.createdAt,
             updatedAt = profile.metadata.updatedAt,
             lastAccessedAt = profile.metadata.lastAccessedAt,
