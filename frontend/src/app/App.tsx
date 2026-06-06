@@ -31,6 +31,7 @@ const MatchmakerMarketplaceScreen = lazy(() => import("./components/MatchmakerMa
 const MatchmakerPublicProfileScreen = lazy(() => import("./components/MatchmakerPublicProfileScreen").then(m => ({ default: m.MatchmakerPublicProfileScreen })));
 const DesignSystemScreen = lazy(() => import("./components/DesignSystemScreen").then(m => ({ default: m.DesignSystemScreen })));
 const MyPageScreen = lazy(() => import("./components/MyPageScreen").then(m => ({ default: m.MyPageScreen })));
+const ColorDetailScreen = lazy(() => import("./components/ColorDetailScreen").then(m => ({ default: m.ColorDetailScreen })));
 const PublicProfileScreen = lazy(() => import("./components/PublicProfileScreen").then(m => ({ default: m.PublicProfileScreen })));
 const FriendConnectScreen = lazy(() => import("./components/FriendConnectScreen").then(m => ({ default: m.FriendConnectScreen })));
 const MatchmakerRewardScreen = lazy(() => import("./components/MatchmakerRewardScreen").then(m => ({ default: m.MatchmakerRewardScreen })));
@@ -94,6 +95,7 @@ type Screen =
   | "matchDetail"
   | "photoVerify"
   | "colorTest"
+  | "colorDetail"
   | "inviteHub";
 
 const ONBOARDING_DRAFT_KEY = "palette_onboarding_draft";
@@ -1015,6 +1017,7 @@ export default function App() {
       {currentScreen === "myPage" && (
         <MyPageScreen
           onNavigateToProfile={() => setCurrentScreen("myProfile")}
+          onNavigateToColor={() => setCurrentScreen("colorDetail")}
           onNavigateToConnector={() => setCurrentScreen("connectorDashboard")}
           onConvertToRegular={handleConvertToRegular}
           onNavigateToFriends={() => { setFriendConnectFrom(currentScreen); setCurrentScreen("friendConnect"); }}
@@ -1101,10 +1104,17 @@ export default function App() {
           onSkip={() => setCurrentScreen("myPage")}
         />
       )}
+
+      {currentScreen === "colorDetail" && (
+        <ColorDetailScreen
+          onBack={() => setCurrentScreen("myPage")}
+          onNavigateToProfile={() => setCurrentScreen("aiProfileEnhance")}
+        />
+      )}
       </Suspense>
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding/detail screens */}
-      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "matchDetail", "photoVerify", "colorTest", "inviteHub"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "matchDetail", "photoVerify", "colorTest", "colorDetail", "inviteHub"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}

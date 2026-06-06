@@ -13,6 +13,7 @@ import { toast } from "sonner";
 
 interface MyPageScreenProps {
   onNavigateToProfile: () => void;
+  onNavigateToColor?: () => void;
   onNavigateToConnector: () => void;
   onLogout: () => void;
   onConvertToRegular: () => void;
@@ -35,6 +36,7 @@ interface ProfileData {
 
 export function MyPageScreen({
   onNavigateToProfile,
+  onNavigateToColor,
   onNavigateToConnector,
   onLogout,
   onConvertToRegular,
@@ -263,10 +265,10 @@ export function MyPageScreen({
             </div>
           </div>
 
-          {/* 나의 색 — Palette 시그니처 정체성 (탭 → 프로필) */}
+          {/* 나의 색 — Palette 시그니처 정체성 (탭 → 색 설명 페이지) */}
           {profile && colorType?.hex && (
             <button
-              onClick={onNavigateToProfile}
+              onClick={() => (onNavigateToColor ?? onNavigateToProfile)()}
               className="mt-4 w-full flex items-center gap-3.5 bg-surface-sunken rounded-2xl px-4 py-3.5 text-left transition-colors hover:bg-accent"
             >
               <span
