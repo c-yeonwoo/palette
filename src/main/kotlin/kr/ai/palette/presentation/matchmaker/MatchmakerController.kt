@@ -11,13 +11,17 @@ import kr.ai.palette.persistence.matchmaker.MatchmakerReviewEntity
 import kr.ai.palette.persistence.matchmaker.MatchmakerReviewJpaRepository
 import kr.ai.palette.persistence.matchmaker.NudgeEntity
 import kr.ai.palette.persistence.matchmaker.NudgeJpaRepository
+import kr.ai.palette.persistence.matchmaker.WithdrawalRequestEntity
+import kr.ai.palette.persistence.matchmaker.WithdrawalRequestJpaRepository
 import kr.ai.palette.presentation.profile.ColorTypeDto
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import java.net.URI
+import java.time.Duration
 import java.time.Instant
 import java.util.*
 
@@ -32,6 +36,12 @@ class MatchmakerController(
     private val friendshipRepository: FriendshipRepository,
     private val profileRepository: ProfileRepository,
     private val nudgeJpaRepository: NudgeJpaRepository,
+    private val withdrawalRequestJpaRepository: WithdrawalRequestJpaRepository,
+    @Value("\${app.withdrawal.holding-days:14}") private val withdrawalHoldingDays: Long,
+    @Value("\${app.withdrawal.min-amount:5000}") private val withdrawalMinAmount: Int,
+    @Value("\${app.withdrawal.daily-limit:200000}") private val withdrawalDailyLimit: Int,
+    @Value("\${app.withdrawal.monthly-limit:1000000}") private val withdrawalMonthlyLimit: Int,
+    @Value("\${app.withdrawal.account-min-age-days:7}") private val withdrawalAccountMinAgeDays: Long,
 ) {
 
     @GetMapping("/marketplace")
@@ -228,29 +238,88 @@ class MatchmakerController(
             return ResponseEntity.status(403).body(mapOf("error" to "출금은 본인인증(휴대폰) 완료 후 가능합니다"))
         }
 
-        if (request.amount <= 0) {
-            return ResponseEntity.badRequest().body(mapOf("error" to "출금 금액은 0보다 커야 합니다"))
+        // 최소 출금 금액
+        if (request.amount < withdrawalMinAmount) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "최소 출금 금액은 ${withdrawalMinAmount}P 입니다"))
         }
 
+        // 신규 계정 cooldown (가입 직후 파밍 후 즉시 출금 방지)
+        val now = Instant.now()
+        val accountAgeDays = Duration.between(matchmaker.metadata.createdAt, now).toDays()
+        if (accountAgeDays < withdrawalAccountMinAgeDays) {
+            return ResponseEntity.status(403).body(
+                mapOf("error" to "가입 후 ${withdrawalAccountMinAgeDays}일 이후부터 출금할 수 있습니다")
+            )
+        }
+
+        // 가용 포인트
         if (matchmaker.earnings.getAvailablePoints() < request.amount) {
             return ResponseEntity.badRequest().body(
                 mapOf("error" to "출금 가능 포인트가 부족합니다 (가용: ${matchmaker.earnings.getAvailablePoints()}P)")
             )
         }
 
-        val updated = matchmaker.copy(
-            earnings = matchmaker.earnings.withdraw(request.amount)
-        )
+        // 일/월 출금 한도 (HOLD+PAID 합산, REJECTED 제외)
+        val recent = withdrawalRequestJpaRepository
+            .findByMatchmakerUserIdAndRequestedAtAfter(authUser.userId.value, now.minus(Duration.ofDays(30)))
+            .filter { it.status != "REJECTED" }
+        val dayCutoff = now.minus(Duration.ofDays(1))
+        val daySum = recent.filter { it.requestedAt.isAfter(dayCutoff) }.sumOf { it.amount }
+        val monthSum = recent.sumOf { it.amount }
+        if (daySum + request.amount > withdrawalDailyLimit) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "일 출금 한도(${withdrawalDailyLimit}P)를 초과합니다"))
+        }
+        if (monthSum + request.amount > withdrawalMonthlyLimit) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "월 출금 한도(${withdrawalMonthlyLimit}P)를 초과합니다"))
+        }
+
+        // 예약(pending) + HOLD 레코드 — holding period 후 자동 확정/관리자 거절 (ADR 0023)
+        val updated = matchmaker.copy(earnings = matchmaker.earnings.reserveForWithdrawal(request.amount))
         matchmakerRepository.save(updated)
+        val availableAt = now.plus(Duration.ofDays(withdrawalHoldingDays))
+        val saved = withdrawalRequestJpaRepository.save(
+            WithdrawalRequestEntity(
+                id = UUID.randomUUID(),
+                matchmakerUserId = authUser.userId.value,
+                amount = request.amount,
+                status = "HOLD",
+                requestedAt = now,
+                availableAt = availableAt,
+            )
+        )
 
         return ResponseEntity.ok(
             mapOf(
                 "success" to true,
-                "withdrawnAmount" to request.amount,
+                "withdrawalId" to saved.id.toString(),
+                "amount" to request.amount,
+                "status" to "HOLD",
+                "availableAt" to availableAt.toString(),
+                "holdingDays" to withdrawalHoldingDays,
                 "remainingAvailable" to updated.earnings.getAvailablePoints(),
-                "message" to "${request.amount}P 출금 신청이 완료되었습니다"
+                "message" to "${request.amount}P 출금 신청 완료 — 검토 기간 ${withdrawalHoldingDays}일 후 지급됩니다"
             )
         )
+    }
+
+    /** 내 출금 요청 내역 (상태/지급예정일 확인). */
+    @GetMapping("/me/withdrawals")
+    fun getMyWithdrawals(
+        @AuthenticationPrincipal authUser: AuthUser
+    ): ResponseEntity<List<Map<String, Any?>>> {
+        val list = withdrawalRequestJpaRepository
+            .findByMatchmakerUserIdOrderByRequestedAtDesc(authUser.userId.value)
+            .map {
+                mapOf(
+                    "id" to it.id.toString(),
+                    "amount" to it.amount,
+                    "status" to it.status,
+                    "requestedAt" to it.requestedAt.toString(),
+                    "availableAt" to it.availableAt.toString(),
+                    "processedAt" to it.processedAt?.toString(),
+                )
+            }
+        return ResponseEntity.ok(list)
     }
 
     @PostMapping("/me/photo")

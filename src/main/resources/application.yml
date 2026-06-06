@@ -68,6 +68,13 @@ app:
   base-url: ${APP_BASE_URL:http://localhost:8080}
   # 베타 게이트 — 값이 있으면 회원가입 시 코드 검증, 빈 값이면 비활성
   beta-code: ${BETA_CODE:}
+  # 주선자 출금 어뷰징 방지 (ADR 0023) — holding 기간 + 한도 + 신규계정 cooldown
+  withdrawal:
+    holding-days: ${WITHDRAWAL_HOLDING_DAYS:14}
+    min-amount: ${WITHDRAWAL_MIN_AMOUNT:5000}
+    daily-limit: ${WITHDRAWAL_DAILY_LIMIT:200000}
+    monthly-limit: ${WITHDRAWAL_MONTHLY_LIMIT:1000000}
+    account-min-age-days: ${WITHDRAWAL_ACCOUNT_MIN_AGE_DAYS:7}
 
 # AWS S3 Configuration
 aws:
