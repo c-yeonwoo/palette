@@ -118,6 +118,9 @@ kr.ai.palette/
 | `/api/v1/notifications` | `NotificationController` | 알림 목록, 읽음 |
 | `/api/v1/devices` | `DeviceTokenController` | FCM 토큰 등록 |
 | `/api/v1/payment` | `PaymentController` | 프로필 열람 결제 |
+| `/api/v1/users/{id}/block,report` | `BlockReportController` | 유저간 차단/신고 (양방향 격리 — ADR 0023) |
+| `/api/v1/matchmakers/me/withdraw,withdrawals` | `MatchmakerController` | 출금 요청(holding)·내역 (ADR 0023) |
+| `/api/v1/admin/withdrawals,reports` | `AdminWithdrawalsController`, `AdminReportsController` | 출금 거절·신고 검토 (ADR 0023) |
 | `/api/v1/verification/phone` | `PhoneVerificationController` | SMS 인증 (베타: bypass) |
 | `/api/v1/identity/nice` | `NiceIdentityController` | NICE 본인인증 (DEV bypass) |
 

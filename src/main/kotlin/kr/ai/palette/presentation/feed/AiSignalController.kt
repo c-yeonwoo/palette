@@ -46,6 +46,7 @@ class AiSignalController(
     private val seedUserPolicy: SeedUserPolicy,
     private val dailyRecommendationRepo: DailyRecommendationJpaRepository,
     private val adminBlockedTargetRepo: AdminBlockedTargetJpaRepository,
+    private val blockService: kr.ai.palette.application.safety.BlockService,
 ) {
     companion object {
         // key: "{userId}:{date}" → 당일 2번째 카드 unlock 여부
@@ -129,6 +130,9 @@ class AiSignalController(
             .findActiveBlockedTargetIds(currentUserId.value, today)
             .toSet()
 
+        // 유저간 차단(양방향) 제외 — ADR 0023
+        val userBlockedIds = blockService.blockedCounterpartIds(currentUserId.value)
+
         val currentGender = currentUser.publicInfo.gender
 
         // TODO: vector-similarity (Phase 3). 현재는 date+UID seed 랜덤.
@@ -137,6 +141,7 @@ class AiSignalController(
             if (uid.toString() in excluded) return@filter false
             if (uid in recentlyRecommended) return@filter false
             if (uid in blockedTargets) return@filter false
+            if (uid in userBlockedIds) return@filter false  // 유저간 차단 양방향 제외 (ADR 0023)
             if (!profile.settings.canReceiveMatches()) return@filter false  // 소개/주선 받기 off·숨김 제외 (ADR 0022)
             val user = userRepository.findById(profile.userId) ?: return@filter false
             if (!exposeSeed && seedUserPolicy.isSeed(user)) return@filter false

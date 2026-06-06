@@ -48,10 +48,10 @@ git log origin/main..HEAD --oneline
 ### 🛡️ Trust & Safety (어뷰징 대응) — 전체: `docs/TRUST_AND_SAFETY.md`
 - [x] **`소개받기`/`주선받기` 토글 서버 강제** ✅ MatchabilityFilter (ADR 0022) — 피드/AI시그널/주선요청 3곳에서 `canReceiveMatches()` 강제
 - [x] **출금 본인인증 게이트** ✅ 휴대폰 인증 계정만 출금 (ADR 0022)
-- [ ] **출금 holding period + 한도 + 신규계정 cooldown** (P0) — WithdrawalRequest 라이프사이클
+- [x] **출금 holding period + 한도 + 신규계정 cooldown** ✅ WithdrawalRequest 라이프사이클 (ADR 0023)
+- [x] **rate limit** (친구/매칭/Nudge) ✅ + **유저간 신고/차단 양방향 격리** ✅ (ADR 0023)
 - [ ] **결제 Toss 서버검증** (P0) — paymentKey 존재 → confirm/webhook, 차지백 시 커미션 회수
 - [ ] **콜루전 기본 탐지** (P0) — 디바이스/IP/CI 공유, 폐쇄 루프, 가입↔성사 시간
-- [ ] **rate limit** (친구/매칭/Nudge) + **유저간 신고/차단 양방향 격리** (P1)
 - [ ] **디바이스/IP 시그널 캡처** (P1, 콜루전 입력) · **감사포인트 비출금화**(신설 시)
 - [ ] **Vision/이미지해시 도용탐지** · **리뷰 verified-match gate** (P2)
 

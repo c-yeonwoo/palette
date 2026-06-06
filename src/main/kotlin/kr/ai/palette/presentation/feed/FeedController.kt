@@ -26,6 +26,7 @@ class FeedController(
     private val cardOpenJpaRepository: CardOpenJpaRepository,
     private val feedHideRepository: FeedHideJpaRepository,
     private val fileStorageService: FileStorageService,
+    private val blockService: kr.ai.palette.application.safety.BlockService,
 ) {
 
     @GetMapping
@@ -65,6 +66,9 @@ class FeedController(
         val hiddenIds = feedHideRepository.findAllByUserId(currentUserId.value.toString())
             .map { it.targetUserId }.toSet()
 
+        // 유저간 차단(양방향) 제외 — ADR 0023
+        val blockedIds = blockService.blockedCounterpartIds(currentUserId.value)
+
         // 2촌만 피드에 노출 (1촌은 이미 아는 사람이므로 제외)
         val profileItems = secondDegreeFriendIds.distinct().mapNotNull { userId ->
             val user = userRepository.findById(userId)
@@ -72,6 +76,7 @@ class FeedController(
             // 매칭 이력 또는 숨김 처리된 프로필 제외
             if (matchHistoryExcluded.contains(userId.value.toString())) return@mapNotNull null
             if (hiddenIds.contains(userId.value.toString())) return@mapNotNull null
+            if (blockedIds.contains(userId.value)) return@mapNotNull null  // 유저간 차단 양방향 (ADR 0023)
 
             // 반대 성별만 필터링
             if (user != null && user.publicInfo.gender != currentUserGender) {

@@ -10,6 +10,7 @@ import kr.ai.palette.domain.matchmaking.MatchmakingRequestStatus
 import kr.ai.palette.domain.notification.PaletteEvent
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.UserRepository
+import kr.ai.palette.application.safety.BlockService
 import kr.ai.palette.infrastructure.ratelimit.RateLimiter
 import org.springframework.context.ApplicationEventPublisher
 import java.time.Duration
@@ -26,6 +27,7 @@ class MatchmakingController(
     private val userRepository: UserRepository,
     private val profileRepository: ProfileRepository,
     private val rateLimiter: RateLimiter,
+    private val blockService: BlockService,
     private val eventPublisher: ApplicationEventPublisher
 ) {
 
@@ -79,6 +81,11 @@ class MatchmakingController(
         // Check if already requested
         if (matchmakingRequestRepository.existsByRequesterIdAndTargetUserId(requesterId, targetUserId)) {
             return ResponseEntity.badRequest().build()
+        }
+
+        // 차단 관계(양방향)면 요청 차단 (ADR 0023)
+        if (blockService.isBlockedBetween(requesterId.value, targetUserId.value)) {
+            return ResponseEntity.status(403).build()
         }
 
         // 대상자가 소개/주선 받기를 꺼뒀거나 숨김이면 요청 차단 (ADR 0022)
