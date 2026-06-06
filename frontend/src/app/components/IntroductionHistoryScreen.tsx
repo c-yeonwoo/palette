@@ -185,7 +185,7 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
                 <Clock className="w-3.5 h-3.5" />
                 진행 중
                 {pendingItems.length > 0 && (
-                  <span className="bg-primary text-primary-foreground text-xs font-bold min-w-[16px] h-4 px-0.5 rounded-full inline-flex items-center justify-center">
+                  <span className="bg-brand-soft text-gold-strong text-xs font-bold min-w-[16px] h-4 px-0.5 rounded-full inline-flex items-center justify-center">
                     {pendingItems.length}
                   </span>
                 )}

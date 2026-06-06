@@ -189,7 +189,7 @@ export function AIInterviewScreen({ onComplete, onBack }: AIInterviewScreenProps
               className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-line ${
                 msg.type === "ai"
                   ? "bg-card shadow-sm text-foreground rounded-tl-none"
-                  : "bg-primary text-primary-foreground rounded-tr-none"
+                  : "bg-brand-soft text-gold-strong rounded-tr-none"
               }`}
             >
               {msg.content}
@@ -224,7 +224,7 @@ export function AIInterviewScreen({ onComplete, onBack }: AIInterviewScreenProps
                   onClick={() => toggleChip(chip)}
                   className={`px-3 py-1.5 rounded-full text-sm transition-all ${
                     selectedChips.includes(chip)
-                      ? "bg-primary text-primary-foreground shadow"
+                      ? "bg-brand-soft text-gold-strong shadow"
                       : "bg-muted text-foreground hover:bg-accent"
                   }`}
                 >
@@ -255,7 +255,7 @@ export function AIInterviewScreen({ onComplete, onBack }: AIInterviewScreenProps
                 ? selectedChips.length === 0
                 : currentInput.trim().length === 0
             }
-            className="w-full h-12 bg-primary text-primary-foreground"
+            className="w-full h-12 bg-brand-soft text-gold-strong"
           >
             {currentStep === questions.length - 1 ? "완성하기 ✨" : "다음"}
             <ChevronRight className="w-4 h-4 ml-1" />

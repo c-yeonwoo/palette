@@ -258,7 +258,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
                   onClick={() => toggleImportantValue(value)}
                   className={`relative cursor-pointer px-4 py-2 transition-all ${
                     isSelected
-                      ? "bg-primary text-primary-foreground border-primary"
+                      ? "bg-brand-soft text-gold-strong border-brand/40"
                       : "bg-card border-border text-muted-foreground hover:border-primary/40"
                   }`}
                   variant={isSelected ? "default" : "outline"}
@@ -302,7 +302,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
                   onClick={() => togglePersonality(personality)}
                   className={`cursor-pointer px-4 py-2 transition-all ${
                     isSelected
-                      ? "bg-primary text-primary-foreground border-primary"
+                      ? "bg-brand-soft text-gold-strong border-brand/40"
                       : "bg-card border-border text-muted-foreground hover:border-primary/40"
                   }`}
                   variant={isSelected ? "default" : "outline"}
@@ -329,7 +329,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
                 onClick={() => toggleAppearanceStyle(style)}
                 className={`cursor-pointer px-4 py-2 transition-all ${
                   selectedAppearanceStyles.includes(style)
-                    ? "bg-primary text-primary-foreground border-primary"
+                    ? "bg-brand-soft text-gold-strong border-brand/40"
                     : "bg-card border-border text-muted-foreground hover:border-primary/40"
                 }`}
                 variant={selectedAppearanceStyles.includes(style) ? "default" : "outline"}
@@ -357,7 +357,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
                 onClick={() => toggleDealBreaker(option.value)}
                 className={`cursor-pointer px-4 py-2 transition-all ${
                   selectedDealBreakers.includes(option.value)
-                    ? "bg-primary text-primary-foreground border-primary"
+                    ? "bg-brand-soft text-gold-strong border-brand/40"
                     : "bg-card border-border text-muted-foreground hover:border-primary/40"
                 }`}
                 variant={selectedDealBreakers.includes(option.value) ? "default" : "outline"}
@@ -384,7 +384,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
             },
           })}
           disabled={!isValid}
-          className="w-full h-14 bg-primary text-primary-foreground disabled:opacity-50"
+          className="w-full h-14 bg-brand-soft text-gold-strong disabled:opacity-50"
         >
           <Sparkles className="w-5 h-5 mr-2" />
           다음 - AI 프로필 완성

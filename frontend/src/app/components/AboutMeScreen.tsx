@@ -184,7 +184,7 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
                   onClick={() => setSmoking(option)}
                   className={`py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
                     smoking === option
-                      ? "bg-primary text-primary-foreground border-primary"
+                      ? "bg-brand-soft text-gold-strong border-brand/40"
                       : "bg-card border-border text-muted-foreground hover:border-primary/40"
                   }`}
                 >
@@ -204,7 +204,7 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
                   onClick={() => setDrinking(option)}
                   className={`py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
                     drinking === option
-                      ? "bg-primary text-primary-foreground border-primary"
+                      ? "bg-brand-soft text-gold-strong border-brand/40"
                       : "bg-card border-border text-muted-foreground hover:border-primary/40"
                   }`}
                 >
@@ -224,7 +224,7 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
                   onClick={() => setReligion(option)}
                   className={`py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
                     religion === option
-                      ? "bg-primary text-primary-foreground border-primary"
+                      ? "bg-brand-soft text-gold-strong border-brand/40"
                       : "bg-card border-border text-muted-foreground hover:border-primary/40"
                   }`}
                 >
@@ -250,7 +250,7 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
             })
           }
           disabled={!isValid}
-          className="w-full h-14 bg-primary text-primary-foreground disabled:opacity-50"
+          className="w-full h-14 bg-brand-soft text-gold-strong disabled:opacity-50"
         >
           다음 - 이상형 설정
         </Button>

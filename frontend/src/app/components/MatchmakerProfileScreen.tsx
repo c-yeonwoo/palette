@@ -248,7 +248,7 @@ export function MatchmakerProfileScreen({ onBack, onConvertToRegular }: Matchmak
             )}
             <button
               onClick={handlePhotoUpload}
-              className="absolute bottom-0 right-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+              className="absolute bottom-0 right-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center hover:bg-brand-soft/70 transition-colors"
             >
               <Camera className="w-4 h-4 text-primary-foreground" />
             </button>

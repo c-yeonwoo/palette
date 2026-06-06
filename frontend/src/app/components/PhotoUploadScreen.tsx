@@ -270,7 +270,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
                   <>
                     <img src={photo} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
                     {index === mainPhotoIndex && (
-                      <div className="absolute top-1 left-1 bg-primary text-primary-foreground rounded-full p-1">
+                      <div className="absolute top-1 left-1 bg-brand-soft text-gold-strong rounded-full p-1">
                         <Star className="w-3 h-3 fill-current" />
                       </div>
                     )}
@@ -379,7 +379,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
             onNext({ photos, mainPhotoIndex, video });
           }}
           disabled={isUploading}
-          className="w-full h-14 bg-primary text-primary-foreground"
+          className="w-full h-14 bg-brand-soft text-gold-strong"
         >
           {isUploading ? "업로드 중..." : "다음 - AI 인터뷰"}
         </Button>

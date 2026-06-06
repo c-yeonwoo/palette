@@ -241,7 +241,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
               <button
                 onClick={() => { setPendingFilters({ ...filters }); setShowFilter(true); }}
                 className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
-                  showFilter || hasActiveFilters ? "bg-primary text-primary-foreground" : "hover:bg-muted/50 text-foreground"
+                  showFilter || hasActiveFilters ? "bg-brand-soft text-gold-strong" : "hover:bg-muted/50 text-foreground"
                 }`}
                 aria-label="필터"
               >
@@ -686,7 +686,7 @@ function AiSignalSection({
                   <button
                     onClick={() => handleUnlock(rec)}
                     disabled={unlocking}
-                    className="mt-1 w-full py-1.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold shadow-lg active:scale-95 transition-transform disabled:opacity-60"
+                    className="mt-1 w-full py-1.5 rounded-xl bg-brand-soft text-gold-strong text-xs font-bold shadow-lg active:scale-95 transition-transform disabled:opacity-60"
                   >
                     {unlocking ? "처리 중..." : `열기 ${rec.unlockPrice.toLocaleString()}원`}
                   </button>
@@ -834,7 +834,7 @@ function ChipButton({ active, onClick, children }: { active: boolean; onClick: (
     <button
       onClick={onClick}
       className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
-        active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
+        active ? "bg-brand-soft text-gold-strong" : "bg-muted text-muted-foreground hover:bg-accent"
       }`}
     >
       {children}
@@ -928,7 +928,7 @@ function FirstTimeGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => v
       {onNavigateToFriends && (
         <button
           onClick={onNavigateToFriends}
-          className="w-full bg-primary text-primary-foreground font-semibold py-3.5 rounded-2xl shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
+          className="w-full bg-brand-soft text-gold-strong font-semibold py-3.5 rounded-2xl shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
         >
           <span>👥</span>
           지금 친구 연결하기
@@ -966,7 +966,7 @@ function NoFriendsNudge({ onNavigateToFriends }: { onNavigateToFriends?: () => v
       {onNavigateToFriends && (
         <button
           onClick={onNavigateToFriends}
-          className="flex items-center gap-2 bg-primary text-primary-foreground font-semibold px-6 py-3 rounded-2xl shadow-md active:scale-95 transition-transform"
+          className="flex items-center gap-2 bg-brand-soft text-gold-strong font-semibold px-6 py-3 rounded-2xl shadow-md active:scale-95 transition-transform"
         >
           <span className="text-base">👥</span>
           친구 추가하기

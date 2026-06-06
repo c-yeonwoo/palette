@@ -195,7 +195,7 @@ export function FriendConnectScreen({ onBack }: FriendConnectScreenProps) {
               onClick={() => setTab(t)}
               className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
                 tab === t
-                  ? "border-primary text-primary"
+                  ? "border-brand/50 text-gold-strong"
                   : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >

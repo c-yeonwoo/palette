@@ -281,7 +281,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                     onClick={() => update('gender', g)}
                     className={`py-3.5 rounded-xl border-2 font-medium transition-all ${
                       formData.gender === g
-                        ? "bg-primary text-primary-foreground border-primary"
+                        ? "bg-brand-soft text-gold-strong border-brand/40"
                         : "bg-card border-border text-muted-foreground hover:border-primary/40"
                     }`}
                   >
@@ -330,7 +330,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                     onClick={() => update('bodyType', type)}
                     className={`py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
                       formData.bodyType === type
-                        ? "bg-primary text-primary-foreground border-primary"
+                        ? "bg-brand-soft text-gold-strong border-brand/40"
                         : "bg-card border-border text-muted-foreground hover:border-primary/40"
                     }`}
                   >
@@ -355,7 +355,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                             onClick={() => update(field, type)}
                             className={`py-2 rounded-lg border-2 text-sm font-bold transition-all ${
                               formData[field] === type
-                                ? "bg-primary text-primary-foreground border-primary"
+                                ? "bg-brand-soft text-gold-strong border-brand/40"
                                 : "bg-card border-border text-muted-foreground hover:border-primary/40"
                             }`}
                           >
@@ -391,7 +391,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                     onClick={() => update('jobCategory', category)}
                     className={`py-3 px-4 rounded-xl border-2 text-sm font-medium text-left transition-all ${
                       formData.jobCategory === category
-                        ? "bg-primary text-primary-foreground border-primary"
+                        ? "bg-brand-soft text-gold-strong border-brand/40"
                         : "bg-card border-border text-muted-foreground hover:border-primary/40"
                     }`}
                   >
@@ -411,7 +411,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                     onClick={() => update('education', level)}
                     className={`py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
                       formData.education === level
-                        ? "bg-primary text-primary-foreground border-primary"
+                        ? "bg-brand-soft text-gold-strong border-brand/40"
                         : "bg-card border-border text-muted-foreground hover:border-primary/40"
                     }`}
                   >
@@ -431,7 +431,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                     onClick={() => update('region', region)}
                     className={`py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
                       formData.region === region
-                        ? "bg-primary text-primary-foreground border-primary"
+                        ? "bg-brand-soft text-gold-strong border-brand/40"
                         : "bg-card border-border text-muted-foreground hover:border-primary/40"
                     }`}
                   >
@@ -524,7 +524,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
         <Button
           onClick={handleNext}
           disabled={!isCurrentStepValid()}
-          className="w-full h-14 bg-primary text-primary-foreground disabled:opacity-50"
+          className="w-full h-14 bg-brand-soft text-gold-strong disabled:opacity-50"
         >
           {miniStep < 4 ? (
             <>

@@ -405,7 +405,7 @@ export function PublicProfileScreen() {
           </p>
           <Button
             size="lg"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="bg-primary hover:bg-brand-soft/70 text-primary-foreground"
             onClick={() => window.location.href = '/'}
           >
             지금 가입하기

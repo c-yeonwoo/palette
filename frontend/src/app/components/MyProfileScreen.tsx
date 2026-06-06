@@ -321,7 +321,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
             </div>
             <button
               onClick={onEdit}
-              className="flex items-center gap-1.5 bg-primary text-primary-foreground text-sm font-semibold px-5 py-2.5 rounded-full shadow-md"
+              className="flex items-center gap-1.5 bg-brand-soft text-gold-strong text-sm font-semibold px-5 py-2.5 rounded-full shadow-md"
             >
               <Plus className="w-4 h-4" />
               사진 추가하기
@@ -512,7 +512,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
             onClick={() => setActiveTab(tab)}
             className={`flex-1 py-3.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
               activeTab === tab
-                ? "border-primary text-primary"
+                ? "border-brand/50 text-gold-strong"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >

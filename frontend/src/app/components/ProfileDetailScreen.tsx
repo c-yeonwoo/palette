@@ -895,7 +895,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                         onClick={() => handleMatchmakerSelect(friend)}
                         className={`w-full text-left px-3 py-2.5 rounded-xl border-2 transition-all ${
                           selectedMatchmaker?.name === friend.name
-                            ? "border-primary bg-primary/5"
+                            ? "border-brand/50 bg-brand-soft/50"
                             : "border-border hover:border-primary/50 hover:bg-accent/5"
                         }`}
                       >
@@ -996,12 +996,12 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                           onClick={() => setSelectedPoints(points)}
                           className={`relative p-3 rounded-xl border-2 text-center transition-all ${
                             selectedPoints === points
-                              ? "border-primary bg-primary/5"
+                              ? "border-brand/50 bg-brand-soft/50"
                               : "border-border hover:border-primary/40"
                           }`}
                         >
                           {recommended && (
-                            <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] font-bold bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                            <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] font-bold bg-brand-soft text-gold-strong px-1.5 py-0.5 rounded-full whitespace-nowrap">
                               추천
                             </span>
                           )}
