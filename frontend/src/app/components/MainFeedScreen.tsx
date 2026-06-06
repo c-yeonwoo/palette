@@ -180,7 +180,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
   };
 
   const [isFeedVisible, setIsFeedVisible] = useState(true);
-  const [homeTab, setHomeTab] = useState<"recommend" | "network">("recommend");
+  const [homeTab, setHomeTab] = useState<"recommend" | "network">("network");
 
   const fetchUserAndFeed = async (f: FilterState = filters) => {
     try {
@@ -396,9 +396,9 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
               </div>
             ) : (
               <>
-                {/* 내부 탭 — 오늘의 추천 / 지인 */}
+                {/* 내부 탭 — 지인 / 팔레트 픽 */}
                 <div className="flex gap-1 p-1 mt-5 rounded-2xl bg-surface-sunken">
-                  {([["recommend", "오늘의 추천"], ["network", "지인"]] as const).map(([key, label]) => (
+                  {([["network", "지인"], ["recommend", "팔레트 픽"]] as const).map(([key, label]) => (
                     <button
                       key={key}
                       onClick={() => setHomeTab(key)}
@@ -424,7 +424,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
                         }}
                       />
                     ) : (
-                      <EmptyState title="오늘의 추천을 준비 중이에요" description="프로필을 완성하면 더 정밀하게 추천해드려요" />
+                      <EmptyState title="팔레트 픽을 준비 중이에요" description="프로필을 완성하면 더 정밀하게 추천해드려요" />
                     )
                   ) : feedItems.length === 0 ? (
                     hasActiveFilters ? (
@@ -655,7 +655,7 @@ function AiSignalSection({
       await api.post("/api/v1/feed/ai-signal/subscribe", {});
       await onChanged?.();
       setShowPaywall(false);
-      toast.success("AI 추천 구독 패스가 시작됐어요 ✨");
+      toast.success("팔레트 픽 패스가 시작됐어요 ✨");
     } catch {
       // 402 (실 결제 모드, paymentKey 없음) 등 — 베타에서는 결제 미연동
       toast.error("결제 연동을 준비 중이에요. 곧 만나요!");
@@ -768,7 +768,7 @@ function AiPassPaywall({
   onClose: () => void;
 }) {
   const benefits = [
-    { emoji: "♾️", title: "매일 추천 무제한", desc: "하루 1장 제한 없이 오늘의 추천을 모두 열람" },
+    { emoji: "♾️", title: "매일 추천 무제한", desc: "하루 1장 제한 없이 팔레트 픽을 모두 열람" },
     { emoji: "📊", title: "궁합 리포트", desc: "왜 잘 맞는지 색깔 기반 상세 분석 제공" },
     { emoji: "✨", title: "우선 추천", desc: "더 정교한 궁합 기반으로 먼저 소개" },
   ];
@@ -782,7 +782,7 @@ function AiPassPaywall({
           <div className="w-12 h-12 rounded-2xl bg-brand-soft flex items-center justify-center mb-3">
             <Sparkles className="w-6 h-6 text-gold-strong" />
           </div>
-          <h3 className="text-lg font-bold text-foreground">AI 추천 구독 패스</h3>
+          <h3 className="text-lg font-bold text-foreground">팔레트 픽 패스</h3>
           <p className="text-sm text-muted-foreground mt-1">색 궁합으로 매일 인연을 추천받아요</p>
         </div>
 
