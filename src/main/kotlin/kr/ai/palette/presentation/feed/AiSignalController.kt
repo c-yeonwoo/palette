@@ -12,7 +12,10 @@ import kr.ai.palette.persistence.recommendation.AdminBlockedTargetJpaRepository
 import kr.ai.palette.persistence.recommendation.DailyRecommendationEntity
 import kr.ai.palette.persistence.recommendation.DailyRecommendationJpaRepository
 import kr.ai.palette.persistence.recommendation.RecommendationSourceEntity
+import kr.ai.palette.persistence.subscription.AiPassSubscriptionEntity
+import kr.ai.palette.persistence.subscription.AiPassSubscriptionJpaRepository
 import kr.ai.palette.presentation.profile.ProfileResponse
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.transaction.annotation.Transactional
@@ -25,9 +28,11 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * AI 시그널 추천 컨트롤러
+ * AI 시그널 추천 컨트롤러 — "오늘의 추천" (ADR 0025)
  *
- * - 하루 1장 무료, 2번째는 1,000원 과금 후 열람
+ * - 비구독자: 하루 1장 무료 미리보기, 2번째부터는 "AI 추천 구독 패스"(₩9,900/월) 필요
+ * - 구독자: 매일 추천 무제한 열람 + 궁합 리포트
+ * - 결제(Toss) 미연동 — stub 모드에서는 결제 없이 패스 활성화(베타 체험)
  * - TODO: 벡터 DB 기반 유사도 매칭 구현 예정
  *   - 프로필 소개글(introduction.text) + 이상형 설명을 임베딩 벡터로 변환
  *   - pgvector / Pinecone 등 벡터 DB에 저장
@@ -47,18 +52,28 @@ class AiSignalController(
     private val dailyRecommendationRepo: DailyRecommendationJpaRepository,
     private val adminBlockedTargetRepo: AdminBlockedTargetJpaRepository,
     private val blockService: kr.ai.palette.application.safety.BlockService,
+    private val aiPassRepo: AiPassSubscriptionJpaRepository,
+    @Value("\${toss.payments.secret-key:}") private val paymentSecretKey: String,
 ) {
     companion object {
-        // key: "{userId}:{date}" → 당일 2번째 카드 unlock 여부
+        // key: "{userId}:{date}" → 당일 2번째 카드 unlock 여부 (legacy per-card unlock)
         private val unlockedToday = ConcurrentHashMap<String, Boolean>()
 
-        const val UNLOCK_PRICE = 1000  // 원
+        const val UNLOCK_PRICE = 1000  // 원 (legacy)
+
+        /** AI 추천 구독 패스 (ADR 0025) */
+        const val PASS_PRICE_MONTHLY = 9900  // 원/월
+        const val PASS_DURATION_DAYS = 30L
 
         /** 60일 이내 추천된 적 있는 사용자는 후보에서 제외 (ADR 0009) */
         const val RECOMMENDATION_EXCLUSION_DAYS = 60L
 
         private val KST = ZoneId.of("Asia/Seoul")
     }
+
+    /** Toss secret 키가 없거나 placeholder 면 결제 stub 모드 (OpenAIService.isStubMode 패턴) */
+    private val isPaymentStubMode: Boolean
+        get() = paymentSecretKey.isBlank() || paymentSecretKey.startsWith("dummy") || paymentSecretKey.contains("placeholder")
 
     @GetMapping
     @Transactional
@@ -161,30 +176,42 @@ class AiSignalController(
     ): AiSignalResponse {
         val unlockKey = "${viewerId.value}:$today"
         val isSecondUnlocked = unlockedToday[unlockKey] == true
+        val pass = aiPassRepo.findByUserId(viewerId.value)
+        val isSubscriber = pass?.expiresAt?.isAfter(Instant.now()) == true
 
         val recommendations = targetIds.mapIndexedNotNull { index, targetUserId ->
             val profile = profileRepository.findByUserId(kr.ai.palette.domain.common.UserId(targetUserId))
                 ?: return@mapIndexedNotNull null
             val user = userRepository.findById(profile.userId)
             val isFree = index == 0
-            val isUnlocked = isFree || isSecondUnlocked
+            // 무료 1장 OR 구독자 OR (legacy) 당일 결제 → 열람 가능
+            val isUnlocked = isFree || isSubscriber || isSecondUnlocked
             val fullProfile = if (isUnlocked) ProfileResponse.from(profile, fileStorageService) else null
             val isOpened = cardOpenJpaRepository.existsByViewerIdAndTargetUserId(viewerId.value, targetUserId)
 
             AiSignalRecommendation(
                 profile = fullProfile,
-                reason = if (isUnlocked) "이상형 소개글 유사도 기반 추천" else "AI가 선택한 오늘의 특별 추천",
+                reason = if (isUnlocked) "프로필 궁합도 기반 추천" else "구독하면 만날 수 있는 오늘의 추천",
                 similarityScore = 0.0,
                 isFree = isFree,
                 isUnlocked = isUnlocked,
+                requiresPass = !isUnlocked,
                 unlockPrice = if (isFree) 0 else UNLOCK_PRICE,
                 isOpened = isOpened,
                 teaserAge = if (!isUnlocked) user?.publicInfo?.birthDate?.let { today.year - it.year } else null,
                 teaserLocation = if (!isUnlocked) profile.locationInfo?.sido else null,
+                // 잠긴 카드도 색 타입은 노출 → 프론트가 궁합 % 티저 계산 (matrix는 프론트 단일 소스)
+                teaserColorType = profile.colorType?.type?.name,
             )
         }
 
-        return AiSignalResponse(recommendations, today.toString())
+        return AiSignalResponse(
+            recommendations = recommendations,
+            generatedAt = today.toString(),
+            isSubscriber = isSubscriber,
+            passPriceMonthly = PASS_PRICE_MONTHLY,
+            passExpiresAt = if (isSubscriber) pass?.expiresAt?.toString() else null,
+        )
     }
 
     /**
@@ -218,28 +245,81 @@ class AiSignalController(
 
         return ResponseEntity.ok(UnlockResponse(alreadyUnlocked = false, price = UNLOCK_PRICE))
     }
+
+    /**
+     * AI 추천 구독 패스 구독/갱신 (ADR 0025)
+     *
+     * - stub 모드(결제 미연동): paymentKey 없이 30일 패스 활성화(베타 체험)
+     * - 실 결제 모드: paymentKey 필수 — Toss 검증 연동 전까지 402 반환
+     */
+    @PostMapping("/subscribe")
+    @Transactional
+    fun subscribe(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @RequestBody(required = false) body: UnlockRequestBody?
+    ): ResponseEntity<SubscribeResponse> {
+        // 실 결제 모드인데 paymentKey 없으면 결제 필요
+        if (!isPaymentStubMode && body?.paymentKey.isNullOrBlank()) {
+            return ResponseEntity.status(402).build()
+        }
+        // TODO Phase 2: Toss Payments 정기결제(빌링) 검증 후 활성화
+
+        val userId = authUser.userId.value
+        val now = Instant.now()
+        val existing = aiPassRepo.findByUserId(userId)
+        val newExpiry = (existing?.expiresAt?.takeIf { it.isAfter(now) } ?: now)
+            .plus(java.time.Duration.ofDays(PASS_DURATION_DAYS))
+
+        if (existing != null) {
+            existing.expiresAt = newExpiry
+            aiPassRepo.save(existing)
+        } else {
+            aiPassRepo.save(
+                AiPassSubscriptionEntity(userId = userId, startedAt = now, expiresAt = newExpiry)
+            )
+        }
+
+        return ResponseEntity.ok(
+            SubscribeResponse(active = true, expiresAt = newExpiry.toString(), priceMonthly = PASS_PRICE_MONTHLY)
+        )
+    }
 }
 
 data class AiSignalResponse(
     val recommendations: List<AiSignalRecommendation>,
-    val generatedAt: String
-)
+    val generatedAt: String,
+    val isSubscriber: Boolean = false,       // AI 추천 구독 패스 보유 여부
+    val passPriceMonthly: Int = PASS_PRICE_MONTHLY_DEFAULT,  // 구독 가격 (원/월)
+    val passExpiresAt: String? = null,       // 구독 만료일 (구독자만)
+) {
+    companion object {
+        const val PASS_PRICE_MONTHLY_DEFAULT = 9900
+    }
+}
 
 data class AiSignalRecommendation(
     val profile: ProfileResponse?,       // 잠금 상태면 null
     val reason: String,
     val similarityScore: Double,
     val isFree: Boolean,                 // 첫 번째 카드 (무료)
-    val isUnlocked: Boolean,             // 결제 후 열람 완료 여부
-    val unlockPrice: Int,                // 과금 금액 (원), 무료면 0
+    val isUnlocked: Boolean,             // 열람 가능 여부 (무료/구독/legacy 결제)
+    val requiresPass: Boolean = false,   // 구독 패스가 있어야 열리는 카드
+    val unlockPrice: Int,                // (legacy) 과금 금액 (원), 무료면 0
     val isOpened: Boolean = false,       // 카드를 열어본 여부 (물감 제거 여부)
     val teaserAge: Int? = null,          // 잠금 상태일 때 노출할 나이 티저
-    val teaserLocation: String? = null   // 잠금 상태일 때 노출할 지역 티저
+    val teaserLocation: String? = null,  // 잠금 상태일 때 노출할 지역 티저
+    val teaserColorType: String? = null  // 잠금 상태일 때도 색 타입은 노출 → 궁합 % 티저
 )
 
 data class UnlockResponse(
     val alreadyUnlocked: Boolean,
     val price: Int
+)
+
+data class SubscribeResponse(
+    val active: Boolean,
+    val expiresAt: String,
+    val priceMonthly: Int
 )
 
 data class UnlockRequestBody(

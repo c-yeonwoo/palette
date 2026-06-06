@@ -95,15 +95,20 @@ interface AiSignalRecommendation {
   similarityScore: number;
   isFree: boolean;
   isUnlocked: boolean;
+  requiresPass?: boolean;
   unlockPrice: number;
   isOpened: boolean;
   teaserAge: number | null;
   teaserLocation: string | null;
+  teaserColorType?: string | null;
 }
 
 interface AiSignalResponse {
   recommendations: AiSignalRecommendation[];
   generatedAt: string;
+  isSubscriber?: boolean;
+  passPriceMonthly?: number;
+  passExpiresAt?: string | null;
 }
 
 interface MainFeedScreenProps {
@@ -202,6 +207,11 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
     } finally {
       setLoading(false);
     }
+  };
+
+  const refetchAiSignal = async () => {
+    const updated = await api.get<AiSignalResponse>("/api/v1/feed/ai-signal").catch(() => null);
+    if (updated) setAiSignal(updated);
   };
 
   const applyFilters = () => {
@@ -386,8 +396,9 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
               {/* AI Signal 은 지인 0명이어도 항상 표시 (빈 화면 방지) */}
               {aiSignal && aiSignal.recommendations.length > 0 && (
                 <AiSignalSection
-                  recommendations={aiSignal.recommendations}
-                  onUnlocked={(updated) => setAiSignal({ recommendations: updated })}
+                  aiSignal={aiSignal}
+                  myColorType={(userProfile?.colorType?.type ?? null) as ColorType | null}
+                  onChanged={refetchAiSignal}
                   onProfileClick={() => {}}
                 />
               )}
@@ -396,13 +407,14 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
           )
         ) : (
           <div className="space-y-5">
-            {/* AI Signal Section — 오늘의 추천 */}
+            {/* AI Signal Section — 오늘의 추천 (홈 최상단) */}
             {aiSignal && aiSignal.recommendations.length > 0 && (
               <AiSignalSection
-                recommendations={aiSignal.recommendations}
-                onUnlocked={(updated) => setAiSignal({ recommendations: updated })}
-                onProfileClick={(rec) => {
-                  const feedItem = feedItems.find(f => f.profile.userId === rec.userId);
+                aiSignal={aiSignal}
+                myColorType={(userProfile?.colorType?.type ?? null) as ColorType | null}
+                onChanged={refetchAiSignal}
+                onProfileClick={(item) => {
+                  const feedItem = feedItems.find(f => f.profile.userId === item.profile.userId);
                   if (feedItem) onProfileClick?.(feedItem);
                 }}
               />
@@ -605,15 +617,21 @@ function RelationshipBadge({ degree, mutualFriends }: { degree?: number; mutualF
 }
 
 function AiSignalSection({
-  recommendations,
+  aiSignal,
+  myColorType,
   onProfileClick,
-  onUnlocked,
+  onChanged,
 }: {
-  recommendations: AiSignalRecommendation[];
+  aiSignal: AiSignalResponse;
+  myColorType: ColorType | null;
   onProfileClick?: (item: FeedProfileItem) => void;
-  onUnlocked?: (updated: AiSignalRecommendation[]) => void;
+  onChanged?: () => void | Promise<void>;
 }) {
-  const [unlocking, setUnlocking] = useState(false);
+  const recommendations = aiSignal.recommendations;
+  const isSubscriber = aiSignal.isSubscriber ?? false;
+  const passPrice = aiSignal.passPriceMonthly ?? 9900;
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [subscribing, setSubscribing] = useState(false);
 
   const jobMap: Record<string, string> = {
     IT_DEVELOPMENT: "IT개발", FINANCE: "금융", EDUCATION: "교육", MEDICAL: "의료",
@@ -621,86 +639,179 @@ function AiSignalSection({
     PROFESSIONAL: "전문직", OTHER: "기타",
   };
 
-  const handleUnlock = async (rec: AiSignalRecommendation) => {
-    if (unlocking) return;
-    setUnlocking(true);
+  const handleSubscribe = async () => {
+    if (subscribing) return;
+    setSubscribing(true);
     try {
-      await api.post("/api/v1/feed/ai-signal/unlock", {});
-      // 잠금 해제 후 전체 목록 다시 가져오기
-      const updated = await api.get<AiSignalResponse>("/api/v1/feed/ai-signal");
-      onUnlocked?.(updated.recommendations);
-      toast.success(`${rec.unlockPrice.toLocaleString()}원으로 AI 추천을 열었어요`);
+      await api.post("/api/v1/feed/ai-signal/subscribe", {});
+      await onChanged?.();
+      setShowPaywall(false);
+      toast.success("AI 추천 구독 패스가 시작됐어요 ✨");
     } catch {
-      toast.error("열람에 실패했어요. 다시 시도해주세요.");
+      // 402 (실 결제 모드, paymentKey 없음) 등 — 베타에서는 결제 미연동
+      toast.error("결제 연동을 준비 중이에요. 곧 만나요!");
     } finally {
-      setUnlocking(false);
+      setSubscribing(false);
     }
   };
 
   return (
     <div className="px-4 mb-5">
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-1">
         <div className="w-6 h-6 rounded-lg bg-brand-soft flex items-center justify-center">
           <Sparkles className="w-3.5 h-3.5 text-primary" />
         </div>
-        <p className="text-sm font-semibold">색깔로 찾은 인연</p>
-        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">준비 중</span>
-        <span className="ml-auto text-xs text-muted-foreground">매일 1장 무료</span>
+        <p className="text-base font-bold text-foreground">오늘의 추천</p>
+        {isSubscriber && (
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-gold-strong">PASS</span>
+        )}
       </div>
+      <p className="text-xs text-muted-foreground mb-3 ml-8">
+        {isSubscriber ? "오늘 당신과 가장 잘 맞는 색을 골랐어요" : "프로필 궁합도를 기반으로 추천해드려요"}
+      </p>
+
       <div className="flex gap-3 overflow-x-auto pb-1">
         {recommendations.map((rec, i) => {
           if (rec.isUnlocked && rec.profile) {
-            // 열람 가능한 카드 → paint reveal 적용
             return (
               <AiSignalCard
                 key={i}
                 rec={rec}
                 jobMap={jobMap}
+                myColorType={myColorType}
                 onProfileClick={onProfileClick}
               />
             );
           }
 
-          // 잠긴 카드 (2번째, 미결제)
+          // 잠긴 카드 — 구독 패스 필요. 궁합 % 티저로 유도.
+          const teaserColor = (rec.teaserColorType ?? null) as ColorType | null;
+          const teaserMeta = teaserColor ? COLOR_META[teaserColor] : null;
+          const teaserCompat = getCompatibilityDeterministic(myColorType, teaserColor, `signal-${i}`);
           return (
-            <div key={i} className="flex-shrink-0 w-36">
-              <div className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-muted shadow-sm">
-                {/* 블러 배경 */}
-                <div className="w-full h-full bg-gradient-to-br from-primary/20 via-primary/10 to-muted flex items-center justify-center">
-                  <span className="text-5xl opacity-10 select-none">👤</span>
-                </div>
-                {/* 잠금 오버레이 */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3">
-                  <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-white" />
+            <div key={i} className="flex-shrink-0 w-40">
+              <button
+                onClick={() => setShowPaywall(true)}
+                className="block w-full text-left relative rounded-2xl overflow-hidden aspect-[3/4] shadow-card active:scale-[0.98] transition-transform"
+                style={{
+                  background:
+                    "radial-gradient(120% 120% at 30% 18%, hsl(var(--gold) / 0.30), transparent 55%)," +
+                    "linear-gradient(150deg, hsl(28 14% 16%), hsl(30 16% 10%))",
+                }}
+              >
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3 text-center">
+                  {teaserCompat && (
+                    <div className="flex flex-col items-center">
+                      <span className="text-2xl font-extrabold" style={{ color: "hsl(var(--gold))" }}>{teaserCompat.score}%</span>
+                      <span className="text-[10px] text-white/70">{teaserCompat.label} 궁합</span>
+                    </div>
+                  )}
+                  <div className="text-white/90 text-xs">
+                    {[rec.teaserAge ? `${rec.teaserAge}세` : null, rec.teaserLocation].filter(Boolean).join(" · ")}
                   </div>
-                  {/* 티저 정보 */}
-                  <div className="text-center">
-                    {rec.teaserAge && (
-                      <p className="text-white/90 text-xs font-semibold">{rec.teaserAge}세</p>
-                    )}
-                    {rec.teaserLocation && (
-                      <p className="text-white/70 text-xs">{rec.teaserLocation}</p>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => handleUnlock(rec)}
-                    disabled={unlocking}
-                    className="mt-1 w-full py-1.5 rounded-xl bg-brand-soft text-gold-strong text-xs font-bold shadow-lg active:scale-95 transition-transform disabled:opacity-60"
-                  >
-                    {unlocking ? "처리 중..." : `열기 ${rec.unlockPrice.toLocaleString()}원`}
-                  </button>
+                  {teaserMeta && (
+                    <span className="w-4 h-4 rounded-full border border-white/60" style={{ backgroundColor: teaserMeta.hex }} />
+                  )}
+                  <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-brand-soft text-gold-strong">
+                    <Sparkles className="w-3 h-3" /> 구독하고 보기
+                  </span>
                 </div>
                 <div className="absolute top-2 left-2">
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/90 text-primary-foreground flex items-center gap-0.5">
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5"
+                    style={{ background: "hsl(var(--gold) / 0.9)", color: "hsl(var(--gold-foreground))" }}>
                     <Sparkles className="w-2.5 h-2.5" /> AI
                   </span>
                 </div>
-              </div>
+              </button>
               <p className="text-xs text-muted-foreground mt-1.5 px-0.5 truncate">{rec.reason}</p>
             </div>
           );
         })}
+      </div>
+
+      {/* 비구독자: 구독 유도 한 줄 */}
+      {!isSubscriber && (
+        <button
+          onClick={() => setShowPaywall(true)}
+          className="mt-2 w-full flex items-center justify-between gap-2 rounded-xl bg-card border border-border px-3.5 py-2.5 shadow-card active:scale-[0.99] transition-transform"
+        >
+          <span className="flex items-center gap-2 text-xs text-foreground">
+            <Sparkles className="w-3.5 h-3.5 text-primary" />
+            매일 무제한 추천 + 궁합 리포트
+          </span>
+          <span className="text-xs font-bold text-gold-strong whitespace-nowrap">월 {passPrice.toLocaleString()}원 →</span>
+        </button>
+      )}
+
+      {showPaywall && (
+        <AiPassPaywall
+          passPrice={passPrice}
+          subscribing={subscribing}
+          onSubscribe={handleSubscribe}
+          onClose={() => setShowPaywall(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function AiPassPaywall({
+  passPrice,
+  subscribing,
+  onSubscribe,
+  onClose,
+}: {
+  passPrice: number;
+  subscribing: boolean;
+  onSubscribe: () => void;
+  onClose: () => void;
+}) {
+  const benefits = [
+    { emoji: "♾️", title: "매일 추천 무제한", desc: "하루 1장 제한 없이 오늘의 추천을 모두 열람" },
+    { emoji: "📊", title: "궁합 리포트", desc: "왜 잘 맞는지 색깔 기반 상세 분석 제공" },
+    { emoji: "✨", title: "우선 추천", desc: "더 정교한 궁합 기반으로 먼저 소개" },
+  ];
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="w-full sm:max-w-sm bg-card rounded-t-3xl sm:rounded-3xl p-6 shadow-overlay"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex flex-col items-center text-center mb-5">
+          <div className="w-12 h-12 rounded-2xl bg-brand-soft flex items-center justify-center mb-3">
+            <Sparkles className="w-6 h-6 text-gold-strong" />
+          </div>
+          <h3 className="text-lg font-bold text-foreground">AI 추천 구독 패스</h3>
+          <p className="text-sm text-muted-foreground mt-1">색 궁합으로 매일 인연을 추천받아요</p>
+        </div>
+
+        <div className="space-y-3 mb-5">
+          {benefits.map((b, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <span className="text-xl">{b.emoji}</span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">{b.title}</p>
+                <p className="text-xs text-muted-foreground">{b.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-2xl bg-muted/60 px-4 py-3 mb-4 flex items-baseline justify-center gap-1">
+          <span className="text-2xl font-extrabold text-foreground">{passPrice.toLocaleString()}원</span>
+          <span className="text-sm text-muted-foreground">/ 월</span>
+        </div>
+
+        <button
+          onClick={onSubscribe}
+          disabled={subscribing}
+          className="w-full py-3.5 rounded-2xl bg-brand-soft text-gold-strong font-bold shadow-card active:scale-95 transition-transform disabled:opacity-60"
+        >
+          {subscribing ? "처리 중..." : "구독하고 시작하기"}
+        </button>
+        <button onClick={onClose} className="w-full py-2.5 mt-1 text-sm text-muted-foreground">
+          다음에 할게요
+        </button>
       </div>
     </div>
   );
@@ -709,10 +820,12 @@ function AiSignalSection({
 function AiSignalCard({
   rec,
   jobMap,
+  myColorType,
   onProfileClick,
 }: {
   rec: AiSignalRecommendation;
   jobMap: Record<string, string>;
+  myColorType: ColorType | null;
   onProfileClick?: (item: FeedProfileItem) => void;
 }) {
   const profile = rec.profile!;
@@ -728,6 +841,8 @@ function AiSignalCard({
 
   const job = profile.careerInfo.category ? jobMap[profile.careerInfo.category] ?? null : null;
   const location = profile.locationInfo.sido;
+  const theirColor = (profile.colorType?.type ?? null) as ColorType | null;
+  const compat = getCompatibilityDeterministic(myColorType, theirColor, profile.userId);
 
   const handleClick = () => {
     if (revealed) {
@@ -802,6 +917,13 @@ function AiSignalCard({
             {rec.isFree && (
               <div className="absolute top-2 right-2">
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-500/90 text-white">FREE</span>
+              </div>
+            )}
+            {compat && (
+              <div className="absolute top-2 left-2">
+                <span className="text-[10px] font-bold bg-white/90 text-foreground rounded-full px-1.5 py-0.5 shadow-sm">
+                  {compat.label} {compat.score}%
+                </span>
               </div>
             )}
             <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2.5">
