@@ -147,6 +147,13 @@ class GlobalExceptionHandler {
         )
     }
 
+    @ExceptionHandler(RateLimitExceededException::class)
+    fun handleRateLimit(ex: RateLimitExceededException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(
+            ErrorResponse(code = "RATE_LIMIT_EXCEEDED", message = ex.message ?: "요청이 너무 잦습니다. 잠시 후 다시 시도해주세요")
+        )
+    }
+
     @ExceptionHandler(UnsupportedOAuthProviderException::class)
     fun handleUnsupportedOAuthProvider(ex: UnsupportedOAuthProviderException): ResponseEntity<ErrorResponse> {
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(
@@ -188,3 +195,4 @@ class DuplicateResourceException(message: String) : RuntimeException(message)
 class BusinessRuleViolationException(message: String) : RuntimeException(message)
 class PaymentRequiredException(message: String) : RuntimeException(message)
 class CoolTimeActiveException(message: String, val remainingDays: Int) : RuntimeException(message)
+class RateLimitExceededException(message: String) : RuntimeException(message)

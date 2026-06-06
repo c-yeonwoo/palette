@@ -5,6 +5,7 @@ import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.friendship.FriendshipRepository
 import kr.ai.palette.domain.matchmaker.*
 import kr.ai.palette.domain.profile.ProfileRepository
+import kr.ai.palette.infrastructure.ratelimit.RateLimiter
 import kr.ai.palette.infrastructure.seed.SeedUserPolicy
 import kr.ai.palette.infrastructure.storage.FileStorageService
 import kr.ai.palette.persistence.matchmaker.MatchmakerReviewEntity
@@ -42,6 +43,7 @@ class MatchmakerController(
     @Value("\${app.withdrawal.daily-limit:200000}") private val withdrawalDailyLimit: Int,
     @Value("\${app.withdrawal.monthly-limit:1000000}") private val withdrawalMonthlyLimit: Int,
     @Value("\${app.withdrawal.account-min-age-days:7}") private val withdrawalAccountMinAgeDays: Long,
+    private val rateLimiter: RateLimiter,
 ) {
 
     @GetMapping("/marketplace")
@@ -416,6 +418,9 @@ class MatchmakerController(
         @AuthenticationPrincipal authUser: AuthUser,
         @RequestBody request: CreateNudgeRequest
     ): ResponseEntity<Map<String, Any?>> {
+        // 어뷰징 방지: 연결 제안 rate limit (ADR 0023)
+        rateLimiter.enforce("nudge:${authUser.userId.value}", 30, Duration.ofDays(1), "연결 제안이 너무 잦습니다. 잠시 후 다시 시도해주세요")
+
         val matchmaker = matchmakerRepository.findByUserId(authUser.userId)
             ?: return ResponseEntity.notFound().build()
 

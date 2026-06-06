@@ -9,12 +9,14 @@ import kr.ai.palette.domain.friendship.FriendshipRepository
 import kr.ai.palette.domain.friendship.FriendshipStatus
 import kr.ai.palette.domain.notification.NotificationType
 import kr.ai.palette.domain.user.UserRepository
+import kr.ai.palette.infrastructure.ratelimit.RateLimiter
 import kr.ai.palette.persistence.friendship.InviteCodeEntity
 import kr.ai.palette.persistence.friendship.InviteCodeJpaRepository
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 
@@ -47,6 +49,7 @@ class FriendshipController(
     private val userRepository: UserRepository,
     private val notificationService: NotificationService,
     private val inviteCodeJpaRepository: InviteCodeJpaRepository,
+    private val rateLimiter: RateLimiter,
 ) {
 
     companion object {
@@ -175,6 +178,9 @@ class FriendshipController(
     ): ResponseEntity<Map<String, Any>> {
         val myUserId = authUser.userId
         val targetId = UserId(targetUserId)
+
+        // 어뷰징 방지: 친구 요청 rate limit — 콜드 add/코드 블래스팅 차단 (ADR 0023)
+        rateLimiter.enforce("friendreq:${myUserId.value}", 30, Duration.ofDays(1), "친구 요청이 너무 잦습니다. 잠시 후 다시 시도해주세요")
 
         userRepository.findById(targetId)
             ?: return ResponseEntity.badRequest().body(mapOf("error" to "존재하지 않는 사용자입니다"))

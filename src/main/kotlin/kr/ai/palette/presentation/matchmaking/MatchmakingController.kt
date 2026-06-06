@@ -10,7 +10,9 @@ import kr.ai.palette.domain.matchmaking.MatchmakingRequestStatus
 import kr.ai.palette.domain.notification.PaletteEvent
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.UserRepository
+import kr.ai.palette.infrastructure.ratelimit.RateLimiter
 import org.springframework.context.ApplicationEventPublisher
+import java.time.Duration
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
@@ -23,6 +25,7 @@ class MatchmakingController(
     private val matchmakingService: MatchmakingService,
     private val userRepository: UserRepository,
     private val profileRepository: ProfileRepository,
+    private val rateLimiter: RateLimiter,
     private val eventPublisher: ApplicationEventPublisher
 ) {
 
@@ -56,6 +59,9 @@ class MatchmakingController(
         @RequestBody request: CreateMatchmakingRequestDto
     ): ResponseEntity<MatchmakingRequestResponse> {
         val requesterId = authUser.userId
+
+        // 어뷰징 방지: 매칭 요청 rate limit (ADR 0023)
+        rateLimiter.enforce("match:${requesterId.value}", 10, Duration.ofDays(1), "매칭 요청이 너무 잦습니다. 잠시 후 다시 시도해주세요")
 
         // Check cooltime (10 days after last successful match)
         val coolTimeDays = 10L
