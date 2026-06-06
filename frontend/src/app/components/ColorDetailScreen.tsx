@@ -67,7 +67,7 @@ export function ColorDetailScreen({ onBack, onNavigateToProfile }: ColorDetailSc
     >
       {/* 헤더 */}
       <header className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-2">
+        <div className="max-w-2xl mx-auto px-5 h-14 flex items-center gap-2">
           <button onClick={onBack} className="p-1.5 -ml-1.5 rounded-full hover:bg-muted/50 transition-colors">
             <ChevronLeft className="w-5 h-5 text-foreground" />
           </button>

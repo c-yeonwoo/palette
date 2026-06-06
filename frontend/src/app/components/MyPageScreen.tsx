@@ -203,7 +203,7 @@ export function MyPageScreen({
     <div className="min-h-screen bg-background pb-24">
       {/* 통일 헤더 (ADR 0014) */}
       <header className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border pt-safe-top">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-2xl mx-auto px-5 h-14 flex items-center justify-between">
           <h1 className="text-base font-bold text-foreground">마이페이지</h1>
           {isMatchmakerOnly && (
             <button
@@ -264,7 +264,7 @@ export function MyPageScreen({
 
       {/* 핸드폰 인증 배너 */}
       {!user?.phoneNumber && isMatchmaker && (
-        <div className="max-w-2xl mx-auto px-4 mt-3">
+        <div className="max-w-2xl mx-auto px-5 mt-3">
           <div className="bg-brand-soft border border-primary/20 rounded-2xl px-4 py-3 flex items-center gap-2">
             <Shield className="w-4 h-4 text-primary flex-shrink-0" />
             <p className="text-xs text-primary">핸드폰 인증 후 주선 서비스를 이용할 수 있어요</p>
@@ -273,7 +273,7 @@ export function MyPageScreen({
       )}
 
       {/* 메뉴 */}
-      <div className="max-w-2xl mx-auto px-4 mt-4 space-y-4">
+      <div className="max-w-2xl mx-auto px-5 mt-4 space-y-4">
         {/* 내 활동 */}
         <section>
           <SectionHeader title="내 활동" className="px-1 mb-3" />

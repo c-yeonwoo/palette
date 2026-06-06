@@ -175,7 +175,7 @@ export function FriendConnectScreen({ onBack }: FriendConnectScreenProps) {
     <div className="min-h-screen bg-background">
       {/* 통일 헤더 (ADR 0014) */}
       <header className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-2">
+        <div className="max-w-2xl mx-auto px-5 h-14 flex items-center gap-2">
           <button onClick={onBack} className="p-1.5 rounded-full hover:bg-muted/50 transition-colors -ml-1.5" aria-label="뒤로">
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -188,7 +188,7 @@ export function FriendConnectScreen({ onBack }: FriendConnectScreenProps) {
         </div>
 
         {/* Tabs */}
-        <div className="max-w-2xl mx-auto px-4 flex gap-1 pb-0">
+        <div className="max-w-2xl mx-auto px-5 flex gap-1 pb-0">
           {(["invite", "search", "friends"] as Tab[]).map(t => (
             <button
               key={t}
@@ -207,7 +207,7 @@ export function FriendConnectScreen({ onBack }: FriendConnectScreenProps) {
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-2xl mx-auto px-5 py-6 space-y-6">
         {/* ─────── Invite Code Tab ─────── */}
         {tab === "invite" && (
           <>

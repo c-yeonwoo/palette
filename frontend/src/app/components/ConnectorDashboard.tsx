@@ -337,7 +337,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
     <div className="h-screen flex flex-col bg-background">
       {/* ── 통일 헤더 (ADR 0014) ── */}
       <header className="sticky top-0 z-10 flex-shrink-0 bg-card/95 backdrop-blur border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-2xl mx-auto px-5 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {onBack && (
               <button onClick={onBack} className="p-1.5 hover:bg-muted/50 rounded-full transition-colors -ml-1.5">
@@ -379,9 +379,9 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
             className="flex-shrink-0 w-full border-b border-border text-left transition-colors enabled:hover:bg-muted/30 disabled:cursor-default"
             aria-label="등급 & 포인트"
           >
-            <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-              <span className="flex items-center gap-1.5 bg-brand-soft text-gold-strong font-bold text-sm px-2.5 py-1 rounded-full flex-shrink-0">
-                <Award className="w-3.5 h-3.5" /> Lv.{lvl}
+            <div className="max-w-2xl mx-auto px-5 py-4 flex items-center gap-3">
+              <span className="flex items-center gap-1.5 bg-secondary text-foreground font-bold text-sm px-2.5 py-1 rounded-full flex-shrink-0 border border-border">
+                <Award className="w-3.5 h-3.5 text-gold-strong" /> Lv.{lvl}
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
@@ -418,7 +418,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
           >
             {label}
             {badge > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs font-bold bg-brand-soft text-gold-strong rounded-full">
+              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs font-bold bg-primary/10 text-primary rounded-full">
                 {badge}
               </span>
             )}
@@ -428,7 +428,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
 
       {/* ── 탭 콘텐츠 (스크롤) ── */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-4 py-4">
+        <div className="max-w-2xl mx-auto px-5 py-4">
 
           {/* ════ 내 지인 탭 ════ */}
           {activeMainTab === "members" && (
@@ -441,7 +441,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                     onClick={() => setMemberGender(g)}
                     className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                       memberGender === g
-                        ? "bg-brand-soft text-gold-strong shadow-sm"
+                        ? "bg-card text-foreground shadow-sm border border-border"
                         : "bg-muted text-muted-foreground hover:text-foreground"
                     }`}
                   >

@@ -124,6 +124,55 @@ class MatchmakingController(
         return ResponseEntity.ok(MatchmakingRequestResponse.from(saved))
     }
 
+    /**
+     * 팔레트 Pick(AI) 직접 소개 요청 — 공통 친구(주선자) 없이 시스템이 바로 대상자에게 프로필 전달.
+     * 주선자 단계를 자동 승인 처리하고 대상자 응답 대기 상태로 생성한다.
+     */
+    @PostMapping("/direct")
+    fun createDirectRequest(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @RequestBody request: CreateDirectRequestDto
+    ): ResponseEntity<MatchmakingRequestResponse> {
+        val requesterId = authUser.userId
+
+        // 어뷰징 방지: 매칭 요청 rate limit (ADR 0023) — 일반 요청과 동일 버킷
+        rateLimiter.enforce("match:${requesterId.value}", 10, Duration.ofDays(1), "매칭 요청이 너무 잦습니다. 잠시 후 다시 시도해주세요")
+
+        val targetUserId = UserId(UUID.fromString(request.targetUserId))
+
+        if (matchmakingRequestRepository.existsByRequesterIdAndTargetUserId(requesterId, targetUserId)) {
+            return ResponseEntity.badRequest().build()
+        }
+        if (blockService.isBlockedBetween(requesterId.value, targetUserId.value)) {
+            return ResponseEntity.status(403).build()
+        }
+        val targetProfile = profileRepository.findByUserId(targetUserId)
+        if (targetProfile != null && !targetProfile.settings.canReceiveMatches()) {
+            return ResponseEntity.status(403).build()
+        }
+
+        val saved = matchmakingRequestRepository.save(
+            MatchmakingRequest.createDirect(
+                requesterId = requesterId,
+                targetUserId = targetUserId,
+                requesterMessage = request.message
+            )
+        )
+
+        // 대상자에게 바로 전달 — 응답 대기 알림 (주선자 승인 알림 재사용, 주선자명="팔레트 Pick")
+        eventPublisher.publishEvent(
+            PaletteEvent.MatchmakingApproved(
+                requestId = saved.id.value.toString(),
+                requesterId = requesterId.value.toString(),
+                targetUserId = targetUserId.value.toString(),
+                matchmakerName = "팔레트 Pick",
+                matchmakerMessage = request.message
+            )
+        )
+
+        return ResponseEntity.ok(MatchmakingRequestResponse.from(saved))
+    }
+
     @GetMapping("/check/{targetUserId}")
     fun checkMatchmakingRequest(
         @AuthenticationPrincipal authUser: AuthUser,
@@ -313,6 +362,11 @@ data class CreateMatchmakingRequestDto(
     val targetUserId: String,
     val matchmakerName: String,
     val message: String?
+)
+
+data class CreateDirectRequestDto(
+    val targetUserId: String,
+    val message: String? = null
 )
 
 data class CheckMatchmakingRequestResponse(

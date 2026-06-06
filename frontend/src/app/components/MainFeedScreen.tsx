@@ -150,11 +150,12 @@ const JOB_CATEGORIES = [
   { value: "OTHER", label: "기타" },
 ];
 
-// 카드 커버 — '팔레트' 무지개 워시. 8색 컬러타입 hue를 파스텔로 섞어 브랜드 정체성 표현.
+// 카드 커버 — 팔레트 '물감(paint)' 이미지. 탭하면 걷히고 사진이 드러난다.
 const PALETTE_COVER_STYLE = {
-  backgroundColor: "#ffffff",
-  backgroundImage:
-    "linear-gradient(135deg, #EF444466 0%, #F9731666 16%, #EAB30859 32%, #22C55E59 48%, #3B82F659 64%, #A855F766 82%, #F9A8D466 100%)",
+  backgroundColor: "hsl(var(--muted))",
+  backgroundImage: "url('/paint-overlay.png')",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
 };
 
 export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigateToFriends, unreadNotifications = 0 }: MainFeedScreenProps) {
@@ -242,7 +243,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
     <div className="min-h-screen bg-background pb-20">
       {/* 통일 헤더 — sticky + bg-card/95 + border-b + h-14 (ADR 0014) */}
       <header className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-2xl mx-auto px-5 h-14 flex items-center justify-between">
           <h1 className="text-base font-bold text-foreground">소개</h1>
           <div className="flex items-center gap-2">
             <button
@@ -272,7 +273,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
 
       {/* Active filter chips — 주선자에게는 숨김 */}
       {hasActiveFilters && userProfile?.accountType !== "MATCHMAKER_ONLY" && (
-        <div className="max-w-2xl mx-auto px-4 pt-3">
+        <div className="max-w-2xl mx-auto px-5 pt-3">
           <div className="flex gap-1.5 overflow-x-auto pb-0.5">
             {(filters.ageMin || filters.ageMax) && (
               <span className="text-xs bg-brand-soft text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
@@ -381,7 +382,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
         const isMatchmakerOnly = userProfile?.accountType === "MATCHMAKER_ONLY";
         const hasAiSignal = !!aiSignal && aiSignal.recommendations.length > 0;
         return (
-          <div className="max-w-2xl mx-auto px-4">
+          <div className="max-w-2xl mx-auto px-5">
             {loading ? (
               <div className="pt-5"><LoadingState /></div>
             ) : isMatchmakerOnly ? (

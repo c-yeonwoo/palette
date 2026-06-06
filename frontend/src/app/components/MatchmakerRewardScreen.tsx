@@ -147,7 +147,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
     <div className="h-screen flex flex-col bg-background">
       {/* 통일 헤더 (ADR 0014) */}
       <header className="sticky top-0 z-10 flex-shrink-0 bg-card/95 backdrop-blur border-b border-border">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-2">
+        <div className="max-w-2xl mx-auto px-5 h-14 flex items-center gap-2">
           <button onClick={onBack} className="p-1.5 rounded-full hover:bg-muted/50 transition-colors -ml-1.5" aria-label="뒤로">
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -155,7 +155,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
         </div>
 
         {/* Tabs */}
-        <div className="max-w-2xl mx-auto px-4 flex gap-1">
+        <div className="max-w-2xl mx-auto px-5 flex gap-1">
           {(["level", "points"] as const).map(t => (
             <button
               key={t}
@@ -173,7 +173,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
       </header>
 
       <div className="flex-1 overflow-y-auto">
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <div className="max-w-2xl mx-auto px-5 py-6 space-y-4">
 
         {/* ─── Level Tab ─── */}
         {activeTab === "level" && (

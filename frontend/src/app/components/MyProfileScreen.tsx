@@ -260,6 +260,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
     return <MatchmakerProfileScreen onBack={onBack} onConvertToRegular={onConvertToRegular} />;
   }
 
+  const accentColor = profile?.colorType?.hex ?? null;
   const sortedPhotos = profile?.photos.slice().sort((a, b) => a.displayOrder - b.displayOrder) ?? [];
   const basicChips: string[] = [
     profile?.basicInfo.height ? `${profile.basicInfo.height}cm` : null,
@@ -270,7 +271,13 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
   ].filter(Boolean) as string[];
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div
+      className="min-h-screen pb-32"
+      style={accentColor
+        ? { backgroundColor: "#ffffff", backgroundImage: `linear-gradient(180deg, ${accentColor}26 0%, ${accentColor}12 360px, ${accentColor}0A 100%)` }
+        : { backgroundColor: "var(--background)" }
+      }
+    >
 
       {/* ── 대표사진 히어로 ── */}
       <div className="relative" style={{ height: 420 }}>

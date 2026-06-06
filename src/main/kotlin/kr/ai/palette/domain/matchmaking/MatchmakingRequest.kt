@@ -43,6 +43,31 @@ data class MatchmakingRequest(
                 updatedAt = now
             )
         }
+
+        /**
+         * 팔레트 Pick(AI) 직접 연결 — 주선자(사람) 단계를 생략하고 바로 대상자 응답 대기 상태로 생성.
+         * 시스템(AI)이 주선자 역할을 대신하므로 주선자 승인 단계가 자동 처리된다.
+         * matchmakerId 는 비-null 제약 충족용으로 요청자 본인을 placeholder 로 둔다(주선자 통계 미반영).
+         */
+        fun createDirect(
+            requesterId: UserId,
+            targetUserId: UserId,
+            requesterMessage: String?
+        ): MatchmakingRequest {
+            val now = LocalDateTime.now()
+            return MatchmakingRequest(
+                id = MatchmakingRequestId(),
+                requesterId = requesterId,
+                targetUserId = targetUserId,
+                matchmakerId = requesterId,
+                requesterMessage = requesterMessage,
+                matchmakerDecision = MatchmakerDecision.approve("팔레트 Pick 자동 연결"),
+                targetUserDecision = null,
+                status = MatchmakingRequestStatus.MATCHMAKER_APPROVED,
+                createdAt = now,
+                updatedAt = now
+            )
+        }
     }
 
     /**

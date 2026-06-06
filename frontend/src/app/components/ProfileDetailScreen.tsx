@@ -313,6 +313,9 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     }
   };
 
+  // 팔레트 Pick(AI 추천)으로 들어온 상세는 공통 친구 없이 시스템이 직접 연결 (degree 0)
+  const isPalettePick = degree === 0;
+
   const handleMatchRequest = () => {
     if (mutualFriends.length === 0) {
       toast.error("공통 친구가 없어 소개를 요청할 수 없습니다");
@@ -320,6 +323,16 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     }
     setShowMatchmakerModal(true);
     setModalStep(1);
+  };
+
+  const handleDirectRequest = async () => {
+    try {
+      await api.post("/api/v1/matchmaking/direct", { targetUserId: userId });
+      toast.success("소개 요청을 보냈어요 · 상대방에게 프로필이 전달됐어요");
+      setAlreadyRequested(true);
+    } catch {
+      toast.error("이미 요청했거나 지금은 요청할 수 없어요");
+    }
   };
 
   const handleMatchmakerSelect = (matchmaker: MutualFriend) => {
@@ -816,7 +829,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
               ⏳ 매칭 성사 후 쿨타임 중 · {coolTimeRemainingDays}일 후 새 요청 가능
             </p>
           )}
-          {mutualFriends.length === 0 ? (
+          {mutualFriends.length === 0 && !isPalettePick ? (
             <div className="rounded-2xl bg-muted/60 border border-border p-4 text-center space-y-3">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">소개 요청을 하려면 공통 친구가 필요해요</p>
@@ -829,24 +842,31 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
               )}
             </div>
           ) : (
-            <Button
-              size="lg"
-              className="w-full h-14"
-              onClick={handleMatchRequest}
-              disabled={alreadyRequested || inCoolTime}
-              variant={alreadyRequested || inCoolTime ? "secondary" : "default"}
-              style={(!alreadyRequested && !inCoolTime && accentColor)
-                ? { backgroundColor: accentColor, borderColor: accentColor, color: buttonTextColor }
-                : {}
-              }
-            >
-              <Send className="w-5 h-5 mr-2" />
-              {alreadyRequested
-                ? "소개 요청 완료"
-                : inCoolTime
-                ? `쿨타임 중 (${coolTimeRemainingDays}일 남음)`
-                : "소개 요청하기"}
-            </Button>
+            <>
+              <Button
+                size="lg"
+                className="w-full h-14"
+                onClick={isPalettePick ? handleDirectRequest : handleMatchRequest}
+                disabled={alreadyRequested || inCoolTime}
+                variant={alreadyRequested || inCoolTime ? "secondary" : "default"}
+                style={(!alreadyRequested && !inCoolTime && accentColor)
+                  ? { backgroundColor: accentColor, borderColor: accentColor, color: buttonTextColor }
+                  : {}
+                }
+              >
+                <Send className="w-5 h-5 mr-2" />
+                {alreadyRequested
+                  ? "소개 요청 완료"
+                  : inCoolTime
+                  ? `쿨타임 중 (${coolTimeRemainingDays}일 남음)`
+                  : "소개 요청하기"}
+              </Button>
+              {isPalettePick && !alreadyRequested && (
+                <p className="text-xs text-center text-muted-foreground mt-2">
+                  팔레트 Pick은 공통 친구 없이 바로 상대방에게 프로필이 전달돼요
+                </p>
+              )}
+            </>
           )}
         </div>
       </div>

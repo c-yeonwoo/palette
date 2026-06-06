@@ -88,7 +88,7 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
 
       {/* 비주선자 CTA */}
       {!isMatchmaker && (
-        <div className="max-w-2xl mx-auto px-4 mb-2">
+        <div className="max-w-2xl mx-auto px-5 mb-2">
           <div className="rounded-2xl bg-secondary border border-border p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
               <HeartHandshake className="w-5 h-5 text-primary" />
@@ -107,7 +107,7 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto px-4 space-y-4 mt-2">
+      <div className="max-w-2xl mx-auto px-5 space-y-4 mt-2">
         {/* Season countdown */}
         <div className="bg-card rounded-2xl border border-border/60 shadow-card p-4 flex items-center gap-4">
           <div className="flex-1">
