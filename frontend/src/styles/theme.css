@@ -100,7 +100,7 @@
   /* ── Surface ── */
   --surface:          0 0% 100%;
   --surface-elevated: 0 0% 100%;
-  --surface-sunken:   0 0% 98.5%;   /* P9: 97 → 98.5 (덜 칙칙) */
+  --surface-sunken:   0 0% 96%;   /* P10: 밝은 배경 대비 보이는 inset (98.5→96) */
 
   /* ── Border ── */
   --border-subtle:    0 0% 93%;
@@ -163,7 +163,7 @@
    3. SHADCN BRIDGE  (기존 컴포넌트 호환, 가급적 수정 금지)
    ============================================================ */
 :root {
-  --background:        #F7F7F5;   /* P9: 중립 거의-흰색 (누런기 X) — 순백 카드와 미세 구분 */
+  --background:        #FAFAF9;   /* P10: 살짝 밝게(화사) — 깊이는 카드 shadow 로, 본문은 맑은 거의-흰색 */
   --foreground:        #1A1916;
   --card:              #FFFFFF;
   --card-foreground:   #1A1916;

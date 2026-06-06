@@ -243,7 +243,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
             </div>
 
             {/* Level Guide */}
-            <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
+            <div className="bg-card rounded-2xl border border-border/60 shadow-card p-4 space-y-3">
               <p className="text-sm font-semibold">등급별 커미션율</p>
               {LEVEL_INFO.map(info => (
                 <div
@@ -279,7 +279,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
             </div>
 
             {/* 리워드 안내 (ConnectorDashboard 에서 이전 — ADR 0015) */}
-            <div className="bg-card rounded-2xl border border-border p-5 space-y-4">
+            <div className="bg-card rounded-2xl border border-border/60 shadow-card p-5 space-y-4">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-primary" />
                 <p className="font-semibold">리워드 안내</p>
@@ -327,7 +327,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
         {activeTab === "points" && (
           <>
             {/* Points Summary */}
-            <div className="bg-card rounded-2xl border border-border p-5 space-y-4">
+            <div className="bg-card rounded-2xl border border-border/60 shadow-card p-5 space-y-4">
               <div className="flex items-center gap-2">
                 <Wallet className="w-5 h-5 text-primary" />
                 <p className="font-semibold">포인트 현황</p>
@@ -347,7 +347,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
             </div>
 
             {/* Withdraw Section */}
-            <div className="bg-card rounded-2xl border border-border p-5 space-y-4">
+            <div className="bg-card rounded-2xl border border-border/60 shadow-card p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <p className="font-semibold">포인트 출금</p>
                 <span className="text-sm text-muted-foreground">1P = 1원</span>

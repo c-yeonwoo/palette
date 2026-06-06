@@ -109,7 +109,7 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
 
       <div className="max-w-2xl mx-auto px-4 space-y-4 mt-2">
         {/* Season countdown */}
-        <div className="bg-card rounded-2xl border border-border p-4 flex items-center gap-4">
+        <div className="bg-card rounded-2xl border border-border/60 shadow-card p-4 flex items-center gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-1.5 mb-1">
               <Clock className="w-4 h-4 text-primary" />
@@ -130,7 +130,7 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
         </div>
 
         {/* My status */}
-        <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
+        <div className="bg-card rounded-2xl border border-border/60 shadow-card p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-muted-foreground">내 순위</p>
@@ -175,7 +175,7 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
         </div>
 
         {/* Tier guide */}
-        <div className="bg-card rounded-2xl border border-border p-4">
+        <div className="bg-card rounded-2xl border border-border/60 shadow-card p-4">
           <p className="text-sm font-semibold mb-3 flex items-center gap-1.5">
             <Medal className="w-4 h-4 text-primary" />
             티어 기준
@@ -196,7 +196,7 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
         </div>
 
         {/* Rankings */}
-        <div className="bg-card rounded-2xl border border-border p-4">
+        <div className="bg-card rounded-2xl border border-border/60 shadow-card p-4">
           <p className="text-sm font-semibold mb-3 flex items-center gap-1.5">
             <Trophy className="w-4 h-4 text-yellow-500" />
             이번 달 순위

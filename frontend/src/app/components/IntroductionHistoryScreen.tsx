@@ -316,7 +316,7 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
                 {completedItems.map(rel => {
                   const currentStageIdx = STAGE_STEPS.findIndex(s => s.key === rel.stage);
                   return (
-                    <div key={rel.requestId} className="bg-card rounded-2xl border border-border/60 p-4 space-y-4">
+                    <div key={rel.requestId} className="bg-card rounded-2xl border border-border/60 shadow-card/60 p-4 space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <CheckCircle2 className="w-4 h-4 text-green-500" />

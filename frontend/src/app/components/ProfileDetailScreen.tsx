@@ -596,7 +596,14 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   const buttonTextColor = accentColor ? getContrastColor(accentColor) : undefined;
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div
+      className="min-h-screen pb-24"
+      style={{
+        background: accentColor
+          ? `linear-gradient(180deg, ${accentColor}29 0%, ${accentColor}0F 220px, var(--background) 460px)`
+          : "var(--background)",
+      }}
+    >
       {/* Header */}
       <div
         className="sticky top-0 z-20 backdrop-blur-sm border-b border-border"
@@ -626,7 +633,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
         {/* Photo Carousel */}
         <div className="px-4 pt-3 flex justify-center">
           {sortedPhotos.length > 0 ? (
-            <div className="rounded-2xl overflow-hidden w-full max-w-[320px]">
+            <div className="rounded-2xl overflow-hidden w-full max-w-[320px] shadow-card-hover ring-1 ring-black/5">
               <PhotoCarousel photos={sortedPhotos} />
             </div>
           ) : (

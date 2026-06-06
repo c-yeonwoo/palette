@@ -305,7 +305,7 @@ export function MyPageScreen({
         {/* 내 활동 */}
         <section>
           <SectionHeader title="내 활동" className="px-1 mb-3" />
-          <div className="bg-card rounded-2xl border border-border overflow-hidden divide-y divide-border">
+          <div className="bg-card rounded-2xl border border-border/60 shadow-card overflow-hidden divide-y divide-border">
             {!isMatchmakerOnly && (
               <MenuItem
                 icon={<UserCircle className="w-4 h-4" />}
@@ -341,7 +341,7 @@ export function MyPageScreen({
         {isMatchmakerOnly && (
           <section>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest px-1 mb-2">계정</p>
-            <div className="bg-card rounded-2xl border border-border overflow-hidden">
+            <div className="bg-card rounded-2xl border border-border/60 shadow-card overflow-hidden">
               <MenuItem
                 icon={<Users className="w-4 h-4" />}
                 title="일반 회원으로 전환"
@@ -355,7 +355,7 @@ export function MyPageScreen({
         {/* 설정 */}
         <section>
           <SectionHeader title="설정" className="px-1 mb-3" />
-          <div className="bg-card rounded-2xl border border-border overflow-hidden divide-y divide-border">
+          <div className="bg-card rounded-2xl border border-border/60 shadow-card overflow-hidden divide-y divide-border">
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted transition-colors"
