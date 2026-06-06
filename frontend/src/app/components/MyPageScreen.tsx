@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ChevronRight, UserCircle, HeartHandshake, LogOut, Users, Camera, Edit2, Loader2, UserPlus, Shield, Trash2, Sparkles } from "lucide-react";
 import { SectionHeader } from "./ui/section-header";
 import { ListRow } from "./ui/list-row";
+import { Switch } from "./ui/switch";
 import { api } from "../../lib/api/apiClient";
 import { tokenStorage } from "../../lib/auth/tokenStorage";
 import { toast } from "sonner";
@@ -29,7 +30,7 @@ interface ProfileData {
   primaryPhotoUrl: string | null;
   metrics?: { trustScore: number; completionRate: number };
   colorType?: { name: string | null; hex: string | null; description: string | null } | null;
-  settings?: { isAcceptingMatches: boolean };
+  settings?: { isAcceptingMatches: boolean; hiddenAt: string | null };
 }
 
 export function MyPageScreen({
@@ -51,7 +52,38 @@ export function MyPageScreen({
   const [isSaving, setIsSaving] = useState(false);
   const [showWithdrawDialog, setShowWithdrawDialog] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
+  const [pendingAccept, setPendingAccept] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 공개 설정 토글 — 소개받기(노출/visibility) + 주선받기(isAcceptingMatches) (MyProfile 에서 이동)
+  const handleToggleVisibility = async (visible: boolean) => {
+    try {
+      const result = await api.patch<{ isAcceptingMatches: boolean; hiddenAt: string | null }>(
+        "/api/v1/profile/settings/visibility", { visible }
+      );
+      setProfile(prev => prev ? { ...prev, settings: { isAcceptingMatches: prev.settings?.isAcceptingMatches ?? true, hiddenAt: result.hiddenAt } } : prev);
+      toast.success(visible ? "소개받기가 시작됐어요" : "소개받기를 잠시 멈췄어요");
+    } catch {
+      toast.error("설정 변경에 실패했습니다");
+    }
+  };
+
+  const handleToggleAccepting = (checked: boolean) => {
+    setPendingAccept(checked);
+    setShowAcceptConfirm(true);
+  };
+
+  const confirmToggleAccepting = async () => {
+    try {
+      await api.patch("/api/v1/profile/settings", { isAcceptingMatches: pendingAccept });
+      setProfile(prev => prev ? { ...prev, settings: { hiddenAt: prev.settings?.hiddenAt ?? null, isAcceptingMatches: pendingAccept } } : prev);
+      toast.success(pendingAccept ? "주선받기가 활성화되었습니다" : "주선받기가 비활성화되었습니다");
+      setShowAcceptConfirm(false);
+    } catch {
+      toast.error("설정 변경에 실패했습니다");
+    }
+  };
 
   useEffect(() => {
     fetchUserInfo();
@@ -166,7 +198,6 @@ export function MyPageScreen({
   const isMatchmaker = user?.canAccessMatchmakerService;
   const completionRate = profile?.metrics?.completionRate ?? null;
   const colorType = profile?.colorType ?? null;
-  const isAcceptingMatches = profile?.settings?.isAcceptingMatches;
   const profileSubtitle = completionRate !== null
     ? `프로필 완성도 ${completionRate}%`
     : "프로필 보기 및 수정";
@@ -270,23 +301,6 @@ export function MyPageScreen({
             </button>
           )}
 
-          {/* 소개받기 상태 — 가장 행동가능한 정보 (탭 → 프로필에서 토글) */}
-          {profile && typeof isAcceptingMatches === "boolean" && (
-            <button
-              onClick={onNavigateToProfile}
-              className="mt-2.5 w-full flex items-center justify-between bg-surface-sunken rounded-2xl px-4 py-3 text-left transition-colors hover:bg-accent"
-            >
-              <span className="flex items-center gap-2.5">
-                <span className={`w-2 h-2 rounded-full ${isAcceptingMatches ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
-                <span className="text-sm font-medium text-foreground">
-                  {isAcceptingMatches ? "소개받는 중" : "소개받기 잠시 멈춤"}
-                </span>
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {isAcceptingMatches ? "프로필이 노출돼요" : "프로필 숨김"}
-              </span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -336,6 +350,31 @@ export function MyPageScreen({
             )}
           </div>
         </section>
+
+        {/* 공개 설정 — 소개받기(노출) + 주선받기 (MyProfile 에서 이동) */}
+        {!isMatchmakerOnly && profile && (
+          <section>
+            <SectionHeader title="공개 설정" className="px-1 mb-3" />
+            <div className="bg-card rounded-2xl border border-border/60 shadow-card overflow-hidden divide-y divide-border">
+              <div className="flex items-center justify-between px-4 py-3.5">
+                <div className="min-w-0 pr-3">
+                  <p className="text-sm font-medium text-foreground">소개받기</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {profile.settings?.hiddenAt ? "잠시 멈춤 — 지인 피드에 안 보여요" : "지인 피드에 내 프로필이 노출돼요"}
+                  </p>
+                </div>
+                <Switch checked={!profile.settings?.hiddenAt} onCheckedChange={handleToggleVisibility} />
+              </div>
+              <div className="flex items-center justify-between px-4 py-3.5">
+                <div className="min-w-0 pr-3">
+                  <p className="text-sm font-medium text-foreground">주선받기</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">지인이 보내는 주선 요청을 받아요</p>
+                </div>
+                <Switch checked={!!profile.settings?.isAcceptingMatches} onCheckedChange={handleToggleAccepting} />
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* 계정 전환 */}
         {isMatchmakerOnly && (
@@ -404,6 +443,24 @@ export function MyPageScreen({
                 {isWithdrawing ? <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />처리 중...</> : "탈퇴하기"}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 주선받기 토글 확인 다이얼로그 */}
+      <Dialog open={showAcceptConfirm} onOpenChange={setShowAcceptConfirm}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{pendingAccept ? "주선받기 활성화" : "주선받기 비활성화"}</DialogTitle>
+            <DialogDescription>
+              {pendingAccept
+                ? "지인이 보내는 주선 요청을 받게 됩니다."
+                : "더 이상 주선 요청을 받지 않습니다."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2 pt-1">
+            <Button variant="outline" className="flex-1" onClick={() => setShowAcceptConfirm(false)}>취소</Button>
+            <Button className="flex-1" onClick={confirmToggleAccepting}>확인</Button>
           </div>
         </DialogContent>
       </Dialog>

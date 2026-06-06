@@ -1,14 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
-import { Switch } from "./ui/switch";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "./ui/dialog";
 import {
   Edit3, Loader2, Settings, LogOut, ChevronLeft,
   ExternalLink, CheckCircle2, Share2, Link,
@@ -136,8 +127,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [activeTab, setActiveTab] = useState<"about" | "ideal">("about");
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [pendingToggleValue, setPendingToggleValue] = useState(false);
   const [showPhoneVerificationModal, setShowPhoneVerificationModal] = useState(false);
   const [showCompletionChecklist, setShowCompletionChecklist] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -192,24 +181,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
       window.location.reload();
     } catch {
       toast.error('로그아웃에 실패했습니다');
-    }
-  };
-
-  const handleToggleAcceptingMatches = (checked: boolean) => {
-    setPendingToggleValue(checked);
-    setShowConfirmModal(true);
-  };
-
-  const confirmToggleAcceptingMatches = async () => {
-    try {
-      await api.patch('/api/v1/profile/settings', { isAcceptingMatches: pendingToggleValue });
-      if (profile) {
-        setProfile({ ...profile, settings: { ...profile.settings, isAcceptingMatches: pendingToggleValue } });
-      }
-      toast.success(pendingToggleValue ? '주선받기가 활성화되었습니다' : '주선받기가 비활성화되었습니다');
-      setShowConfirmModal(false);
-    } catch {
-      toast.error('설정 변경에 실패했습니다');
     }
   };
 
@@ -658,47 +629,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
             </section>
           )}
 
-          {/* 설정 */}
-          {userProfile.accountType === "REGULAR" && profile && (
-            <section className="px-6 py-6">
-              <SectionLabel>설정</SectionLabel>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">소개받기</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {profile.settings.hiddenAt
-                        ? "잠시 멈춤 — 내 프로필이 지인의 피드에 보이지 않아요"
-                        : "지인의 피드에 내 프로필이 노출돼요"}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={!profile.settings.hiddenAt}
-                    onCheckedChange={async (visible) => {
-                      try {
-                        const result = await api.patch<{ isAcceptingMatches: boolean; hiddenAt: string | null }>(
-                          '/api/v1/profile/settings/visibility', { visible }
-                        );
-                        setProfile(prev => prev ? { ...prev, settings: { ...prev.settings, hiddenAt: result.hiddenAt } } : prev);
-                        toast.success(visible ? '소개받기가 시작됐어요' : '소개받기를 잠시 멈췄어요');
-                      } catch {
-                        toast.error('설정 변경에 실패했습니다');
-                      }
-                    }}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">주선받기</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      지인이 보내는 주선 요청을 받아요
-                    </p>
-                  </div>
-                  <Switch checked={profile.settings.isAcceptingMatches} onCheckedChange={handleToggleAcceptingMatches} />
-                </div>
-              </div>
-            </section>
-          )}
+          {/* 공개 설정(소개받기/주선받기) 토글은 마이페이지로 이동됨 (MyPageScreen) */}
         </div>
       )}
 
@@ -784,24 +715,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
           프로필 수정하기
         </Button>
       </div>
-
-      {/* ── 모달 ── */}
-      <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{pendingToggleValue ? '주선받기 활성화' : '주선받기 비활성화'}</DialogTitle>
-            <DialogDescription>
-              {pendingToggleValue
-                ? '내 프로필이 2촌 피드에 노출됩니다.'
-                : '내 프로필이 더 이상 노출되지 않습니다.'}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConfirmModal(false)}>취소</Button>
-            <Button onClick={confirmToggleAcceptingMatches}>확인</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <NiceVerificationModal
         isOpen={showPhoneVerificationModal}
