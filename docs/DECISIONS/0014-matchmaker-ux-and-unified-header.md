@@ -23,7 +23,7 @@
 ### 2. 공통 헤더 패턴 (모든 화면 통일)
 
 ```tsx
-<header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
+<header className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border">
   <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
     <div className="flex items-center gap-2">
       {onBack && (
@@ -40,7 +40,7 @@
 
 규칙:
 - **sticky top-0 z-10** — 스크롤 시 헤더 고정 (모바일 표준)
-- **bg-background/95 + backdrop-blur** — 반투명 (스크롤 콘텐츠가 살짝 비침)
+- **bg-card/95 + backdrop-blur** — 흰색(#FFF) 네비 + 반투명. 본문 배경(#F7F7F5)과 분리되어 상·하단 네비가 일관되게 흰색으로 떠 보임 (개정: 기존 bg-background/95 는 본문과 동색이라 화면별 이질감 → 흰색 통일)
 - **border-b border-border** — 헤더-콘텐츠 구분
 - **max-w-2xl + px-4 + h-14** — 모바일/태블릿 공통 너비/높이
 - **h1 text-base font-bold** — 16px (브랜드 hero 는 콘텐츠 영역에서)

@@ -222,8 +222,8 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* 통일 헤더 — sticky + bg-background/95 + border-b + h-14 (ADR 0014) */}
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
+      {/* 통일 헤더 — sticky + bg-card/95 + border-b + h-14 (ADR 0014) */}
+      <header className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <h1 className="text-base font-bold text-foreground">주변 지인</h1>
           <div className="flex items-center gap-2">

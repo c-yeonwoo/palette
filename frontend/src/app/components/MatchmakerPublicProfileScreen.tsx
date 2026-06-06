@@ -265,7 +265,7 @@ export function MatchmakerPublicProfileScreen({
       </div>
 
       {/* 하단 요청 버튼 */}
-      <div className="fixed bottom-0 left-0 right-0 px-6 pb-8 pt-3 bg-background border-t border-border">
+      <div className="fixed bottom-0 left-0 right-0 px-6 pb-8 pt-3 bg-card/95 backdrop-blur border-t border-border">
         <Button
           onClick={() => onRequestMatch(matchmakerId)}
           className="w-full h-12 font-semibold"

@@ -146,7 +146,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* 통일 헤더 (ADR 0014) */}
-      <header className="sticky top-0 z-10 flex-shrink-0 bg-background/95 backdrop-blur border-b border-border">
+      <header className="sticky top-0 z-10 flex-shrink-0 bg-card/95 backdrop-blur border-b border-border">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-2">
           <button onClick={onBack} className="p-1.5 rounded-full hover:bg-muted/50 transition-colors -ml-1.5" aria-label="뒤로">
             <ChevronLeft className="w-5 h-5" />

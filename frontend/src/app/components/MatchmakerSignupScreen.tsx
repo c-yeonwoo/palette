@@ -210,7 +210,7 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 bg-background border-b z-10">
+      <div className="sticky top-0 bg-card/95 backdrop-blur border-b z-10">
         <div className="flex items-center justify-between p-4">
           <button onClick={onBack} className="p-2 hover:bg-muted rounded-full transition-colors">
             <ArrowLeft className="w-5 h-5" />

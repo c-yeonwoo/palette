@@ -152,7 +152,7 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* 통일 헤더 (ADR 0014) */}
-      <header className="sticky top-0 z-20 bg-background/95 backdrop-blur border-b border-border pt-safe-top">
+      <header className="sticky top-0 z-20 bg-card/95 backdrop-blur border-b border-border pt-safe-top">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {onBack && (

@@ -336,7 +336,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* ── 통일 헤더 (ADR 0014) ── */}
-      <header className="sticky top-0 z-10 flex-shrink-0 bg-background/95 backdrop-blur border-b border-border">
+      <header className="sticky top-0 z-10 flex-shrink-0 bg-card/95 backdrop-blur border-b border-border">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {onBack && (

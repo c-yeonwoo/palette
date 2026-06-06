@@ -174,7 +174,7 @@ export function MyPageScreen({
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* 통일 헤더 (ADR 0014) */}
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border pt-safe-top">
+      <header className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border pt-safe-top">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <h1 className="text-base font-bold text-foreground">마이페이지</h1>
           {isMatchmakerOnly && (

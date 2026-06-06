@@ -384,7 +384,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     return (
       <div className="min-h-screen bg-background flex flex-col">
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-4 flex items-center gap-3">
+        <div className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border px-4 py-4 flex items-center gap-3">
           <button onClick={onBack} className="p-2 hover:bg-accent rounded-full transition-colors">
             <ChevronLeft className="w-5 h-5" />
           </button>
