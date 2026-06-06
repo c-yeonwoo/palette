@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { ChevronRight, UserCircle, HeartHandshake, LogOut, Users, Camera, Edit2, Loader2, UserPlus, Shield, Trash2, Sparkles } from "lucide-react";
+import { ChevronRight, UserCircle, HeartHandshake, LogOut, Users, Camera, Edit2, Loader2, UserPlus, Shield, Trash2 } from "lucide-react";
 import { SectionHeader } from "./ui/section-header";
 import { ListRow } from "./ui/list-row";
 import { Switch } from "./ui/switch";
@@ -13,8 +13,6 @@ import { toast } from "sonner";
 
 interface MyPageScreenProps {
   onNavigateToProfile: () => void;
-  onNavigateToColor?: () => void;
-  onNavigateToConnector: () => void;
   onLogout: () => void;
   onConvertToRegular: () => void;
   onNavigateToFriends?: () => void;
@@ -36,8 +34,6 @@ interface ProfileData {
 
 export function MyPageScreen({
   onNavigateToProfile,
-  onNavigateToColor,
-  onNavigateToConnector,
   onLogout,
   onConvertToRegular,
   onNavigateToFriends
@@ -199,9 +195,8 @@ export function MyPageScreen({
   const isMatchmakerOnly = user?.accountType === "MATCHMAKER_ONLY";
   const isMatchmaker = user?.canAccessMatchmakerService;
   const completionRate = profile?.metrics?.completionRate ?? null;
-  const colorType = profile?.colorType ?? null;
   const profileSubtitle = completionRate !== null
-    ? `프로필 완성도 ${completionRate}%`
+    ? `완성도 ${completionRate}% · 높을수록 정밀 추천`
     : "프로필 보기 및 수정";
 
   return (
@@ -264,45 +259,6 @@ export function MyPageScreen({
               )}
             </div>
           </div>
-
-          {/* 나의 색 — Palette 시그니처 정체성 (탭 → 색 설명 페이지) */}
-          {profile && colorType?.hex && (
-            <button
-              onClick={() => (onNavigateToColor ?? onNavigateToProfile)()}
-              className="mt-4 w-full flex items-center gap-3.5 bg-surface-sunken rounded-2xl px-4 py-3.5 text-left transition-colors hover:bg-accent"
-            >
-              <span
-                className="w-11 h-11 rounded-full flex-shrink-0 ring-2 ring-white shadow-sm"
-                style={{ backgroundColor: colorType.hex }}
-              />
-              <span className="min-w-0 flex-1">
-                <span className="block text-[11px] font-medium text-muted-foreground">나의 색</span>
-                <span className="block text-sm font-bold text-foreground truncate">{colorType.name ?? "내 색깔"}</span>
-                {colorType.description && (
-                  <span className="block text-xs text-muted-foreground truncate mt-0.5">{colorType.description}</span>
-                )}
-              </span>
-              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            </button>
-          )}
-
-          {/* 아직 색이 없으면 — AI 프로필로 찾기 유도 */}
-          {profile && !colorType?.hex && (
-            <button
-              onClick={onNavigateToProfile}
-              className="mt-4 w-full flex items-center gap-3 bg-brand-soft rounded-2xl px-4 py-3.5 text-left transition-colors hover:brightness-[0.98]"
-            >
-              <span className="w-9 h-9 rounded-full bg-card flex items-center justify-center flex-shrink-0">
-                <Sparkles className="w-4 h-4 text-primary" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-sm font-bold text-gold-strong">나의 색 찾기</span>
-                <span className="block text-xs text-gold-strong/70 truncate">AI 프로필로 당신만의 색을 발견하세요</span>
-              </span>
-              <ChevronRight className="w-4 h-4 text-gold-strong flex-shrink-0" />
-            </button>
-          )}
-
         </div>
       </div>
 
@@ -336,18 +292,6 @@ export function MyPageScreen({
                 title="친구 연결"
                 subtitle="초대 코드 & 친구 검색"
                 onClick={onNavigateToFriends}
-              />
-            )}
-            {isMatchmaker && (
-              <MenuItem
-                icon={<HeartHandshake className="w-4 h-4" />}
-                title="주선자 대시보드"
-                subtitle={
-                  matchmaker?.level
-                    ? `Lv.${matchmaker.level} · ${(matchmaker.totalPoints ?? 0).toLocaleString()}P`
-                    : "소개 요청 관리 및 수익 확인"
-                }
-                onClick={onNavigateToConnector}
               />
             )}
           </div>

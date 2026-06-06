@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { ArrowLeft, ChevronDown, Lock, Loader2, Plus, Video, X, Sparkles } from "lucide-react";
+import { ArrowLeft, ChevronDown, Loader2, Plus, Video, X, Sparkles } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { PersonalityTestManager } from "./PersonalityTestManager";
@@ -314,28 +314,28 @@ const careerCategories = [
 const educationLevels = [
   { value: "HIGH_SCHOOL", label: "고졸" },
   { value: "ASSOCIATE", label: "전문대" },
-  { value: "BACHELOR", label: "대졸 🎓" },
-  { value: "MASTER", label: "석사 📜" },
-  { value: "DOCTORATE", label: "박사 🏅" },
+  { value: "BACHELOR", label: "대졸" },
+  { value: "MASTER", label: "석사" },
+  { value: "DOCTORATE", label: "박사" },
 ];
 
 const smokingOptions = [
-  { value: "NEVER", label: "🚭 비흡연" },
-  { value: "SOMETIMES", label: "💨 가끔" },
-  { value: "OFTEN", label: "🚬 자주" },
+  { value: "NEVER", label: "비흡연" },
+  { value: "SOMETIMES", label: "가끔" },
+  { value: "OFTEN", label: "자주" },
 ];
 
 const drinkingOptions = [
-  { value: "NEVER", label: "🫖 안 마심" },
-  { value: "SOMETIMES", label: "🍷 가끔" },
-  { value: "OFTEN", label: "🍻 자주" },
+  { value: "NEVER", label: "안 마심" },
+  { value: "SOMETIMES", label: "가끔" },
+  { value: "OFTEN", label: "자주" },
 ];
 
 const religionOptions = [
   { value: "NONE", label: "무교" },
-  { value: "CHRISTIANITY", label: "✝️ 기독교" },
-  { value: "CATHOLICISM", label: "⛪ 천주교" },
-  { value: "BUDDHISM", label: "🪷 불교" },
+  { value: "CHRISTIANITY", label: "기독교" },
+  { value: "CATHOLICISM", label: "천주교" },
+  { value: "BUDDHISM", label: "불교" },
   { value: "OTHER", label: "기타" },
 ];
 
@@ -366,12 +366,12 @@ const importantValueOptions = [
 ];
 
 const datePreferenceOptions = [
-  { value: "ACTIVE", label: "🏄 액티브", desc: "여행, 운동, 액티비티" },
-  { value: "INDOOR", label: "🏠 인도어", desc: "집, 카페, 넷플릭스" },
-  { value: "CULTURE", label: "🎭 문화생활", desc: "전시, 공연, 맛집" },
-  { value: "NATURE", label: "🌿 자연속으로", desc: "산책, 드라이브, 피크닉" },
-  { value: "NIGHT", label: "🌙 야경/술자리", desc: "바, 루프탑, 한강" },
-  { value: "RELAXED", label: "☕ 여유롭게", desc: "브런치, 독서, 산책" },
+  { value: "ACTIVE", label: "액티브", desc: "여행, 운동, 액티비티" },
+  { value: "INDOOR", label: "인도어", desc: "집, 카페, 넷플릭스" },
+  { value: "CULTURE", label: "문화생활", desc: "전시, 공연, 맛집" },
+  { value: "NATURE", label: "자연속으로", desc: "산책, 드라이브, 피크닉" },
+  { value: "NIGHT", label: "야경/술자리", desc: "바, 루프탑, 한강" },
+  { value: "RELAXED", label: "여유롭게", desc: "브런치, 독서, 산책" },
 ];
 
 // 남자가 선택 (여자 외모 스타일)
@@ -412,35 +412,6 @@ const dealBreakerOptions = [
   { value: "CONTACTS_EX", label: "전 연인 연락", emoji: "📱" },
   { value: "LARGE_AGE_GAP", label: "큰 나이차", emoji: "🎂" },
 ];
-
-// ─── 프로필 레벨 ─────────────────────────────────────────
-
-const LEVEL_META = [
-  { level: 1, name: "씨앗", emoji: "🌱",
-    hint: "라이프스타일 2개 이상 선택하면 나만의 색깔 타입이 발급돼요" },
-  { level: 2, name: "새싹", emoji: "🌿",
-    hint: "연애 스타일 5개 이상 답변하면 매칭이 시작돼요" },
-  { level: 3, name: "꽃",   emoji: "🌸",
-    hint: "버킷리스트 3개↑ 또는 성격테스트 1개↑ 추가하면 추천 우선순위가 올라가요" },
-  { level: 4, name: "나무", emoji: "🌳",
-    hint: "완성! 최고 우선순위로 추천돼요 🎉" },
-];
-
-function computeLevel(profile: ProfileData, photos: ({ id: string; url: string } | null)[]): number {
-  if (photos.filter(Boolean).length < 1) return 0;
-  const lifestyleCount = [
-    profile.lifestyleInfo.smoking,
-    profile.lifestyleInfo.drinking,
-    profile.lifestyleInfo.religion,
-  ].filter(Boolean).length;
-  if (lifestyleCount < 2) return 1;
-  const datingStyleCount = Object.keys(profile.introduction.datingStyle || {}).length;
-  if (datingStyleCount < 5) return 2;
-  const bucketCount = (profile.idealType.bucketList ?? []).length;
-  const testCount  = (profile.personalityTests ?? []).length;
-  if (bucketCount < 3 && testCount < 1) return 3;
-  return 4;
-}
 
 // ─── 공통 칩 컴포넌트 ─────────────────────────────────────
 
@@ -538,81 +509,6 @@ function SubLabel({
     <div className="mb-3">
       <p className="text-sm font-semibold text-foreground">{children}</p>
       {hint && <p className="text-xs text-muted-foreground mt-0.5">{hint}</p>}
-    </div>
-  );
-}
-
-// ─── 프로필 레벨 배너 ─────────────────────────────────────
-
-function ProfileLevelBanner({
-  level,
-  colorType,
-}: {
-  level: number;
-  colorType?: { type?: string | null; name?: string | null; hex?: string | null } | null;
-}) {
-  const meta = LEVEL_META[Math.max(0, level - 1)] ?? LEVEL_META[0];
-  const nextMeta = LEVEL_META[level] ?? null;
-  const progress = Math.max(4, (level / 4) * 100);
-  const colorLocked = level < 2;
-  const hint = level < 4
-    ? (nextMeta ? nextMeta.hint : meta.hint)
-    : "완성! 최고 우선순위로 추천돼요";
-
-  return (
-    <div className="bg-card border border-border rounded-2xl px-4 py-3.5">
-      <div className="flex items-center gap-3">
-        {/* 색깔 원 */}
-        {colorLocked ? (
-          <div className="w-9 h-9 rounded-full bg-muted border border-dashed border-border flex items-center justify-center flex-shrink-0">
-            <Lock className="w-3.5 h-3.5 text-muted-foreground" />
-          </div>
-        ) : colorType?.hex ? (
-          <div
-            className="w-9 h-9 rounded-full border-2 border-white shadow-sm flex-shrink-0"
-            style={{ backgroundColor: colorType.hex }}
-          />
-        ) : (
-          <div className="w-9 h-9 rounded-full bg-brand-soft border border-primary/30 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-4 h-4 text-primary" />
-          </div>
-        )}
-
-        {/* 레벨 텍스트 + 진행 바 */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-1.5 mb-1.5">
-            <span className="text-xs text-muted-foreground">Lv.{level}</span>
-            <span className="text-sm font-semibold text-foreground">{meta.emoji} {meta.name}</span>
-            {!colorLocked && colorType?.name && (
-              <span className="text-xs text-muted-foreground ml-auto">{colorType.name}</span>
-            )}
-          </div>
-          <div className="relative h-1.5 bg-muted rounded-full">
-            <div
-              className="absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-700"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-
-        {/* 힌트 아이콘 — hover 시 툴팁 */}
-        <div className="relative group flex-shrink-0">
-          <button
-            type="button"
-            className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-brand-soft hover:text-primary transition-colors"
-          >
-            <span className="text-xs font-bold">?</span>
-          </button>
-          {/* 툴팁 */}
-          <div className="absolute right-0 bottom-full mb-2 w-56 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50">
-            <div className="bg-popover border border-border rounded-xl px-3 py-2.5 shadow-lg">
-              <p className="text-xs text-popover-foreground leading-relaxed">{hint}</p>
-            </div>
-            {/* 말풍선 꼬리 */}
-            <div className="absolute right-2.5 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-border" />
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -791,8 +687,6 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
   }
 
   // ── 완성도 계산 ──────────────────────────────────────────
-  const level = computeLevel(profile, photos);
-
   const photoCount     = photos.filter(Boolean).length;
   const lifestyleCount = [profile.lifestyleInfo.smoking, profile.lifestyleInfo.drinking, profile.lifestyleInfo.religion].filter(Boolean).length;
   const datingStyleCount = Object.keys(profile.introduction.datingStyle || {}).length;
@@ -845,9 +739,6 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
       </div>
 
       <div className="px-4 py-5 space-y-4">
-        {/* ── 레벨 배너 ── */}
-        <ProfileLevelBanner level={level} colorType={profile.colorType} />
-
         {/* ════ 내 소개 탭 ════ */}
         {activeTab === "about" && (
           <>
@@ -943,7 +834,6 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-semibold text-foreground">동영상 <span className="text-muted-foreground font-normal">(선택)</span></p>
-                  <p className="text-xs text-muted-foreground">+50 신뢰도 🏆</p>
                 </div>
                 <div
                   className={`relative aspect-video rounded-xl border-2 overflow-hidden cursor-pointer transition-all ${
@@ -1018,7 +908,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                         })
                       }
                     >
-                      {type.emoji} {type.label}
+                      {type.label}
                     </Chip>
                   ))}
                 </div>
@@ -1088,7 +978,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                         })
                       }
                     >
-                      {cat.emoji} {cat.label}
+                      {cat.label}
                     </Chip>
                   ))}
                 </div>
@@ -1117,7 +1007,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                   className="w-full border-dashed hover:border-primary/50 hover:bg-muted"
                   onClick={() => toast.info('홈택스 연동 기능은 준비 중입니다')}
                 >
-                  {profile.careerInfo.incomeRange ? '✅ 소득인증 완료' : '🏦 소득인증하기'}
+                  {profile.careerInfo.incomeRange ? '소득인증 완료' : '소득인증하기'}
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
                   홈택스 연동 인증 시 고소득 뱃지가 표시돼요. (연소득 7,500만원 이상)
@@ -1425,7 +1315,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                       style={{ backgroundColor: `${typeInfo.color}15`, borderColor: `${typeInfo.color}40` }}
                     >
                       <p className="text-sm font-semibold mb-1" style={{ color: typeInfo.color }}>
-                        {typeInfo.emoji} {typeInfo.label}
+                        {typeInfo.label}
                       </p>
                       <p className="text-xs text-muted-foreground leading-relaxed">{typeInfo.description}</p>
                       <p className="text-xs text-muted-foreground mt-2 opacity-70">
@@ -1550,7 +1440,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                   return (
                     <div key={q.key}>
                       <p className="text-sm font-semibold text-foreground mb-2.5">
-                        {q.emoji} {q.label}
+                        {q.label}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {q.options.map((opt) => (
@@ -1626,7 +1516,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                         });
                       }}
                     >
-                      {emoji} {label}
+                      {label}
                     </Chip>
                   );
                 })}
@@ -1668,7 +1558,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                         });
                       }}
                     >
-                      {emoji} {value}
+                      {value}
                     </Chip>
                   );
                 })}
@@ -1698,7 +1588,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                         });
                       }}
                     >
-                      {emoji} {label}
+                      {label}
                     </Chip>
                   );
                 })}
@@ -1737,7 +1627,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                         });
                       }}
                     >
-                      {emoji} {label}
+                      {label}
                     </Chip>
                   );
                 })}
@@ -1845,7 +1735,7 @@ function BucketListSection({
                     selected={selected.includes(item.key)}
                     onClick={() => toggle(item.key)}
                   >
-                    {item.emoji} {item.label}
+                    {item.label}
                   </Chip>
                 ))}
               </div>
@@ -1868,7 +1758,7 @@ function BucketListSection({
                     selected={selected.includes(item.key)}
                     onClick={() => toggle(item.key)}
                   >
-                    ✍️ {item.label}
+                    {item.label}
                   </Chip>
                 ))}
             </div>
@@ -1903,7 +1793,7 @@ function BucketListSection({
           </Button>
         </div>
         <p className="text-xs text-muted-foreground mt-1.5">
-          직접 추가한 항목은 상대방에게 그대로 보여요 — 개성 있게 써보세요 😄
+          직접 추가한 항목은 상대방에게 그대로 보여요 — 개성 있게 써보세요
         </p>
       </div>
     </Section>

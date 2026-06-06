@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
-import { Upload, Share2, Camera, Plus, Video, Star, CheckCircle2, ArrowLeft, X, Play } from "lucide-react";
+import { Upload, Share2, Camera, Plus, Video, Star, ArrowLeft, X, Play } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
 
@@ -35,18 +35,6 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
   const videoInputRef = useRef<HTMLInputElement>(null);
   const [activePhotoSlot, setActivePhotoSlot] = useState<number>(0);
 
-  // Trust score calculation
-  const photoCount = photos.filter(p => p !== null).length;
-  const hasVideo = video !== null;
-  const trustScore = Math.min(100, photoCount * 15 + (hasVideo ? 50 : 0));
-
-  const getTrustLevel = (score: number) => {
-    if (score >= 71) return { level: "Gold", circles: 3, colorClass: "bg-primary", textClass: "text-primary" };
-    if (score >= 41) return { level: "Silver", circles: 2, colorClass: "bg-muted-foreground", textClass: "text-muted-foreground" };
-    return { level: "Bronze", circles: 1, colorClass: "bg-foreground/40", textClass: "text-foreground/60" };
-  };
-
-  const trustLevel = getTrustLevel(trustScore);
   const uploadedCount = photos.filter(p => p !== null).length;
 
   const handlePhotoSlotClick = (index: number) => {
@@ -129,7 +117,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
       const reader = new FileReader();
       reader.onload = (ev) => setVideo(ev.target?.result as string);
       reader.readAsDataURL(file);
-      toast.success("동영상이 추가됐어요 · 신뢰도 +50점");
+      toast.success("동영상이 추가됐어요");
     };
     e.target.value = "";
   };
@@ -174,54 +162,14 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
 
       {/* Content */}
       <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
-        {/* Trust Score Display */}
-        <div className="bg-secondary border-2 border-border rounded-xl p-6">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h3 className="text-foreground mb-1">신뢰도 점수</h3>
-              <p className="text-sm text-muted-foreground">
-                사진이 많을수록 신뢰도가 올라가요
-              </p>
-            </div>
-            <div className="text-right">
-              <div className={`text-3xl font-bold ${trustLevel.textClass}`}>
-                {trustScore}점
-              </div>
-              <div className="flex gap-1 mt-1 justify-end">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={`w-3 h-3 rounded-full ${
-                      i < trustLevel.circles ? trustLevel.colorClass : 'bg-muted'
-                    }`}
-                  />
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">{trustLevel.level}</p>
-            </div>
-          </div>
-
-          {/* Trust Score Tips */}
-          <div className="bg-card rounded-lg p-4 space-y-2">
-            <p className="text-sm font-medium text-foreground mb-2">신뢰도 높이는 방법:</p>
-            <div className="space-y-1.5 text-sm text-foreground/80">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
-                <span>타인 촬영 사진: +20점</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
-                <span>전신 사진: +15점</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
-                <span>다양한 상황 사진: +10점</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Star className="w-4 h-4 text-primary" />
-                <span className="font-medium">동영상 업로드: +50점</span>
-              </div>
-            </div>
+        {/* 좋은 사진 가이드 (등급·점수 없음 — 색깔만 유효) */}
+        <div className="bg-secondary border border-border rounded-xl p-5">
+          <h3 className="text-foreground mb-3 font-medium">좋은 사진 고르는 법</h3>
+          <div className="space-y-2 text-sm text-foreground/80">
+            <p>· 남이 찍어준 자연스러운 사진</p>
+            <p>· 얼굴이 선명하게 보이는 사진</p>
+            <p>· 전신과 다양한 상황이 담긴 사진</p>
+            <p className="text-muted-foreground">사진이 많을수록 매칭 확률이 올라가요</p>
           </div>
         </div>
 
@@ -298,7 +246,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
 
         {/* Video Upload */}
         <div>
-          <Label className="mb-3 block">프로필 동영상 (선택) - 신뢰도 +50점! 🎬</Label>
+          <Label className="mb-3 block">프로필 동영상 (선택)</Label>
           <input
             ref={videoInputRef}
             type="file"
@@ -338,7 +286,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
             </div>
             {!video && (
               <div className="col-span-2 flex flex-col justify-center space-y-1 text-sm text-foreground/80">
-                <p className="font-medium">동영상으로 신뢰도 UP! ⬆️</p>
+                <p className="font-medium">동영상을 추가하면 더 잘 전달돼요</p>
                 <p className="text-xs text-muted-foreground">• 5~30초 분량</p>
                 <p className="text-xs text-muted-foreground">• MP4/MOV 형식</p>
                 <p className="text-xs text-muted-foreground">• 최대 50MB</p>

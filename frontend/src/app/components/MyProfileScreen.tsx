@@ -15,13 +15,13 @@ import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
 import { AccentScope } from "../contexts/AccentScope";
 import { ColorTypeAura } from "./color/ColorTypeAura";
 import { ColorTypeBadge } from "./color/ColorTypeBadge";
-import { TrustTier } from "./color/TrustTier";
 import { getMyColorType } from "../../lib/daily-match";
 
 interface MyProfileScreenProps {
   onBack: () => void;
   onEdit: () => void;
   onConvertToRegular: () => void;
+  onNavigateToColor?: () => void;
 }
 
 interface UserProfile {
@@ -120,7 +120,7 @@ interface ProfileData {
   vouches?: Array<{ message: string }>;
 }
 
-export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfileScreenProps) {
+export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigateToColor }: MyProfileScreenProps) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -443,17 +443,11 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
 
       {/* ── Stats ── */}
       {profile && (
-        <div className="grid grid-cols-2 divide-x divide-border border-b border-border">
-          <div className="flex flex-col items-center py-4 gap-0.5">
-            <span className="text-base font-bold text-foreground">{profile.metrics.trustScore}</span>
-            <span className="text-xs text-muted-foreground">신뢰도</span>
-          </div>
-          <div className="flex flex-col items-center py-4 gap-0.5">
-            <span className="text-base font-bold text-foreground">{profile.metrics.viewCount}</span>
-            <div className="flex items-center gap-0.5">
-              <Eye className="w-3 h-3 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">열람</span>
-            </div>
+        <div className="flex items-center justify-center border-b border-border">
+          <div className="flex items-center py-4 gap-1.5">
+            <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-sm font-bold text-foreground">{profile.metrics.viewCount}</span>
+            <span className="text-xs text-muted-foreground">명이 내 프로필을 봤어요</span>
           </div>
         </div>
       )}
@@ -535,15 +529,27 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
             </section>
           )}
 
-          {/* 색깔 타입 설명 */}
+          {/* 나의 색 — 탭하면 AI 근거·성향·이상형 상세 페이지로 */}
           {profile?.colorType?.description && (
             <section className="px-6 pt-4 pb-4">
               {(() => {
                 const colorKey = (profile.colorType!.key ?? getMyColorType()) as import("../../lib/colorTypes").ColorTypeKey;
                 return (
                   <AccentScope colorType={colorKey}>
-                    <div className="bg-user-accent-soft border border-border-subtle rounded-lg p-4">
-                      <p className="text-caption text-text-tertiary mb-2">나의 색깔</p>
+                    <button
+                      type="button"
+                      onClick={() => onNavigateToColor?.()}
+                      disabled={!onNavigateToColor}
+                      className="w-full text-left bg-user-accent-soft border border-border-subtle rounded-lg p-4 transition-colors hover:brightness-[0.99] disabled:cursor-default"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-caption text-text-tertiary">나의 색</p>
+                        {onNavigateToColor && (
+                          <span className="inline-flex items-center text-caption text-text-tertiary">
+                            자세히 <ChevronRight className="w-3.5 h-3.5" />
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-start gap-3">
                         <ColorTypeBadge colorType={colorKey} style="dot" size="lg" />
                         <div>
@@ -551,7 +557,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
                           <p className="text-caption text-text-secondary leading-relaxed">{profile.colorType!.description}</p>
                         </div>
                       </div>
-                    </div>
+                    </button>
                   </AccentScope>
                 );
               })()}
@@ -738,9 +744,10 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
             <div className="flex-shrink-0 px-6 pt-5 pb-4 border-b border-border">
               <div className="w-10 h-1 rounded-full bg-muted mx-auto mb-4" />
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold">프로필 완성도 올리기</h3>
+                <h3 className="text-lg font-bold">프로필 완성도</h3>
                 <span className="text-2xl font-bold text-primary">{profile.metrics.completionRate}%</span>
               </div>
+              <p className="text-xs text-muted-foreground mt-1">완성도가 높을수록 더 잘 맞는 인연을 정밀하게 추천해드려요</p>
               <div className="w-full h-2 bg-muted rounded-full mt-3 overflow-hidden">
                 <div
                   className="h-full bg-primary rounded-full transition-all duration-700"
@@ -819,7 +826,7 @@ function buildCompletionChecklist(profile: ProfileData, user: UserProfile): Chec
     {
       key: "photo",
       label: "사진 등록",
-      hint: "사진을 최소 1장 등록해주세요. 신뢰도가 높아져요!",
+      hint: "사진을 최소 1장 등록해주세요. 매칭 확률이 올라가요!",
       points: 20,
       done: profile.photos.length > 0,
     },
@@ -840,7 +847,7 @@ function buildCompletionChecklist(profile: ProfileData, user: UserProfile): Chec
     {
       key: "phone",
       label: "핸드폰 인증",
-      hint: "인증하면 신뢰도 뱃지가 표시돼요",
+      hint: "인증하면 인증 뱃지가 표시돼요",
       points: 15,
       done: user.isPhoneVerified,
     },
@@ -862,7 +869,7 @@ function buildCompletionChecklist(profile: ProfileData, user: UserProfile): Chec
     {
       key: "career",
       label: "직장 또는 학교 입력",
-      hint: "선택 사항이지만 신뢰도가 높아져요",
+      hint: "선택 사항이지만 추천 정확도가 올라가요",
       points: 10,
       done: !!(profile.careerInfo.company || profile.educationInfo.school),
     },

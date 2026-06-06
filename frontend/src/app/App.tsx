@@ -953,6 +953,7 @@ export default function App() {
           onBack={handleMyProfileBack}
           onEdit={handleMyProfileEdit}
           onConvertToRegular={handleConvertToRegular}
+          onNavigateToColor={() => setCurrentScreen("colorDetail")}
         />
       )}
 
@@ -1022,8 +1023,6 @@ export default function App() {
       {currentScreen === "myPage" && (
         <MyPageScreen
           onNavigateToProfile={() => setCurrentScreen("myProfile")}
-          onNavigateToColor={() => setCurrentScreen("colorDetail")}
-          onNavigateToConnector={() => setCurrentScreen("connectorDashboard")}
           onConvertToRegular={handleConvertToRegular}
           onNavigateToFriends={() => { setFriendConnectFrom(currentScreen); setCurrentScreen("friendConnect"); }}
           onLogout={() => {
@@ -1112,7 +1111,7 @@ export default function App() {
 
       {currentScreen === "colorDetail" && (
         <ColorDetailScreen
-          onBack={() => setCurrentScreen("myPage")}
+          onBack={() => setCurrentScreen("myProfile")}
           onNavigateToProfile={() => setCurrentScreen("aiProfileEnhance")}
         />
       )}
