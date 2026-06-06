@@ -9,7 +9,6 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { CheckCircle2, XCircle, Coins, Loader2, ChevronLeft, Award, ChevronRight, Users } from "lucide-react";
-import { LevelBar } from "./ui/level-bar";
 import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
 import { MessageModal } from "./MessageModal";
@@ -362,67 +361,49 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
         </div>
       </header>
 
-      {/* ── 이번달 요약 + Stats ── */}
-      <div className="flex-shrink-0 bg-card border-b border-border px-4 py-3 max-w-2xl w-full mx-auto">
-        {/* 이번달 칩 + 등급 칩 */}
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs bg-brand-soft text-primary font-semibold px-2.5 py-1 rounded-full">
-            이번달 성사 {matchmakerData?.successfulMatches ?? 0}건
-          </span>
-          <span className="text-xs text-muted-foreground">
-            적립 {((matchmakerData?.totalPoints ?? 0)).toLocaleString()}P
-          </span>
-          {onNavigateToReward && (
-            <button
-              onClick={onNavigateToReward}
-              className="ml-auto flex items-center gap-1.5 bg-brand-soft border border-brand/25 rounded-full px-3 py-1 text-xs font-semibold text-primary hover:bg-brand-soft transition-colors"
-              aria-label="등급 & 리워드"
-            >
-              <Award className="w-3.5 h-3.5" />
-              Lv.{matchmakerData?.level ?? 1}
-              <ChevronRight className="w-3 h-3 -mr-1" />
-            </button>
-          )}
-        </div>
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-3 mb-3">
-          {[
-            { label: "내 지인", value: `${members.length}명` },
-            { label: "총 주선", value: `${matchmakerData?.totalMatchRequests ?? 0}건` },
-            { label: "성공률", value: matchmakerData?.successRate ? `${Math.round(matchmakerData.successRate * 100)}%` : "-" },
-          ].map(({ label, value }) => (
-            <div key={label} className="text-center">
-              <p className="text-base font-bold text-foreground">{value}</p>
-              <p className="text-xs text-muted-foreground">{label}</p>
+      {/* ── 등급 요약 strip (상세 지표·포인트·커미션은 리워드 화면) ── */}
+      {matchmakerData && (() => {
+        const lvl = matchmakerData.level;
+        const successes = matchmakerData.successfulMatches;
+        const LEVELS = [
+          { name: "새싹", base: 0, next: 3, nextName: "씨앗" },
+          { name: "씨앗", base: 3, next: 6, nextName: "꽃봉오리" },
+          { name: "꽃봉오리", base: 6, next: 11, nextName: "꽃" },
+          { name: "꽃", base: 11, next: 21, nextName: "나무" },
+          { name: "나무", base: 21, next: undefined, nextName: undefined },
+        ];
+        const meta = LEVELS[Math.min(Math.max(lvl - 1, 0), 4)];
+        const remaining = meta.next != null ? Math.max(0, meta.next - successes) : null;
+        const pct = meta.next != null
+          ? Math.min(100, Math.max(0, Math.round(((successes - meta.base) / (meta.next - meta.base)) * 100)))
+          : 100;
+        return (
+          <button
+            onClick={() => onNavigateToReward?.()}
+            disabled={!onNavigateToReward}
+            className="flex-shrink-0 w-full bg-card border-b border-border text-left transition-colors enabled:hover:bg-muted/30 disabled:cursor-default"
+            aria-label="등급 & 포인트"
+          >
+            <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
+              <span className="flex items-center gap-1.5 bg-brand-soft text-gold-strong font-bold text-sm px-2.5 py-1 rounded-full flex-shrink-0">
+                <Award className="w-3.5 h-3.5" /> Lv.{lvl}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-sm font-semibold text-foreground truncate">{meta.name}</span>
+                  <span className="text-xs text-muted-foreground flex-shrink-0">
+                    {remaining != null ? `다음 ${meta.nextName}까지 ${remaining}건` : "최고 등급"}
+                  </span>
+                </div>
+                <div className="mt-1.5 h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+              {onNavigateToReward && <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
             </div>
-          ))}
-        </div>
-
-        {/* 레벨 바 */}
-        {matchmakerData && (() => {
-          const lvl = matchmakerData.level;
-          const successes = matchmakerData.successfulMatches;
-          const LEVELS = [
-            { level: 1, name: "새싹", next: 3, nextName: "씨앗", color: "#22C55E" },
-            { level: 2, name: "씨앗", next: 6, nextName: "꽃봉오리", color: "#84CC16" },
-            { level: 3, name: "꽃봉오리", next: 11, nextName: "꽃", color: "#F97316" },
-            { level: 4, name: "꽃", next: 21, nextName: "나무", color: "#EC4899" },
-            { level: 5, name: "나무", next: undefined, nextName: undefined, color: "#A855F7" },
-          ];
-          const meta = LEVELS[Math.min(lvl - 1, 4)];
-          return (
-            <LevelBar
-              level={meta.level}
-              levelName={meta.name}
-              color={meta.color}
-              current={successes}
-              next={meta.next}
-              nextName={meta.nextName}
-              className="mt-1"
-            />
-          );
-        })()}
-      </div>
+          </button>
+        );
+      })()}
 
       {/* ── 메인 탭 ── */}
       <div className="flex-shrink-0 flex border-b border-border bg-card">
