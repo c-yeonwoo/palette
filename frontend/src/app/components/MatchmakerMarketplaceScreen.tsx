@@ -23,9 +23,9 @@ import { getColorTypeMeta } from "../../lib/colorTypes";
 import {
   MOCK_MARKETPLACE,
   SPECIALTY_FILTER_OPTIONS,
-  LEVEL_META,
   type MarketplaceMatchmaker,
 } from "../../data/mock-marketplace";
+import { tierFor } from "../../lib/matchmakerLevels";
 
 type SortKey = "success" | "rating" | "recent";
 
@@ -235,7 +235,7 @@ function MatchmakerCard({
 }) {
   const meta = getColorTypeMeta(m.colorType);
   const hsl = `hsl(${meta.h} ${meta.s}% ${meta.l}%)`;
-  const levelMeta = LEVEL_META[m.level];
+  const levelMeta = tierFor(m.level);
 
   return (
     <button

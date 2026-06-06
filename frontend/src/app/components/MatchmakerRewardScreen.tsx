@@ -4,6 +4,7 @@ import { Input } from "./ui/input";
 import { ChevronLeft, Star, TrendingUp, Wallet, RefreshCw, Award, Coins, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
+import { MATCHMAKER_TIER_LIST } from "../../lib/matchmakerLevels";
 
 interface MatchmakerData {
   matchmakerId: string;
@@ -25,13 +26,14 @@ interface MatchmakerRewardScreenProps {
   onBack: () => void;
 }
 
-const LEVEL_INFO = [
-  { level: 1, minMatches: 0, maxMatches: 2, commission: 30, label: "씨앗" },
-  { level: 2, minMatches: 3, maxMatches: 5, commission: 35, label: "새싹" },
-  { level: 3, minMatches: 6, maxMatches: 10, commission: 40, label: "나무" },
-  { level: 4, minMatches: 11, maxMatches: 20, commission: 45, label: "열매" },
-  { level: 5, minMatches: 21, maxMatches: Infinity, commission: 50, label: "숲" },
-];
+// 단일 소스(lib/matchmakerLevels)에서 파생 — label = 등급명
+const LEVEL_INFO = MATCHMAKER_TIER_LIST.map((t) => ({
+  level: t.level,
+  minMatches: t.minMatches,
+  maxMatches: t.maxMatches,
+  commission: t.commission,
+  label: t.name,
+}));
 
 export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) {
   const [data, setData] = useState<MatchmakerData | null>(null);

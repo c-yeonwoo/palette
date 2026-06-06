@@ -3,6 +3,7 @@ import { Button } from "./ui/button";
 import { ChevronLeft, Star, Heart, Users, CheckCircle2, Loader2, Send } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
+import { tierFor } from "../../lib/matchmakerLevels";
 
 interface MatchmakerPublicProfileScreenProps {
   matchmakerId: string;
@@ -32,14 +33,6 @@ interface Review {
   comment: string;
   createdAt: string;
 }
-
-const LEVEL_META: Record<number, { name: string; emoji: string; color: string; desc: string }> = {
-  1: { name: "씨앗",   emoji: "🌱", color: "#6B7280", desc: "0-2 성공" },
-  2: { name: "새싹",   emoji: "🌿", color: "#22C55E", desc: "3-5 성공" },
-  3: { name: "꽃",     emoji: "🌸", color: "#EC4899", desc: "6-10 성공" },
-  4: { name: "나무",   emoji: "🌳", color: "#16A34A", desc: "11-20 성공" },
-  5: { name: "숲",     emoji: "🌲", color: "#15803D", desc: "21+ 성공" },
-};
 
 export function MatchmakerPublicProfileScreen({
   matchmakerId,
@@ -96,7 +89,7 @@ export function MatchmakerPublicProfileScreen({
 
   if (!matchmaker) return null;
 
-  const lv = LEVEL_META[matchmaker.level] ?? LEVEL_META[1];
+  const lv = tierFor(matchmaker.level);
   const approvalRate = matchmaker.totalMatchRequests > 0
     ? Math.round((matchmaker.successfulMatches / matchmaker.totalMatchRequests) * 100)
     : 0;

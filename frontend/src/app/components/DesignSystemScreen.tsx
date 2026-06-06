@@ -10,6 +10,7 @@ import {
 import { AccentScope } from "../contexts/AccentScope";
 import { SkeletonProfileHeader, SkeletonCard, SkeletonListRow } from "./ui/skeleton";
 import { ColorTypeBadge } from "./color/ColorTypeBadge";
+import { tierFor, nextTier } from "../../lib/matchmakerLevels";
 import { ColorTypeAura } from "./color/ColorTypeAura";
 import { MatchPairMark } from "./color/MatchPairMark";
 import { TrustTier } from "./color/TrustTier";
@@ -28,14 +29,6 @@ import { Switch } from "./ui/switch";
 interface DesignSystemScreenProps {
   onBack: () => void;
 }
-
-const LEVEL_META: Record<number, { name: string; color: string; next?: number; nextName?: string }> = {
-  1: { name: "씨앗",  color: "#6B7280", next: 3,  nextName: "새싹" },
-  2: { name: "새싹",  color: "#22C55E", next: 6,  nextName: "꽃" },
-  3: { name: "꽃",    color: "#EC4899", next: 11, nextName: "나무" },
-  4: { name: "나무",  color: "#16A34A", next: 21, nextName: "숲" },
-  5: { name: "숲",    color: "#15803D" },
-};
 
 export function DesignSystemScreen({ onBack }: DesignSystemScreenProps) {
   const [toggle1, setToggle1] = useState(true);
@@ -256,17 +249,18 @@ export function DesignSystemScreen({ onBack }: DesignSystemScreenProps) {
           <Card variant="flat" className="gap-0">
             <CardContent className="pt-4 pb-4 space-y-4">
               {([1, 2, 3, 4, 5] as const).map((lv) => {
-                const meta = LEVEL_META[lv];
+                const tier = tierFor(lv);
+                const nt = nextTier(lv);
                 const current = [1, 4, 8, 14, 23][lv - 1];
                 return (
                   <LevelBar
                     key={lv}
                     level={lv}
-                    levelName={meta.name}
-                    color={meta.color}
+                    levelName={tier.name}
+                    color={tier.color}
                     current={current}
-                    next={meta.next}
-                    nextName={meta.nextName}
+                    next={nt?.minMatches}
+                    nextName={nt?.name}
                   />
                 );
               })}

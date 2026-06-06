@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
 import { MessageModal } from "./MessageModal";
 import { getCompatibilityDeterministic, COLOR_META, type ColorType } from "../../lib/colorCompatibility";
+import { tierFor, nextTier } from "../../lib/matchmakerLevels";
 
 interface MatchmakerData {
   matchmakerId: string;
@@ -365,17 +366,11 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
       {matchmakerData && (() => {
         const lvl = matchmakerData.level;
         const successes = matchmakerData.successfulMatches;
-        const LEVELS = [
-          { name: "새싹", base: 0, next: 3, nextName: "씨앗" },
-          { name: "씨앗", base: 3, next: 6, nextName: "꽃봉오리" },
-          { name: "꽃봉오리", base: 6, next: 11, nextName: "꽃" },
-          { name: "꽃", base: 11, next: 21, nextName: "나무" },
-          { name: "나무", base: 21, next: undefined, nextName: undefined },
-        ];
-        const meta = LEVELS[Math.min(Math.max(lvl - 1, 0), 4)];
-        const remaining = meta.next != null ? Math.max(0, meta.next - successes) : null;
-        const pct = meta.next != null
-          ? Math.min(100, Math.max(0, Math.round(((successes - meta.base) / (meta.next - meta.base)) * 100)))
+        const tier = tierFor(lvl);
+        const next = nextTier(lvl);
+        const remaining = next ? Math.max(0, next.minMatches - successes) : null;
+        const pct = next
+          ? Math.min(100, Math.max(0, Math.round(((successes - tier.minMatches) / (next.minMatches - tier.minMatches)) * 100)))
           : 100;
         return (
           <button
@@ -390,9 +385,9 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm font-semibold text-foreground truncate">{meta.name}</span>
+                  <span className="text-sm font-semibold text-foreground truncate">{tier.name}</span>
                   <span className="text-xs text-muted-foreground flex-shrink-0">
-                    {remaining != null ? `다음 ${meta.nextName}까지 ${remaining}건` : "최고 등급"}
+                    {remaining != null ? `다음 ${next?.name}까지 ${remaining}건` : "최고 등급"}
                   </span>
                 </div>
                 <div className="mt-1.5 h-1.5 bg-muted rounded-full overflow-hidden">

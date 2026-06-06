@@ -223,11 +223,4 @@ export const SPECIALTY_FILTER_OPTIONS = [
   "결혼목적", "진지한연애", "자연스럽게",
 ];
 
-/** 레벨 메타 */
-export const LEVEL_META: Record<MatchmakerLevel, { name: string; emoji: string }> = {
-  1: { name: "씨앗",   emoji: "🌱" },
-  2: { name: "새싹",   emoji: "🌿" },
-  3: { name: "꽃",     emoji: "🌸" },
-  4: { name: "나무",   emoji: "🌳" },
-  5: { name: "숲",     emoji: "🌲" },
-};
+// 레벨 메타는 lib/matchmakerLevels (단일 소스)로 이전 — tierFor(level) 사용
