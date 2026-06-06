@@ -337,14 +337,14 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
     <div className="h-screen flex flex-col bg-background">
       {/* ── 통일 헤더 (ADR 0014) ── */}
       <header className="sticky top-0 z-10 flex-shrink-0 bg-card/95 backdrop-blur border-b border-border">
-        <div className="max-w-2xl mx-auto px-5 h-14 flex items-center justify-between">
+        <div className="max-w-2xl mx-auto px-5 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {onBack && (
               <button onClick={onBack} className="p-1.5 hover:bg-muted/50 rounded-full transition-colors -ml-1.5">
                 <ChevronLeft className="w-5 h-5" />
               </button>
             )}
-            <h1 className="text-base font-bold text-foreground">주선 대시보드</h1>
+            <h1 className="text-lg font-bold text-foreground">주선 대시보드</h1>
           </div>
 
           <div className="flex items-center gap-2">

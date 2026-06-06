@@ -243,8 +243,8 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
     <div className="min-h-screen bg-background pb-20">
       {/* 통일 헤더 — sticky + bg-card/95 + border-b + h-14 (ADR 0014) */}
       <header className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border">
-        <div className="max-w-2xl mx-auto px-5 h-14 flex items-center justify-between">
-          <h1 className="text-base font-bold text-foreground">소개</h1>
+        <div className="max-w-2xl mx-auto px-5 h-16 flex items-center justify-between">
+          <h1 className="text-lg font-bold text-foreground">소개</h1>
           <div className="flex items-center gap-2">
             <button
               onClick={onNotificationClick}
@@ -302,9 +302,9 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
 
       {/* Filter Panel */}
       {showFilter && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowFilter(false)}>
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={() => setShowFilter(false)}>
           <div
-            className="absolute right-0 top-0 h-full w-full max-w-sm bg-background overflow-y-auto"
+            className="absolute right-0 top-0 h-full w-full max-w-sm bg-background overflow-y-auto animate-slide-in-right"
             onClick={e => e.stopPropagation()}
           >
             <div className="sticky top-0 bg-background/90 backdrop-blur-xl border-b border-border px-6 py-4 flex items-center justify-between">
@@ -522,16 +522,12 @@ function ProfileCard({
           <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
         )}
 
-        {/* 커버 — 팔레트 무지개 워시 (탭하면 fade out) */}
+        {/* 커버 — 팔레트 물감 워시 (탭하면 fade out) */}
         {!revealed && (
           <div
-            className="absolute inset-0 transition-opacity duration-700 flex items-center justify-center"
+            className="absolute inset-0 transition-opacity duration-700"
             style={{ opacity: peeling ? 0 : 1, ...PALETTE_COVER_STYLE }}
-          >
-            <span className="text-xs font-medium text-foreground/70 bg-white/75 rounded-full px-3 py-1 shadow-sm">
-              {peeling ? "여는 중…" : "탭해서 열기"}
-            </span>
-          </div>
+          />
         )}
 
 
@@ -875,9 +871,6 @@ function AiSignalCard({
                 {[rec.teaserAge ? `${rec.teaserAge}세` : null, rec.teaserLocation].filter(Boolean).join(" · ")}
               </p>
             )}
-            <span className="text-xs font-medium text-foreground/70 bg-white/75 rounded-full px-3 py-1 shadow-sm">
-              {peeling ? "여는 중…" : "탭해서 열기"}
-            </span>
             <div className="absolute top-2 left-2">
               <span className="text-xs font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 bg-white/85 text-gold-strong shadow-sm">
                 <Sparkles className="w-2.5 h-2.5" /> AI
