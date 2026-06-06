@@ -190,7 +190,7 @@ export function MyPageScreen({
       </header>
 
       {/* 아바타 + 이름 영역 */}
-      <div className="bg-card border-b border-border px-4">
+      <div className="border-b border-border px-4">
         <div className="max-w-2xl mx-auto py-5">
           {/* 아바타 + 이름 */}
           <div className="flex items-center gap-4">

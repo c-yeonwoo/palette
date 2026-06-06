@@ -376,7 +376,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
           <button
             onClick={() => onNavigateToReward?.()}
             disabled={!onNavigateToReward}
-            className="flex-shrink-0 w-full bg-card border-b border-border text-left transition-colors enabled:hover:bg-muted/30 disabled:cursor-default"
+            className="flex-shrink-0 w-full border-b border-border text-left transition-colors enabled:hover:bg-muted/30 disabled:cursor-default"
             aria-label="등급 & 포인트"
           >
             <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
@@ -401,7 +401,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
       })()}
 
       {/* ── 메인 탭 ── */}
-      <div className="flex-shrink-0 flex border-b border-border bg-card">
+      <div className="flex-shrink-0 flex border-b border-border">
         {([
           { key: "members", label: "내 지인", badge: members.length },
           { key: "requests", label: "주선 요청", badge: pendingRequests.length },
