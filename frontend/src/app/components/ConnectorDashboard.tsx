@@ -404,7 +404,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
       <div className="flex-shrink-0 flex border-b border-border">
         {([
           { key: "members", label: "내 지인", badge: members.length },
-          { key: "requests", label: "주선 요청", badge: pendingRequests.length },
+          { key: "requests", label: "소개 요청", badge: pendingRequests.length },
           { key: "history", label: "이력", badge: 0 },
         ] as const).map(({ key, label, badge }) => (
           <button
@@ -503,14 +503,14 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
             </div>
           )}
 
-          {/* ════ 주선 요청 탭 ════ */}
+          {/* ════ 소개 요청 탭 ════ */}
           {activeMainTab === "requests" && (
             <div className="space-y-4">
               {pendingRequests.length === 0 ? (
                 <div className="py-16 text-center space-y-3">
                   <div className="text-4xl">📭</div>
-                  <p className="font-semibold text-foreground">대기 중인 주선 요청이 없어요</p>
-                  <p className="text-sm text-muted-foreground">지인을 모아두면 주선 요청이 들어와요</p>
+                  <p className="font-semibold text-foreground">대기 중인 소개 요청이 없어요</p>
+                  <p className="text-sm text-muted-foreground">지인을 모아두면 소개 요청이 들어와요</p>
                   {onNavigateToFriends && (
                     <button
                       onClick={onNavigateToFriends}
@@ -850,7 +850,7 @@ function RequestDetailModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>주선 요청 상세</DialogTitle>
+          <DialogTitle>소개 요청 상세</DialogTitle>
           <DialogDescription>
             <span className={`font-semibold ${statusInfo.color}`}>{statusInfo.label}</span>
           </DialogDescription>

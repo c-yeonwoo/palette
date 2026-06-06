@@ -629,7 +629,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular }: MyProfil
             </section>
           )}
 
-          {/* 공개 설정(소개받기/주선받기) 토글은 마이페이지로 이동됨 (MyPageScreen) */}
+          {/* 공개 설정(프로필 공개/소개 받기) 토글은 마이페이지로 이동됨 (MyPageScreen) */}
         </div>
       )}
 

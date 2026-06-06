@@ -58,14 +58,14 @@ export function MyPageScreen({
   const [pendingAccept, setPendingAccept] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 공개 설정 토글 — 소개받기(노출/visibility) + 주선받기(isAcceptingMatches) (MyProfile 에서 이동)
+  // 공개 설정 토글 — 프로필 공개(visibility) + 소개 받기(isAcceptingMatches) (MyProfile 에서 이동)
   const handleToggleVisibility = async (visible: boolean) => {
     try {
       const result = await api.patch<{ isAcceptingMatches: boolean; hiddenAt: string | null }>(
         "/api/v1/profile/settings/visibility", { visible }
       );
       setProfile(prev => prev ? { ...prev, settings: { isAcceptingMatches: prev.settings?.isAcceptingMatches ?? true, hiddenAt: result.hiddenAt } } : prev);
-      toast.success(visible ? "소개받기가 시작됐어요" : "소개받기를 잠시 멈췄어요");
+      toast.success(visible ? "프로필을 공개했어요" : "프로필을 숨겼어요");
     } catch {
       toast.error("설정 변경에 실패했습니다");
     }
@@ -80,7 +80,7 @@ export function MyPageScreen({
     try {
       await api.patch("/api/v1/profile/settings", { isAcceptingMatches: pendingAccept });
       setProfile(prev => prev ? { ...prev, settings: { hiddenAt: prev.settings?.hiddenAt ?? null, isAcceptingMatches: pendingAccept } } : prev);
-      toast.success(pendingAccept ? "주선받기가 활성화되었습니다" : "주선받기가 비활성화되었습니다");
+      toast.success(pendingAccept ? "소개 받기가 활성화되었습니다" : "소개 받기가 비활성화되었습니다");
       setShowAcceptConfirm(false);
     } catch {
       toast.error("설정 변경에 실패했습니다");
@@ -345,7 +345,7 @@ export function MyPageScreen({
                 subtitle={
                   matchmaker?.level
                     ? `Lv.${matchmaker.level} · ${(matchmaker.totalPoints ?? 0).toLocaleString()}P`
-                    : "주선 요청 관리 및 수익 확인"
+                    : "소개 요청 관리 및 수익 확인"
                 }
                 onClick={onNavigateToConnector}
               />
@@ -353,24 +353,24 @@ export function MyPageScreen({
           </div>
         </section>
 
-        {/* 공개 설정 — 소개받기(노출) + 주선받기 (MyProfile 에서 이동) */}
+        {/* 공개 설정 — 프로필 공개 + 소개 받기 (MyProfile 에서 이동) */}
         {!isMatchmakerOnly && profile && (
           <section>
             <SectionHeader title="공개 설정" className="px-1 mb-3" />
             <div className="bg-card rounded-2xl border border-border/60 shadow-card overflow-hidden divide-y divide-border">
               <div className="flex items-center justify-between px-4 py-3.5">
                 <div className="min-w-0 pr-3">
-                  <p className="text-sm font-medium text-foreground">소개받기</p>
+                  <p className="text-sm font-medium text-foreground">프로필 공개</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {profile.settings?.hiddenAt ? "잠시 멈춤 — 지인 피드에 안 보여요" : "지인 피드에 내 프로필이 노출돼요"}
+                    {profile.settings?.hiddenAt ? "숨김 — 지인 피드에 보이지 않아요" : "지인 피드에 내 프로필이 노출돼요"}
                   </p>
                 </div>
                 <Switch checked={!profile.settings?.hiddenAt} onCheckedChange={handleToggleVisibility} />
               </div>
               <div className="flex items-center justify-between px-4 py-3.5">
                 <div className="min-w-0 pr-3">
-                  <p className="text-sm font-medium text-foreground">주선받기</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">지인이 보내는 주선 요청을 받아요</p>
+                  <p className="text-sm font-medium text-foreground">소개 받기</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">지인이 보내는 소개 요청을 받아요</p>
                 </div>
                 <Switch checked={!!profile.settings?.isAcceptingMatches} onCheckedChange={handleToggleAccepting} />
               </div>
@@ -433,7 +433,7 @@ export function MyPageScreen({
           <div className="py-3 space-y-3">
             <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-3 text-xs text-destructive space-y-1">
               <p>• 프로필 및 사진 삭제</p>
-              <p>• 주선 요청 내역 삭제</p>
+              <p>• 소개 요청 내역 삭제</p>
               <p>• 친구 관계 삭제</p>
               <p>• 모든 알림 및 기록 삭제</p>
             </div>
@@ -449,15 +449,15 @@ export function MyPageScreen({
         </DialogContent>
       </Dialog>
 
-      {/* 주선받기 토글 확인 다이얼로그 */}
+      {/* 소개 받기 토글 확인 다이얼로그 */}
       <Dialog open={showAcceptConfirm} onOpenChange={setShowAcceptConfirm}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>{pendingAccept ? "주선받기 활성화" : "주선받기 비활성화"}</DialogTitle>
+            <DialogTitle>{pendingAccept ? "소개 받기 활성화" : "소개 받기 비활성화"}</DialogTitle>
             <DialogDescription>
               {pendingAccept
-                ? "지인이 보내는 주선 요청을 받게 됩니다."
-                : "더 이상 주선 요청을 받지 않습니다."}
+                ? "지인이 보내는 소개 요청을 받게 됩니다."
+                : "더 이상 소개 요청을 받지 않습니다."}
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-2 pt-1">

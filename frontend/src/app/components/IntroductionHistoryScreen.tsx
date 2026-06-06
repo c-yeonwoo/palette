@@ -220,7 +220,7 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
                 <div>
                   <p className="font-medium text-muted-foreground">진행 중인 소개가 없어요</p>
                   <p className="text-sm text-muted-foreground/70 mt-1">
-                    홈 피드에서 마음에 드는 분께<br />주선 요청을 해보세요
+                    홈 피드에서 마음에 드는 분께<br />소개 요청을 해보세요
                   </p>
                 </div>
               </div>
@@ -412,7 +412,7 @@ function RequestTimeline({ request }: { request: MatchRequestWithRole }) {
 
     if (myRole === "requester") {
       // 주선자가 검토하는 단계
-      const step1: Step = { label: "주선 요청 전달", sub: `${matchmakerName}님께 전달됐어요`, state: "done" };
+      const step1: Step = { label: "소개 요청 전달", sub: `${matchmakerName}님께 전달됐어요`, state: "done" };
 
       if (status === "PENDING") {
         return [
@@ -454,7 +454,7 @@ function RequestTimeline({ request }: { request: MatchRequestWithRole }) {
       return [{ label: "매칭 성사! 🎉", sub: "연락처를 확인해보세요", state: "done" }];
     }
     if (status === "REJECTED_BY_TARGET") {
-      return [{ label: "거절하셨어요", sub: "언제든 마음이 바뀌면 주선을 요청해보세요", state: "failed" }];
+      return [{ label: "거절하셨어요", sub: "언제든 마음이 바뀌면 소개를 요청해보세요", state: "failed" }];
     }
     return [{ label: "처리 중", state: "active" }];
   })();

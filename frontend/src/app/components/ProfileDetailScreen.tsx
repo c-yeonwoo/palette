@@ -315,7 +315,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
 
   const handleMatchRequest = () => {
     if (mutualFriends.length === 0) {
-      toast.error("공통 친구가 없어 주선을 요청할 수 없습니다");
+      toast.error("공통 친구가 없어 소개를 요청할 수 없습니다");
       return;
     }
     setShowMatchmakerModal(true);
@@ -345,7 +345,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
         offeredPoints: selectedPoints,
       });
 
-      toast.success(`${selectedMatchmaker.name}님께 주선을 요청했습니다`);
+      toast.success(`${selectedMatchmaker.name}님께 소개를 요청했습니다`);
       setAlreadyRequested(true);
       setShowMatchmakerModal(false);
       setModalStep(1);
@@ -353,7 +353,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
       setRequestMessage("");
     } catch (error) {
       console.error("Failed to create matchmaking request:", error);
-      toast.error("주선 요청에 실패했습니다");
+      toast.error("소개 요청에 실패했습니다");
     }
   };
 
@@ -397,10 +397,10 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
           </div>
 
           <h2 className="text-xl font-bold mb-2">
-            {degree === 2 ? "2촌" : "3촌"} 프로필 열람
+            {degree === 2 ? "친구의 친구" : "한 다리 더 건너"} 프로필 열람
           </h2>
           <p className="text-muted-foreground mb-1">
-            {degree === 2 ? "2촌 친구의 친구" : "3촌 지인"}입니다
+            {degree === 2 ? "친구의 친구" : "친구의 친구의 친구"}예요
           </p>
           {mutualFriends.length > 0 && (
             <p className="text-sm text-primary mb-4">
@@ -819,7 +819,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
           {mutualFriends.length === 0 ? (
             <div className="rounded-2xl bg-muted/60 border border-border p-4 text-center space-y-3">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">주선 요청을 하려면 공통 친구가 필요해요</p>
+                <p className="text-sm font-medium text-muted-foreground">소개 요청을 하려면 공통 친구가 필요해요</p>
                 <p className="text-xs text-muted-foreground">친구를 연결하면 지인을 통한 신뢰있는 주선이 가능해요.</p>
               </div>
               {onNavigateToFriends && (
@@ -842,10 +842,10 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
             >
               <Send className="w-5 h-5 mr-2" />
               {alreadyRequested
-                ? "주선 요청 완료"
+                ? "소개 요청 완료"
                 : inCoolTime
                 ? `쿨타임 중 (${coolTimeRemainingDays}일 남음)`
-                : "주선 요청하기"}
+                : "소개 요청하기"}
             </Button>
           )}
         </div>
@@ -880,9 +880,9 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
               <div className="animate-in fade-in slide-in-from-right duration-300">
                 {/* Modal Header */}
                 <div className="border-b border-border px-6 py-4">
-                  <h3 className="text-lg font-semibold text-center">주선 요청</h3>
+                  <h3 className="text-lg font-semibold text-center">소개 요청</h3>
                   <p className="text-sm text-muted-foreground text-center mt-1">
-                    어떤 분께 주선을 요청하시겠습니까?
+                    어떤 분께 소개를 요청하시겠습니까?
                   </p>
                 </div>
 
@@ -959,7 +959,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
               <div className="animate-in fade-in slide-in-from-right duration-300">
                 {/* Modal Header */}
                 <div className="border-b border-border px-6 py-4">
-                  <h3 className="text-lg font-semibold text-center">주선 요청</h3>
+                  <h3 className="text-lg font-semibold text-center">소개 요청</h3>
                   <p className="text-sm text-muted-foreground text-center mt-1">
                     주선자에게 감사 포인트를 설정해주세요
                   </p>

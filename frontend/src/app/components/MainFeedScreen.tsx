@@ -225,7 +225,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
       {/* 통일 헤더 — sticky + bg-card/95 + border-b + h-14 (ADR 0014) */}
       <header className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-          <h1 className="text-base font-bold text-foreground">주변 지인</h1>
+          <h1 className="text-base font-bold text-foreground">소개</h1>
           <div className="flex items-center gap-2">
             <button
               onClick={onNotificationClick}
@@ -566,9 +566,9 @@ function RelationshipBadge({ degree, mutualFriends }: { degree?: number; mutualF
     return (
       <div className="flex items-center gap-1 min-w-0">
         <span className="flex-shrink-0 text-xs font-bold bg-brand-soft text-primary rounded-full px-1.5 py-0.5 leading-none">
-          1촌
+          내 지인
         </span>
-        <p className="text-xs text-muted-foreground truncate">직접 연결</p>
+        <p className="text-xs text-muted-foreground truncate">직접 아는 사이</p>
       </div>
     );
   }
@@ -580,7 +580,7 @@ function RelationshipBadge({ degree, mutualFriends }: { degree?: number; mutualF
     return (
       <div className="flex items-center gap-1 min-w-0">
         <span className="flex-shrink-0 text-xs font-bold bg-secondary text-muted-foreground rounded-full px-1.5 py-0.5 leading-none border border-border">
-          2촌
+          친구의 친구
         </span>
         <p className="text-xs text-muted-foreground truncate">
           {connector}{extra} 통해
@@ -957,7 +957,7 @@ function NoFriendsNudge({ onNavigateToFriends }: { onNavigateToFriends?: () => v
 
       <h3 className="text-lg font-bold mb-2">아직 연결된 지인이 없어요</h3>
       <p className="text-sm text-muted-foreground leading-relaxed max-w-[260px] mb-2">
-        친구를 추가하면 주변 지인을 소개받을 수 있어요
+        친구를 추가하면 친구의 친구를 소개받을 수 있어요
       </p>
       <p className="text-xs text-muted-foreground/70 max-w-[240px] mb-8">
         팔레트는 지인 네트워크 기반이라 친구가 많을수록 더 많은 분을 만날 수 있어요

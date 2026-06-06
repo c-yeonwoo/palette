@@ -1150,7 +1150,7 @@ function BottomNavigation({
         ]
       : [
           { screen: "mainFeed", icon: Home, label: "홈" },
-          { screen: "introductionHistory", icon: Clock, label: "소개" },
+          { screen: "introductionHistory", icon: Clock, label: "인연" },
           { screen: "connectorDashboard", icon: Heart, label: "주선" },
           { screen: "myPage", icon: User, label: "나", matchScreens: ["myPage", "myProfile"] },
         ];
