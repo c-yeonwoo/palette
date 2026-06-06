@@ -598,11 +598,14 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   return (
     <div
       className="min-h-screen pb-24"
-      style={{
-        background: accentColor
-          ? `linear-gradient(180deg, ${accentColor}29 0%, ${accentColor}0F 220px, var(--background) 460px)`
-          : "var(--background)",
-      }}
+      style={accentColor
+        ? {
+            // 인물 메인 컬러를 흰색 위에 옅게(톤다운) 전면에 깔아 화사하게 — 회색 톤 제거
+            backgroundColor: "#ffffff",
+            backgroundImage: `linear-gradient(180deg, ${accentColor}26 0%, ${accentColor}12 300px, ${accentColor}0A 100%)`,
+          }
+        : { backgroundColor: "var(--background)" }
+      }
     >
       {/* Header */}
       <div
