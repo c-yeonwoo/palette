@@ -45,7 +45,18 @@ git log origin/main..HEAD --oneline
 
 ## 🟠 P1 — 1-2주 내 완료 (높은 우선순위)
 
-### 🛡️ 프라이버시 가드 누락 (현재 토글 무동작)
+### 🛡️ Trust & Safety (어뷰징 대응) — 전체: `docs/TRUST_AND_SAFETY.md`
+- [x] **`소개받기`/`주선받기` 토글 서버 강제** ✅ MatchabilityFilter (ADR 0022) — 피드/AI시그널/주선요청 3곳에서 `canReceiveMatches()` 강제
+- [x] **출금 본인인증 게이트** ✅ 휴대폰 인증 계정만 출금 (ADR 0022)
+- [ ] **출금 holding period + 한도 + 신규계정 cooldown** (P0) — WithdrawalRequest 라이프사이클
+- [ ] **결제 Toss 서버검증** (P0) — paymentKey 존재 → confirm/webhook, 차지백 시 커미션 회수
+- [ ] **콜루전 기본 탐지** (P0) — 디바이스/IP/CI 공유, 폐쇄 루프, 가입↔성사 시간
+- [ ] **rate limit** (친구/매칭/Nudge) + **유저간 신고/차단 양방향 격리** (P1)
+- [ ] **디바이스/IP 시그널 캡처** (P1, 콜루전 입력) · **감사포인트 비출금화**(신설 시)
+- [ ] **Vision/이미지해시 도용탐지** · **리뷰 verified-match gate** (P2)
+
+<details><summary>(해소됨) 프라이버시 가드 누락 — 원문</summary>
+
 - [ ] **`소개받기`(=hiddenAt) / `주선받기`(=isAcceptingMatches) 토글이 실제로 동작하도록**
   - 현재: UI 토글은 있는데 백엔드에서 **어디서도 필터링에 사용되지 않음** (DB 저장만 됨)
   - 검증한 위치 — 누락:
@@ -57,6 +68,8 @@ git log origin/main..HEAD --oneline
     - 주선받기 off → 내가 주선자로 경유되지 않음 (내 1촌 A 의 피드에 내 1촌 B 가 안 보임)
     - 둘 다 off 시 매칭 요청 생성 자체가 막혀야 함
   - 적용 방향: 1) 도메인 서비스에 `MatchabilityFilter` 도입, 2) JPA repository 쿼리에 join + WHERE 추가, 3) Feed 결과 매핑 시 필터
+
+</details>
 
 ### UX / 온보딩 (베타 이탈 방지)
 - [ ] **온보딩 진행률 정확히 표시** — 실제 화면 수 또는 예상 소요 시간 표기

@@ -179,7 +179,8 @@ Admin: `/api/v1/admin/**` → `hasRole("ADMIN")` (단 `/api/v1/admin/auth/login`
 2. 각 1촌의 친구들 = 2촌 후보
 3. 본인/1촌/매칭 이력/숨김 제외
 4. 반대 성별 + 필터(나이/키/지역/직업) 통과한 프로필만
-5. 공통 1촌(주선자 후보)도 함께 반환
+5. **MatchabilityFilter**: `ProfileSettings.canReceiveMatches()`(소개/주선 받기 on + 숨김 아님) 인 대상만 — 피드/AI시그널/주선요청 공통 서버 강제 (ADR 0022)
+6. 공통 1촌(주선자 후보)도 함께 반환
 
 ### 6.3 주선 요청 (2단계 승인)
 1. `POST /api/v1/matchmaking/request` (요청자 → 대상자, 주선자 지정)

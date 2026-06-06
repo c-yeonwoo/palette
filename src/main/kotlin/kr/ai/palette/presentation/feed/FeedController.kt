@@ -76,6 +76,9 @@ class FeedController(
             // 반대 성별만 필터링
             if (user != null && user.publicInfo.gender != currentUserGender) {
                 profileRepository.findByUserId(userId)?.let { profile ->
+                    // 소개/주선 받기 off·숨김 처리한 대상자 제외 (ADR 0022)
+                    if (!profile.settings.canReceiveMatches()) return@let null
+
                     // 나이 필터
                     val userAge = user.publicInfo.getAge()
                     if (ageMin != null && userAge < ageMin) return@let null

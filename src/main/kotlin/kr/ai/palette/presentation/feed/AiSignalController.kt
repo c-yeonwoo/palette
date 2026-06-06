@@ -137,6 +137,7 @@ class AiSignalController(
             if (uid.toString() in excluded) return@filter false
             if (uid in recentlyRecommended) return@filter false
             if (uid in blockedTargets) return@filter false
+            if (!profile.settings.canReceiveMatches()) return@filter false  // 소개/주선 받기 off·숨김 제외 (ADR 0022)
             val user = userRepository.findById(profile.userId) ?: return@filter false
             if (!exposeSeed && seedUserPolicy.isSeed(user)) return@filter false
             user.publicInfo.gender != currentGender

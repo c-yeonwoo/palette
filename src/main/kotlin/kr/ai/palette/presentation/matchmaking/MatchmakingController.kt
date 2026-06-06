@@ -8,6 +8,7 @@ import kr.ai.palette.domain.matchmaking.MatchmakingRequestId
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestRepository
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestStatus
 import kr.ai.palette.domain.notification.PaletteEvent
+import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.UserRepository
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.http.ResponseEntity
@@ -21,6 +22,7 @@ class MatchmakingController(
     private val matchmakingRequestRepository: MatchmakingRequestRepository,
     private val matchmakingService: MatchmakingService,
     private val userRepository: UserRepository,
+    private val profileRepository: ProfileRepository,
     private val eventPublisher: ApplicationEventPublisher
 ) {
 
@@ -66,12 +68,17 @@ class MatchmakingController(
             }
         }
 
+        val targetUserId = UserId(UUID.fromString(request.targetUserId))
+
         // Check if already requested
-        if (matchmakingRequestRepository.existsByRequesterIdAndTargetUserId(
-                requesterId,
-                UserId(UUID.fromString(request.targetUserId))
-            )) {
+        if (matchmakingRequestRepository.existsByRequesterIdAndTargetUserId(requesterId, targetUserId)) {
             return ResponseEntity.badRequest().build()
+        }
+
+        // 대상자가 소개/주선 받기를 꺼뒀거나 숨김이면 요청 차단 (ADR 0022)
+        val targetProfile = profileRepository.findByUserId(targetUserId)
+        if (targetProfile != null && !targetProfile.settings.canReceiveMatches()) {
+            return ResponseEntity.status(403).build()
         }
 
         // Find matchmaker by real name

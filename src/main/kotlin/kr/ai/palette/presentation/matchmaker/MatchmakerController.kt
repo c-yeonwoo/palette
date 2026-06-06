@@ -220,6 +220,14 @@ class MatchmakerController(
         val matchmaker = matchmakerRepository.findByUserId(authUser.userId)
             ?: return ResponseEntity.notFound().build()
 
+        // 어뷰징 방지: 출금은 본인인증(휴대폰) 완료 계정만 (ADR 0022).
+        // 정식: NICE 실인증 + 계좌 실명(CI) 일치 + holding period 로 강화.
+        val user = userRepository.findById(authUser.userId)
+            ?: return ResponseEntity.notFound().build()
+        if (!user.privateInfo.isPhoneVerified) {
+            return ResponseEntity.status(403).body(mapOf("error" to "출금은 본인인증(휴대폰) 완료 후 가능합니다"))
+        }
+
         if (request.amount <= 0) {
             return ResponseEntity.badRequest().body(mapOf("error" to "출금 금액은 0보다 커야 합니다"))
         }
