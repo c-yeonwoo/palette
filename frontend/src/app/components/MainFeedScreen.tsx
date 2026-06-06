@@ -180,6 +180,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
   };
 
   const [isFeedVisible, setIsFeedVisible] = useState(true);
+  const [homeTab, setHomeTab] = useState<"recommend" | "network">("recommend");
 
   const fetchUserAndFeed = async (f: FilterState = filters) => {
     try {
@@ -217,6 +218,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
   const applyFilters = () => {
     setFilters(pendingFilters);
     setShowFilter(false);
+    setHomeTab("network");
     fetchUserAndFeed(pendingFilters);
   };
 
@@ -368,71 +370,86 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
         </div>
       )}
 
-      {/* F08 데일리 컬러 매칭 배너 */}
-      <div className="max-w-2xl mx-auto pt-2">
-        <DailyMatchBanner className="mb-3" />
-      </div>
-
-      {/* Feed */}
-      <div className="max-w-2xl mx-auto px-4">
-        {loading ? (
-          <LoadingState />
-        ) : userProfile?.accountType === "MATCHMAKER_ONLY" ? (
-          <EmptyState title="주선자 전용 계정" description="주선 기능은 주선자 대시보드에서 이용하실 수 있습니다" />
-        ) : !isFeedVisible ? (
-          <div className="flex flex-col items-center gap-3 py-16 text-center px-4">
-            <span className="text-4xl">🙈</span>
-            <p className="font-semibold text-foreground">소개받기가 잠시 멈춰 있어요</p>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              내 프로필이 지인의 피드에 보이지 않는 상태예요.<br />
-              내 프로필 → 설정 → 소개받기를 켜면 다시 시작돼요.
-            </p>
-          </div>
-        ) : feedItems.length === 0 ? (
-          hasActiveFilters ? (
-            <EmptyState title="조건에 맞는 지인이 없어요" description="필터 조건을 조정해보세요" />
-          ) : (
-            <div className="space-y-5">
-              {/* AI Signal 은 지인 0명이어도 항상 표시 (빈 화면 방지) */}
-              {aiSignal && aiSignal.recommendations.length > 0 && (
-                <AiSignalSection
-                  aiSignal={aiSignal}
-                  myColorType={(userProfile?.colorType?.type ?? null) as ColorType | null}
-                  onChanged={refetchAiSignal}
-                  onProfileClick={() => {}}
-                />
-              )}
-              <FirstTimeGuide onNavigateToFriends={onNavigateToFriends} />
+      {(() => {
+        const myColor = (userProfile?.colorType?.type ?? null) as ColorType | null;
+        const isMatchmakerOnly = userProfile?.accountType === "MATCHMAKER_ONLY";
+        const hasAiSignal = !!aiSignal && aiSignal.recommendations.length > 0;
+        return (
+          <div className="max-w-2xl mx-auto px-4">
+            {/* 컬러 궁합 배너 — 카드와 동일한 16px inset, 위 여백 확대 */}
+            <div className="pt-6">
+              <DailyMatchBanner />
             </div>
-          )
-        ) : (
-          <div className="space-y-5">
-            {/* AI Signal Section — 오늘의 추천 (홈 최상단) */}
-            {aiSignal && aiSignal.recommendations.length > 0 && (
-              <AiSignalSection
-                aiSignal={aiSignal}
-                myColorType={(userProfile?.colorType?.type ?? null) as ColorType | null}
-                onChanged={refetchAiSignal}
-                onProfileClick={(item) => {
-                  const feedItem = feedItems.find(f => f.profile.userId === item.profile.userId);
-                  if (feedItem) onProfileClick?.(feedItem);
-                }}
-              />
+
+            {loading ? (
+              <div className="pt-5"><LoadingState /></div>
+            ) : isMatchmakerOnly ? (
+              <EmptyState title="주선자 전용 계정" description="주선 기능은 주선자 대시보드에서 이용하실 수 있습니다" />
+            ) : !isFeedVisible ? (
+              <div className="flex flex-col items-center gap-3 py-16 text-center px-4">
+                <span className="text-4xl">🙈</span>
+                <p className="font-semibold text-foreground">소개받기가 잠시 멈춰 있어요</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  내 프로필이 지인의 피드에 보이지 않는 상태예요.<br />
+                  마이페이지 → 공개 설정 → 소개 받기를 켜면 다시 시작돼요.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* 내부 탭 — 오늘의 추천 / 지인 */}
+                <div className="flex gap-1 p-1 mt-5 rounded-2xl bg-surface-sunken">
+                  {([["recommend", "오늘의 추천"], ["network", "지인"]] as const).map(([key, label]) => (
+                    <button
+                      key={key}
+                      onClick={() => setHomeTab(key)}
+                      className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                        homeTab === key ? "bg-card text-foreground shadow-card" : "text-muted-foreground"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="pt-4">
+                  {homeTab === "recommend" ? (
+                    hasAiSignal ? (
+                      <AiSignalSection
+                        aiSignal={aiSignal!}
+                        myColorType={myColor}
+                        onChanged={refetchAiSignal}
+                        onProfileClick={(item) => {
+                          const feedItem = feedItems.find(f => f.profile.userId === item.profile.userId);
+                          onProfileClick?.(feedItem ?? item);
+                        }}
+                      />
+                    ) : (
+                      <EmptyState title="오늘의 추천을 준비 중이에요" description="프로필을 완성하면 더 정밀하게 추천해드려요" />
+                    )
+                  ) : feedItems.length === 0 ? (
+                    hasActiveFilters ? (
+                      <EmptyState title="조건에 맞는 지인이 없어요" description="필터 조건을 조정해보세요" />
+                    ) : (
+                      <FirstTimeGuide onNavigateToFriends={onNavigateToFriends} />
+                    )
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      {feedItems.map((item) => (
+                        <ProfileCard
+                          key={item.profile.userId}
+                          item={item}
+                          myColorType={myColor}
+                          onClick={() => onProfileClick?.(item)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {feedItems.map((item) => (
-                <ProfileCard
-                  key={item.profile.userId}
-                  item={item}
-                  myColorType={(userProfile?.colorType?.type ?? null) as ColorType | null}
-                  onClick={() => onProfileClick?.(item)}
-                />
-              ))}
-            </div>
           </div>
-        )}
-      </div>
+        );
+      })()}
     </div>
   );
 }
@@ -503,18 +520,21 @@ function ProfileCard({
           <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
         )}
 
-        {/* Gold 가림막 — 탭하면 부드럽게 fade out (reveal) */}
+        {/* 커버 — 상대의 '색'을 입힌 물감 워시 (탭하면 fade out) */}
         {!revealed && (
           <div
-            className="absolute inset-0 transition-opacity duration-700 flex items-center justify-center"
+            className="absolute inset-0 transition-opacity duration-700 flex flex-col items-center justify-center gap-2.5"
             style={{
               opacity: peeling ? 0 : 1,
-              background:
-                "radial-gradient(120% 120% at 30% 20%, hsl(var(--gold) / 0.30), transparent 55%)," +
-                "linear-gradient(150deg, hsl(28 14% 16%), hsl(30 16% 10%))",
+              background: theirMeta
+                ? `radial-gradient(120% 110% at 28% 18%, ${theirMeta.hex}59, transparent 62%), linear-gradient(155deg, hsl(var(--surface-sunken)), hsl(var(--muted)))`
+                : "linear-gradient(155deg, hsl(var(--surface-sunken)), hsl(var(--muted)))",
             }}
           >
-            <span className="text-[11px] tracking-wide" style={{ color: "hsl(var(--gold))" }}>
+            {theirMeta && (
+              <span className="w-10 h-10 rounded-full ring-2 ring-white/80 shadow-sm" style={{ backgroundColor: theirMeta.hex }} />
+            )}
+            <span className="text-xs font-medium text-foreground/55">
               {peeling ? "여는 중…" : "탭해서 열기"}
             </span>
           </div>
@@ -537,17 +557,6 @@ function ProfileCard({
                 {[job, location].filter(Boolean).join(" · ")}
               </p>
             )}
-          </div>
-        )}
-
-        {/* 미공개 상태: 색깔 타입 힌트 */}
-        {!revealed && theirMeta && (
-          <div className="absolute top-2 left-2">
-            <span
-              className="w-5 h-5 rounded-full border-2 border-white/80 shadow block"
-              style={{ backgroundColor: theirMeta.hex }}
-              title={theirMeta.name}
-            />
           </div>
         )}
 
@@ -588,15 +597,14 @@ function RelationshipBadge({ degree, mutualFriends }: { degree?: number; mutualF
   // 2촌: 공통 지인 통해
   if (degree === 2 && mutualFriends.length > 0) {
     const connector = mutualFriends[0].name;
-    const extra = mutualFriends.length > 1 ? ` 외 ${mutualFriends.length - 1}명` : "";
+    const more = mutualFriends.length - 1;
+    const label = more > 0 ? `${connector}님 외 ${more}명의 친구` : `${connector}님의 친구`;
     return (
       <div className="flex items-center gap-1 min-w-0">
         <span className="flex-shrink-0 text-xs font-bold bg-secondary text-muted-foreground rounded-full px-1.5 py-0.5 leading-none border border-border">
           친구의 친구
         </span>
-        <p className="text-xs text-muted-foreground truncate">
-          {connector}{extra} 통해
-        </p>
+        <p className="text-xs text-muted-foreground truncate">{label}</p>
       </div>
     );
   }
@@ -604,11 +612,12 @@ function RelationshipBadge({ degree, mutualFriends }: { degree?: number; mutualF
   // degree 없이 mutualFriends만 있는 경우 (fallback)
   if (mutualFriends.length > 0) {
     const name = mutualFriends[0].name;
-    const extra = mutualFriends.length > 1 ? ` 외 ${mutualFriends.length - 1}명` : "";
+    const more = mutualFriends.length - 1;
+    const label = more > 0 ? `${name}님 외 ${more}명의 지인` : `${name}님의 지인`;
     return (
       <div className="flex items-center gap-1 min-w-0">
         <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 flex-shrink-0" />
-        <p className="text-xs text-muted-foreground truncate">{name}{extra}의 지인</p>
+        <p className="text-xs text-muted-foreground truncate">{label}</p>
       </div>
     );
   }
@@ -656,21 +665,17 @@ function AiSignalSection({
   };
 
   return (
-    <div className="px-4 mb-5">
-      <div className="flex items-center gap-2 mb-1">
-        <div className="w-6 h-6 rounded-lg bg-brand-soft flex items-center justify-center">
-          <Sparkles className="w-3.5 h-3.5 text-primary" />
-        </div>
-        <p className="text-base font-bold text-foreground">오늘의 추천</p>
+    <div className="mb-2">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm text-muted-foreground">
+          {isSubscriber ? "오늘 당신과 가장 잘 맞는 색을 골랐어요" : "프로필 궁합도를 기반으로 추천해드려요"}
+        </p>
         {isSubscriber && (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-soft text-gold-strong">PASS</span>
+          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-brand-soft text-gold-strong">PASS</span>
         )}
       </div>
-      <p className="text-xs text-muted-foreground mb-3 ml-8">
-        {isSubscriber ? "오늘 당신과 가장 잘 맞는 색을 골랐어요" : "프로필 궁합도를 기반으로 추천해드려요"}
-      </p>
 
-      <div className="flex gap-3 overflow-x-auto pb-1">
+      <div className="grid grid-cols-2 gap-3">
         {recommendations.map((rec, i) => {
           if (rec.isUnlocked && rec.profile) {
             return (
@@ -689,36 +694,32 @@ function AiSignalSection({
           const teaserMeta = teaserColor ? COLOR_META[teaserColor] : null;
           const teaserCompat = getCompatibilityDeterministic(myColorType, teaserColor, `signal-${i}`);
           return (
-            <div key={i} className="flex-shrink-0 w-40">
+            <div key={i}>
               <button
                 onClick={() => setShowPaywall(true)}
                 className="block w-full text-left relative rounded-2xl overflow-hidden aspect-[3/4] shadow-card active:scale-[0.98] transition-transform"
                 style={{
-                  background:
-                    "radial-gradient(120% 120% at 30% 18%, hsl(var(--gold) / 0.30), transparent 55%)," +
-                    "linear-gradient(150deg, hsl(28 14% 16%), hsl(30 16% 10%))",
+                  background: teaserMeta
+                    ? `radial-gradient(120% 110% at 28% 18%, ${teaserMeta.hex}59, transparent 62%), linear-gradient(155deg, hsl(var(--surface-sunken)), hsl(var(--muted)))`
+                    : "linear-gradient(155deg, hsl(var(--surface-sunken)), hsl(var(--muted)))",
                 }}
               >
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3 text-center">
                   {teaserCompat && (
                     <div className="flex flex-col items-center">
-                      <span className="text-2xl font-extrabold" style={{ color: "hsl(var(--gold))" }}>{teaserCompat.score}%</span>
-                      <span className="text-[10px] text-white/70">{teaserCompat.label} 궁합</span>
+                      <span className="text-3xl font-extrabold text-foreground">{teaserCompat.score}%</span>
+                      <span className="text-xs text-muted-foreground">{teaserCompat.label} 궁합</span>
                     </div>
                   )}
-                  <div className="text-white/90 text-xs">
+                  <div className="text-foreground/60 text-xs">
                     {[rec.teaserAge ? `${rec.teaserAge}세` : null, rec.teaserLocation].filter(Boolean).join(" · ")}
                   </div>
-                  {teaserMeta && (
-                    <span className="w-4 h-4 rounded-full border border-white/60" style={{ backgroundColor: teaserMeta.hex }} />
-                  )}
-                  <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-brand-soft text-gold-strong">
+                  <span className="mt-1 inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-brand-soft text-gold-strong">
                     <Sparkles className="w-3 h-3" /> 구독하고 보기
                   </span>
                 </div>
                 <div className="absolute top-2 left-2">
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5"
-                    style={{ background: "hsl(var(--gold) / 0.9)", color: "hsl(var(--gold-foreground))" }}>
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 bg-brand-soft text-gold-strong">
                     <Sparkles className="w-2.5 h-2.5" /> AI
                   </span>
                 </div>
@@ -843,6 +844,7 @@ function AiSignalCard({
   const location = profile.locationInfo.sido;
   const theirColor = (profile.colorType?.type ?? null) as ColorType | null;
   const compat = getCompatibilityDeterministic(myColorType, theirColor, profile.userId);
+  const theirMeta = theirColor ? COLOR_META[theirColor] : null;
 
   const handleClick = () => {
     if (revealed) {
@@ -863,7 +865,7 @@ function AiSignalCard({
   const flipped = peeling || revealed;
 
   return (
-    <div onClick={handleClick} className="flex-shrink-0 w-36 cursor-pointer select-none">
+    <div onClick={handleClick} className="cursor-pointer select-none">
       <div className="relative aspect-[3/4]" style={{ perspective: "1000px" }}>
         <div
           className="relative w-full h-full transition-transform duration-700"
@@ -873,31 +875,33 @@ function AiSignalCard({
             transitionTimingFunction: "cubic-bezier(0.4, 0.0, 0.2, 1)",
           }}
         >
-          {/* ── 앞면 (물감 질감 + gold + 티저) — 잠긴 상태 ── */}
+          {/* ── 앞면 (상대의 색 물감 워시 + 티저) — 잠긴 상태 ── */}
           <div
             className="absolute inset-0 rounded-2xl overflow-hidden shadow-sm flex flex-col items-center justify-center gap-2"
             style={{
               backfaceVisibility: "hidden",
               WebkitBackfaceVisibility: "hidden",
-              background:
-                "radial-gradient(120% 120% at 30% 20%, hsl(var(--gold) / 0.32), transparent 55%)," +
-                "radial-gradient(120% 120% at 75% 80%, hsl(var(--gold) / 0.22), transparent 50%)," +
-                "linear-gradient(150deg, hsl(28 14% 16%), hsl(30 16% 10%))",
+              background: theirMeta
+                ? `radial-gradient(120% 110% at 28% 18%, ${theirMeta.hex}59, transparent 62%), linear-gradient(155deg, hsl(var(--surface-sunken)), hsl(var(--muted)))`
+                : "linear-gradient(155deg, hsl(var(--surface-sunken)), hsl(var(--muted)))",
             }}
           >
-            <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ background: "hsl(var(--gold) / 0.25)" }}>
-              <Sparkles className="w-4 h-4" style={{ color: "hsl(var(--gold))" }} />
-            </div>
+            {theirMeta ? (
+              <span className="w-10 h-10 rounded-full ring-2 ring-white/80 shadow-sm" style={{ backgroundColor: theirMeta.hex }} />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-brand-soft flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-primary" />
+              </div>
+            )}
             <div className="text-center px-2">
-              {rec.teaserAge && <p className="text-white/90 text-xs font-semibold">{rec.teaserAge}세</p>}
-              {rec.teaserLocation && <p className="text-white/60 text-[11px]">{rec.teaserLocation}</p>}
+              {rec.teaserAge && <p className="text-foreground text-xs font-semibold">{rec.teaserAge}세</p>}
+              {rec.teaserLocation && <p className="text-muted-foreground text-xs">{rec.teaserLocation}</p>}
             </div>
-            <span className="text-[10px] tracking-wide" style={{ color: "hsl(var(--gold))" }}>
+            <span className="text-xs font-medium text-foreground/55">
               {peeling ? "여는 중…" : "탭해서 열기"}
             </span>
             <div className="absolute top-2 left-2">
-              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5"
-                style={{ background: "hsl(var(--gold) / 0.9)", color: "hsl(var(--gold-foreground))" }}>
+              <span className="text-xs font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 bg-brand-soft text-gold-strong">
                 <Sparkles className="w-2.5 h-2.5" /> AI
               </span>
             </div>
@@ -916,12 +920,12 @@ function AiSignalCard({
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
             {rec.isFree && (
               <div className="absolute top-2 right-2">
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-500/90 text-white">FREE</span>
+                <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-green-500/90 text-white">FREE</span>
               </div>
             )}
             {compat && (
               <div className="absolute top-2 left-2">
-                <span className="text-[10px] font-bold bg-white/90 text-foreground rounded-full px-1.5 py-0.5 shadow-sm">
+                <span className="text-xs font-bold bg-white/90 text-foreground rounded-full px-1.5 py-0.5 shadow-sm">
                   {compat.label} {compat.score}%
                 </span>
               </div>

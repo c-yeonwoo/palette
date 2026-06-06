@@ -129,7 +129,7 @@ export function NotificationScreen({ onBack, onOpenMatch, isMockData = false }: 
         <h1 className="text-body font-semibold text-text-primary">
           알림
           {totalUnread > 0 && (
-            <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-brand text-brand-foreground text-[10px] font-bold">
+            <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-brand text-brand-foreground text-xs font-bold">
               {totalUnread > 99 ? "99+" : totalUnread}
             </span>
           )}
@@ -161,7 +161,7 @@ export function NotificationScreen({ onBack, onOpenMatch, isMockData = false }: 
             >
               {label}
               {unread > 0 && (
-                <span className="ml-1 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-brand text-brand-foreground text-[9px] font-bold">
+                <span className="ml-1 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-brand text-brand-foreground text-xs font-bold">
                   {unread}
                 </span>
               )}

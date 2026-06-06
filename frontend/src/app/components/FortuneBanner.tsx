@@ -126,13 +126,13 @@ export function FortuneBanner() {
                     className="w-8 h-8 rounded-full shadow-sm border border-white"
                     style={{ backgroundColor: myMeta.hex }}
                   />
-                  <span className="text-[9px] text-muted-foreground">나</span>
+                  <span className="text-xs text-muted-foreground">나</span>
                   <div className="w-px h-3 bg-border" />
                   <span
                     className="w-8 h-8 rounded-full shadow-sm border border-white"
                     style={{ backgroundColor: compatibleMeta.hex }}
                   />
-                  <span className="text-[9px] text-muted-foreground">인연</span>
+                  <span className="text-xs text-muted-foreground">인연</span>
                 </div>
                 <div className="flex-1">
                   <p className="text-xs font-semibold text-foreground mb-1">

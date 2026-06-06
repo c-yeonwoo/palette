@@ -126,7 +126,7 @@ export function BetaGateScreen({ onPassed }: BetaGateScreenProps) {
             {submitting ? "확인 중..." : "입장하기"}
           </Button>
 
-          <p className="text-[11px] text-muted-foreground text-center">
+          <p className="text-xs text-muted-foreground text-center">
             베타 코드가 없으신가요? 인스타그램{" "}
             <span className="text-orange-500 font-medium">@palette.kr</span>{" "}
             에서 신청해주세요

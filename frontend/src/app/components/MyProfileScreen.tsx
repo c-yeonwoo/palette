@@ -401,10 +401,10 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[10px] font-bold text-white">{profile.metrics.completionRate}%</span>
+                    <span className="text-xs font-bold text-white">{profile.metrics.completionRate}%</span>
                   </div>
                 </div>
-                <span className="text-[10px] text-white/70">완성도</span>
+                <span className="text-xs text-white/70">완성도</span>
               </button>
             )}
           </div>
@@ -429,7 +429,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
               className="w-20 h-20 flex-shrink-0 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/50 transition-colors flex flex-col items-center justify-center gap-1"
             >
               <Plus className="w-5 h-5 text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground">{sortedPhotos.length}/6</span>
+              <span className="text-xs text-muted-foreground">{sortedPhotos.length}/6</span>
             </button>
           )}
           {/* 사진 0장이면 안내 */}

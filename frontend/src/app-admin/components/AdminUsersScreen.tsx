@@ -170,7 +170,7 @@ export function AdminUsersScreen({ onBack, onSelectUser }: Props) {
                     <td className="px-4 py-3">
                       <span className="text-xs text-muted-foreground">{u.accountType}</span>
                       {u.role === "ADMIN" && (
-                        <span className="ml-1.5 inline-block text-[10px] px-1.5 py-0.5 rounded-full bg-foreground text-background font-medium">
+                        <span className="ml-1.5 inline-block text-xs px-1.5 py-0.5 rounded-full bg-foreground text-background font-medium">
                           ADMIN
                         </span>
                       )}

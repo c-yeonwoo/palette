@@ -37,7 +37,7 @@ export function DailyMatchBanner({ onViewRecommended, className }: DailyMatchBan
   return (
     <div
       className={cn(
-        "mx-4 rounded-2xl overflow-hidden shadow-card transition-all duration-300",
+        "rounded-2xl overflow-hidden shadow-card transition-all duration-300",
         className,
       )}
       style={{

@@ -1183,7 +1183,7 @@ function BottomNavigation({
                 />
               </div>
               <span
-                className="text-[10px] transition-colors duration-200 mt-0.5"
+                className="text-xs transition-colors duration-200 mt-0.5"
                 style={{
                   color: active ? "hsl(var(--brand))" : "hsl(var(--text-tertiary))",
                   fontWeight: active ? 700 : 500,

@@ -418,7 +418,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
           >
             {label}
             {badge > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-brand-soft text-gold-strong rounded-full">
+              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs font-bold bg-brand-soft text-gold-strong rounded-full">
                 {badge}
               </span>
             )}
@@ -579,12 +579,12 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="flex items-center gap-1.5">
-                            <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground/60">{nudge.fromMember.name.charAt(0)}</span>
+                            <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground/60">{nudge.fromMember.name.charAt(0)}</span>
                             <span className="text-sm font-medium">{nudge.fromMember.name}</span>
                           </div>
                           <span className="text-muted-foreground text-sm">↔</span>
                           <div className="flex items-center gap-1.5">
-                            <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold text-muted-foreground/60">{nudge.toMember.name.charAt(0)}</span>
+                            <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground/60">{nudge.toMember.name.charAt(0)}</span>
                             <span className="text-sm font-medium">{nudge.toMember.name}</span>
                           </div>
                           <span className="ml-auto text-xs text-muted-foreground">−{nudge.pointsSpent}P</span>
@@ -1150,7 +1150,7 @@ function MemberCard({
           </div>
         )}
         {hasActiveNudge && (
-          <span className="absolute top-2 left-2 bg-brand-soft text-gold-strong text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+          <span className="absolute top-2 left-2 bg-brand-soft text-gold-strong text-xs font-bold px-1.5 py-0.5 rounded-full">
             제안중
           </span>
         )}

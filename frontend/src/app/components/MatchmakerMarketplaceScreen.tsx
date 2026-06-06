@@ -255,7 +255,7 @@ function MatchmakerCard({
           />
           {/* 레벨 뱃지 */}
           <div
-            className="absolute -bottom-1 -right-1 text-[11px] leading-none"
+            className="absolute -bottom-1 -right-1 text-xs leading-none"
             title={`Lv.${m.level} ${levelMeta.name}`}
             aria-label={levelMeta.name}
           >

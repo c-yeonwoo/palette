@@ -526,6 +526,22 @@
 }
 
 /* ============================================================
+   5b. TYPE SCALE — 최소 크기 상향 + 최대·최소 격차 압축 (가독성)
+   가장 작은 글씨를 키우고(12→13), 큰 글씨는 살짝 낮춰(24→22, 30→26)
+   전체 폰트 범위를 좁힌다.
+   ============================================================ */
+@theme {
+  --text-xs: 0.8125rem;            /* 13px (기존 12) */
+  --text-xs--line-height: 1.125rem;/* 18px */
+  --text-sm: 0.875rem;             /* 14px (유지) */
+  --text-sm--line-height: 1.25rem; /* 20px */
+  --text-2xl: 1.375rem;            /* 22px (기존 24) */
+  --text-2xl--line-height: 1.75rem;
+  --text-3xl: 1.625rem;            /* 26px (기존 30) */
+  --text-3xl--line-height: 2rem;
+}
+
+/* ============================================================
    6. TYPOGRAPHY UTILITIES
    Tailwind v4: @utility 로 등록 → text-display-lg 등 사용 가능
    ============================================================ */
@@ -536,7 +552,7 @@
   .text-title      { font-size: 18px; line-height: 26px; font-weight: 600; }
   .text-body       { font-size: 15px; line-height: 22px; font-weight: 500; }
   .text-body-sm    { font-size: 13px; line-height: 20px; font-weight: 500; }
-  .text-caption    { font-size: 12px; line-height: 16px; font-weight: 500; }
+  .text-caption    { font-size: 13px; line-height: 18px; font-weight: 500; }
 
   /* 4pt grid spacing helpers (문서용 — Tailwind 기본 scale은 4pt 기반이므로
      p-4=16px, gap-3=12px, mt-6=24px 같은 4의 배수 단위만 사용할 것) */

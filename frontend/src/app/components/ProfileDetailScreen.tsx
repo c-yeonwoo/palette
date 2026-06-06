@@ -1001,7 +1001,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                           }`}
                         >
                           {recommended && (
-                            <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] font-bold bg-brand-soft text-gold-strong px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                            <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs font-bold bg-brand-soft text-gold-strong px-1.5 py-0.5 rounded-full whitespace-nowrap">
                               추천
                             </span>
                           )}
@@ -1171,14 +1171,14 @@ function ColorCompatBanner({
               </div>
               <p className="text-xs text-neutral-500 mt-0.5 leading-snug">{compat.tagline}</p>
             </div>
-            <span className="shrink-0 text-[10px] font-medium text-neutral-400 bg-black/5 px-2 py-0.5 rounded-full">✦ AI 분석</span>
+            <span className="shrink-0 text-xs font-medium text-neutral-400 bg-black/5 px-2 py-0.5 rounded-full">✦ AI 분석</span>
           </div>
 
           {/* 구분선 */}
           <div className="border-t border-black/5 pt-3 space-y-2">
             {insights.map((pt, i) => (
               <div key={i} className="flex items-start gap-2">
-                <span className={`text-[10px] mt-[3px] font-bold shrink-0 ${style!.text}`}>•</span>
+                <span className={`text-xs mt-[3px] font-bold shrink-0 ${style!.text}`}>•</span>
                 <p className="text-xs text-neutral-600 leading-relaxed">{pt}</p>
               </div>
             ))}
@@ -1198,7 +1198,7 @@ function ColorCompatBanner({
           <div className="border-t border-black/5 pt-2 space-y-1.5">
             {generateMatchInsights(null, theirProfile, null).map((pt, i) => (
               <div key={i} className="flex items-start gap-2">
-                <span className="text-[10px] mt-[3px] font-bold shrink-0 text-neutral-400">•</span>
+                <span className="text-xs mt-[3px] font-bold shrink-0 text-neutral-400">•</span>
                 <p className="text-xs text-neutral-500 leading-relaxed">{pt}</p>
               </div>
             ))}

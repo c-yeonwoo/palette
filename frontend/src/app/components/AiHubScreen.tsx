@@ -370,20 +370,20 @@ function PaintCard({
                 "linear-gradient(150deg, hsl(28 14% 16%), hsl(30 16% 10%))",
             }}
           >
-            <span className="text-[11px] tracking-wide" style={{ color: "hsl(var(--gold))" }}>
+            <span className="text-xs tracking-wide" style={{ color: "hsl(var(--gold))" }}>
               {peeling ? "여는 중…" : "탭해서 열기"}
             </span>
           </div>
         )}
 
         <div className="absolute top-2 left-2 z-10">
-          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/90 text-primary-foreground flex items-center gap-0.5">
+          <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-primary/90 text-primary-foreground flex items-center gap-0.5">
             <Sparkles className="w-2.5 h-2.5" /> AI
           </span>
         </div>
         {rec.isFree && (
           <div className="absolute top-2 right-2 z-10">
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-500/90 text-white">FREE</span>
+            <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-green-500/90 text-white">FREE</span>
           </div>
         )}
 
@@ -468,7 +468,7 @@ function AiSignalSection({
                   </button>
                 </div>
                 <div className="absolute top-2 left-2">
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/90 text-primary-foreground flex items-center gap-0.5">
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-primary/90 text-primary-foreground flex items-center gap-0.5">
                     <Sparkles className="w-2.5 h-2.5" /> AI
                   </span>
                 </div>

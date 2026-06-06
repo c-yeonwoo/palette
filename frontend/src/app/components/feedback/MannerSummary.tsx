@@ -111,7 +111,7 @@ export function MannerSummary({
               >
                 <span className="text-sm">{emoji}</span>
                 <span className="text-caption font-medium">{label}</span>
-                <span className="text-[10px] font-bold bg-[hsl(var(--state-success)/0.15)] px-1.5 py-0.5 rounded-pill">
+                <span className="text-xs font-bold bg-[hsl(var(--state-success)/0.15)] px-1.5 py-0.5 rounded-pill">
                   {count}
                 </span>
               </div>
@@ -134,7 +134,7 @@ export function MannerSummary({
               >
                 <span className="text-sm">{emoji}</span>
                 <span className="text-caption font-medium">{label}</span>
-                <span className="text-[10px] font-bold bg-border-subtle px-1.5 py-0.5 rounded-pill">
+                <span className="text-xs font-bold bg-border-subtle px-1.5 py-0.5 rounded-pill">
                   {count}
                 </span>
               </div>

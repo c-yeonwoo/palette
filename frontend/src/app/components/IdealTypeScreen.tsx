@@ -265,7 +265,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
                 >
                   {isSelected && (
                     <span
-                      className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-foreground text-background text-[10px] font-bold flex items-center justify-center shadow-sm"
+                      className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-foreground text-background text-xs font-bold flex items-center justify-center shadow-sm"
                       aria-label={`${rank + 1}순위`}
                     >
                       {rank + 1}
