@@ -1,11 +1,17 @@
 package kr.ai.palette.presentation.matchmaker
 
 import kr.ai.palette.domain.auth.AuthUser
+import kr.ai.palette.domain.common.UserId
+import kr.ai.palette.domain.friendship.FriendshipRepository
 import kr.ai.palette.domain.matchmaker.*
+import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.infrastructure.seed.SeedUserPolicy
 import kr.ai.palette.infrastructure.storage.FileStorageService
 import kr.ai.palette.persistence.matchmaker.MatchmakerReviewEntity
 import kr.ai.palette.persistence.matchmaker.MatchmakerReviewJpaRepository
+import kr.ai.palette.persistence.matchmaker.NudgeEntity
+import kr.ai.palette.persistence.matchmaker.NudgeJpaRepository
+import kr.ai.palette.presentation.profile.ColorTypeDto
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.transaction.annotation.Transactional
@@ -23,6 +29,9 @@ class MatchmakerController(
     private val userRepository: kr.ai.palette.domain.user.UserRepository,
     private val matchmakerReviewJpaRepository: MatchmakerReviewJpaRepository,
     private val seedUserPolicy: SeedUserPolicy,
+    private val friendshipRepository: FriendshipRepository,
+    private val profileRepository: ProfileRepository,
+    private val nudgeJpaRepository: NudgeJpaRepository,
 ) {
 
     @GetMapping("/marketplace")
@@ -280,6 +289,129 @@ class MatchmakerController(
             )
         )
     }
+
+    /**
+     * 내 지인(members) — 주선자가 연결해 줄 수 있는 1촌(승인된 친구) 목록.
+     */
+    @GetMapping("/me/members")
+    fun getMyMembers(
+        @AuthenticationPrincipal authUser: AuthUser
+    ): ResponseEntity<MembersResponse> {
+        val members = friendshipRepository.findAcceptedFriendshipsByUserId(authUser.userId)
+            .mapNotNull { friendship ->
+                val otherId = friendship.getOtherUserId(authUser.userId)
+                toClientMember(otherId, friendship.acceptedAt)
+            }
+        return ResponseEntity.ok(MembersResponse(members))
+    }
+
+    /**
+     * 내가 만든 연결 제안(Nudge) 목록.
+     */
+    @GetMapping("/me/nudges")
+    fun getMyNudges(
+        @AuthenticationPrincipal authUser: AuthUser
+    ): ResponseEntity<NudgesResponse> {
+        val nudges = nudgeJpaRepository
+            .findByMatchmakerUserIdOrderByProposedAtDesc(authUser.userId.value)
+            .mapNotNull { nudge ->
+                val from = toClientMember(UserId(nudge.fromUserId), null) ?: return@mapNotNull null
+                val to = toClientMember(UserId(nudge.toUserId), null) ?: return@mapNotNull null
+                NudgeProposalResponse(
+                    id = nudge.id.toString(),
+                    fromMember = from,
+                    toMember = to,
+                    message = nudge.message,
+                    pointsSpent = nudge.pointsSpent,
+                    status = nudge.status,
+                    proposedAt = nudge.proposedAt.toString(),
+                )
+            }
+        return ResponseEntity.ok(NudgesResponse(nudges))
+    }
+
+    /**
+     * 연결 제안 생성 — 두 지인을 매칭시켜보자고 제안. 건당 50P 소모.
+     */
+    @PostMapping("/me/nudges")
+    @Transactional
+    fun createNudge(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @RequestBody request: CreateNudgeRequest
+    ): ResponseEntity<Map<String, Any?>> {
+        val matchmaker = matchmakerRepository.findByUserId(authUser.userId)
+            ?: return ResponseEntity.notFound().build()
+
+        val fromUserId = runCatching { UUID.fromString(request.fromUserId) }.getOrNull()
+            ?: return ResponseEntity.badRequest().body(mapOf("error" to "잘못된 fromUserId"))
+        val toUserId = runCatching { UUID.fromString(request.toUserId) }.getOrNull()
+            ?: return ResponseEntity.badRequest().body(mapOf("error" to "잘못된 toUserId"))
+        if (fromUserId == toUserId) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "같은 사람을 연결할 수 없습니다"))
+        }
+
+        // 두 사람 모두 내 지인(1촌)인지 검증
+        val myFriendIds = friendshipRepository.findFriendIdsByUserId(authUser.userId)
+            .map { it.value }.toSet()
+        if (fromUserId !in myFriendIds || toUserId !in myFriendIds) {
+            return ResponseEntity.status(403).body(mapOf("error" to "내 지인만 연결 제안할 수 있습니다"))
+        }
+
+        val cost = 50
+        if (matchmaker.earnings.getAvailablePoints() < cost) {
+            return ResponseEntity.badRequest().body(
+                mapOf("error" to "포인트가 부족합니다 (가용: ${matchmaker.earnings.getAvailablePoints()}P)")
+            )
+        }
+
+        val saved = nudgeJpaRepository.save(
+            NudgeEntity(
+                id = UUID.randomUUID(),
+                matchmakerUserId = authUser.userId.value,
+                fromUserId = fromUserId,
+                toUserId = toUserId,
+                message = request.message,
+                pointsSpent = cost,
+                status = "PENDING",
+            )
+        )
+        val updatedEarnings = matchmaker.earnings.spend(cost)
+        matchmakerRepository.save(matchmaker.copy(earnings = updatedEarnings))
+
+        return ResponseEntity.ok(
+            mapOf(
+                "success" to true,
+                "nudgeId" to saved.id.toString(),
+                "pointsSpent" to cost,
+                "remainingAvailable" to updatedEarnings.getAvailablePoints(),
+            )
+        )
+    }
+
+    /**
+     * userId → ClientMember 투영 (User + Profile). 사용자가 없으면 null.
+     */
+    private fun toClientMember(userId: UserId, joinedAt: Instant?): ClientMember? {
+        val user = userRepository.findById(userId) ?: return null
+        val profile = profileRepository.findByUserId(userId)
+        val colorDto = profile?.colorType?.let { ColorTypeDto.from(it) }
+        val photoUrl = profile?.photos?.firstOrNull { it.isPrimary }?.url?.let {
+            fileStorageService.getPresignedDownloadUrl(it)
+        }
+        return ClientMember(
+            id = userId.value.toString(),
+            userId = userId.value.toString(),
+            name = user.privateInfo.realName.ifBlank { user.publicInfo.nickname },
+            age = user.publicInfo.getAge(),
+            gender = user.publicInfo.gender.name,
+            region = profile?.locationInfo?.sido ?: "",
+            colorType = colorDto?.key,
+            colorHex = colorDto?.hex,
+            colorName = colorDto?.name,
+            photoUrl = photoUrl,
+            joinedAt = joinedAt?.toString() ?: "",
+        )
+    }
 }
 
 data class MatchmakerResponse(
@@ -319,6 +451,44 @@ data class UpdatePublicProfileRequest(
 data class CreateReviewRequest(
     val rating: Int,  // 1-5
     val comment: String,
+)
+
+data class CreateNudgeRequest(
+    val fromUserId: String,
+    val toUserId: String,
+    val message: String?,
+)
+
+data class MembersResponse(
+    val members: List<ClientMember>,
+)
+
+data class NudgesResponse(
+    val nudges: List<NudgeProposalResponse>,
+)
+
+data class ClientMember(
+    val id: String,
+    val userId: String,
+    val name: String,
+    val age: Int,
+    val gender: String,          // "MALE" | "FEMALE"
+    val region: String,
+    val colorType: String?,      // 컬러 key (orange/blue/...)
+    val colorHex: String?,
+    val colorName: String?,
+    val photoUrl: String?,
+    val joinedAt: String,        // ISO-8601, 없으면 ""
+)
+
+data class NudgeProposalResponse(
+    val id: String,
+    val fromMember: ClientMember,
+    val toMember: ClientMember,
+    val message: String?,
+    val pointsSpent: Int,
+    val status: String,          // PENDING | BOTH_ACCEPTED | REJECTED | MATCHED
+    val proposedAt: String,
 )
 
 data class MatchmakerPublicResponse(
