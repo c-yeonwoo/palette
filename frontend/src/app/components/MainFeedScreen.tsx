@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { MapPin, SlidersHorizontal, X, Bell, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
-import { DailyMatchBanner } from "./DailyMatchBanner";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { getCompatibilityDeterministic, COLOR_META, type ColorType } from "../../lib/colorCompatibility";
@@ -150,6 +149,13 @@ const JOB_CATEGORIES = [
   { value: "PROFESSIONAL", label: "전문직" },
   { value: "OTHER", label: "기타" },
 ];
+
+// 카드 커버 — '팔레트' 무지개 워시. 8색 컬러타입 hue를 파스텔로 섞어 브랜드 정체성 표현.
+const PALETTE_COVER_STYLE = {
+  backgroundColor: "#ffffff",
+  backgroundImage:
+    "linear-gradient(135deg, #EF444466 0%, #F9731666 16%, #EAB30859 32%, #22C55E59 48%, #3B82F659 64%, #A855F766 82%, #F9A8D466 100%)",
+};
 
 export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigateToFriends, unreadNotifications = 0 }: MainFeedScreenProps) {
   const [feedItems, setFeedItems] = useState<FeedProfileItem[]>([]);
@@ -376,11 +382,6 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
         const hasAiSignal = !!aiSignal && aiSignal.recommendations.length > 0;
         return (
           <div className="max-w-2xl mx-auto px-4">
-            {/* 컬러 궁합 배너 — 카드와 동일한 16px inset, 위 여백 확대 */}
-            <div className="pt-6">
-              <DailyMatchBanner />
-            </div>
-
             {loading ? (
               <div className="pt-5"><LoadingState /></div>
             ) : isMatchmakerOnly ? (
@@ -396,9 +397,9 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
               </div>
             ) : (
               <>
-                {/* 내부 탭 — 지인 / 팔레트 픽 */}
+                {/* 내부 탭 — 지인 / 팔레트 Pick */}
                 <div className="flex gap-1 p-1 mt-5 rounded-2xl bg-surface-sunken">
-                  {([["network", "지인"], ["recommend", "팔레트 픽"]] as const).map(([key, label]) => (
+                  {([["network", "지인"], ["recommend", "팔레트 Pick"]] as const).map(([key, label]) => (
                     <button
                       key={key}
                       onClick={() => setHomeTab(key)}
@@ -424,7 +425,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
                         }}
                       />
                     ) : (
-                      <EmptyState title="팔레트 픽을 준비 중이에요" description="프로필을 완성하면 더 정밀하게 추천해드려요" />
+                      <EmptyState title="팔레트 Pick을 준비 중이에요" description="프로필을 완성하면 더 정밀하게 추천해드려요" />
                     )
                   ) : feedItems.length === 0 ? (
                     hasActiveFilters ? (
@@ -520,21 +521,13 @@ function ProfileCard({
           <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
         )}
 
-        {/* 커버 — 상대의 '색'을 입힌 물감 워시 (탭하면 fade out) */}
+        {/* 커버 — 팔레트 무지개 워시 (탭하면 fade out) */}
         {!revealed && (
           <div
-            className="absolute inset-0 transition-opacity duration-700 flex flex-col items-center justify-center gap-2.5"
-            style={{
-              opacity: peeling ? 0 : 1,
-              background: theirMeta
-                ? `radial-gradient(120% 110% at 28% 18%, ${theirMeta.hex}59, transparent 62%), linear-gradient(155deg, hsl(var(--surface-sunken)), hsl(var(--muted)))`
-                : "linear-gradient(155deg, hsl(var(--surface-sunken)), hsl(var(--muted)))",
-            }}
+            className="absolute inset-0 transition-opacity duration-700 flex items-center justify-center"
+            style={{ opacity: peeling ? 0 : 1, ...PALETTE_COVER_STYLE }}
           >
-            {theirMeta && (
-              <span className="w-10 h-10 rounded-full ring-2 ring-white/80 shadow-sm" style={{ backgroundColor: theirMeta.hex }} />
-            )}
-            <span className="text-xs font-medium text-foreground/55">
+            <span className="text-xs font-medium text-foreground/70 bg-white/75 rounded-full px-3 py-1 shadow-sm">
               {peeling ? "여는 중…" : "탭해서 열기"}
             </span>
           </div>
@@ -655,7 +648,7 @@ function AiSignalSection({
       await api.post("/api/v1/feed/ai-signal/subscribe", {});
       await onChanged?.();
       setShowPaywall(false);
-      toast.success("팔레트 픽 패스가 시작됐어요 ✨");
+      toast.success("팔레트 Pick 패스가 시작됐어요 ✨");
     } catch {
       // 402 (실 결제 모드, paymentKey 없음) 등 — 베타에서는 결제 미연동
       toast.error("결제 연동을 준비 중이에요. 곧 만나요!");
@@ -691,40 +684,37 @@ function AiSignalSection({
 
           // 잠긴 카드 — 구독 패스 필요. 궁합 % 티저로 유도.
           const teaserColor = (rec.teaserColorType ?? null) as ColorType | null;
-          const teaserMeta = teaserColor ? COLOR_META[teaserColor] : null;
           const teaserCompat = getCompatibilityDeterministic(myColorType, teaserColor, `signal-${i}`);
+          const teaserSub = [rec.teaserAge ? `${rec.teaserAge}세` : null, rec.teaserLocation].filter(Boolean).join(" · ");
           return (
             <div key={i}>
               <button
                 onClick={() => setShowPaywall(true)}
                 className="block w-full text-left relative rounded-2xl overflow-hidden aspect-[3/4] shadow-card active:scale-[0.98] transition-transform"
-                style={{
-                  background: teaserMeta
-                    ? `radial-gradient(120% 110% at 28% 18%, ${teaserMeta.hex}59, transparent 62%), linear-gradient(155deg, hsl(var(--surface-sunken)), hsl(var(--muted)))`
-                    : "linear-gradient(155deg, hsl(var(--surface-sunken)), hsl(var(--muted)))",
-                }}
+                style={PALETTE_COVER_STYLE}
               >
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3 text-center">
-                  {teaserCompat && (
-                    <div className="flex flex-col items-center">
-                      <span className="text-3xl font-extrabold text-foreground">{teaserCompat.score}%</span>
-                      <span className="text-xs text-muted-foreground">{teaserCompat.label} 궁합</span>
-                    </div>
-                  )}
-                  <div className="text-foreground/60 text-xs">
-                    {[rec.teaserAge ? `${rec.teaserAge}세` : null, rec.teaserLocation].filter(Boolean).join(" · ")}
+                  <div className="flex flex-col items-center bg-white/80 rounded-2xl px-3.5 py-2 shadow-sm">
+                    {teaserCompat ? (
+                      <>
+                        <span className="text-3xl font-extrabold text-foreground">{teaserCompat.score}%</span>
+                        <span className="text-xs text-muted-foreground">{teaserCompat.label} 궁합</span>
+                      </>
+                    ) : (
+                      <Sparkles className="w-5 h-5 text-gold-strong" />
+                    )}
+                    {teaserSub && <span className="text-xs text-muted-foreground mt-0.5">{teaserSub}</span>}
                   </div>
-                  <span className="mt-1 inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-brand-soft text-gold-strong">
+                  <span className="mt-1 inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-brand-soft text-gold-strong shadow-sm">
                     <Sparkles className="w-3 h-3" /> 구독하고 보기
                   </span>
                 </div>
                 <div className="absolute top-2 left-2">
-                  <span className="text-xs font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 bg-brand-soft text-gold-strong">
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 bg-white/85 text-gold-strong shadow-sm">
                     <Sparkles className="w-2.5 h-2.5" /> AI
                   </span>
                 </div>
               </button>
-              <p className="text-xs text-muted-foreground mt-1.5 px-0.5 truncate">{rec.reason}</p>
             </div>
           );
         })}
@@ -768,7 +758,7 @@ function AiPassPaywall({
   onClose: () => void;
 }) {
   const benefits = [
-    { emoji: "♾️", title: "매일 추천 무제한", desc: "하루 1장 제한 없이 팔레트 픽을 모두 열람" },
+    { emoji: "♾️", title: "매일 추천 무제한", desc: "하루 1장 제한 없이 팔레트 Pick을 모두 열람" },
     { emoji: "📊", title: "궁합 리포트", desc: "왜 잘 맞는지 색깔 기반 상세 분석 제공" },
     { emoji: "✨", title: "우선 추천", desc: "더 정교한 궁합 기반으로 먼저 소개" },
   ];
@@ -782,7 +772,7 @@ function AiPassPaywall({
           <div className="w-12 h-12 rounded-2xl bg-brand-soft flex items-center justify-center mb-3">
             <Sparkles className="w-6 h-6 text-gold-strong" />
           </div>
-          <h3 className="text-lg font-bold text-foreground">팔레트 픽 패스</h3>
+          <h3 className="text-lg font-bold text-foreground">팔레트 Pick 패스</h3>
           <p className="text-sm text-muted-foreground mt-1">색 궁합으로 매일 인연을 추천받아요</p>
         </div>
 
@@ -844,7 +834,6 @@ function AiSignalCard({
   const location = profile.locationInfo.sido;
   const theirColor = (profile.colorType?.type ?? null) as ColorType | null;
   const compat = getCompatibilityDeterministic(myColorType, theirColor, profile.userId);
-  const theirMeta = theirColor ? COLOR_META[theirColor] : null;
 
   const handleClick = () => {
     if (revealed) {
@@ -875,33 +864,21 @@ function AiSignalCard({
             transitionTimingFunction: "cubic-bezier(0.4, 0.0, 0.2, 1)",
           }}
         >
-          {/* ── 앞면 (상대의 색 물감 워시 + 티저) — 잠긴 상태 ── */}
+          {/* ── 앞면 (팔레트 무지개 워시 + 티저) — 잠긴 상태 ── */}
           <div
             className="absolute inset-0 rounded-2xl overflow-hidden shadow-sm flex flex-col items-center justify-center gap-2"
-            style={{
-              backfaceVisibility: "hidden",
-              WebkitBackfaceVisibility: "hidden",
-              background: theirMeta
-                ? `radial-gradient(120% 110% at 28% 18%, ${theirMeta.hex}59, transparent 62%), linear-gradient(155deg, hsl(var(--surface-sunken)), hsl(var(--muted)))`
-                : "linear-gradient(155deg, hsl(var(--surface-sunken)), hsl(var(--muted)))",
-            }}
+            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", ...PALETTE_COVER_STYLE }}
           >
-            {theirMeta ? (
-              <span className="w-10 h-10 rounded-full ring-2 ring-white/80 shadow-sm" style={{ backgroundColor: theirMeta.hex }} />
-            ) : (
-              <div className="w-9 h-9 rounded-full bg-brand-soft flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-primary" />
-              </div>
+            {(rec.teaserAge || rec.teaserLocation) && (
+              <p className="text-foreground text-xs font-semibold bg-white/75 rounded-full px-2.5 py-0.5">
+                {[rec.teaserAge ? `${rec.teaserAge}세` : null, rec.teaserLocation].filter(Boolean).join(" · ")}
+              </p>
             )}
-            <div className="text-center px-2">
-              {rec.teaserAge && <p className="text-foreground text-xs font-semibold">{rec.teaserAge}세</p>}
-              {rec.teaserLocation && <p className="text-muted-foreground text-xs">{rec.teaserLocation}</p>}
-            </div>
-            <span className="text-xs font-medium text-foreground/55">
+            <span className="text-xs font-medium text-foreground/70 bg-white/75 rounded-full px-3 py-1 shadow-sm">
               {peeling ? "여는 중…" : "탭해서 열기"}
             </span>
             <div className="absolute top-2 left-2">
-              <span className="text-xs font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 bg-brand-soft text-gold-strong">
+              <span className="text-xs font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 bg-white/85 text-gold-strong shadow-sm">
                 <Sparkles className="w-2.5 h-2.5" /> AI
               </span>
             </div>
@@ -941,7 +918,6 @@ function AiSignalCard({
           </div>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground mt-1.5 px-0.5 truncate">{rec.reason}</p>
     </div>
   );
 }

@@ -452,6 +452,41 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
         </div>
       )}
 
+      {/* ── 나의 색 (stats 바로 아래) — 탭하면 AI 근거·성향·이상형 상세로 ── */}
+      {profile?.colorType?.description && (
+        <section className="px-6 py-4 border-b border-border">
+          {(() => {
+            const colorKey = (profile.colorType!.key ?? getMyColorType()) as import("../../lib/colorTypes").ColorTypeKey;
+            return (
+              <AccentScope colorType={colorKey}>
+                <button
+                  type="button"
+                  onClick={() => onNavigateToColor?.()}
+                  disabled={!onNavigateToColor}
+                  className="w-full text-left bg-user-accent-soft border border-border-subtle rounded-lg p-4 transition-colors hover:brightness-[0.99] disabled:cursor-default"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-caption text-text-tertiary">나의 색</p>
+                    {onNavigateToColor && (
+                      <span className="inline-flex items-center text-caption text-text-tertiary">
+                        자세히 <ChevronRight className="w-3.5 h-3.5" />
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <ColorTypeBadge colorType={colorKey} style="dot" size="lg" />
+                    <div>
+                      <p className="text-body-sm font-semibold text-text-primary mb-0.5">{profile.colorType!.name}</p>
+                      <p className="text-caption text-text-secondary leading-relaxed">{profile.colorType!.description}</p>
+                    </div>
+                  </div>
+                </button>
+              </AccentScope>
+            );
+          })()}
+        </section>
+      )}
+
       {/* ── 핸드폰 미인증 ── */}
       {!userProfile.isPhoneVerified && (
         <button
@@ -526,41 +561,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
                   mode="view"
                 />
               ))}
-            </section>
-          )}
-
-          {/* 나의 색 — 탭하면 AI 근거·성향·이상형 상세 페이지로 */}
-          {profile?.colorType?.description && (
-            <section className="px-6 pt-4 pb-4">
-              {(() => {
-                const colorKey = (profile.colorType!.key ?? getMyColorType()) as import("../../lib/colorTypes").ColorTypeKey;
-                return (
-                  <AccentScope colorType={colorKey}>
-                    <button
-                      type="button"
-                      onClick={() => onNavigateToColor?.()}
-                      disabled={!onNavigateToColor}
-                      className="w-full text-left bg-user-accent-soft border border-border-subtle rounded-lg p-4 transition-colors hover:brightness-[0.99] disabled:cursor-default"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-caption text-text-tertiary">나의 색</p>
-                        {onNavigateToColor && (
-                          <span className="inline-flex items-center text-caption text-text-tertiary">
-                            자세히 <ChevronRight className="w-3.5 h-3.5" />
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <ColorTypeBadge colorType={colorKey} style="dot" size="lg" />
-                        <div>
-                          <p className="text-body-sm font-semibold text-text-primary mb-0.5">{profile.colorType!.name}</p>
-                          <p className="text-caption text-text-secondary leading-relaxed">{profile.colorType!.description}</p>
-                        </div>
-                      </div>
-                    </button>
-                  </AccentScope>
-                );
-              })()}
             </section>
           )}
 
