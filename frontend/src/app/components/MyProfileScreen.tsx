@@ -17,7 +17,6 @@ import { ColorTypeAura } from "./color/ColorTypeAura";
 import { ColorTypeBadge } from "./color/ColorTypeBadge";
 import { getMyColorType } from "../../lib/daily-match";
 import { jobCategoryLabel } from "../../lib/jobCategory";
-import { PaletteInsightPanel } from "./insights/PaletteInsightPanel";
 
 interface MyProfileScreenProps {
   onBack: () => void;
@@ -461,16 +460,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
         </div>
       )}
 
-      {/* ── 팔레트의 분석 (점진 공개) — stats 바로 아래 ── */}
-      {profile && (
-        <section className="px-5 pt-4 pb-2">
-          <PaletteInsightPanel
-            profile={profile as any}
-            onNavigateToEdit={onEdit}
-            onNavigateToColor={onNavigateToColor}
-          />
-        </section>
-      )}
 
       {/* ── 핸드폰 미인증 ── */}
       {!userProfile.isPhoneVerified && (

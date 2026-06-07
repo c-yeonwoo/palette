@@ -14,7 +14,7 @@
  * ADR 0037 — 점진 공개 + 강점 태그(Phase B) + 데이트 코드(Phase C).
  */
 import { useEffect, useMemo, useState } from "react";
-import { Sparkles, Lock, ChevronRight, X, Check, Palette, Star, Heart, Compass } from "lucide-react";
+import { Sparkles, Lock, ChevronRight, X, Check, Palette, Star, Heart, Compass, HelpCircle } from "lucide-react";
 import { COLOR_META, type ColorType } from "../../../lib/colorCompatibility";
 import { dateCodeFor } from "../../../lib/dateCode";
 
@@ -123,9 +123,9 @@ export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToCol
     <section>
       {/* ── 카드 밖 헤더 ── */}
       <div className="flex items-center justify-between mb-3 px-1">
-        <div>
+        <div className="flex items-center gap-1.5">
           <h2 className="text-lg font-extrabold text-foreground tracking-tight">팔레트의 분석</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">프로필을 채울수록 더 깊이 알아가요</p>
+          <UsageHelpButton allUnlocked={allUnlocked} unlockedCount={unlockedCount} total={stages.length} />
         </div>
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-bold text-foreground">{unlockedCount}<span className="text-muted-foreground">/{stages.length}</span></span>
@@ -139,6 +139,7 @@ export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToCol
           </div>
         </div>
       </div>
+      <p className="text-xs text-muted-foreground mb-3 px-1">프로필을 채울수록 더 깊이 알아가요</p>
 
       {/* ── 카드 리스트 ── */}
       <div className="rounded-2xl bg-card border border-border shadow-card overflow-hidden divide-y divide-border">
@@ -153,9 +154,6 @@ export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToCol
           </StageRow>
         ))}
       </div>
-
-      {/* ── Footer: 분석 활용 안내 ── */}
-      <InsightUsageFooter allUnlocked={allUnlocked} unlockedCount={unlockedCount} total={stages.length} />
 
       {/* ── Unlock 모달 ── */}
       {unlockModalStage && (
@@ -325,12 +323,10 @@ function useStages(profile: ProfileLike): Stage[] {
 }
 
 /**
- * 분석 결과 활용 안내 footer — 사용자가 "이걸 어디에 쓰는지" 알아야 신뢰가 생긴다.
- * unlock 진행률에 따라 톤 변화:
- *  - 진행 중: "분석이 진행될수록 이렇게 활용돼요"
- *  - 모두 완료: "이제 이렇게 활용돼요"
+ * 헤더 옆 (?) 도움말 — 분석 결과가 어디에 활용되는지 호버/탭으로 노출.
+ * 모바일에서는 탭으로 토글, 데스크탑에서는 hover 도 동작.
  */
-function InsightUsageFooter({
+function UsageHelpButton({
   allUnlocked,
   unlockedCount,
   total,
@@ -339,6 +335,8 @@ function InsightUsageFooter({
   unlockedCount: number;
   total: number;
 }) {
+  const [open, setOpen] = useState(false);
+
   const usages: Array<{ Icon: React.ElementType; title: string; desc: string }> = [
     { Icon: Sparkles, title: "팔레트 Pick 추천 정밀도",  desc: "당신의 색·결·매력을 기반으로 매일 추천이 더 정교해져요" },
     { Icon: Heart,    title: "어울리는 인연 우선 노출", desc: "지인 피드에서 궁합이 좋은 상대를 먼저 보여드려요" },
@@ -347,26 +345,55 @@ function InsightUsageFooter({
   ];
 
   return (
-    <div className="mt-4 rounded-2xl bg-surface-sunken border border-border/60 p-4">
-      <div className="flex items-baseline justify-between mb-3">
-        <p className="text-sm font-bold text-foreground">
-          {allUnlocked ? "이 분석은 이렇게 활용돼요" : "분석이 깊어질수록 이렇게 활용돼요"}
-        </p>
-        <p className="text-xs text-muted-foreground">{unlockedCount}/{total}</p>
-      </div>
-      <ul className="space-y-2.5">
-        {usages.map((u, i) => (
-          <li key={i} className="flex items-start gap-2.5">
-            <div className="w-7 h-7 rounded-full bg-card flex items-center justify-center flex-shrink-0 shadow-sm">
-              <u.Icon className="w-3.5 h-3.5 text-gold-strong" />
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        onMouseEnter={() => setOpen(true)}
+        className="w-5 h-5 rounded-full inline-flex items-center justify-center hover:bg-muted/60 transition-colors"
+        aria-label="분석 결과는 어디에 활용되나요?"
+      >
+        <HelpCircle className="w-4 h-4 text-muted-foreground" />
+      </button>
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in"
+          onClick={() => setOpen(false)}
+          onMouseLeave={() => setOpen(false)}
+        >
+          <div
+            className="w-full sm:max-w-sm bg-card rounded-t-3xl sm:rounded-3xl p-5 shadow-overlay animate-slide-up relative"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setOpen(false)}
+              className="absolute right-3 top-3 w-8 h-8 rounded-full hover:bg-muted/50 flex items-center justify-center"
+              aria-label="닫기"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+            <div className="flex items-baseline justify-between mb-4 pr-7">
+              <p className="text-base font-extrabold text-foreground">
+                {allUnlocked ? "이 분석은 이렇게 활용돼요" : "분석이 깊어질수록 이렇게 활용돼요"}
+              </p>
+              <p className="text-xs font-semibold text-muted-foreground flex-shrink-0">{unlockedCount}/{total}</p>
             </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-foreground">{u.title}</p>
-              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{u.desc}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
+            <ul className="space-y-3">
+              {usages.map((u, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-brand-soft flex items-center justify-center flex-shrink-0">
+                    <u.Icon className="w-4 h-4 text-gold-strong" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-foreground">{u.title}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{u.desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

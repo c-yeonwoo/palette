@@ -10,6 +10,7 @@ import { Switch } from "./ui/switch";
 import { api } from "../../lib/api/apiClient";
 import { tokenStorage } from "../../lib/auth/tokenStorage";
 import { toast } from "sonner";
+import { PaletteInsightPanel } from "./insights/PaletteInsightPanel";
 
 interface MyPageScreenProps {
   onNavigateToProfile: () => void;
@@ -27,8 +28,21 @@ interface MatchmakerData {
 
 interface ProfileData {
   primaryPhotoUrl: string | null;
+  basicInfo?: { height?: number | null; mbti?: string | null };
+  careerInfo?: { category?: string | null };
   metrics?: { trustScore: number; completionRate: number };
-  colorType?: { name: string | null; hex: string | null; description: string | null } | null;
+  colorType?: {
+    type?: string | null;
+    key?: string | null;
+    name: string | null;
+    hex: string | null;
+    description: string | null;
+    reasoning?: string | null;
+    personalitySummary?: string | null;
+    idealTypeInsight?: string | null;
+    strengths?: string[] | null;
+  } | null;
+  attachmentProfile?: unknown;
   settings?: { isAcceptingMatches: boolean; hiddenAt: string | null; detailsVisibleToFriends?: boolean };
 }
 
@@ -254,6 +268,16 @@ export function MyPageScreen({
           </div>
         </div>
       </div>
+
+      {/* 팔레트의 분석 — 마이페이지 최상위 (ADR 0037) */}
+      {!isMatchmakerOnly && profile && (
+        <div className="max-w-2xl mx-auto px-5 mt-5">
+          <PaletteInsightPanel
+            profile={profile as any}
+            onNavigateToEdit={onNavigateToProfile}
+          />
+        </div>
+      )}
 
       {/* 핸드폰 인증 배너 */}
       {!user?.phoneNumber && isMatchmaker && (
