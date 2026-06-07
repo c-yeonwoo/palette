@@ -80,6 +80,8 @@ interface FeedProfileItem {
   degree?: number;
   viewCost?: number;
   isOpened?: boolean;
+  nickname?: string | null;
+  age?: number | null;
 }
 
 interface FeedResponse {
@@ -465,7 +467,7 @@ function ProfileCard({
   myColorType: ColorType | null;
   onClick: () => void;
 }) {
-  const { profile, mutualFriends, viewCost = 3000, isOpened = false } = item;
+  const { profile, mutualFriends, viewCost = 3000, isOpened = false, nickname = null, age = null } = item;
   const [revealed, setRevealed] = useState(isOpened);
   const [peeling, setPeeling] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -505,10 +507,11 @@ function ProfileCard({
   };
 
   const flipped = peeling || revealed;
+  const accentHex = theirMeta?.hex ?? null;
 
   return (
     <div onClick={handleClick} className="cursor-pointer select-none">
-      {/* Photo card — 3D 플립 (탭하면 카드가 180° 뒤집히며 사진 공개) */}
+      {/* 사진 — 3D 플립 (탭하면 180° 뒤집히며 사진 공개, dim 없음) */}
       <div className="relative aspect-[3/4]" style={{ perspective: "1000px" }}>
         <div
           className="relative w-full h-full transition-transform duration-700"
@@ -520,13 +523,13 @@ function ProfileCard({
         >
           {/* ── 앞면 (물감 커버) — 잠긴 상태 ── */}
           <div
-            className="absolute inset-0 rounded-2xl overflow-hidden shadow-sm"
+            className="absolute inset-0 rounded-2xl overflow-hidden shadow-card"
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", ...PALETTE_COVER_STYLE }}
           />
 
-          {/* ── 뒷면 (사진 + 정보) — 공개 상태 ── */}
+          {/* ── 뒷면 (사진만, dim 제거) — 공개 상태. 아래 소개 섹션과 이어지도록 위쪽만 라운드 ── */}
           <div
-            className="absolute inset-0 rounded-2xl overflow-hidden shadow-sm bg-muted"
+            className="absolute inset-0 rounded-t-2xl overflow-hidden shadow-card bg-muted"
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
           >
             {profile.primaryPhotoUrl ? (
@@ -536,7 +539,6 @@ function ProfileCard({
                 <span className="text-5xl opacity-20 select-none">👤</span>
               </div>
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
             {compat && (
               <div className="absolute top-2 right-2">
                 <span className="text-xs font-bold bg-white/90 text-foreground rounded-full px-2 py-0.5 shadow-sm">
@@ -544,33 +546,47 @@ function ProfileCard({
                 </span>
               </div>
             )}
-            <div className="absolute bottom-0 left-0 right-0 px-3 pb-3">
-              {profile.basicInfo.height && (
-                <p className="text-white text-sm font-semibold leading-tight">
-                  {profile.basicInfo.height}cm
-                  {profile.basicInfo.mbti && (
-                    <span className="font-normal opacity-75"> · {profile.basicInfo.mbti}</span>
-                  )}
-                </p>
-              )}
-              {(job || location) && (
-                <p className="text-white/70 text-xs mt-0.5">
-                  {[job, location].filter(Boolean).join(" · ")}
-                </p>
-              )}
-            </div>
           </div>
         </div>
       </div>
 
-      {/* 지인 연결 + 색깔 타입 */}
-      <div className="mt-1.5 px-0.5 space-y-0.5">
+      {/* 소개 섹션 — 사진 바로 밑 (공개 후). 배경 = 상대 팔레트 컬러 파스텔 */}
+      {revealed && (
+        <div
+          className="rounded-b-2xl px-3 py-2.5 shadow-card"
+          style={{ backgroundColor: accentHex ? `${accentHex}1F` : "hsl(var(--surface-sunken))" }}
+        >
+          <CardInfoSection nickname={nickname ?? null} job={job} age={age ?? null} region={location} />
+        </div>
+      )}
+
+      {/* 지인 연결 */}
+      <div className="mt-2 px-0.5">
         <RelationshipBadge degree={degree} mutualFriends={mutualFriends} />
-        {theirMeta && compat && revealed && (
-          <p className="text-xs text-muted-foreground truncate">{compat.tagline}</p>
-        )}
       </div>
     </div>
+  );
+}
+
+/** 카드 하단 소개 섹션 — 닉네임 / 직업군 / 나이 · 지역 */
+function CardInfoSection({
+  nickname,
+  job,
+  age,
+  region,
+}: {
+  nickname: string | null;
+  job: string | null;
+  age: number | null;
+  region: string | null;
+}) {
+  const sub = [age ? `${age}세` : null, region].filter(Boolean).join(" · ");
+  return (
+    <>
+      {nickname && <p className="text-sm font-bold text-foreground truncate leading-tight">{nickname}</p>}
+      {job && <p className="text-xs text-muted-foreground truncate mt-0.5">{job}</p>}
+      {sub && <p className="text-xs text-muted-foreground truncate mt-0.5">{sub}</p>}
+    </>
   );
 }
 
@@ -834,6 +850,7 @@ function AiSignalCard({
   const location = profile.locationInfo.sido;
   const theirColor = (profile.colorType?.type ?? null) as ColorType | null;
   const compat = getCompatibilityDeterministic(myColorType, theirColor, profile.userId);
+  const accentHex = theirColor ? COLOR_META[theirColor]?.hex ?? null : null;
 
   const handleClick = () => {
     if (revealed) {
@@ -881,9 +898,9 @@ function AiSignalCard({
             </div>
           </div>
 
-          {/* ── 뒷면 (프로필 사진) — 공개 상태 ── */}
+          {/* ── 뒷면 (사진만, dim 제거) — 공개 상태. 위쪽만 라운드 ── */}
           <div
-            className="absolute inset-0 rounded-2xl overflow-hidden shadow-sm bg-muted"
+            className="absolute inset-0 rounded-t-2xl overflow-hidden shadow-card bg-muted"
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
           >
             {profile.primaryPhotoUrl ? (
@@ -891,7 +908,6 @@ function AiSignalCard({
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-muted via-accent to-muted/60" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
             {rec.isFree && (
               <div className="absolute top-2 right-2">
                 <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-green-500/90 text-white">FREE</span>
@@ -904,17 +920,19 @@ function AiSignalCard({
                 </span>
               </div>
             )}
-            <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2.5">
-              {profile.basicInfo.height && (
-                <p className="text-white text-xs font-semibold">{profile.basicInfo.height}cm</p>
-              )}
-              {(job || location) && (
-                <p className="text-white/70 text-xs">{[job, location].filter(Boolean).join(" · ")}</p>
-              )}
-            </div>
           </div>
         </div>
       </div>
+
+      {/* 소개 섹션 — 사진 바로 밑 (공개 후). 배경 = 상대 팔레트 컬러 파스텔 */}
+      {revealed && (
+        <div
+          className="rounded-b-2xl px-3 py-2.5 shadow-card"
+          style={{ backgroundColor: accentHex ? `${accentHex}1F` : "hsl(var(--surface-sunken))" }}
+        >
+          <CardInfoSection nickname={null} job={job} age={rec.teaserAge ?? null} region={location} />
+        </div>
+      )}
     </div>
   );
 }

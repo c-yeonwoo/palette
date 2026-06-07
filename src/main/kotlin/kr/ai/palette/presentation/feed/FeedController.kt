@@ -121,7 +121,9 @@ class FeedController(
                         mutualFriends = mutualFriendNames,
                         degree = 2,
                         viewCost = 3000,
-                        isOpened = openedIds.contains(userId.value.toString())
+                        isOpened = openedIds.contains(userId.value.toString()),
+                        nickname = user.publicInfo.nickname,
+                        age = user.publicInfo.getAge()
                     )
                 }
             } else {
@@ -190,7 +192,9 @@ data class FeedProfileItem(
     val mutualFriends: List<String>,  // 공통 친구들의 닉네임 리스트
     val degree: Int = 2,              // 1=1촌(free), 2=2촌(3,000원), 3=3촌(5,000원)
     val viewCost: Int = 3000,         // 0 for free
-    val isOpened: Boolean = false     // 이미 카드를 열어본 여부
+    val isOpened: Boolean = false,    // 이미 카드를 열어본 여부
+    val nickname: String? = null,     // 카드 소개 섹션용
+    val age: Int? = null              // 카드 소개 섹션용
 )
 
 data class FriendsResponse(

@@ -117,63 +117,37 @@ export function NotificationScreen({ onBack, onOpenMatch, isMockData = false }: 
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* ── 헤더 ── */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
-        <button
-          onClick={onBack}
-          className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-surface-sunken"
-          aria-label="뒤로"
-        >
-          <ArrowLeft className="w-5 h-5 text-text-primary" />
-        </button>
-        <h1 className="text-body font-semibold text-text-primary">
-          알림
-          {totalUnread > 0 && (
-            <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-brand text-brand-foreground text-xs font-bold">
-              {totalUnread > 99 ? "99+" : totalUnread}
-            </span>
-          )}
-        </h1>
-        <button
-          onClick={markAllRead}
-          disabled={totalUnread === 0}
-          className="flex items-center gap-1 text-caption font-medium text-brand disabled:text-text-tertiary disabled:cursor-not-allowed"
-          aria-label="전체 읽음"
-        >
-          <CheckCheck className="w-4 h-4" />
-          전체 읽음
-        </button>
-      </div>
+      {/* ── 헤더 (통일 스타일: 흰색 sticky) ── */}
+      <header className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border">
+        <div className="max-w-2xl mx-auto px-5 h-16 flex items-center justify-between gap-2">
+          <button
+            onClick={onBack}
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted/50 -ml-1.5"
+            aria-label="뒤로"
+          >
+            <ArrowLeft className="w-5 h-5 text-foreground" />
+          </button>
+          <h1 className="flex-1 text-lg font-bold text-foreground flex items-center gap-1.5">
+            알림
+            {totalUnread > 0 && (
+              <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-brand text-brand-foreground text-xs font-bold">
+                {totalUnread > 99 ? "99+" : totalUnread}
+              </span>
+            )}
+          </h1>
+          <button
+            onClick={markAllRead}
+            disabled={totalUnread === 0}
+            className="flex items-center gap-1 text-xs font-medium text-brand disabled:text-text-tertiary disabled:cursor-not-allowed"
+            aria-label="전체 읽음"
+          >
+            <CheckCheck className="w-4 h-4" />
+            전체 읽음
+          </button>
+        </div>
+      </header>
 
-      {/* ── 탭 바 ── */}
-      <div className="flex border-b border-border-subtle bg-surface">
-        {TABS.map(({ key, label }) => {
-          const unread = tabUnread(key);
-          const isActive = activeTab === key;
-          return (
-            <button
-              key={key}
-              onClick={() => setActiveTab(key)}
-              className={cn(
-                "flex-1 py-3 text-body-sm font-medium relative transition-colors",
-                isActive ? "text-text-primary" : "text-text-tertiary",
-              )}
-            >
-              {label}
-              {unread > 0 && (
-                <span className="ml-1 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-brand text-brand-foreground text-xs font-bold">
-                  {unread}
-                </span>
-              )}
-              {isActive && (
-                <span className="absolute bottom-0 left-1/4 right-1/4 h-0.5 bg-brand rounded-t-pill" />
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── 목록 ── */}
+      {/* ── 목록 (탭 구분 없이 하나로) ── */}
       <div className="flex-1 overflow-y-auto">
         {filtered.length === 0 ? (
           <NotificationEmptyState tab={activeTab} />
