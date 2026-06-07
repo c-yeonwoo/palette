@@ -62,22 +62,30 @@ export function AccountTypeSelectionScreen({ onComplete, onBack, mode = "post-au
             <p className="text-sm text-muted-foreground">어떻게 이용하시겠어요?</p>
           </div>
 
-          {/* Account Type Cards — button 으로 명시(클릭 영역 확실) + 컴팩트 */}
-          <div className="space-y-3">
+          {/* Account Type Cards — button 으로 명시(클릭 영역 확실) */}
+          <div className="space-y-4">
             <AccountTypeCard
               active={selectedType === "REGULAR"}
-              icon={<Heart className="w-5 h-5 text-primary" />}
+              icon={<Heart className="w-7 h-7 text-primary" />}
               title="일반 회원"
-              desc="소중한 인연을 찾고 싶어요"
-              bullets={["지인의 지인과 신뢰 있는 매칭", "프로필 작성 · 매칭 요청"]}
+              desc="인연 찾기와 지인 주선 모두 가능해요"
+              bullets={[
+                "지인의 지인과 신뢰 있는 매칭",
+                "직접 매칭 요청 + 지인 주선까지 모두",
+                "주선 성공 시 리워드 적립",
+              ]}
               onClick={() => setSelectedType("REGULAR")}
             />
             <AccountTypeCard
               active={selectedType === "MATCHMAKER_ONLY"}
-              icon={<Users className="w-5 h-5 text-primary" />}
+              icon={<Users className="w-7 h-7 text-primary" />}
               title="주선자 전용"
-              desc="지인들을 연결해주고 싶어요"
-              bullets={["지인 관리 · 매칭 주선·승인", "리워드 적립, 매칭 대상 제외"]}
+              desc="주선 활동에만 참여할게요"
+              bullets={[
+                "지인 관리 · 매칭 주선·승인",
+                "리워드 적립",
+                "매칭 대상에서는 제외돼요",
+              ]}
               onClick={() => setSelectedType("MATCHMAKER_ONLY")}
             />
           </div>
@@ -121,25 +129,25 @@ function AccountTypeCard({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`w-full text-left rounded-2xl bg-card p-4 transition-all ${
+      className={`w-full text-left rounded-2xl bg-card p-6 transition-all ${
         active
           ? "border-2 border-primary ring-2 ring-primary/20 shadow-card"
           : "border border-border shadow-card hover:border-primary/40 active:scale-[0.99]"
       }`}
     >
-      <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-full bg-brand-soft flex items-center justify-center flex-shrink-0">
+      <div className="flex items-start gap-4">
+        <div className="w-14 h-14 rounded-full bg-brand-soft flex items-center justify-center flex-shrink-0">
           {icon}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-base font-bold text-foreground">{title}</p>
-            {active && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
+            <p className="text-lg font-bold text-foreground">{title}</p>
+            {active && <Check className="w-5 h-5 text-primary flex-shrink-0" />}
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
-          <ul className="mt-2 space-y-1">
+          <p className="text-sm text-muted-foreground mt-1">{desc}</p>
+          <ul className="mt-3 space-y-1.5">
             {bullets.map((b, i) => (
-              <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+              <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
                 <span className="text-primary/70 mt-0.5">·</span>
                 <span>{b}</span>
               </li>
