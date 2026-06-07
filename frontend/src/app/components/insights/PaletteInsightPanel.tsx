@@ -82,16 +82,16 @@ export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToCol
   // 5단계 콘텐츠 (key 기반 매핑)
   const renderStageContent: Record<StageKey, () => React.ReactNode> = {
     color: () => cs?.name && (
-      <div className="flex items-start gap-3">
-        {accentHex && (
-          <span className="w-9 h-9 rounded-full flex-shrink-0 ring-2 ring-white shadow-sm" style={{ backgroundColor: accentHex }} />
-        )}
-        <div className="min-w-0 flex-1">
-          <p className="text-base font-bold text-foreground leading-tight">{cs.name}</p>
-          {cs.reasoning && (
-            <p className="text-sm text-muted-foreground leading-relaxed mt-1.5">{cs.reasoning}</p>
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5 mb-1">
+          {accentHex && (
+            <span className="w-3 h-3 rounded-full flex-shrink-0 ring-1 ring-black/5" style={{ backgroundColor: accentHex }} />
           )}
+          <p className="text-sm font-bold text-foreground leading-tight">{cs.name}</p>
         </div>
+        {cs.reasoning && (
+          <p className="text-sm text-muted-foreground leading-relaxed">{cs.reasoning}</p>
+        )}
       </div>
     ),
     trait: () => cs?.personalitySummary && (
