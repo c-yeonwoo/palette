@@ -54,11 +54,17 @@ class PaymentController(
 ) {
 
     companion object {
+        /**
+         * 거리별 프로필 열람 비용. 베타: paid_views 단건 결제(원 단위).
+         * 정책 단가 변경 시 ADR 0039 + POLICY §1.1 동기화 필수.
+         *
+         * 1촌(지인) 무료 / 친구의 친구 1,000원 / 한 다리 더 건너 2,000원
+         */
         fun costForDegree(degree: Int): Int = when (degree) {
             1 -> 0
-            2 -> 3000
-            3 -> 5000
-            else -> 5000
+            2 -> 1000
+            3 -> 2000
+            else -> 2000
         }
     }
 
