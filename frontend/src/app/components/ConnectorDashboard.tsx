@@ -437,9 +437,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
             key={key}
             onClick={() => setActiveMainTab(key)}
             className={`flex-1 py-3 text-sm font-semibold relative transition-colors ${
-              activeMainTab === key
-                ? "text-primary border-b-2 border-primary -mb-px"
-                : "text-muted-foreground hover:text-foreground"
+              activeMainTab === key ? "text-primary" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {label}
@@ -447,6 +445,9 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
               <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 text-xs font-bold bg-primary/10 text-primary rounded-full">
                 {badge}
               </span>
+            )}
+            {activeMainTab === key && (
+              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-8 bg-primary rounded-full" />
             )}
           </button>
         ))}
