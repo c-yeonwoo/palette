@@ -1156,11 +1156,12 @@ function BottomNavigation({
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-30 safe-area-inset-bottom"
+      className="fixed bottom-0 left-0 right-0 z-30"
       style={{
         background: "hsl(var(--surface) / 0.92)",
         backdropFilter: "blur(16px)",
         boxShadow: "0 -1px 0 hsl(0 0% 0% / 0.06), 0 -4px 16px hsl(0 0% 0% / 0.04)",
+        paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
       <div className="max-w-2xl mx-auto flex items-center justify-around h-[60px] px-2">
