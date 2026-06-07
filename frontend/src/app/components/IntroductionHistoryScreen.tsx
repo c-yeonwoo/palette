@@ -170,45 +170,38 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
         </div>
       </header>
 
-      {/* Tabs */}
-      <div className="max-w-2xl mx-auto flex border-b border-border/40 px-4 bg-background sticky top-14 z-10">
-        {(["pending", "completed"] as TabType[]).map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-3 text-sm font-medium relative transition-colors ${
-              activeTab === tab ? "text-primary" : "text-muted-foreground"
-            }`}
-          >
-            {tab === "pending" ? (
-              <span className="flex items-center justify-center gap-1.5">
-                <Clock className="w-3.5 h-3.5" />
-                진행 중
-                {pendingItems.length > 0 && (
-                  <span className="bg-brand-soft text-gold-strong text-xs font-bold min-w-[16px] h-4 px-0.5 rounded-full inline-flex items-center justify-center">
-                    {pendingItems.length}
+      {/* Tabs — 홈(소개) 세그먼트 스타일 통일 */}
+      <div className="max-w-2xl mx-auto px-5 pt-4">
+        <div className="flex gap-1 p-1 rounded-2xl bg-surface-sunken">
+          {(["pending", "completed"] as TabType[]).map(tab => {
+            const isActive = activeTab === tab;
+            const label = tab === "pending" ? "진행 중" : "매칭 완료";
+            const count = tab === "pending" ? pendingItems.length : completedItems.length;
+            const Icon = tab === "pending" ? Clock : Heart;
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 ${
+                  isActive ? "bg-card text-foreground shadow-card" : "text-muted-foreground"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                {label}
+                {count > 0 && (
+                  <span className={`text-xs font-bold min-w-[16px] h-4 px-1 rounded-full inline-flex items-center justify-center ${
+                    isActive ? "bg-brand-soft text-gold-strong" : "bg-muted text-muted-foreground"
+                  }`}>
+                    {count}
                   </span>
                 )}
-              </span>
-            ) : (
-              <span className="flex items-center justify-center gap-1.5">
-                <Heart className="w-3.5 h-3.5" />
-                매칭 완료
-                {completedItems.length > 0 && (
-                  <span className="bg-muted text-muted-foreground text-xs font-bold min-w-[16px] h-4 px-0.5 rounded-full inline-flex items-center justify-center">
-                    {completedItems.length}
-                  </span>
-                )}
-              </span>
-            )}
-            {activeTab === tab && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
-            )}
-          </button>
-        ))}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-5 pt-4">
+      <div className="max-w-2xl mx-auto px-5 pt-3">
         {/* ── 진행 중 탭 ── */}
         {activeTab === "pending" && (
           <>

@@ -376,12 +376,22 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
           <button
             onClick={() => onNavigateToReward?.()}
             disabled={!onNavigateToReward}
-            className="flex-shrink-0 w-full border-b border-border text-left transition-colors enabled:hover:bg-muted/30 disabled:cursor-default"
+            className="flex-shrink-0 w-full border-b border-border text-left transition-colors enabled:hover:brightness-[0.98] disabled:cursor-default"
             aria-label="등급 & 포인트"
+            style={{
+              backgroundImage: `linear-gradient(135deg, ${tier.color}1A 0%, ${tier.color}08 60%, transparent 100%)`,
+            }}
           >
             <div className="max-w-2xl mx-auto px-5 py-4 flex items-center gap-3">
-              <span className="flex items-center gap-1.5 bg-secondary text-foreground font-bold text-sm px-2.5 py-1 rounded-full flex-shrink-0 border border-border">
-                <Award className="w-3.5 h-3.5 text-gold-strong" /> Lv.{lvl}
+              <span
+                className="flex items-center gap-1.5 font-bold text-sm px-2.5 py-1 rounded-full flex-shrink-0 border"
+                style={{
+                  backgroundColor: `${tier.color}26`,
+                  borderColor: `${tier.color}55`,
+                  color: tier.color,
+                }}
+              >
+                <Award className="w-3.5 h-3.5" /> Lv.{lvl}
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
@@ -390,8 +400,11 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                     {remaining != null ? `다음 ${next?.name}까지 ${remaining}건` : "최고 등급"}
                   </span>
                 </div>
-                <div className="mt-1.5 h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${pct}%` }} />
+                <div className="mt-1.5 h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{ width: `${pct}%`, backgroundColor: tier.color }}
+                  />
                 </div>
               </div>
               {onNavigateToReward && <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
