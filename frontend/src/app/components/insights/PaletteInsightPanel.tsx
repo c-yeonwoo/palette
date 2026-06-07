@@ -14,7 +14,7 @@
  * ADR 0037 — 점진 공개 + 강점 태그(Phase B) + 데이트 코드(Phase C).
  */
 import { useEffect, useMemo, useState } from "react";
-import { Sparkles, Lock, ChevronRight, X, Check } from "lucide-react";
+import { Sparkles, Lock, ChevronRight, X, Check, Palette, Star, Heart, Compass } from "lucide-react";
 import { COLOR_META, type ColorType } from "../../../lib/colorCompatibility";
 import { dateCodeFor } from "../../../lib/dateCode";
 
@@ -47,7 +47,7 @@ type StageKey = "hint" | "color" | "strengths" | "ideal" | "dateCode";
 interface Stage {
   key: StageKey;
   label: string;
-  emoji: string;
+  Icon: React.ElementType;
   unlocked: boolean;
   /** 잠금일 때 노출되는 다음 단계 안내 카피 */
   hint: string;
@@ -198,10 +198,12 @@ function StageRow({
         handleClick ? "transition-colors enabled:hover:bg-muted/30 active:scale-[0.997]" : ""
       }`}
     >
-      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-base ${
+      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
         stage.unlocked ? "bg-brand-soft" : "bg-muted/60"
       }`}>
-        {stage.unlocked ? stage.emoji : <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
+        {stage.unlocked
+          ? <stage.Icon className="w-4 h-4 text-gold-strong" />
+          : <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
       </div>
       <div className="flex-1 min-w-0">
         <p className={`text-xs font-bold ${stage.unlocked ? "text-foreground" : "text-muted-foreground"}`}>
@@ -280,15 +282,15 @@ function InsightUnlockModal({
 
         <div className="flex flex-col items-center text-center pt-2">
           <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mb-3"
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3"
             style={{ backgroundColor: accentHex ? `${accentHex}26` : "hsl(var(--brand-soft))" }}
           >
-            {stage.emoji}
+            <stage.Icon className="w-7 h-7" style={{ color: accentHex ?? undefined }} />
           </div>
           <p className="text-xs font-bold text-gold-strong uppercase tracking-wide">팔레트가 새로운 걸 알아냈어요</p>
           <h3 className="text-xl font-extrabold text-foreground mt-1">{stage.label}</h3>
           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-            프로필을 채워주실수록 팔레트가 당신을 더 깊이 이해해요. 다음 발견까지 한 걸음 더!
+            프로필을 채워주실수록 팔레트가 당신을 더 깊이 이해해요. 다음 발견까지 한 걸음 더.
           </p>
         </div>
 
@@ -320,11 +322,11 @@ function useStages(profile: ProfileLike): Stage[] {
       !!profile.attachmentProfile;
 
     return [
-      { key: "hint",      label: "당신의 결",       emoji: "🌱", unlocked: basicFilled,    hint: "기본 정보를 채우면 시작돼요" },
-      { key: "color",     label: "당신의 색",       emoji: "🎨", unlocked: colorReady,     hint: "AI 인터뷰를 완료하면 색이 정해져요" },
-      { key: "strengths", label: "당신의 매력",     emoji: "✨", unlocked: strengthsReady, hint: "인터뷰를 더 채우면 강점이 드러나요" },
-      { key: "ideal",     label: "어울리는 인연",   emoji: "💞", unlocked: idealReady,     hint: "이상형을 채우면 어울리는 인연이 보여요" },
-      { key: "dateCode",  label: "데이트 코드",     emoji: "🧭", unlocked: fullReady,      hint: "프로필을 모두 채우면 데이트 코드가 열려요" },
+      { key: "hint",      label: "당신의 결",     Icon: Sparkles, unlocked: basicFilled,    hint: "기본 정보를 채우면 시작돼요" },
+      { key: "color",     label: "당신의 색",     Icon: Palette,  unlocked: colorReady,     hint: "AI 인터뷰를 완료하면 색이 정해져요" },
+      { key: "strengths", label: "당신의 매력",   Icon: Star,     unlocked: strengthsReady, hint: "인터뷰를 더 채우면 강점이 드러나요" },
+      { key: "ideal",     label: "어울리는 인연", Icon: Heart,    unlocked: idealReady,     hint: "이상형을 채우면 어울리는 인연이 보여요" },
+      { key: "dateCode",  label: "데이트 코드",   Icon: Compass,  unlocked: fullReady,      hint: "프로필을 모두 채우면 데이트 코드가 열려요" },
     ];
   }, [profile]);
 }
