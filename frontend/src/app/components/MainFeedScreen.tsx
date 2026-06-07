@@ -5,6 +5,7 @@ import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { getCompatibilityDeterministic, COLOR_META, type ColorType } from "../../lib/colorCompatibility";
 import { DailyMatchBanner } from "./DailyMatchBanner";
+import { jobCategoryLabel, JOB_CATEGORY_OPTIONS } from "../../lib/jobCategory";
 
 interface ProfilePhoto {
   id: string;
@@ -139,18 +140,9 @@ interface FilterState {
 }
 
 const REGIONS = ["서울", "경기", "인천", "부산", "대구", "광주", "대전", "울산", "세종", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
-const JOB_CATEGORIES = [
+const JOB_CATEGORIES: Array<{ value: string; label: string }> = [
   { value: "", label: "전체" },
-  { value: "IT_DEVELOPMENT", label: "IT/개발" },
-  { value: "FINANCE", label: "금융/보험" },
-  { value: "EDUCATION", label: "교육" },
-  { value: "MEDICAL", label: "의료/보건" },
-  { value: "MEDIA", label: "미디어/엔터" },
-  { value: "SERVICE", label: "서비스/영업" },
-  { value: "MANUFACTURING", label: "제조/생산" },
-  { value: "PUBLIC_OFFICIAL", label: "공무원/공공기관" },
-  { value: "PROFESSIONAL", label: "전문직" },
-  { value: "OTHER", label: "기타" },
+  ...JOB_CATEGORY_OPTIONS,
 ];
 
 // 카드 커버 — 팔레트 '물감(paint)' 이미지. 탭하면 걷히고 사진이 드러난다.
@@ -484,12 +476,7 @@ function ProfileCard({
     };
   }, []);
 
-  const jobMap: Record<string, string> = {
-    IT_DEVELOPMENT: "IT개발", FINANCE: "금융", EDUCATION: "교육", MEDICAL: "의료",
-    MEDIA: "미디어", SERVICE: "서비스", MANUFACTURING: "제조", PUBLIC_OFFICIAL: "공무원",
-    PROFESSIONAL: "전문직", OTHER: "기타",
-  };
-  const job = profile.careerInfo.category ? jobMap[profile.careerInfo.category] ?? null : null;
+  const job = jobCategoryLabel(profile.careerInfo.category, { short: true });
   const location = profile.locationInfo.sido;
 
   const theirColorType = (profile.colorType?.type ?? null) as ColorType | null;
@@ -659,12 +646,6 @@ function AiSignalSection({
   const [showPaywall, setShowPaywall] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
 
-  const jobMap: Record<string, string> = {
-    IT_DEVELOPMENT: "IT개발", FINANCE: "금융", EDUCATION: "교육", MEDICAL: "의료",
-    MEDIA: "미디어", SERVICE: "서비스", MANUFACTURING: "제조", PUBLIC_OFFICIAL: "공무원",
-    PROFESSIONAL: "전문직", OTHER: "기타",
-  };
-
   const handleSubscribe = async () => {
     if (subscribing) return;
     setSubscribing(true);
@@ -699,7 +680,6 @@ function AiSignalSection({
               <AiSignalCard
                 key={i}
                 rec={rec}
-                jobMap={jobMap}
                 myColorType={myColorType}
                 onProfileClick={onProfileClick}
               />
@@ -834,12 +814,10 @@ function AiPassPaywall({
 
 function AiSignalCard({
   rec,
-  jobMap,
   myColorType,
   onProfileClick,
 }: {
   rec: AiSignalRecommendation;
-  jobMap: Record<string, string>;
   myColorType: ColorType | null;
   onProfileClick?: (item: FeedProfileItem) => void;
 }) {
@@ -854,7 +832,7 @@ function AiSignalCard({
     };
   }, []);
 
-  const job = profile.careerInfo.category ? jobMap[profile.careerInfo.category] ?? null : null;
+  const job = jobCategoryLabel(profile.careerInfo.category, { short: true });
   const location = profile.locationInfo.sido;
   const theirColor = (profile.colorType?.type ?? null) as ColorType | null;
   const compat = getCompatibilityDeterministic(myColorType, theirColor, profile.userId);

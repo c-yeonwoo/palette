@@ -16,6 +16,7 @@ import { AccentScope } from "../contexts/AccentScope";
 import { ColorTypeAura } from "./color/ColorTypeAura";
 import { ColorTypeBadge } from "./color/ColorTypeBadge";
 import { getMyColorType } from "../../lib/daily-match";
+import { jobCategoryLabel } from "../../lib/jobCategory";
 
 interface MyProfileScreenProps {
   onBack: () => void;
@@ -266,7 +267,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
     profile?.basicInfo.height ? `${profile.basicInfo.height}cm` : null,
     profile?.basicInfo.bodyType ? getBodyTypeLabel(profile.basicInfo.bodyType) : null,
     profile?.basicInfo.mbti || null,
-    profile?.careerInfo.category || null,
+    jobCategoryLabel(profile?.careerInfo.category),
     profile?.locationInfo.sido || null,
   ].filter(Boolean) as string[];
 

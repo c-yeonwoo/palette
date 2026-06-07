@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { getCompatibilityDeterministic, COLOR_META, COMPAT_STYLE, type ColorType } from "../../lib/colorCompatibility";
 import { CategoryCard } from "./profile/CategoryCard";
 import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
+import { jobCategoryLabel } from "../../lib/jobCategory";
 
 interface MutualFriend {
   name: string;
@@ -518,16 +519,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     return map[bodyType] || bodyType;
   };
 
-  const getJobCategoryDisplay = (category: string | null) => {
-    if (!category) return null;
-    const map: Record<string, string> = {
-      IT_DEVELOPMENT: "IT/개발", FINANCE: "금융/보험", EDUCATION: "교육",
-      MEDICAL: "의료/보건", MEDIA: "미디어/엔터", SERVICE: "서비스/영업",
-      MANUFACTURING: "제조/생산", PUBLIC_OFFICIAL: "공무원/공공기관",
-      PROFESSIONAL: "전문직", OTHER: "기타"
-    };
-    return map[category] || category;
-  };
+  const getJobCategoryDisplay = (category: string | null) => jobCategoryLabel(category);
 
   const getEducationDisplay = (level: string | null) => {
     if (!level) return null;

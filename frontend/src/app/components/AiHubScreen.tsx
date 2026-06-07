@@ -13,6 +13,7 @@ import {
 import { FortuneBanner } from "./FortuneBanner";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
+import { jobCategoryLabel } from "../../lib/jobCategory";
 import {
   Dialog,
   DialogContent,
@@ -107,19 +108,6 @@ interface CompatibilityResponse {
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
-const JOB_MAP: Record<string, string> = {
-  IT_DEVELOPMENT: "IT개발",
-  FINANCE: "금융",
-  EDUCATION: "교육",
-  MEDICAL: "의료",
-  MEDIA: "미디어",
-  SERVICE: "서비스",
-  MANUFACTURING: "제조",
-  PUBLIC_OFFICIAL: "공무원",
-  PROFESSIONAL: "전문직",
-  OTHER: "기타",
-};
 
 const MBTI_OPTIONS = [
   "INTJ", "INTP", "ENTJ", "ENTP",
@@ -345,7 +333,7 @@ function PaintCard({
     if (timerRef.current) clearTimeout(timerRef.current);
   }, []);
 
-  const job = profile.careerInfo.category ? JOB_MAP[profile.careerInfo.category] ?? null : null;
+  const job = jobCategoryLabel(profile.careerInfo.category, { short: true });
   const location = profile.locationInfo.sido;
 
   return (
