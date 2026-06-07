@@ -400,6 +400,32 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
         );
       })()}
 
+      {/* ── 수익 요약 카드 (커미션율 · 적립 포인트) — 등급 strip 아래 / 탭 위 ── */}
+      {matchmakerData && (
+        <div className="flex-shrink-0 border-b border-border">
+          <div className="max-w-2xl mx-auto px-5 py-3">
+            <button
+              onClick={() => onNavigateToReward?.()}
+              disabled={!onNavigateToReward}
+              className="w-full rounded-2xl border border-border bg-card shadow-card p-3 grid grid-cols-3 divide-x divide-border text-center enabled:active:scale-[0.99] transition-transform disabled:cursor-default"
+            >
+              <div className="px-2">
+                <p className="text-xs text-muted-foreground mb-1">커미션율</p>
+                <p className="text-base font-bold text-foreground">{Math.round((matchmakerData.commissionRate ?? 0) * 100)}%</p>
+              </div>
+              <div className="px-2">
+                <p className="text-xs text-muted-foreground mb-1">사용 가능</p>
+                <p className="text-base font-bold text-gold-strong">{(matchmakerData.availablePoints ?? 0).toLocaleString()}P</p>
+              </div>
+              <div className="px-2">
+                <p className="text-xs text-muted-foreground mb-1">누적</p>
+                <p className="text-base font-bold text-foreground">{(matchmakerData.totalPoints ?? 0).toLocaleString()}P</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── 메인 탭 ── */}
       <div className="flex-shrink-0 flex border-b border-border">
         {([
@@ -429,28 +455,6 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
       {/* ── 탭 콘텐츠 (스크롤) ── */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-5 py-4">
-
-          {/* ── 수익 요약 카드 (커미션율 · 적립 포인트) ── */}
-          {matchmakerData && (
-            <button
-              onClick={() => onNavigateToReward?.()}
-              disabled={!onNavigateToReward}
-              className="w-full mb-4 rounded-2xl border border-border bg-card shadow-card p-4 grid grid-cols-3 divide-x divide-border text-center enabled:active:scale-[0.99] transition-transform disabled:cursor-default"
-            >
-              <div className="px-2">
-                <p className="text-xs text-muted-foreground mb-1">커미션율</p>
-                <p className="text-lg font-bold text-foreground">{Math.round((matchmakerData.commissionRate ?? 0) * 100)}%</p>
-              </div>
-              <div className="px-2">
-                <p className="text-xs text-muted-foreground mb-1">사용 가능</p>
-                <p className="text-lg font-bold text-gold-strong">{(matchmakerData.availablePoints ?? 0).toLocaleString()}P</p>
-              </div>
-              <div className="px-2">
-                <p className="text-xs text-muted-foreground mb-1">누적</p>
-                <p className="text-lg font-bold text-foreground">{(matchmakerData.totalPoints ?? 0).toLocaleString()}P</p>
-              </div>
-            </button>
-          )}
 
           {/* ════ 내 지인 탭 ════ */}
           {activeMainTab === "members" && (

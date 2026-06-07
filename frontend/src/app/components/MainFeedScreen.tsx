@@ -550,13 +550,10 @@ function ProfileCard({
         </div>
       </div>
 
-      {/* 소개 섹션 — 사진 바로 밑 (공개 후). 배경 = 상대 팔레트 컬러 파스텔 */}
+      {/* 소개 섹션 — 사진 바로 밑 (공개 후). 흰색 + 그림자 */}
       {revealed && (
-        <div
-          className="rounded-b-2xl px-3 py-2.5 shadow-card"
-          style={{ backgroundColor: accentHex ? `${accentHex}1F` : "hsl(var(--surface-sunken))" }}
-        >
-          <CardInfoSection nickname={nickname ?? null} job={job} age={age ?? null} region={location} />
+        <div className="rounded-b-2xl bg-card px-3 py-3 shadow-card">
+          <CardInfoSection nickname={nickname ?? null} job={job} age={age ?? null} region={location} colorHex={accentHex} colorName={theirMeta?.name ?? null} />
         </div>
       )}
 
@@ -568,24 +565,34 @@ function ProfileCard({
   );
 }
 
-/** 카드 하단 소개 섹션 — 닉네임 / 직업군 / 나이 · 지역 */
+/** 카드 하단 소개 섹션 — 닉네임 / 직업군 / 나이 · 지역 / 색 */
 function CardInfoSection({
   nickname,
   job,
   age,
   region,
+  colorHex,
+  colorName,
 }: {
   nickname: string | null;
   job: string | null;
   age: number | null;
   region: string | null;
+  colorHex: string | null;
+  colorName: string | null;
 }) {
   const sub = [age ? `${age}세` : null, region].filter(Boolean).join(" · ");
   return (
     <>
-      {nickname && <p className="text-sm font-bold text-foreground truncate leading-tight">{nickname}</p>}
-      {job && <p className="text-xs text-muted-foreground truncate mt-0.5">{job}</p>}
-      {sub && <p className="text-xs text-muted-foreground truncate mt-0.5">{sub}</p>}
+      {nickname && <p className="text-base font-extrabold text-foreground truncate leading-tight tracking-tight">{nickname}</p>}
+      {job && <p className="text-xs font-semibold text-foreground/80 truncate mt-1">{job}</p>}
+      {sub && <p className="text-xs font-semibold text-foreground/60 truncate mt-0.5">{sub}</p>}
+      {colorHex && (
+        <div className="flex items-center gap-1.5 mt-1.5">
+          <span className="w-2.5 h-2.5 rounded-full ring-1 ring-black/5" style={{ backgroundColor: colorHex }} />
+          {colorName && <span className="text-xs font-semibold text-foreground/70 truncate">{colorName}</span>}
+        </div>
+      )}
     </>
   );
 }
@@ -607,14 +614,9 @@ function RelationshipBadge({ degree, mutualFriends }: { degree?: number; mutualF
   if (degree === 2 && mutualFriends.length > 0) {
     const connector = mutualFriends[0].name;
     const more = mutualFriends.length - 1;
-    const label = more > 0 ? `${connector}님 외 ${more}명의 친구` : `${connector}님의 친구`;
+    const label = more > 0 ? `${connector}님 외 ${more}명의 지인` : `${connector}님의 지인`;
     return (
-      <div className="flex items-center gap-1 min-w-0">
-        <span className="flex-shrink-0 text-xs font-bold bg-secondary text-muted-foreground rounded-full px-1.5 py-0.5 leading-none border border-border">
-          친구의 친구
-        </span>
-        <p className="text-xs text-muted-foreground truncate">{label}</p>
-      </div>
+      <p className="text-xs font-semibold text-muted-foreground truncate">{label}</p>
     );
   }
 
@@ -924,13 +926,10 @@ function AiSignalCard({
         </div>
       </div>
 
-      {/* 소개 섹션 — 사진 바로 밑 (공개 후). 배경 = 상대 팔레트 컬러 파스텔 */}
+      {/* 소개 섹션 — 사진 바로 밑 (공개 후). 흰색 + 그림자 */}
       {revealed && (
-        <div
-          className="rounded-b-2xl px-3 py-2.5 shadow-card"
-          style={{ backgroundColor: accentHex ? `${accentHex}1F` : "hsl(var(--surface-sunken))" }}
-        >
-          <CardInfoSection nickname={null} job={job} age={rec.teaserAge ?? null} region={location} />
+        <div className="rounded-b-2xl bg-card px-3 py-3 shadow-card">
+          <CardInfoSection nickname={null} job={job} age={rec.teaserAge ?? null} region={location} colorHex={accentHex} colorName={theirColor ? COLOR_META[theirColor]?.name ?? null : null} />
         </div>
       )}
     </div>

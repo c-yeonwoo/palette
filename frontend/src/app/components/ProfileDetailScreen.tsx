@@ -860,14 +860,10 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
             <>
               <Button
                 size="lg"
-                className="w-full h-14"
+                className="w-full h-14 bg-brand-soft text-gold-strong hover:bg-brand-soft/90 font-bold"
                 onClick={isPalettePick ? handleDirectRequest : handleMatchRequest}
                 disabled={alreadyRequested || inCoolTime}
                 variant={alreadyRequested || inCoolTime ? "secondary" : "default"}
-                style={(!alreadyRequested && !inCoolTime && accentColor)
-                  ? { backgroundColor: accentColor, borderColor: accentColor, color: buttonTextColor }
-                  : {}
-                }
               >
                 <Send className="w-5 h-5 mr-2" />
                 {alreadyRequested

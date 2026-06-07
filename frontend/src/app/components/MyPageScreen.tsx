@@ -292,7 +292,7 @@ export function MyPageScreen({
 
         {/* 공개 범위 — 프로필 공개 (소개 요청 받기는 항상 ON, 토글 제거) */}
         {!isMatchmakerOnly && profile && (
-          <section>
+          <section className="!mt-[26px]">
             <SectionHeader title="공개 범위" className="px-1 mb-3" />
             <div className="bg-card rounded-2xl border border-border/60 shadow-card overflow-hidden divide-y divide-border">
               <div className="flex items-center justify-between px-4 py-3.5">
@@ -335,7 +335,7 @@ export function MyPageScreen({
         )}
 
         {/* 설정 */}
-        <section>
+        <section className="!mt-[26px]">
           <SectionHeader title="설정" className="px-1 mb-3" />
           <div className="bg-card rounded-2xl border border-border/60 shadow-card overflow-hidden divide-y divide-border">
             <button
