@@ -21,7 +21,7 @@ class SecurityConfig(
     private val oAuth2AuthenticationSuccessHandler: OAuth2AuthenticationSuccessHandler,
     private val oAuth2AuthenticationFailureHandler: OAuth2AuthenticationFailureHandler,
     private val jwtAuthenticationFilter: JwtAuthenticationFilter,
-    @Value("\${cors.allowed-origins:http://localhost:3000,http://localhost:8080}")
+    @Value("\${cors.allowed-origins:http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080}")
     private val corsAllowedOrigins: String,
 ) {
 
