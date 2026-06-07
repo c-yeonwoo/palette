@@ -14,7 +14,7 @@
  * ADR 0037 — 점진 공개 + 강점 태그(Phase B) + 데이트 코드(Phase C).
  */
 import { useEffect, useMemo, useState } from "react";
-import { Sparkles, Lock, ChevronRight, X, Check, Palette, Star, Heart, Compass, HelpCircle } from "lucide-react";
+import { Sparkles, Lock, ChevronRight, X, Check, Palette, Star, Heart, Compass, HelpCircle, RefreshCw } from "lucide-react";
 import { COLOR_META, type ColorType } from "../../../lib/colorCompatibility";
 import { dateCodeFor } from "../../../lib/dateCode";
 
@@ -41,6 +41,8 @@ interface PaletteInsightPanelProps {
   onNavigateToEdit?: () => void;
   /** 컬러 카드 클릭 — 컬러 상세로 이동 (선택) */
   onNavigateToColor?: () => void;
+  /** "다시 분석" 진입 — AI 인터뷰 prefill 모드로 재진행 */
+  onReanalyze?: () => void;
 }
 
 type StageKey = "color" | "trait" | "strengths" | "ideal" | "dateCode";
@@ -57,7 +59,7 @@ interface Stage {
 
 const SEEN_KEY = "palette:insights:seenStages:v1";
 
-export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToColor }: PaletteInsightPanelProps) {
+export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToColor, onReanalyze }: PaletteInsightPanelProps) {
   const stages = useStages(profile);
   const colorTypeKey = (profile.colorType?.type ?? null) as ColorType | null;
   const accentHex = profile.colorType?.hex ?? null;
@@ -78,6 +80,8 @@ export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToCol
   const unlockedCount = stages.filter(s => s.unlocked).length;
   const allUnlocked = unlockedCount === stages.length;
   const cs = profile.colorType;
+  const hasAnalysis = !!cs?.name;
+  const [showReanalyzeConfirm, setShowReanalyzeConfirm] = useState(false);
 
   // 5단계 콘텐츠 (key 기반 매핑)
   const renderStageContent: Record<StageKey, () => React.ReactNode> = {
@@ -139,7 +143,18 @@ export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToCol
           </div>
         </div>
       </div>
-      <p className="text-xs text-muted-foreground mb-3 px-1">프로필을 채울수록 더 깊이 알아가요</p>
+      <div className="flex items-center justify-between mb-3 px-1">
+        <p className="text-xs text-muted-foreground">프로필을 채울수록 더 깊이 알아가요</p>
+        {hasAnalysis && onReanalyze && (
+          <button
+            onClick={() => setShowReanalyzeConfirm(true)}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-gold-strong hover:underline"
+          >
+            <RefreshCw className="w-3 h-3" />
+            다시 분석
+          </button>
+        )}
+      </div>
 
       {/* ── 카드 리스트 ── */}
       <div className="rounded-2xl bg-card border border-border shadow-card overflow-hidden divide-y divide-border">
@@ -154,6 +169,37 @@ export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToCol
           </StageRow>
         ))}
       </div>
+
+      {/* ── 다시 분석 확인 ── */}
+      {showReanalyzeConfirm && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => setShowReanalyzeConfirm(false)}>
+          <div className="w-full sm:max-w-sm bg-card rounded-t-3xl sm:rounded-3xl p-6 shadow-overlay animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-2xl bg-brand-soft flex items-center justify-center mb-3">
+                <RefreshCw className="w-6 h-6 text-gold-strong" />
+              </div>
+              <h3 className="text-lg font-extrabold text-foreground">팔레트 분석을 다시 받을까요?</h3>
+              <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                이전 답변을 미리 채워둘게요. 바뀐 부분만 새로 적으면, 팔레트가 다시 분석해드려요.
+              </p>
+            </div>
+            <div className="flex gap-2 mt-5">
+              <button
+                onClick={() => setShowReanalyzeConfirm(false)}
+                className="flex-1 py-3 rounded-2xl bg-muted text-foreground font-semibold active:scale-95 transition-transform"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => { setShowReanalyzeConfirm(false); onReanalyze?.(); }}
+                className="flex-1 py-3 rounded-2xl bg-brand-soft text-gold-strong font-bold shadow-card active:scale-95 transition-transform"
+              >
+                다시 분석
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Unlock 모달 ── */}
       {unlockModalStage && (

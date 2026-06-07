@@ -17,6 +17,7 @@ interface MyPageScreenProps {
   onLogout: () => void;
   onConvertToRegular: () => void;
   onNavigateToFriends?: () => void;
+  onReanalyze?: () => void;
 }
 
 interface MatchmakerData {
@@ -50,7 +51,8 @@ export function MyPageScreen({
   onNavigateToProfile,
   onLogout,
   onConvertToRegular,
-  onNavigateToFriends
+  onNavigateToFriends,
+  onReanalyze,
 }: MyPageScreenProps) {
   const [user, setUser] = useState<any>(null);
   const [matchmaker, setMatchmaker] = useState<MatchmakerData | null>(null);
@@ -275,6 +277,7 @@ export function MyPageScreen({
           <PaletteInsightPanel
             profile={profile as any}
             onNavigateToEdit={onNavigateToProfile}
+            onReanalyze={onReanalyze}
           />
         </div>
       )}

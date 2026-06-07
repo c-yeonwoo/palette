@@ -17,6 +17,8 @@ interface InterviewQuestion {
 interface AIInterviewScreenProps {
   onComplete: (answers: Record<string, string>) => void;
   onBack: () => void;
+  /** 재진행 모드: 이전 답변을 미리 채워두고 인사 메시지 변경 (ADR 0037 후속) */
+  initialAnswers?: Record<string, string> | null;
 }
 
 type MessageType = "ai" | "user";
@@ -26,11 +28,12 @@ interface ChatMessage {
   questionId?: string;
 }
 
-export function AIInterviewScreen({ onComplete, onBack }: AIInterviewScreenProps) {
+export function AIInterviewScreen({ onComplete, onBack, initialAnswers }: AIInterviewScreenProps) {
+  const isReanalyze = !!initialAnswers && Object.values(initialAnswers).some(v => !!v);
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>(initialAnswers ?? {});
   const [currentInput, setCurrentInput] = useState("");
   const [selectedChips, setSelectedChips] = useState<string[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -45,16 +48,29 @@ export function AIInterviewScreen({ onComplete, onBack }: AIInterviewScreenProps
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // 재진행 모드: 단계 진입 시 이전 답변을 입력창에 미리 채워서 수정 편의 제공
+  useEffect(() => {
+    if (!isReanalyze) return;
+    const q = questions[currentStep];
+    const prev = q ? (initialAnswers?.[q.id] ?? "") : "";
+    setCurrentInput(prev);
+    if (q?.inputType === "chips" && prev) {
+      setSelectedChips(prev.split(",").map(s => s.trim()).filter(Boolean));
+    } else {
+      setSelectedChips([]);
+    }
+  }, [currentStep, questions, isReanalyze, initialAnswers]);
+
   const fetchQuestions = async () => {
     try {
       const data = await api.get<{ questions: InterviewQuestion[] }>("/api/v1/ai-interview/questions");
       setQuestions(data.questions);
       // Show intro + first question
+      const intro = isReanalyze
+        ? "다시 분석을 시작할게요. 이전 답변을 미리 채워뒀으니, 바꾸고 싶은 부분만 새로 적어주세요. 그대로 두고 싶으면 다음으로 넘어가도 돼요."
+        : "안녕하세요! 저는 당신의 색깔을 찾아드릴 AI예요.\n\n편하게 대화하듯이 답변해주시면, 당신만의 멋진 프로필을 만들어드릴게요!\n\n10개의 질문이 있어요. 준비되셨나요?";
       setMessages([
-        {
-          type: "ai",
-          content: "안녕하세요! 😊 저는 당신의 색깔을 찾아드릴 AI예요.\n\n편하게 대화하듯이 답변해주시면, 당신만의 멋진 프로필을 만들어드릴게요!\n\n10개의 질문이 있어요. 준비되셨나요?",
-        },
+        { type: "ai", content: intro },
         {
           type: "ai",
           content: data.questions[0].question,

@@ -200,6 +200,10 @@ export default function App() {
   const [selectedViewCost, setSelectedViewCost] = useState<number>(3000);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [introMethod, setIntroMethod] = useState<"INTERVIEW" | "MANUAL">("INTERVIEW");
+  /** AI 인터뷰 재분석 모드 (마이페이지에서 진입 시 true) — 완료 후 마이페이지로 복귀 */
+  const [isReanalyzeMode, setIsReanalyzeMode] = useState(false);
+  /** 재분석용 prefill 답변 (서버 프로필에서 로드) */
+  const [reanalyzeAnswers, setReanalyzeAnswers] = useState<Record<string, string> | null>(null);
   const [prevScreen, setPrevScreen] = useState<Screen>("mainFeed");
   const [selectedMatchmakerId, setSelectedMatchmakerId] = useState<string | undefined>(undefined);
   const [selectedMatchId, setSelectedMatchId] = useState<string>("match-001");
@@ -475,6 +479,30 @@ export default function App() {
     setCurrentScreen("aiInterview");
   };
 
+  /**
+   * 마이페이지 → 팔레트 분석 다시 받기.
+   * 서버 프로필에서 기존 인터뷰 답변·이상형을 로드해 profileData 에 prefill 하고
+   * 인터뷰 화면을 재진행 모드로 진입. 완료 후 마이페이지로 복귀.
+   */
+  const handleReanalyzeStart = async () => {
+    try {
+      const data = await api.get<any>('/api/v1/profile');
+      const prevAnswers: Record<string, string> = data?.introduction?.interviewAnswers ?? {};
+      setReanalyzeAnswers(prevAnswers);
+      setProfileData(prev => ({
+        ...prev,
+        introduction: { ...prev.introduction, interviewAnswers: prevAnswers },
+        idealType: data?.idealType ?? prev.idealType,
+        lifestyleInfo: data?.lifestyleInfo ?? prev.lifestyleInfo,
+      }));
+      setIntroMethod("INTERVIEW");
+      setIsReanalyzeMode(true);
+      setCurrentScreen("aiInterview");
+    } catch {
+      toast.error("기존 답변을 불러오지 못했어요");
+    }
+  };
+
   const handleIntroMethodManual = () => {
     setIntroMethod("MANUAL");
     setCurrentScreen("aboutMe");
@@ -680,8 +708,15 @@ export default function App() {
 
       localStorage.removeItem(ONBOARDING_DRAFT_KEY);
       localStorage.removeItem(ONBOARDING_STEP_KEY);
-      setCurrentScreen("mainFeed");
-      toast.success("프로필이 성공적으로 생성되었습니다!");
+      if (isReanalyzeMode) {
+        setIsReanalyzeMode(false);
+        setReanalyzeAnswers(null);
+        setCurrentScreen("myPage");
+        toast.success("팔레트가 다시 분석했어요 ✨");
+      } else {
+        setCurrentScreen("mainFeed");
+        toast.success("프로필이 성공적으로 생성되었습니다!");
+      }
     } catch (error: any) {
       console.error('Failed to complete profile:', error);
       toast.error(`프로필 생성에 실패했습니다: ${error?.message || '알 수 없는 오류'}`);
@@ -933,7 +968,16 @@ export default function App() {
       {currentScreen === "aiInterview" && (
         <AIInterviewScreen
           onComplete={handleAIInterviewComplete}
-          onBack={() => setCurrentScreen("introMethodSelection")}
+          onBack={() => {
+            if (isReanalyzeMode) {
+              setIsReanalyzeMode(false);
+              setReanalyzeAnswers(null);
+              setCurrentScreen("myPage");
+            } else {
+              setCurrentScreen("introMethodSelection");
+            }
+          }}
+          initialAnswers={isReanalyzeMode ? reanalyzeAnswers : null}
         />
       )}
 
@@ -1045,6 +1089,7 @@ export default function App() {
           onNavigateToProfile={() => setCurrentScreen("myProfile")}
           onConvertToRegular={handleConvertToRegular}
           onNavigateToFriends={() => { setFriendConnectFrom(currentScreen); setCurrentScreen("friendConnect"); }}
+          onReanalyze={handleReanalyzeStart}
           onLogout={() => {
             localStorage.removeItem(ONBOARDING_DRAFT_KEY);
             localStorage.removeItem(ONBOARDING_STEP_KEY);
