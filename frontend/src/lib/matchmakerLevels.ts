@@ -22,11 +22,11 @@ export interface MatchmakerTier {
 }
 
 export const MATCHMAKER_TIERS: Record<MatchmakerLevel, MatchmakerTier> = {
-  1: { level: 1, name: "브론즈",     emoji: "🥉", commission: 30, minMatches: 0,  maxMatches: 2,                       color: "#B87333" },
-  2: { level: 2, name: "실버",       emoji: "🥈", commission: 35, minMatches: 3,  maxMatches: 5,                       color: "#A8AEB8" },
-  3: { level: 3, name: "골드",       emoji: "🥇", commission: 40, minMatches: 6,  maxMatches: 10,                      color: "#BD9244" },
-  4: { level: 4, name: "플래티넘",   emoji: "💠", commission: 45, minMatches: 11, maxMatches: 20,                      color: "#6E8CA0" },
-  5: { level: 5, name: "다이아몬드", emoji: "💎", commission: 50, minMatches: 21, maxMatches: Number.POSITIVE_INFINITY, color: "#45B6CC" },
+  1: { level: 1, name: "브론즈",     emoji: "🥉", commission: 15, minMatches: 0,  maxMatches: 2,                       color: "#B87333" },
+  2: { level: 2, name: "실버",       emoji: "🥈", commission: 20, minMatches: 3,  maxMatches: 5,                       color: "#A8AEB8" },
+  3: { level: 3, name: "골드",       emoji: "🥇", commission: 25, minMatches: 6,  maxMatches: 10,                      color: "#BD9244" },
+  4: { level: 4, name: "플래티넘",   emoji: "💠", commission: 30, minMatches: 11, maxMatches: 20,                      color: "#6E8CA0" },
+  5: { level: 5, name: "다이아몬드", emoji: "💎", commission: 40, minMatches: 21, maxMatches: Number.POSITIVE_INFINITY, color: "#45B6CC" },
 };
 
 /** 1~5 순서 배열 */
