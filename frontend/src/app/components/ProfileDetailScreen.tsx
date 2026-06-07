@@ -68,6 +68,17 @@ interface ProfileData {
       motto: string | null;
     } | null;
   };
+  attachmentProfile?: {
+    contactAnxiety: number;
+    intimacyAvoidance: number;
+    conflictStyle: number;
+    emotionExpression: number;
+    independenceLevel: number;
+    attachmentType?: string;
+    attachmentTypeLabel?: string;
+    attachmentTypeDescription?: string;
+    attachmentTypeEmoji?: string;
+  } | null;
   idealType: {
     datePreferences: string[];
     importantValues: string[];
@@ -723,6 +734,67 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                 </div>
               ) : (
                 <>
+              {/* 소개글 — 자유 텍스트 (편집화면의 "소개글" 필드) */}
+              {profile?.introduction.text && (
+                <Section title="소개글">
+                  <div
+                    className="bg-card rounded-lg p-4"
+                    style={accentColor
+                      ? { border: `1px solid ${accentColor}40` }
+                      : { border: "1px solid hsl(var(--border))" }
+                    }
+                  >
+                    <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">
+                      {profile.introduction.text}
+                    </p>
+                  </div>
+                </Section>
+              )}
+
+              {/* 관심사 — 칩 */}
+              {profile?.introduction.interests && profile.introduction.interests.length > 0 && (
+                <Section title="관심사">
+                  <div className="bg-card rounded-lg border border-border p-4">
+                    <div className="flex flex-wrap gap-2">
+                      {profile.introduction.interests.map((interest) => (
+                        <span
+                          key={interest}
+                          className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-muted text-foreground"
+                          style={accentColor ? { backgroundColor: `${accentColor}15`, color: accentColor } : undefined}
+                        >
+                          {interest}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </Section>
+              )}
+
+              {/* 심리 프로필 — 애착 유형 */}
+              {profile?.attachmentProfile?.attachmentTypeLabel && (
+                <Section title="심리 프로필">
+                  <div className="bg-card rounded-lg border border-border p-4">
+                    <div className="flex items-start gap-3">
+                      {profile.attachmentProfile.attachmentTypeEmoji && (
+                        <span className="text-2xl flex-shrink-0" aria-hidden>
+                          {profile.attachmentProfile.attachmentTypeEmoji}
+                        </span>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-foreground">
+                          {profile.attachmentProfile.attachmentTypeLabel}
+                        </p>
+                        {profile.attachmentProfile.attachmentTypeDescription && (
+                          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                            {profile.attachmentProfile.attachmentTypeDescription}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Section>
+              )}
+
               {/* Introduction */}
               <Section title="자기소개">
                 {profile?.introduction.interviewAnswers ? (

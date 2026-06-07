@@ -17,6 +17,7 @@ interface MyPageScreenProps {
   onLogout: () => void;
   onConvertToRegular: () => void;
   onNavigateToFriends?: () => void;
+  onNavigateToColor?: () => void;
   onReanalyze?: () => void;
 }
 
@@ -52,6 +53,7 @@ export function MyPageScreen({
   onLogout,
   onConvertToRegular,
   onNavigateToFriends,
+  onNavigateToColor,
   onReanalyze,
 }: MyPageScreenProps) {
   const [user, setUser] = useState<any>(null);
@@ -277,6 +279,7 @@ export function MyPageScreen({
           <PaletteInsightPanel
             profile={profile as any}
             onNavigateToEdit={onNavigateToProfile}
+            onNavigateToColor={onNavigateToColor}
             onReanalyze={onReanalyze}
           />
         </div>

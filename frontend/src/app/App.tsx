@@ -181,6 +181,8 @@ function applyBrandFromLocalStorage() {
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>("login");
   const [friendConnectFrom, setFriendConnectFrom] = useState<Screen>("myPage");
+  // 색 상세 진입점 — myPage / myProfile 둘 다 진입 가능, 돌아갈 화면 추적
+  const [colorDetailFrom, setColorDetailFrom] = useState<Screen>("myPage");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [betaPassed, setBetaPassed] = useState<boolean>(hasBetaPassed());
@@ -1017,7 +1019,7 @@ export default function App() {
           onBack={handleMyProfileBack}
           onEdit={handleMyProfileEdit}
           onConvertToRegular={handleConvertToRegular}
-          onNavigateToColor={() => setCurrentScreen("colorDetail")}
+          onNavigateToColor={() => { setColorDetailFrom("myProfile"); setCurrentScreen("colorDetail"); }}
         />
       )}
 
@@ -1089,6 +1091,7 @@ export default function App() {
           onNavigateToProfile={() => setCurrentScreen("myProfile")}
           onConvertToRegular={handleConvertToRegular}
           onNavigateToFriends={() => { setFriendConnectFrom(currentScreen); setCurrentScreen("friendConnect"); }}
+          onNavigateToColor={() => { setColorDetailFrom("myPage"); setCurrentScreen("colorDetail"); }}
           onReanalyze={handleReanalyzeStart}
           onLogout={() => {
             localStorage.removeItem(ONBOARDING_DRAFT_KEY);
@@ -1176,7 +1179,7 @@ export default function App() {
 
       {currentScreen === "colorDetail" && (
         <ColorDetailScreen
-          onBack={() => setCurrentScreen("myProfile")}
+          onBack={() => setCurrentScreen(colorDetailFrom)}
           onNavigateToProfile={() => setCurrentScreen("aiProfileEnhance")}
         />
       )}
