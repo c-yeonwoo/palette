@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">팔레트</string>
+    <string name="title_activity_main">팔레트</string>
+    <string name="package_name">kr.ai.palette</string>
+    <string name="custom_url_scheme">kr.ai.palette</string>
+</resources>

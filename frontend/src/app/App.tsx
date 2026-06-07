@@ -32,6 +32,9 @@ const MatchmakerPublicProfileScreen = lazy(() => import("./components/Matchmaker
 const DesignSystemScreen = lazy(() => import("./components/DesignSystemScreen").then(m => ({ default: m.DesignSystemScreen })));
 const MyPageScreen = lazy(() => import("./components/MyPageScreen").then(m => ({ default: m.MyPageScreen })));
 const ColorDetailScreen = lazy(() => import("./components/ColorDetailScreen").then(m => ({ default: m.ColorDetailScreen })));
+const PrivacyPolicyScreen = lazy(() => import("./components/legal/PrivacyPolicyScreen").then(m => ({ default: m.PrivacyPolicyScreen })));
+const TermsOfServiceScreen = lazy(() => import("./components/legal/TermsOfServiceScreen").then(m => ({ default: m.TermsOfServiceScreen })));
+const DeleteAccountScreen = lazy(() => import("./components/legal/DeleteAccountScreen").then(m => ({ default: m.DeleteAccountScreen })));
 const PublicProfileScreen = lazy(() => import("./components/PublicProfileScreen").then(m => ({ default: m.PublicProfileScreen })));
 const FriendConnectScreen = lazy(() => import("./components/FriendConnectScreen").then(m => ({ default: m.FriendConnectScreen })));
 const MatchmakerRewardScreen = lazy(() => import("./components/MatchmakerRewardScreen").then(m => ({ default: m.MatchmakerRewardScreen })));
@@ -96,7 +99,10 @@ type Screen =
   | "photoVerify"
   | "colorTest"
   | "colorDetail"
-  | "inviteHub";
+  | "inviteHub"
+  | "privacyPolicy"
+  | "termsOfService"
+  | "deleteAccount";
 
 const ONBOARDING_DRAFT_KEY = "palette_onboarding_draft";
 const ONBOARDING_STEP_KEY = "palette_onboarding_step";
@@ -1093,6 +1099,9 @@ export default function App() {
           onNavigateToFriends={() => { setFriendConnectFrom(currentScreen); setCurrentScreen("friendConnect"); }}
           onNavigateToColor={() => { setColorDetailFrom("myPage"); setCurrentScreen("colorDetail"); }}
           onReanalyze={handleReanalyzeStart}
+          onNavigatePrivacy={() => setCurrentScreen("privacyPolicy")}
+          onNavigateTerms={() => setCurrentScreen("termsOfService")}
+          onNavigateDeleteAccount={() => setCurrentScreen("deleteAccount")}
           onLogout={() => {
             localStorage.removeItem(ONBOARDING_DRAFT_KEY);
             localStorage.removeItem(ONBOARDING_STEP_KEY);
@@ -1183,10 +1192,30 @@ export default function App() {
           onNavigateToProfile={() => setCurrentScreen("aiProfileEnhance")}
         />
       )}
+
+      {currentScreen === "privacyPolicy" && (
+        <PrivacyPolicyScreen onBack={() => setCurrentScreen("myPage")} />
+      )}
+
+      {currentScreen === "termsOfService" && (
+        <TermsOfServiceScreen onBack={() => setCurrentScreen("myPage")} />
+      )}
+
+      {currentScreen === "deleteAccount" && (
+        <DeleteAccountScreen
+          onBack={() => setCurrentScreen("myPage")}
+          onCompleted={() => {
+            localStorage.removeItem(ONBOARDING_DRAFT_KEY);
+            localStorage.removeItem(ONBOARDING_STEP_KEY);
+            setIsLoggedIn(false);
+            setCurrentScreen("login");
+          }}
+        />
+      )}
       </Suspense>
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding/detail screens */}
-      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "matchDetail", "photoVerify", "colorTest", "colorDetail", "inviteHub"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "matchDetail", "photoVerify", "colorTest", "colorDetail", "inviteHub", "privacyPolicy", "termsOfService", "deleteAccount"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}

@@ -1,14 +1,36 @@
 import { Button } from "./ui/button";
 import { Mail } from "lucide-react";
+import { toast } from "sonner";
 import { authService } from "../../lib/auth/authService";
 
 interface LoginScreenProps {
   onEmailLogin?: () => void;
 }
 
+/**
+ * iOS WebView/native 에서만 Apple Sign In 버튼 노출.
+ * Apple App Store Review 4.8 — 다른 third-party SSO 가 있는 앱은 Apple Sign In 의무.
+ * 베타: 백엔드 미구현 → 버튼 누르면 "준비 중" 토스트 (Apple 심사 직전 활성화).
+ */
+function isIOSNative(): boolean {
+  // Capacitor 환경 — iOS 네이티브 셸. 웹/Android 에선 false.
+  return (
+    typeof window !== "undefined" &&
+    (window as any).Capacitor?.getPlatform?.() === "ios"
+  );
+}
+
 export function LoginScreen({ onEmailLogin }: LoginScreenProps) {
+  const showAppleSignIn = isIOSNative();
+
   const handleKakaoLogin = () => {
     authService.loginWithKakao();
+  };
+
+  const handleAppleLogin = async () => {
+    // Apple Sign In flow (베타): @capacitor-community/apple-sign-in 도입 시 교체.
+    // identityToken 받아 POST /api/v1/auth/oauth/apple 로 검증 → JWT 발급.
+    toast.info("Apple 로그인은 곧 지원될 예정이에요");
   };
 
   const handleEmailLogin = () => {
@@ -62,6 +84,19 @@ export function LoginScreen({ onEmailLogin }: LoginScreenProps) {
             </svg>
             카카오로 시작하기
           </Button>
+
+          {showAppleSignIn && (
+            <Button
+              onClick={handleAppleLogin}
+              className="w-full h-14 bg-black hover:bg-neutral-900 text-white shadow-lg"
+              aria-label="Apple 로 시작하기"
+            >
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12 0-.23-.02-.3-.03-.01-.06-.04-.22-.04-.4 0-1.15.572-2.27 1.206-2.98.804-.94 2.142-1.64 3.248-1.68.03.13.05.28.05.44zM21.66 17.6c-.39.9-.864 1.81-1.595 2.94-.951 1.47-2.288 3.3-3.945 3.32-1.46.02-1.836-.95-3.823-.94-1.988.02-2.403.95-3.864.93-1.657-.02-2.929-1.7-3.88-3.16-2.659-4.13-2.95-8.97-1.3-11.55.967-1.52 2.522-2.41 3.998-2.43 1.508-.03 2.927.98 3.85.98.92 0 2.65-1.21 4.48-1.04.76.03 2.92.31 4.31 2.32-.11.07-2.57 1.5-2.55 4.49.04 3.58 3.15 4.78 3.18 4.79z" />
+              </svg>
+              Apple 로 시작하기
+            </Button>
+          )}
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">

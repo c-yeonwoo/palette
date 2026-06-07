@@ -166,3 +166,89 @@ ssh ubuntu@54.116.183.195 \
 - Flyway 도입
 - 무중단 배포
 - CloudWatch 알람 + MySQL 자동 백업
+
+---
+
+## 10. 모바일 앱 (iOS / Android) 배포 — ADR 0040
+
+### 10.1 로컬 환경 준비
+
+```bash
+# 한 번만
+xcode-select --install                   # Xcode 풀버전 (Mac App Store) 후 설정 변경
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+brew install cocoapods                   # 또는 sudo gem install cocoapods
+# Android Studio 설치 → SDK 확인 → ANDROID_HOME 환경변수 등록
+export ANDROID_HOME=$HOME/Library/Android/sdk
+```
+
+### 10.2 디자이너 자산 → 아이콘/스플래시 자동 생성
+
+```bash
+cd frontend
+# frontend/assets/icon.png (1024×1024), splash.png (2732×2732) 배치 후
+npx capacitor-assets generate \
+  --iconBackgroundColor '#F4EFE7' \
+  --splashBackgroundColor '#F4EFE7'
+```
+
+### 10.3 빌드 & 동기화
+
+```bash
+cd frontend
+npm run build                # vite build → dist/
+npx cap sync ios             # dist + 플러그인을 ios/ 로 복사 (CocoaPods 자동 실행)
+npx cap sync android         # 동일 for android/
+```
+
+### 10.4 iOS 빌드 (Xcode)
+
+```bash
+npx cap open ios             # Xcode 열기
+# Xcode 상단:
+#   Signing & Capabilities → Team 선택 (Apple Developer 계정 필수)
+#   Sign in with Apple capability 추가 (정식 활성화 시)
+#   Push Notifications capability 추가
+# Product → Archive → Distribute App → App Store Connect
+```
+
+### 10.5 Android 빌드 (Android Studio)
+
+```bash
+npx cap open android         # Android Studio 열기
+# 또는 CLI:
+cd android && ./gradlew bundleRelease    # AAB 생성 → Play Console 업로드
+```
+
+키스토어:
+```bash
+keytool -genkey -v -keystore palette-release.keystore -alias palette -keyalg RSA -keysize 2048 -validity 10000
+# android/app/build.gradle 의 signingConfigs.release 에 경로/비밀번호 등록 (커밋 금지)
+```
+
+### 10.6 App Store Connect 제출 체크리스트
+
+- [ ] App ID `kr.ai.palette` 등록 (Apple Developer)
+- [ ] Sign In with Apple capability + Service ID + .p8 키 다운로드
+- [ ] AASA (Universal Link) 발급 — `https://palette.kr/.well-known/apple-app-site-association`
+- [ ] App Store Connect: 메타데이터, 스크린샷, 17+ 등급, 데이팅 카테고리
+- [ ] App Review Note (영어): "지인 기반 매칭 컨셉 / 본인 인증 / 신고·차단 매커니즘 / 결제는 비활성(베타)" 명시
+- [ ] 데모 계정 (Reviewer 가입용): demo@palette.kr / 임시 비밀번호
+- [ ] Privacy Manifest (`PrivacyInfo.xcprivacy`) — iOS 17 SDK 부터 필수
+- [ ] 결제 활성화 시 IAP 등록 (외부 결제 거부)
+
+### 10.7 Google Play Console 체크리스트
+
+- [ ] 패키지명 `kr.ai.palette` 등록
+- [ ] 키스토어 백업 (분실 시 앱 업데이트 불가)
+- [ ] Data Safety form — 수집 데이터 매핑 (POLICY §1·§3 참조)
+- [ ] 콘텐츠 등급 — 데이팅 카테고리 IARC 설문
+- [ ] 만 19세 이상 대상 — 광고 노출 제한 설정
+- [ ] AAB 업로드 (APK 아님, 2021.8 부터 의무)
+- [ ] 테스트 트랙(내부/비공개) → 프로덕션 단계 승격
+
+### 10.8 OTA 업데이트 정책
+
+- 웹 자산(dist)만 변경 시: `cap sync` 후 재제출 (Apple Live Update 정책상 JS 동적 로딩은 제한, 정적 빌드 권장)
+- 네이티브 플러그인 변경 시: 반드시 새 빌드 번호 + 심사 제출
+- Capacitor Live Updates / Ionic Appflow 도입은 트래픽 확보 후 검토

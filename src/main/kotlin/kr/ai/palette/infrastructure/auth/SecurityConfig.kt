@@ -46,6 +46,8 @@ class SecurityConfig(
                         "/api/v1/auth/email/**",
                         // 토큰 만료 시 refresh — access token 없이 refresh token 만으로 호출
                         "/api/v1/auth/refresh",
+                        // Apple Sign In 콜백 — identityToken 검증 후 JWT 발급 (베타 stub, ADR 0040)
+                        "/api/v1/auth/oauth/apple",
                         // 베타 게이트 — 회원가입 전 코드 검증/상태 조회
                         "/api/v1/auth/beta-code/**",
                         // 운영자 로그인 — 인증 전 호출 (이후 /api/v1/admin/** 는 hasRole("ADMIN"))

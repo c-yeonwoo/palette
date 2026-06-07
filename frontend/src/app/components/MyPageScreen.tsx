@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { ChevronRight, UserCircle, HeartHandshake, LogOut, Users, Camera, Edit2, Loader2, UserPlus, Shield, Trash2 } from "lucide-react";
+import { ChevronRight, UserCircle, HeartHandshake, LogOut, Users, Camera, Edit2, Loader2, UserPlus, Shield, Trash2, FileText } from "lucide-react";
 import { SectionHeader } from "./ui/section-header";
 import { ListRow } from "./ui/list-row";
 import { Switch } from "./ui/switch";
@@ -19,6 +19,9 @@ interface MyPageScreenProps {
   onNavigateToFriends?: () => void;
   onNavigateToColor?: () => void;
   onReanalyze?: () => void;
+  onNavigatePrivacy?: () => void;
+  onNavigateTerms?: () => void;
+  onNavigateDeleteAccount?: () => void;
 }
 
 interface MatchmakerData {
@@ -55,6 +58,9 @@ export function MyPageScreen({
   onNavigateToFriends,
   onNavigateToColor,
   onReanalyze,
+  onNavigatePrivacy,
+  onNavigateTerms,
+  onNavigateDeleteAccount,
 }: MyPageScreenProps) {
   const [user, setUser] = useState<any>(null);
   const [matchmaker, setMatchmaker] = useState<MatchmakerData | null>(null);
@@ -368,6 +374,28 @@ export function MyPageScreen({
         <section className="!mt-[26px]">
           <SectionHeader title="설정" className="px-1 mb-3" />
           <div className="bg-card rounded-2xl border border-border/60 shadow-card overflow-hidden divide-y divide-border">
+            {onNavigateTerms && (
+              <button
+                onClick={onNavigateTerms}
+                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted transition-colors"
+              >
+                <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <span className="text-sm font-medium">이용약관</span>
+              </button>
+            )}
+            {onNavigatePrivacy && (
+              <button
+                onClick={onNavigatePrivacy}
+                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted transition-colors"
+              >
+                <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <span className="text-sm font-medium">개인정보 처리방침</span>
+              </button>
+            )}
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted transition-colors"
@@ -378,7 +406,7 @@ export function MyPageScreen({
               <span className="text-sm font-medium">로그아웃</span>
             </button>
             <button
-              onClick={() => setShowWithdrawDialog(true)}
+              onClick={() => onNavigateDeleteAccount ? onNavigateDeleteAccount() : setShowWithdrawDialog(true)}
               className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted transition-colors"
             >
               <div className="w-8 h-8 rounded-xl bg-destructive/10 flex items-center justify-center flex-shrink-0">

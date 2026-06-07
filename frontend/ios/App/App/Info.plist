@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>ko</string>
+	<key>CFBundleDisplayName</key>
+	<string>팔레트</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>armv7</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+
+	<!-- ─────────────────────────────────────────────
+	     심사 가이드: App Store Review Guideline 5.1.1(i)
+	     모든 권한엔 한국어 사용 사유 문자열 필수.
+	     ───────────────────────────────────────────── -->
+	<key>NSCameraUsageDescription</key>
+	<string>프로필 사진과 본인 인증 영상을 촬영하기 위해 카메라 접근이 필요해요.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>프로필 사진을 등록하기 위해 사진 라이브러리에 접근해요. 선택한 사진만 업로드됩니다.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>매칭된 상대와의 추억을 저장할 때 사진을 갤러리에 저장해요.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>본인 인증 영상에 음성을 함께 녹음해 진성 회원임을 확인해요.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>휴대폰 연락처를 기반으로 지인 네트워크를 구성해 신뢰할 수 있는 소개를 도와드려요. 연락처는 암호화되어 매칭에만 사용됩니다.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>빠른 로그인을 위해 Face ID 를 사용해요. 얼굴 정보는 기기에만 저장됩니다.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>맞춤형 추천을 제공하기 위해 활동 데이터를 분석합니다. 거부해도 모든 기능을 사용할 수 있어요.</string>
+
+	<!-- 데이팅앱 17+ 등급 명시 -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+	</dict>
+
+	<!-- 카카오/Apple 로그인 외부 앱 호출 허용 (질의 스킴) -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>kakaokompassauth</string>
+		<string>kakaolink</string>
+		<string>itms-apps</string>
+	</array>
+
+	<!-- OAuth 콜백 URL 스킴: palette://oauth-callback -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>kr.ai.palette</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>palette</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- iOS 15+ 권장: SceneDelegate 미사용 명시 (Capacitor 기본 구조 유지) -->
+</dict>
+</plist>
