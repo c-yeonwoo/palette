@@ -80,12 +80,13 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    // 로컬 개발 시 /api, /oauth2, /login 호출을 백엔드 (8080) 로 프록시
+    // 로컬 개발 시 /api, /oauth2, /login 호출을 백엔드 (8081) 로 프록시
+    // (8080은 다른 로컬 서비스가 점유할 수 있어 충돌 회피용으로 8081 고정)
     // → 프론트 코드는 상대경로 그대로 사용 가능 (prod 와 동일 동작)
     proxy: {
-      '/api': 'http://localhost:8080',
-      '/oauth2': 'http://localhost:8080',
-      '/login': 'http://localhost:8080',
+      '/api': 'http://localhost:8081',
+      '/oauth2': 'http://localhost:8081',
+      '/login': 'http://localhost:8081',
     },
   },
 })

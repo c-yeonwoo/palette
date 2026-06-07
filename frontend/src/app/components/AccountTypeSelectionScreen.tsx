@@ -46,7 +46,7 @@ export function AccountTypeSelectionScreen({ onComplete, onBack, mode = "post-au
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background overflow-y-auto pb-12">
       {/* 뒤로가기 (pre-auth에서만) */}
       {onBack && (
         <div className="px-4 pt-safe-top pt-4">
@@ -55,7 +55,7 @@ export function AccountTypeSelectionScreen({ onComplete, onBack, mode = "post-au
           </button>
         </div>
       )}
-      <div className="flex-1 flex items-center justify-center p-6">
+      <div className="flex-1 flex justify-center px-6 py-8">
       <div className="w-full max-w-2xl space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
