@@ -43,10 +43,12 @@ interface PaletteInsightPanelProps {
   onNavigateToColor?: () => void;
 }
 
-type StageKey = "hint" | "color" | "strengths" | "ideal" | "dateCode";
+type StageKey = "color" | "trait" | "strengths" | "ideal" | "dateCode";
 interface Stage {
   key: StageKey;
   label: string;
+  /** 통일된 한 줄 소개 — 활성/비활성 공통 톤 */
+  caption: string;
   Icon: React.ElementType;
   unlocked: boolean;
   /** 잠금일 때 노출되는 다음 단계 안내 카피 */
@@ -74,93 +76,86 @@ export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToCol
   }, [stages]);
 
   const unlockedCount = stages.filter(s => s.unlocked).length;
+  const allUnlocked = unlockedCount === stages.length;
+  const cs = profile.colorType;
+
+  // 5단계 콘텐츠 (key 기반 매핑)
+  const renderStageContent: Record<StageKey, () => React.ReactNode> = {
+    color: () => cs?.name && (
+      <div className="flex items-start gap-3">
+        {accentHex && (
+          <span className="w-9 h-9 rounded-full flex-shrink-0 ring-2 ring-white shadow-sm" style={{ backgroundColor: accentHex }} />
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="text-base font-bold text-foreground leading-tight">{cs.name}</p>
+          {cs.reasoning && (
+            <p className="text-sm text-muted-foreground leading-relaxed mt-1.5">{cs.reasoning}</p>
+          )}
+        </div>
+      </div>
+    ),
+    trait: () => cs?.personalitySummary && (
+      <p className="text-sm text-foreground/85 leading-relaxed">{cs.personalitySummary}</p>
+    ),
+    strengths: () => cs?.strengths && cs.strengths.length > 0 && (
+      <div className="flex flex-wrap gap-1.5">
+        {cs.strengths.slice(0, 5).map((tag, i) => (
+          <span
+            key={i}
+            className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full"
+            style={{
+              backgroundColor: accentHex ? `${accentHex}1F` : "hsl(var(--brand-soft))",
+              color: "hsl(var(--gold-strong))",
+            }}
+          >
+            {tag}
+          </span>
+        ))}
+      </div>
+    ),
+    ideal: () => cs?.idealTypeInsight && (
+      <p className="text-sm text-foreground/85 leading-relaxed">{cs.idealTypeInsight}</p>
+    ),
+    dateCode: () => <DateCodeViz colorType={colorTypeKey} accentHex={accentHex} />,
+  };
 
   return (
-    <section className="rounded-2xl bg-card border border-border shadow-card overflow-hidden">
-      {/* 헤더 */}
-      <div className="px-5 py-4 border-b border-border flex items-center gap-2">
-        <div className="w-7 h-7 rounded-lg bg-brand-soft flex items-center justify-center">
-          <Sparkles className="w-4 h-4 text-gold-strong" />
+    <section>
+      {/* ── 카드 밖 헤더 ── */}
+      <div className="flex items-center justify-between mb-3 px-1">
+        <div>
+          <h2 className="text-lg font-extrabold text-foreground tracking-tight">팔레트의 분석</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">프로필을 채울수록 더 깊이 알아가요</p>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-foreground">팔레트의 분석</p>
-          <p className="text-xs text-muted-foreground">프로필을 채울수록 더 깊이 알아가요 · {unlockedCount}/{stages.length} 발견</p>
-        </div>
-        <div className="flex items-center gap-0.5" aria-label="진행도">
-          {stages.map((s, i) => (
-            <span
-              key={i}
-              className={`w-1.5 h-1.5 rounded-full transition-colors ${s.unlocked ? "bg-gold-strong" : "bg-muted"}`}
-            />
-          ))}
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-bold text-foreground">{unlockedCount}<span className="text-muted-foreground">/{stages.length}</span></span>
+          <div className="flex items-center gap-0.5" aria-label="진행도">
+            {stages.map((s, i) => (
+              <span
+                key={i}
+                className={`w-1.5 h-1.5 rounded-full transition-colors ${s.unlocked ? "bg-gold-strong" : "bg-muted"}`}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* 카드 리스트 */}
-      <div className="divide-y divide-border">
-        {/* 1. 컬러 힌트 */}
-        <StageRow stage={stages[0]} onLockClick={onNavigateToEdit}>
-          <p className="text-sm text-foreground/85">
-            기본 정보를 채워주셔서, 팔레트가 당신의 결을 읽고 있어요.
-          </p>
-        </StageRow>
-
-        {/* 2. 컬러 확정 */}
-        <StageRow stage={stages[1]} onLockClick={onNavigateToEdit} onUnlockedClick={onNavigateToColor}>
-          {profile.colorType?.name && (
-            <div className="flex items-start gap-3">
-              {accentHex && (
-                <span className="w-8 h-8 rounded-full flex-shrink-0 ring-2 ring-white shadow-sm" style={{ backgroundColor: accentHex }} />
-              )}
-              <div className="min-w-0">
-                <p className="text-base font-bold text-foreground">{profile.colorType.name}</p>
-                {profile.colorType.reasoning && (
-                  <p className="text-xs text-muted-foreground leading-relaxed mt-1 line-clamp-3">
-                    {profile.colorType.reasoning}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-        </StageRow>
-
-        {/* 3. 강점 태그 */}
-        <StageRow stage={stages[2]} onLockClick={onNavigateToEdit}>
-          {profile.colorType?.strengths && profile.colorType.strengths.length > 0 && (
-            <>
-              <p className="text-xs text-muted-foreground mb-2">팔레트가 본 당신의 매력</p>
-              <div className="flex flex-wrap gap-1.5">
-                {profile.colorType.strengths.slice(0, 5).map((tag, i) => (
-                  <span
-                    key={i}
-                    className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full"
-                    style={{
-                      backgroundColor: accentHex ? `${accentHex}1F` : "hsl(var(--brand-soft))",
-                      color: accentHex ? undefined : "hsl(var(--gold-strong))",
-                    }}
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </>
-          )}
-        </StageRow>
-
-        {/* 4. 이상형 유추 */}
-        <StageRow stage={stages[3]} onLockClick={onNavigateToEdit}>
-          {profile.colorType?.idealTypeInsight && (
-            <p className="text-sm text-foreground/85 leading-relaxed">
-              {profile.colorType.idealTypeInsight}
-            </p>
-          )}
-        </StageRow>
-
-        {/* 5. 데이트 코드 — 좌표 시각화 */}
-        <StageRow stage={stages[4]} onLockClick={onNavigateToEdit}>
-          <DateCodeViz colorType={colorTypeKey} accentHex={accentHex} />
-        </StageRow>
+      {/* ── 카드 리스트 ── */}
+      <div className="rounded-2xl bg-card border border-border shadow-card overflow-hidden divide-y divide-border">
+        {stages.map(stage => (
+          <StageRow
+            key={stage.key}
+            stage={stage}
+            onLockClick={onNavigateToEdit}
+            onUnlockedClick={stage.key === "color" ? onNavigateToColor : undefined}
+          >
+            {renderStageContent[stage.key]()}
+          </StageRow>
+        ))}
       </div>
+
+      {/* ── Footer: 분석 활용 안내 ── */}
+      <InsightUsageFooter allUnlocked={allUnlocked} unlockedCount={unlockedCount} total={stages.length} />
 
       {/* ── Unlock 모달 ── */}
       {unlockModalStage && (
@@ -198,7 +193,7 @@ function StageRow({
         handleClick ? "transition-colors enabled:hover:bg-muted/30 active:scale-[0.997]" : ""
       }`}
     >
-      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+      <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
         stage.unlocked ? "bg-brand-soft" : "bg-muted/60"
       }`}>
         {stage.unlocked
@@ -206,16 +201,17 @@ function StageRow({
           : <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
       </div>
       <div className="flex-1 min-w-0">
-        <p className={`text-xs font-bold ${stage.unlocked ? "text-foreground" : "text-muted-foreground"}`}>
+        <p className={`text-sm font-bold leading-tight ${stage.unlocked ? "text-foreground" : "text-muted-foreground"}`}>
           {stage.label}
         </p>
-        <div className="mt-1.5">
+        <p className="text-xs text-muted-foreground mt-0.5">{stage.caption}</p>
+        <div className="mt-2.5">
           {stage.unlocked
             ? children
-            : <p className="text-xs text-muted-foreground">{stage.hint}</p>}
+            : <p className="text-xs text-muted-foreground/80">{stage.hint}</p>}
         </div>
       </div>
-      {handleClick && <ChevronRight className="w-4 h-4 text-muted-foreground/60 flex-shrink-0 mt-1" />}
+      {handleClick && <ChevronRight className="w-4 h-4 text-muted-foreground/60 flex-shrink-0 mt-1.5" />}
     </Wrapper>
   );
 }
@@ -305,15 +301,12 @@ function InsightUnlockModal({
   );
 }
 
-/** 단계 unlock 조건 평가 */
+/** 단계 unlock 조건 평가 — 사용자 의도 순서: 색 → 결 → 매력 → 인연 → 데이트 코드 */
 function useStages(profile: ProfileLike): Stage[] {
   return useMemo(() => {
     const ct = profile.colorType;
-    const basicFilled =
-      !!profile.basicInfo?.height ||
-      !!profile.basicInfo?.mbti ||
-      !!profile.careerInfo?.category;
     const colorReady = !!ct?.name;
+    const traitReady = !!ct?.personalitySummary;
     const strengthsReady = !!ct?.strengths && ct.strengths.length > 0;
     const idealReady = !!ct?.idealTypeInsight;
     const fullReady =
@@ -322,11 +315,58 @@ function useStages(profile: ProfileLike): Stage[] {
       !!profile.attachmentProfile;
 
     return [
-      { key: "hint",      label: "당신의 결",     Icon: Sparkles, unlocked: basicFilled,    hint: "기본 정보를 채우면 시작돼요" },
-      { key: "color",     label: "당신의 색",     Icon: Palette,  unlocked: colorReady,     hint: "AI 인터뷰를 완료하면 색이 정해져요" },
-      { key: "strengths", label: "당신의 매력",   Icon: Star,     unlocked: strengthsReady, hint: "인터뷰를 더 채우면 강점이 드러나요" },
-      { key: "ideal",     label: "어울리는 인연", Icon: Heart,    unlocked: idealReady,     hint: "이상형을 채우면 어울리는 인연이 보여요" },
-      { key: "dateCode",  label: "데이트 코드",   Icon: Compass,  unlocked: fullReady,      hint: "프로필을 모두 채우면 데이트 코드가 열려요" },
+      { key: "color",     label: "당신의 색",     caption: "팔레트가 고른 당신의 컬러 타입",      Icon: Palette,  unlocked: colorReady,     hint: "AI 인터뷰를 완료하면 색이 정해져요" },
+      { key: "trait",     label: "당신의 결",     caption: "답변에서 읽힌 성격·연애 성향",        Icon: Sparkles, unlocked: traitReady,     hint: "인터뷰를 채우면 결이 드러나요" },
+      { key: "strengths", label: "당신의 매력",   caption: "팔레트가 본 당신의 강점",             Icon: Star,     unlocked: strengthsReady, hint: "인터뷰를 더 채우면 매력 포인트가 정리돼요" },
+      { key: "ideal",     label: "어울리는 인연", caption: "어떤 사람과 잘 맞을지 유추",          Icon: Heart,    unlocked: idealReady,     hint: "이상형을 채우면 어울리는 인연이 보여요" },
+      { key: "dateCode",  label: "데이트 코드",   caption: "두 축으로 표현한 데이트 스타일",      Icon: Compass,  unlocked: fullReady,      hint: "프로필을 모두 채우면 데이트 코드가 열려요" },
     ];
   }, [profile]);
+}
+
+/**
+ * 분석 결과 활용 안내 footer — 사용자가 "이걸 어디에 쓰는지" 알아야 신뢰가 생긴다.
+ * unlock 진행률에 따라 톤 변화:
+ *  - 진행 중: "분석이 진행될수록 이렇게 활용돼요"
+ *  - 모두 완료: "이제 이렇게 활용돼요"
+ */
+function InsightUsageFooter({
+  allUnlocked,
+  unlockedCount,
+  total,
+}: {
+  allUnlocked: boolean;
+  unlockedCount: number;
+  total: number;
+}) {
+  const usages: Array<{ Icon: React.ElementType; title: string; desc: string }> = [
+    { Icon: Sparkles, title: "팔레트 Pick 추천 정밀도",  desc: "당신의 색·결·매력을 기반으로 매일 추천이 더 정교해져요" },
+    { Icon: Heart,    title: "어울리는 인연 우선 노출", desc: "지인 피드에서 궁합이 좋은 상대를 먼저 보여드려요" },
+    { Icon: Palette,  title: "프로필 자동 업데이트",    desc: "분석 결과가 소개글·색 카드에 자연스럽게 반영돼요" },
+    { Icon: Compass,  title: "주선자 참고 자료",        desc: "주선 요청을 받은 분이 당신을 더 빠르게 이해해요" },
+  ];
+
+  return (
+    <div className="mt-4 rounded-2xl bg-surface-sunken border border-border/60 p-4">
+      <div className="flex items-baseline justify-between mb-3">
+        <p className="text-sm font-bold text-foreground">
+          {allUnlocked ? "이 분석은 이렇게 활용돼요" : "분석이 깊어질수록 이렇게 활용돼요"}
+        </p>
+        <p className="text-xs text-muted-foreground">{unlockedCount}/{total}</p>
+      </div>
+      <ul className="space-y-2.5">
+        {usages.map((u, i) => (
+          <li key={i} className="flex items-start gap-2.5">
+            <div className="w-7 h-7 rounded-full bg-card flex items-center justify-center flex-shrink-0 shadow-sm">
+              <u.Icon className="w-3.5 h-3.5 text-gold-strong" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-foreground">{u.title}</p>
+              <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{u.desc}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
