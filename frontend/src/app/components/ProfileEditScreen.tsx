@@ -6,6 +6,7 @@ import { ArrowLeft, ChevronDown, Loader2, Plus, Video, X, Sparkles } from "lucid
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { PersonalityTestManager } from "./PersonalityTestManager";
+import { JOB_CATEGORY_OPTIONS } from "../../lib/jobCategory";
 
 interface ProfileEditScreenProps {
   onBack: () => void;
@@ -298,18 +299,8 @@ const bodyTypeOptions = [
   { value: "CURVY", label: "통통", emoji: "🍑" },
 ];
 
-const careerCategories = [
-  { value: "IT_DEVELOPMENT", label: "IT/개발", emoji: "💻" },
-  { value: "FINANCE", label: "금융/보험", emoji: "💰" },
-  { value: "EDUCATION", label: "교육", emoji: "📚" },
-  { value: "MEDICAL", label: "의료/보건", emoji: "🏥" },
-  { value: "MEDIA", label: "미디어/엔터", emoji: "🎬" },
-  { value: "SERVICE", label: "서비스/영업", emoji: "🤝" },
-  { value: "MANUFACTURING", label: "제조/생산", emoji: "🏭" },
-  { value: "PUBLIC_OFFICIAL", label: "공무원", emoji: "🏛️" },
-  { value: "PROFESSIONAL", label: "전문직", emoji: "⚖️" },
-  { value: "OTHER", label: "기타", emoji: "✨" },
-];
+// 직군 옵션 — SoT: lib/jobCategory.ts (ADR 0036). 22 카테고리, legacy PROFESSIONAL 숨김.
+const careerCategories = JOB_CATEGORY_OPTIONS;
 
 const educationLevels = [
   { value: "HIGH_SCHOOL", label: "고졸" },

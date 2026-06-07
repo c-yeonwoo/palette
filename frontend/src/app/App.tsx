@@ -530,17 +530,36 @@ export default function App() {
         '풍만': 'CURVY',
       };
 
+      // 직군 한글 라벨 → enum (인터뷰 자연어 응답 → enum value).
+      // 풀 라벨/짧은 라벨 둘 다 인식 + 기존(초기 풀) 한글도 호환.
       const jobCategoryMap: { [key: string]: string } = {
-        'IT/개발': 'IT_DEVELOPMENT',
-        '금융/보험': 'FINANCE',
-        '교육': 'EDUCATION',
-        '의료/보건': 'MEDICAL',
-        '미디어/엔터': 'MEDIA',
+        // 초기 풀 (호환)
+        'IT/개발': 'IT_DEVELOPMENT', 'IT개발': 'IT_DEVELOPMENT',
+        '금융/보험': 'FINANCE', '금융': 'FINANCE',
+        '교육': 'EDUCATION', '교육 (교사·강사)': 'EDUCATION',
+        '의료/보건': 'MEDICAL', '의료': 'MEDICAL',
+        '미디어/엔터': 'MEDIA', '미디어/방송/엔터': 'MEDIA', '미디어': 'MEDIA',
         '서비스/영업': 'SERVICE',
-        '제조/생산': 'MANUFACTURING',
-        '공무원/공공기관': 'PUBLIC_OFFICIAL',
+        '제조/생산': 'MANUFACTURING', '제조/엔지니어링': 'MANUFACTURING', '제조': 'MANUFACTURING',
+        '공무원/공공기관': 'PUBLIC_OFFICIAL', '공무원': 'PUBLIC_OFFICIAL',
         '전문직': 'PROFESSIONAL',
         '기타': 'OTHER',
+        // 확장 (ADR 0036)
+        '디자인/크리에이티브': 'DESIGN', '디자인': 'DESIGN',
+        '기획/전략': 'PLANNING_STRATEGY', '기획': 'PLANNING_STRATEGY',
+        '마케팅/광고/홍보': 'MARKETING', '마케팅': 'MARKETING',
+        '법조 (변호사·법무사)': 'LAW', '법조': 'LAW', '변호사': 'LAW',
+        '회계/세무': 'ACCOUNTING_TAX', '회계': 'ACCOUNTING_TAX', '세무': 'ACCOUNTING_TAX',
+        '연구/학술 (교수·연구원)': 'RESEARCH', '연구': 'RESEARCH', '연구원': 'RESEARCH', '교수': 'RESEARCH',
+        '군인/경찰/소방': 'MILITARY_POLICE', '군경': 'MILITARY_POLICE',
+        '영업/세일즈': 'SALES', '영업': 'SALES',
+        '서비스/유통/F&B': 'SERVICE',
+        '건설/부동산': 'CONSTRUCTION_REALESTATE', '건설': 'CONSTRUCTION_REALESTATE',
+        '무역/물류': 'TRADE_LOGISTICS', '물류': 'TRADE_LOGISTICS',
+        '예술/문화/스포츠': 'ART_CULTURE', '예술': 'ART_CULTURE',
+        '사업/창업/자영업': 'STARTUP_BUSINESS', '사업': 'STARTUP_BUSINESS',
+        '프리랜서': 'FREELANCE', '프리': 'FREELANCE',
+        '학생/취업준비': 'STUDENT', '학생': 'STUDENT',
       };
 
       const educationMap: { [key: string]: string } = {
