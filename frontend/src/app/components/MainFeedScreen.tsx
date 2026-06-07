@@ -4,6 +4,7 @@ import { Button } from "./ui/button";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { getCompatibilityDeterministic, COLOR_META, type ColorType } from "../../lib/colorCompatibility";
+import { DailyMatchBanner } from "./DailyMatchBanner";
 
 interface ProfilePhoto {
   id: string;
@@ -400,8 +401,13 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
               </div>
             ) : (
               <>
+                {/* 오늘의 컬러 궁합 — 탭 변화 무관 상시 노출 */}
+                <div className="pt-4">
+                  <DailyMatchBanner />
+                </div>
+
                 {/* 내부 탭 — 지인 / 팔레트 Pick */}
-                <div className="flex gap-1 p-1 mt-5 rounded-2xl bg-surface-sunken">
+                <div className="flex gap-1 p-1 mt-4 rounded-2xl bg-surface-sunken">
                   {([["network", "지인"], ["recommend", "팔레트 Pick"]] as const).map(([key, label]) => (
                     <button
                       key={key}
