@@ -44,9 +44,9 @@ export function DailyMatchBanner({ onViewRecommended, className }: DailyMatchBan
         background: `linear-gradient(135deg, hsl(${myMeta.h} ${myMeta.s}% 95%), hsl(${recMeta.h} ${recMeta.s}% 95%))`,
       }}
     >
-      {/* ── 접힌 헤더 ── */}
+      {/* ── 접힌 헤더 (좌우 16 · 상하 14 일관) ── */}
       <button
-        className="w-full flex items-center gap-3 px-4 py-3"
+        className="w-full flex items-center gap-3 p-4 min-w-0"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
       >
@@ -62,17 +62,20 @@ export function DailyMatchBanner({ onViewRecommended, className }: DailyMatchBan
           />
         </div>
 
-        <div className="flex-1 text-left">
+        <div className="flex-1 min-w-0 text-left">
           <p className="text-caption font-semibold text-text-primary flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-brand" />
-            오늘의 컬러 궁합
+            <Sparkles className="w-3 h-3 text-brand flex-shrink-0" />
+            <span className="truncate">오늘의 컬러 궁합</span>
           </p>
           <p className="text-caption text-text-secondary truncate">{message}</p>
         </div>
 
-        {/* 점수 + 토글 */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-body font-bold" style={{ color: barColor }}>
+        {/* 점수 + 토글 (점수는 칩으로 — 잘림 방지) */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span
+            className="inline-flex items-center justify-center text-xs font-bold bg-white/70 rounded-full px-2 py-0.5 min-w-[34px] text-center"
+            style={{ color: barColor }}
+          >
             {loveScore}
           </span>
           {expanded ? (
@@ -83,9 +86,9 @@ export function DailyMatchBanner({ onViewRecommended, className }: DailyMatchBan
         </div>
       </button>
 
-      {/* ── 펼쳐진 상세 ── */}
+      {/* ── 펼쳐진 상세 (좌우 16 · 상 0 / 하 16 → 헤더와 합쳐 좌우 일관, 상하 14+0+16) ── */}
       {expanded && (
-        <div className="px-4 pb-4 space-y-3">
+        <div className="px-4 pb-4 pt-1 space-y-3">
           {/* 내 타입 ↔ 추천 타입 */}
           <div className="flex items-center justify-center gap-4">
             <div className="flex flex-col items-center gap-1">
