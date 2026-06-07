@@ -501,63 +501,66 @@ function ProfileCard({
       setRevealed(true);
       setPeeling(false);
       api.post(`/api/v1/feed/open/${profile.userId}`, {}).catch(() => {});
-    }, 1200);
+    }, 720);
   };
+
+  const flipped = peeling || revealed;
 
   return (
     <div onClick={handleClick} className="cursor-pointer select-none">
-      {/* Photo card */}
-      <div className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-muted shadow-sm">
-        {/* 실제 사진 (항상 렌더링, paint 아래에 있음) */}
-        {profile.primaryPhotoUrl ? (
-          <img src={profile.primaryPhotoUrl} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-muted via-accent to-muted/60 flex items-center justify-center">
-            <span className="text-5xl opacity-20 select-none">👤</span>
-          </div>
-        )}
-
-        {/* 공개 후 그라디언트 */}
-        {revealed && (
-          <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
-        )}
-
-        {/* 커버 — 팔레트 물감 워시 (탭하면 fade out) */}
-        {!revealed && (
+      {/* Photo card — 3D 플립 (탭하면 카드가 180° 뒤집히며 사진 공개) */}
+      <div className="relative aspect-[3/4]" style={{ perspective: "1000px" }}>
+        <div
+          className="relative w-full h-full transition-transform duration-700"
+          style={{
+            transformStyle: "preserve-3d",
+            transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
+            transitionTimingFunction: "cubic-bezier(0.4, 0.0, 0.2, 1)",
+          }}
+        >
+          {/* ── 앞면 (물감 커버) — 잠긴 상태 ── */}
           <div
-            className="absolute inset-0 transition-opacity duration-700"
-            style={{ opacity: peeling ? 0 : 1, ...PALETTE_COVER_STYLE }}
+            className="absolute inset-0 rounded-2xl overflow-hidden shadow-sm"
+            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", ...PALETTE_COVER_STYLE }}
           />
-        )}
 
-
-        {/* 공개 후 하단 정보 */}
-        {revealed && (
-          <div className="absolute bottom-0 left-0 right-0 px-3 pb-3">
-            {profile.basicInfo.height && (
-              <p className="text-white text-sm font-semibold leading-tight">
-                {profile.basicInfo.height}cm
-                {profile.basicInfo.mbti && (
-                  <span className="font-normal opacity-75"> · {profile.basicInfo.mbti}</span>
-                )}
-              </p>
+          {/* ── 뒷면 (사진 + 정보) — 공개 상태 ── */}
+          <div
+            className="absolute inset-0 rounded-2xl overflow-hidden shadow-sm bg-muted"
+            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+          >
+            {profile.primaryPhotoUrl ? (
+              <img src={profile.primaryPhotoUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-muted via-accent to-muted/60 flex items-center justify-center">
+                <span className="text-5xl opacity-20 select-none">👤</span>
+              </div>
             )}
-            {(job || location) && (
-              <p className="text-white/70 text-xs mt-0.5">
-                {[job, location].filter(Boolean).join(" · ")}
-              </p>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
+            {compat && (
+              <div className="absolute top-2 right-2">
+                <span className="text-xs font-bold bg-white/90 text-foreground rounded-full px-2 py-0.5 shadow-sm">
+                  {compat.label} {compat.score}%
+                </span>
+              </div>
             )}
+            <div className="absolute bottom-0 left-0 right-0 px-3 pb-3">
+              {profile.basicInfo.height && (
+                <p className="text-white text-sm font-semibold leading-tight">
+                  {profile.basicInfo.height}cm
+                  {profile.basicInfo.mbti && (
+                    <span className="font-normal opacity-75"> · {profile.basicInfo.mbti}</span>
+                  )}
+                </p>
+              )}
+              {(job || location) && (
+                <p className="text-white/70 text-xs mt-0.5">
+                  {[job, location].filter(Boolean).join(" · ")}
+                </p>
+              )}
+            </div>
           </div>
-        )}
-
-        {/* 공개 후: 색깔 궁합 배지 */}
-        {revealed && compat && (
-          <div className="absolute top-2 right-2">
-            <span className="text-xs font-bold bg-white/90 text-foreground rounded-full px-2 py-0.5 shadow-sm">
-              {compat.label} {compat.score}%
-            </span>
-          </div>
-        )}
+        </div>
       </div>
 
       {/* 지인 연결 + 색깔 타입 */}

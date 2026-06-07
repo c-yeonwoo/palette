@@ -45,7 +45,7 @@ const InviteHubScreen = lazy(() => import("./components/invite/InviteHubScreen")
 
 import { Toaster } from "./components/ui/sonner";
 import { Button } from "./components/ui/button";
-import { Home, User, Clock, Trophy, Sparkles, Heart } from "lucide-react";
+import { Home, User, Trophy, Sparkles, Heart, Waypoints } from "lucide-react";
 import { toast } from "sonner";
 import { authService } from "../lib/auth/authService";
 import { tokenStorage } from "../lib/auth/tokenStorage";
@@ -975,7 +975,7 @@ export default function App() {
       )}
 
       {currentScreen === "introductionHistory" && (
-        <IntroductionHistoryScreen onBack={() => setCurrentScreen("mainFeed")} />
+        <IntroductionHistoryScreen />
       )}
 
       {currentScreen === "profileDetail" && selectedUserId && (
@@ -991,8 +991,8 @@ export default function App() {
 
       {currentScreen === "connectorDashboard" && (
         <ConnectorDashboard
-          // ADR 0014: MATCHMAKER_ONLY 에게는 connectorDashboard 가 홈 — 뒤로가기 없음
-          onBack={userAccountType === "MATCHMAKER_ONLY" ? undefined : handleConnectorDashboardBack}
+          // 주선은 하단 탭(최상단) — 뒤로가기 없음. 하위 화면(리워드/마켓)은 각자 헤더에 back 보유
+          onBack={undefined}
           onNavigateToReward={() => setCurrentScreen("matchmakerReward")}
           onNavigateToFriends={() => { setFriendConnectFrom(currentScreen); setCurrentScreen("friendConnect"); }}
           onNavigateToMarketplace={() => setCurrentScreen("matchmakerMarketplace")}
@@ -1144,13 +1144,13 @@ function BottomNavigation({
   const tabs: { screen: Screen; icon: React.ElementType; label: string; matchScreens?: Screen[] }[] =
     accountType === "MATCHMAKER_ONLY"
       ? [
-          { screen: "connectorDashboard", icon: Heart, label: "주선 대시보드" },
+          { screen: "connectorDashboard", icon: Waypoints, label: "주선 대시보드" },
           { screen: "myPage", icon: User, label: "나", matchScreens: ["myPage", "myProfile"] },
         ]
       : [
           { screen: "mainFeed", icon: Home, label: "홈" },
-          { screen: "introductionHistory", icon: Clock, label: "인연" },
-          { screen: "connectorDashboard", icon: Heart, label: "주선" },
+          { screen: "introductionHistory", icon: Heart, label: "인연" },
+          { screen: "connectorDashboard", icon: Waypoints, label: "주선" },
           { screen: "myPage", icon: User, label: "나", matchScreens: ["myPage", "myProfile"] },
         ];
 
