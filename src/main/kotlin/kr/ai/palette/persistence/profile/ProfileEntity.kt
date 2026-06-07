@@ -166,6 +166,9 @@ class ProfileEntity(
     @Column(name = "hidden_at")
     var hiddenAt: Instant?,
 
+    @Column(name = "details_visible_to_friends")
+    var detailsVisibleToFriends: Boolean? = false,
+
     // LocationInfo - hometown
     @Column(name = "hometown_sido", length = 50)
     var hometownSido: String? = null,

@@ -29,7 +29,7 @@ interface ProfileData {
   primaryPhotoUrl: string | null;
   metrics?: { trustScore: number; completionRate: number };
   colorType?: { name: string | null; hex: string | null; description: string | null } | null;
-  settings?: { isAcceptingMatches: boolean; hiddenAt: string | null };
+  settings?: { isAcceptingMatches: boolean; hiddenAt: string | null; detailsVisibleToFriends?: boolean };
 }
 
 export function MyPageScreen({
@@ -60,6 +60,17 @@ export function MyPageScreen({
       );
       setProfile(prev => prev ? { ...prev, settings: { isAcceptingMatches: prev.settings?.isAcceptingMatches ?? true, hiddenAt: result.hiddenAt } } : prev);
       toast.success(visible ? "프로필을 공개했어요" : "프로필을 숨겼어요");
+    } catch {
+      toast.error("설정 변경에 실패했습니다");
+    }
+  };
+
+  // 지인(1촌)에게 상세(소개글·성향·이상형)까지 공개할지 — 기본 off(핵심정보만)
+  const handleToggleDetailsToFriends = async (val: boolean) => {
+    try {
+      await api.patch("/api/v1/profile/settings", { detailsVisibleToFriends: val });
+      setProfile(prev => prev ? { ...prev, settings: { ...(prev.settings ?? { isAcceptingMatches: true, hiddenAt: null }), detailsVisibleToFriends: val } } : prev);
+      toast.success(val ? "지인에게도 상세 프로필을 공개해요" : "지인에겐 핵심 정보만 보여줘요");
     } catch {
       toast.error("설정 변경에 실패했습니다");
     }
@@ -292,6 +303,17 @@ export function MyPageScreen({
                   </p>
                 </div>
                 <Switch checked={!profile.settings?.hiddenAt} onCheckedChange={handleToggleVisibility} />
+              </div>
+              <div className="flex items-center justify-between px-4 py-3.5">
+                <div className="min-w-0 pr-3">
+                  <p className="text-sm font-medium text-foreground">지인에게 상세 프로필 공개</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {profile.settings?.detailsVisibleToFriends
+                      ? "내 지인도 소개글·성향·이상형을 볼 수 있어요"
+                      : "지인에겐 핵심 정보(키·나이·직업·지역)만 보여요"}
+                  </p>
+                </div>
+                <Switch checked={!!profile.settings?.detailsVisibleToFriends} onCheckedChange={handleToggleDetailsToFriends} />
               </div>
             </div>
           </section>

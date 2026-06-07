@@ -102,8 +102,13 @@ class ProfileController(
         var profile = profileRepository.findByUserId(authUser.userId)
             ?: return ResponseEntity.notFound().build()
 
-        // Update settings
-        profile = profile.updateSettings(request.toDomain())
+        // 제공된 필드만 병합 (hiddenAt 등 미제공 값은 보존)
+        val cur = profile.settings
+        val merged = cur.copy(
+            isAcceptingMatches = request.isAcceptingMatches ?: cur.isAcceptingMatches,
+            detailsVisibleToFriends = request.detailsVisibleToFriends ?: cur.detailsVisibleToFriends
+        )
+        profile = profile.updateSettings(merged)
 
         val savedProfile = profileRepository.save(profile)
         return ResponseEntity.ok(ProfileResponse.from(savedProfile, fileStorageService))
@@ -118,11 +123,8 @@ class ProfileController(
         val profile = profileRepository.findByUserId(authUser.userId)
             ?: return ResponseEntity.notFound().build()
 
-        val newSettings = if (request.visible) {
-            ProfileSettings(isAcceptingMatches = profile.settings.isAcceptingMatches, hiddenAt = null)
-        } else {
-            ProfileSettings(isAcceptingMatches = false, hiddenAt = Instant.now())
-        }
+        // hiddenAt 만 토글 (isAcceptingMatches·detailsVisibleToFriends 보존 — show/hide 도메인 메서드)
+        val newSettings = if (request.visible) profile.settings.show() else profile.settings.hide()
         val saved = profileRepository.save(profile.updateSettings(newSettings))
         return ResponseEntity.ok(ProfileSettingsDto.from(saved.settings))
     }

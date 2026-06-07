@@ -122,7 +122,8 @@ class ProfileMapper(
             ),
             settings = ProfileSettings(
                 isAcceptingMatches = entity.isAcceptingMatches,
-                hiddenAt = entity.hiddenAt
+                hiddenAt = entity.hiddenAt,
+                detailsVisibleToFriends = entity.detailsVisibleToFriends ?: false
             )
         )
     }
@@ -177,6 +178,7 @@ class ProfileMapper(
             viewCount = profile.metrics.viewCount,
             isAcceptingMatches = profile.settings.isAcceptingMatches,
             hiddenAt = profile.settings.hiddenAt,
+            detailsVisibleToFriends = profile.settings.detailsVisibleToFriends,
             attachmentContactAnxiety = profile.attachmentProfile?.contactAnxiety,
             attachmentIntimacyAvoidance = profile.attachmentProfile?.intimacyAvoidance,
             attachmentConflictStyle = profile.attachmentProfile?.conflictStyle,

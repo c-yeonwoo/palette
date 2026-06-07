@@ -94,6 +94,7 @@ interface ProfileData {
   metrics: {
     trustScore: number;
   };
+  settings?: { detailsVisibleToFriends?: boolean } | null;
 }
 
 function PhotoCarousel({ photos }: { photos: Array<{ id: string; url: string }> }) {
@@ -315,6 +316,9 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
 
   // 팔레트 Pick(AI 추천)으로 들어온 상세는 공통 친구 없이 시스템이 직접 연결 (degree 0)
   const isPalettePick = degree === 0;
+
+  // 내 지인(1촌)이고, 상대가 '지인에게 상세 공개'를 끈 경우 → 소개글·성향·이상형 숨김 (핵심정보만) (ADR 0035)
+  const detailsHidden = degree === 1 && !(profile?.settings?.detailsVisibleToFriends ?? false);
 
   const handleMatchRequest = () => {
     if (mutualFriends.length === 0) {
@@ -685,26 +689,28 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                 />
               )}
             </button>
-            <button
-              onClick={() => setActiveTab("ideal")}
-              className={`pb-3 px-1 font-medium transition-colors relative ${
-                activeTab === "ideal" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              원하는 이상형
-              {activeTab === "ideal" && (
-                <div
-                  className="absolute bottom-0 left-0 right-0 h-0.5"
-                  style={{ backgroundColor: accentColor ?? "hsl(var(--primary))" }}
-                />
-              )}
-            </button>
+            {!detailsHidden && (
+              <button
+                onClick={() => setActiveTab("ideal")}
+                className={`pb-3 px-1 font-medium transition-colors relative ${
+                  activeTab === "ideal" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                원하는 이상형
+                {activeTab === "ideal" && (
+                  <div
+                    className="absolute bottom-0 left-0 right-0 h-0.5"
+                    style={{ backgroundColor: accentColor ?? "hsl(var(--primary))" }}
+                  />
+                )}
+              </button>
+            )}
           </div>
         </div>
 
         {/* Tab Content */}
         <div className="p-6 space-y-6">
-          {activeTab === "about" ? (
+          {(activeTab === "about" || detailsHidden) ? (
             <>
               {/* 기본정보 — CategoryCard 3종 */}
               <div className="space-y-3">
@@ -718,6 +724,13 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                 ))}
               </div>
 
+              {detailsHidden ? (
+                <div className="rounded-2xl bg-muted/60 border border-border p-4 text-center">
+                  <p className="text-sm font-medium text-foreground">핵심 정보만 공개된 프로필이에요</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">이 분은 지인에게 소개글·성향·이상형을 비공개했어요</p>
+                </div>
+              ) : (
+                <>
               {/* Introduction */}
               <Section title="자기소개">
                 {profile?.introduction.interviewAnswers ? (
@@ -788,6 +801,8 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                     </div>
                   </div>
                 </Section>
+              )}
+                </>
               )}
             </>
           ) : (

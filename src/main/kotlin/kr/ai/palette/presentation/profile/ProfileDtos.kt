@@ -135,15 +135,9 @@ data class UpdateProfileRequest(
 )
 
 data class UpdateSettingsRequest(
-    val isAcceptingMatches: Boolean
-) {
-    fun toDomain(): ProfileSettings {
-        return ProfileSettings(
-            isAcceptingMatches = isAcceptingMatches,
-            hiddenAt = null
-        )
-    }
-}
+    val isAcceptingMatches: Boolean? = null,
+    val detailsVisibleToFriends: Boolean? = null
+)
 
 data class BasicInfoDto(
     val height: Int?,
@@ -390,12 +384,14 @@ data class ProfileMetricsDto(
 
 data class ProfileSettingsDto(
     val isAcceptingMatches: Boolean,
-    val hiddenAt: Instant?
+    val hiddenAt: Instant?,
+    val detailsVisibleToFriends: Boolean = false
 ) {
     fun toDomain(): ProfileSettings {
         return ProfileSettings(
             isAcceptingMatches = isAcceptingMatches,
-            hiddenAt = hiddenAt
+            hiddenAt = hiddenAt,
+            detailsVisibleToFriends = detailsVisibleToFriends
         )
     }
 
@@ -403,7 +399,8 @@ data class ProfileSettingsDto(
         fun from(settings: ProfileSettings): ProfileSettingsDto {
             return ProfileSettingsDto(
                 isAcceptingMatches = settings.isAcceptingMatches,
-                hiddenAt = settings.hiddenAt
+                hiddenAt = settings.hiddenAt,
+                detailsVisibleToFriends = settings.detailsVisibleToFriends
             )
         }
     }

@@ -4,7 +4,9 @@ import java.time.Instant
 
 data class ProfileSettings(
     val isAcceptingMatches: Boolean,
-    val hiddenAt: Instant?
+    val hiddenAt: Instant?,
+    /** 내 지인(1촌)에게도 상세(소개글·성향·이상형)를 공개할지. 기본 false = 핵심정보만 공개 (ADR 0035) */
+    val detailsVisibleToFriends: Boolean = false
 ) {
     fun isVisible(): Boolean = hiddenAt == null
 
