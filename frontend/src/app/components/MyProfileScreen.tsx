@@ -741,9 +741,9 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
           className="fixed inset-0 z-50 flex flex-col justify-end"
           onClick={() => setShowCompletionChecklist(false)}
         >
-          <div className="absolute inset-0 bg-black/40" />
+          <div className="absolute inset-0 bg-black/40 animate-fade-in" />
           <div
-            className="relative bg-card rounded-t-3xl flex flex-col w-full"
+            className="relative bg-card rounded-t-3xl flex flex-col w-full animate-slide-up"
             style={{ maxHeight: "82dvh" }}
             onClick={(e) => e.stopPropagation()}
           >

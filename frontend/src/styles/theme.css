@@ -487,6 +487,13 @@
 .animate-slide-in-right { animation: slide-in-right 0.28s cubic-bezier(0.32, 0.72, 0, 1); }
 .animate-fade-in { animation: fade-in 0.2s ease-out; }
 
+/* ── 하단 바텀시트/드로어 진입 (아래에서 위로) ── */
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+.animate-slide-up { animation: slide-up 0.32s cubic-bezier(0.32, 0.72, 0, 1); }
+
 @layer utilities {
   /* 모션 토큰을 Tailwind 사용성으로 노출 */
   .transition-default {
@@ -545,8 +552,8 @@
 @theme {
   --text-xs: 0.8125rem;            /* 13px (기존 12) */
   --text-xs--line-height: 1.125rem;/* 18px */
-  --text-sm: 0.875rem;             /* 14px (유지) */
-  --text-sm--line-height: 1.25rem; /* 20px */
+  --text-sm: 0.9375rem;            /* 15px (14→15, 본문 가독성 ↑) */
+  --text-sm--line-height: 1.375rem;/* 22px */
   --text-2xl: 1.375rem;            /* 22px (기존 24) */
   --text-2xl--line-height: 1.75rem;
   --text-3xl: 1.625rem;            /* 26px (기존 30) */

@@ -430,19 +430,41 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-5 py-4">
 
+          {/* ── 수익 요약 카드 (커미션율 · 적립 포인트) ── */}
+          {matchmakerData && (
+            <button
+              onClick={() => onNavigateToReward?.()}
+              disabled={!onNavigateToReward}
+              className="w-full mb-4 rounded-2xl border border-border bg-card shadow-card p-4 grid grid-cols-3 divide-x divide-border text-center enabled:active:scale-[0.99] transition-transform disabled:cursor-default"
+            >
+              <div className="px-2">
+                <p className="text-xs text-muted-foreground mb-1">커미션율</p>
+                <p className="text-lg font-bold text-foreground">{Math.round((matchmakerData.commissionRate ?? 0) * 100)}%</p>
+              </div>
+              <div className="px-2">
+                <p className="text-xs text-muted-foreground mb-1">사용 가능</p>
+                <p className="text-lg font-bold text-gold-strong">{(matchmakerData.availablePoints ?? 0).toLocaleString()}P</p>
+              </div>
+              <div className="px-2">
+                <p className="text-xs text-muted-foreground mb-1">누적</p>
+                <p className="text-lg font-bold text-foreground">{(matchmakerData.totalPoints ?? 0).toLocaleString()}P</p>
+              </div>
+            </button>
+          )}
+
           {/* ════ 내 지인 탭 ════ */}
           {activeMainTab === "members" && (
             <div className="space-y-4">
-              {/* 남/여 토글 */}
-              <div className="flex gap-2">
+              {/* 남/여 세그먼트 토글 (홈 탭 스타일) */}
+              <div className="flex gap-1 p-1 rounded-2xl bg-surface-sunken">
                 {(["MALE", "FEMALE"] as const).map(g => (
                   <button
                     key={g}
                     onClick={() => setMemberGender(g)}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                    className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${
                       memberGender === g
-                        ? "bg-card text-foreground shadow-sm border border-border"
-                        : "bg-muted text-muted-foreground hover:text-foreground"
+                        ? "bg-card text-foreground shadow-card"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     {g === "MALE" ? `남성 ${members.filter(m => m.gender === "MALE").length}명` : `여성 ${members.filter(m => m.gender === "FEMALE").length}명`}
@@ -945,8 +967,8 @@ function NudgeFlowSheet({
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-overlay max-h-[85vh] flex flex-col">
+      <div className="fixed inset-0 bg-black/40 z-40 animate-fade-in" onClick={onClose} />
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background rounded-t-3xl shadow-overlay max-h-[85vh] flex flex-col animate-slide-up">
         {/* 핸들 */}
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-9 h-1 rounded-full bg-border" />
