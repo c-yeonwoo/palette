@@ -136,6 +136,10 @@ class ProfileEntity(
     @Column(name = "color_ideal_type_insight", columnDefinition = "TEXT")
     var colorIdealTypeInsight: String? = null,
 
+    /** AI 분석 — 강점 태그 CSV ("감수성 깊은 사색가, ...") — ADR 0037 */
+    @Column(name = "color_strengths", columnDefinition = "TEXT")
+    var colorStrengths: String? = null,
+
     // ProfileMetadata
     @Column(name = "created_at", nullable = false)
     var createdAt: Instant,

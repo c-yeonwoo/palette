@@ -17,6 +17,7 @@ interface ColorTypeData {
   reasoning?: string | null;
   personalitySummary?: string | null;
   idealTypeInsight?: string | null;
+  strengths?: string[] | null;
 }
 
 interface ColorDetailScreenProps {

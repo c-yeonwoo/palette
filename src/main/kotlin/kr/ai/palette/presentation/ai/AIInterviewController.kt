@@ -42,6 +42,7 @@ class AIInterviewController(
                 reasoning = request.colorReasoning?.takeIf { it.isNotBlank() },
                 personalitySummary = request.personalitySummary?.takeIf { it.isNotBlank() },
                 idealTypeInsight = request.idealTypeInsight?.takeIf { it.isNotBlank() },
+                strengths = request.strengths?.filter { it.isNotBlank() }?.takeIf { it.isNotEmpty() },
             )
         )
         profileRepository.save(updatedProfile)
@@ -150,4 +151,5 @@ data class CompleteInterviewRequest(
     val colorReasoning: String? = null,
     val personalitySummary: String? = null,
     val idealTypeInsight: String? = null,
+    val strengths: List<String>? = null,
 )

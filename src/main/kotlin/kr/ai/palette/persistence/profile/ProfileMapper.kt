@@ -98,6 +98,7 @@ class ProfileMapper(
                     reasoning = entity.colorReasoning,
                     personalitySummary = entity.colorPersonalitySummary,
                     idealTypeInsight = entity.colorIdealTypeInsight,
+                    strengths = entity.colorStrengths?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() },
                 )
             },
             attachmentProfile = if (entity.attachmentContactAnxiety != null) {
@@ -169,6 +170,7 @@ class ProfileMapper(
             colorReasoning = profile.colorType?.reasoning,
             colorPersonalitySummary = profile.colorType?.personalitySummary,
             colorIdealTypeInsight = profile.colorType?.idealTypeInsight,
+            colorStrengths = profile.colorType?.strengths?.takeIf { it.isNotEmpty() }?.joinToString(","),
             createdAt = profile.metadata.createdAt,
             updatedAt = profile.metadata.updatedAt,
             lastAccessedAt = profile.metadata.lastAccessedAt,

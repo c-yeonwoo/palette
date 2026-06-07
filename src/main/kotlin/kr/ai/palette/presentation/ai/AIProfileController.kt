@@ -74,6 +74,8 @@ data class GenerateResponse(
     val idealTypeInsight: String = "",
     /** 색깔 분석에 사용된 핵심 키워드 (UI 칩) */
     val colorKeywords: List<String> = emptyList(),
+    /** 강점 태그 3~5개 — 인사이트 카드 노출 (ADR 0037) */
+    val strengths: List<String> = emptyList(),
 )
 
 private fun ProfileGenerationResult.toResponse() = GenerateResponse(
@@ -86,4 +88,5 @@ private fun ProfileGenerationResult.toResponse() = GenerateResponse(
     personalitySummary = personalitySummary,
     idealTypeInsight = idealTypeInsight,
     colorKeywords = colorKeywords,
+    strengths = strengths,
 )

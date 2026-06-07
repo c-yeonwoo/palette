@@ -94,6 +94,7 @@ data class ColorTypeDto(
     val reasoning: String? = null,
     val personalitySummary: String? = null,
     val idealTypeInsight: String? = null,
+    val strengths: List<String>? = null,
 ) {
     companion object {
         private val ENUM_TO_KEY = mapOf(
@@ -116,6 +117,7 @@ data class ColorTypeDto(
             reasoning = ct.reasoning,
             personalitySummary = ct.personalitySummary,
             idealTypeInsight = ct.idealTypeInsight,
+            strengths = ct.strengths,
         )
     }
 }

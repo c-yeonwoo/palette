@@ -14,6 +14,7 @@ interface ProfileGenerationResult {
   personalitySummary?: string;
   idealTypeInsight?: string;
   colorKeywords?: string[];
+  strengths?: string[];
 }
 
 interface AIProfileEnhanceScreenProps {

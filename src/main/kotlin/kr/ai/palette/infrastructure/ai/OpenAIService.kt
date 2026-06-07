@@ -38,6 +38,8 @@ data class ProfileGenerationResult(
     val idealTypeInsight: String = "",
     /** 답변에서 핵심으로 본 키워드들 (UI 칩으로 표시 가능) */
     val colorKeywords: List<String> = emptyList(),
+    /** 강점 태그 3~5개 ("감수성 깊은 사색가" 등) — 인사이트 카드 노출 (ADR 0037) */
+    val strengths: List<String> = emptyList(),
 )
 
 @Service
@@ -135,6 +137,8 @@ class OpenAIService(
         val colorInfo = COLOR_TYPE_INFO[colorType] ?: COLOR_TYPE_INFO.values.last()
         @Suppress("UNCHECKED_CAST")
         val keywords = (map["colorKeywords"] as? List<String>)?.filter { it.isNotBlank() } ?: emptyList()
+        @Suppress("UNCHECKED_CAST")
+        val strengths = (map["strengths"] as? List<String>)?.map { it.trim() }?.filter { it.isNotBlank() }?.take(5) ?: emptyList()
         return ProfileGenerationResult(
             colorType = colorType,
             colorName = colorInfo.name,
@@ -145,6 +149,7 @@ class OpenAIService(
             personalitySummary = (map["personalitySummary"] as? String)?.trim().orEmpty(),
             idealTypeInsight = (map["idealTypeInsight"] as? String)?.trim().orEmpty(),
             colorKeywords = keywords,
+            strengths = strengths,
         )
     }
 
@@ -204,6 +209,17 @@ class OpenAIService(
             }
         }
 
+        // stub strengths — 답변/이상형에서 단서 잡아 한국어 태그 풍으로
+        val stubStrengths = buildList {
+            if (answers["hobby"]?.contains("책") == true || answers["passion"]?.contains("배움") == true)
+                add("호기심 많은 탐험가")
+            if (answers["happiness"]?.contains("가족") == true || answers["motto"]?.contains("따뜻") == true)
+                add("따뜻한 동반자")
+            if (ideal?.importantValues?.isNotEmpty() == true) add("진정성 있는 관계 추구")
+            if (answers["charm"]?.length ?: 0 > 30) add("자기 표현이 솔직한 사람")
+            add("감수성 깊은 사색가")
+        }.distinct().take(4)
+
         return ProfileGenerationResult(
             colorType = "WARM_ORANGE",
             colorName = color.name,
@@ -214,6 +230,7 @@ class OpenAIService(
             personalitySummary = personalitySummary,
             idealTypeInsight = idealTypeInsight,
             colorKeywords = keywords,
+            strengths = stubStrengths,
         )
     }
 
@@ -228,6 +245,7 @@ class OpenAIService(
   "colorReasoning": "<왜 이 색깔로 분석했는지 — 사용자 답변에서 근거를 직접 인용하며 설명. 2-3문장, 150자 내외>",
   "personalitySummary": "<이 사람의 성격·연애 성향 요약 — 답변에서 드러난 특징. 2-3문장, 150자 내외>",
   "idealTypeInsight": "<어떤 이상형을 원하는지 유추 — 답변과 이상형 정보를 근거로 어울리는 상대상을 추론. 2-3문장, 150자 내외>",
+  "strengths": ["<강점 태그 3-5개 (예: '감수성 깊은 사색가', '따뜻한 동반자', '진정성 있는 대화가')>"],
   "colorKeywords": ["<핵심 키워드 3-5개>"],
   "introduction": "<자기소개글 (500자 이상)>"
 }
@@ -259,6 +277,11 @@ class OpenAIService(
 - 이상형 정보가 있으면 그것을 우선 반영하고, 없으면 자기소개 답변에서 결을 추론
 - 외모 조건보다 성향·관계 방식 위주로, 단정이 아닌 "~한 분과 잘 어울릴 것 같아요" 형식
 - 150자 내외 2-3문장
+
+[strengths 작성 기준 — "강점 태그"]
+- 답변에서 드러난 매력 포인트를 한국어 짧은 명사구로 3~5개 (예: "감수성 깊은 사색가", "따뜻한 동반자", "진정성 있는 대화가", "꾸준한 노력가")
+- 외모/스펙(키·직업·학력)은 제외, 성격·태도·관계 스타일 중심
+- 각 태그는 6~10자, 명사구 끝맺음 ("~사람" "~타입" 등 어색한 어미 지양)
 
 [colorKeywords 작성 기준]
 - 사용자 답변에서 뽑은 핵심 단어/구절 3-5개 (예: "주말 카페 책 읽기", "공감 능력", "차분한 대화")

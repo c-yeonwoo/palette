@@ -17,6 +17,7 @@ import { ColorTypeAura } from "./color/ColorTypeAura";
 import { ColorTypeBadge } from "./color/ColorTypeBadge";
 import { getMyColorType } from "../../lib/daily-match";
 import { jobCategoryLabel } from "../../lib/jobCategory";
+import { PaletteInsightPanel } from "./insights/PaletteInsightPanel";
 
 interface MyProfileScreenProps {
   onBack: () => void;
@@ -460,38 +461,14 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
         </div>
       )}
 
-      {/* ── 나의 색 (stats 바로 아래) — 탭하면 AI 근거·성향·이상형 상세로 ── */}
-      {profile?.colorType?.description && (
-        <section className="px-6 py-4 border-b border-border">
-          {(() => {
-            const colorKey = (profile.colorType!.key ?? getMyColorType()) as import("../../lib/colorTypes").ColorTypeKey;
-            return (
-              <AccentScope colorType={colorKey}>
-                <button
-                  type="button"
-                  onClick={() => onNavigateToColor?.()}
-                  disabled={!onNavigateToColor}
-                  className="w-full text-left bg-user-accent-soft border border-border-subtle rounded-lg p-4 transition-colors hover:brightness-[0.99] disabled:cursor-default"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-caption text-text-tertiary">나의 색</p>
-                    {onNavigateToColor && (
-                      <span className="inline-flex items-center text-caption text-text-tertiary">
-                        자세히 <ChevronRight className="w-3.5 h-3.5" />
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <ColorTypeBadge colorType={colorKey} style="dot" size="lg" />
-                    <div>
-                      <p className="text-body-sm font-semibold text-text-primary mb-0.5">{profile.colorType!.name}</p>
-                      <p className="text-caption text-text-secondary leading-relaxed">{profile.colorType!.description}</p>
-                    </div>
-                  </div>
-                </button>
-              </AccentScope>
-            );
-          })()}
+      {/* ── 팔레트의 분석 (점진 공개) — stats 바로 아래 ── */}
+      {profile && (
+        <section className="px-5 pt-4 pb-2">
+          <PaletteInsightPanel
+            profile={profile as any}
+            onNavigateToEdit={onEdit}
+            onNavigateToColor={onNavigateToColor}
+          />
         </section>
       )}
 
