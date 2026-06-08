@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { getCompatibilityDeterministic, COLOR_META, COMPAT_STYLE, type ColorType } from "../../lib/colorCompatibility";
 import { CategoryCard } from "./profile/CategoryCard";
 import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
+import { onboardingProgress } from "../../lib/onboarding/progress";
 import { jobCategoryLabel } from "../../lib/jobCategory";
 
 interface MutualFriend {
@@ -252,6 +253,8 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
       ]);
       setProfile(profileResponse);
       setUserInfo(userResponse);
+      // 온보딩 진척 (O-001) — 친친 프로필 1회 열람 완료 마킹
+      onboardingProgress.markViewedProfile();
     } catch (error) {
       console.error("Failed to fetch profile:", error);
       toast.error("프로필을 불러오는데 실패했습니다");
@@ -375,6 +378,8 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
       });
 
       toast.success(`${selectedMatchmaker.name}님께 소개를 요청했습니다`);
+      // 온보딩 진척 (O-001) — 소개 요청 1회 보냄 마킹
+      onboardingProgress.markSentMatchRequest();
       setAlreadyRequested(true);
       setShowMatchmakerModal(false);
       setModalStep(1);

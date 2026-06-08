@@ -70,11 +70,12 @@ class NotificationEventListener(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun onMatchmakingRejectedByMatchmaker(event: PaletteEvent.MatchmakingRejectedByMatchmaker) =
         runSafely("MatchmakingRejectedByMatchmaker") {
+            // S-001 — 정서적 회복 톤. "거절"보다 "타이밍이 아니었다" 프레이밍.
             notificationService.create(
                 userId = event.requesterId,
                 type = NotificationType.MATCH_REJECTED,
-                title = "주선 요청이 거절되었습니다",
-                body = "${event.matchmakerName}님이 이번 주선은 어렵다고 했어요. 다른 인연을 찾아보세요.",
+                title = "이번엔 타이밍이 아니었어요",
+                body = "${event.matchmakerName}님이 이번 주선은 어렵다고 했어요. 소개 요청 티켓은 자동 환불됐어요 — 마음에 드는 다른 분께 다시 시도해보세요.",
                 metadata = mapOf("requestId" to event.requestId)
             )
         }
@@ -108,11 +109,12 @@ class NotificationEventListener(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun onMatchmakingRejectedByTarget(event: PaletteEvent.MatchmakingRejectedByTarget) =
         runSafely("MatchmakingRejectedByTarget") {
+            // S-001 — 정서적 회복. "당신 잘못이 아님" + 다음 추천 노출 유도.
             notificationService.create(
                 userId = event.requesterId,
                 type = NotificationType.MATCH_REJECTED_BY_TARGET,
-                title = "이번 인연은 아니었어요",
-                body = "아쉽게도 이번 주선은 이루어지지 않았습니다. 다음 인연을 기대해보세요.",
+                title = "이번 인연은 아니었어요 🌿",
+                body = "마음이 맞는 시점은 사람마다 달라요. 당신의 색과 더 잘 어울리는 분이 곧 나타날 거예요 — 팔레트 Pick 에서 확인해보세요.",
                 metadata = mapOf("requestId" to event.requestId)
             )
         }

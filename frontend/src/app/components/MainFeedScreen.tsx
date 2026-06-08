@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { getCompatibilityDeterministic, COLOR_META, type ColorType } from "../../lib/colorCompatibility";
 import { DailyMatchBanner } from "./DailyMatchBanner";
 import { jobCategoryLabel, JOB_CATEGORY_OPTIONS } from "../../lib/jobCategory";
+import { OnboardingTourCard } from "./onboarding/OnboardingTourCard";
+import { onboardingProgress } from "../../lib/onboarding/progress";
 
 interface ProfilePhoto {
   id: string;
@@ -153,11 +155,16 @@ const PALETTE_COVER_STYLE = {
   backgroundPosition: "center",
 };
 
-export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigateToFriends, unreadNotifications = 0 }: MainFeedScreenProps) {
+interface MainFeedScreenPropsExtended extends MainFeedScreenProps {
+  onNavigateToMyPage?: () => void;
+}
+
+export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigateToFriends, onNavigateToMyPage, unreadNotifications = 0 }: MainFeedScreenPropsExtended) {
   const [feedItems, setFeedItems] = useState<FeedProfileItem[]>([]);
   const [aiSignal, setAiSignal] = useState<AiSignalResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [friendCount, setFriendCount] = useState<number>(0);
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     ageMin: "", ageMax: "", heightMin: "", heightMax: "",
@@ -189,6 +196,10 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
       setLoading(true);
       const userData = await api.get<UserProfile>('/api/v1/auth/me');
       setUserProfile(userData);
+      // 친구 카운트 — O-001 온보딩 안내 카드용
+      api.get<unknown[]>('/api/v1/friends')
+        .then(arr => setFriendCount(Array.isArray(arr) ? arr.length : 0))
+        .catch(() => setFriendCount(0));
       if (userData.accountType === "REGULAR") {
         // 피드 노출 설정 확인
         const profileData = await api.get<{ settings?: { isAcceptingMatches?: boolean } }>('/api/v1/profile').catch(() => null);
@@ -265,6 +276,18 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
           </div>
         </div>
       </header>
+
+      {/* 온보딩 안내 카드 (O-001) — 일반 회원만, 모든 단계 완료/dismiss 시 자동 숨김 */}
+      {userProfile?.accountType === "REGULAR" && (
+        <OnboardingTourCard
+          hasFriends={friendCount > 0}
+          hasViewedProfile={onboardingProgress.hasViewedProfile()}
+          hasSentMatchRequest={onboardingProgress.hasSentMatchRequest()}
+          hasColorAnalysis={!!userProfile.colorType?.name}
+          onNavigateToFriends={onNavigateToFriends}
+          onNavigateToMyPage={onNavigateToMyPage}
+        />
+      )}
 
       {/* Active filter chips — 주선자에게는 숨김 */}
       {hasActiveFilters && userProfile?.accountType !== "MATCHMAKER_ONLY" && (
@@ -431,6 +454,8 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
                   ) : feedItems.length === 0 ? (
                     hasActiveFilters ? (
                       <EmptyState title="조건에 맞는 지인이 없어요" description="필터 조건을 조정해보세요" />
+                    ) : friendCount > 0 ? (
+                      <EmptyNetworkGuide onNavigateToFriends={onNavigateToFriends} friendCount={friendCount} />
                     ) : (
                       <FirstTimeGuide onNavigateToFriends={onNavigateToFriends} />
                     )
@@ -1037,6 +1062,45 @@ function FirstTimeGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => v
 
       <p className="text-xs text-muted-foreground/60 text-center pt-1">
         베타 기간 동안은 친구 없이도 시드 유저 12명을 둘러볼 수 있어요
+      </p>
+    </div>
+  );
+}
+
+/**
+ * D-001 — 친구는 있지만 친친 풀이 비어있는 케이스.
+ * "친구의 친구가 아직 가입 전" 메시지 + 친구 더 초대 유도.
+ */
+function EmptyNetworkGuide({ friendCount, onNavigateToFriends }: { friendCount: number; onNavigateToFriends?: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+      <div className="relative mb-7">
+        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-brand-soft to-primary/15 flex items-center justify-center">
+          <span className="text-3xl">🌱</span>
+        </div>
+      </div>
+
+      <h3 className="text-base font-bold mb-1.5">친구의 친구는 곧 만날 수 있어요</h3>
+      <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px] mb-3">
+        지인 <strong className="text-foreground">{friendCount}명</strong>과 연결돼 있어요.<br />
+        그분들의 친구가 가입하면 자동으로 풀에 나타나요.
+      </p>
+      <p className="text-xs text-muted-foreground/80 max-w-[260px] mb-7 leading-relaxed">
+        팔레트는 1·2촌 네트워크 기반이에요. 지인을 더 초대하면 풀이 빠르게 늘어요.
+      </p>
+
+      {onNavigateToFriends && (
+        <button
+          onClick={onNavigateToFriends}
+          className="flex items-center gap-2 bg-foreground text-background font-semibold px-5 py-2.5 rounded-2xl shadow-md active:scale-95 transition-transform"
+        >
+          <span className="text-base">👥</span>
+          지인 더 초대하기
+        </button>
+      )}
+
+      <p className="text-[11px] text-muted-foreground/60 mt-3 max-w-[240px]">
+        초대된 지인이 가입하면 양쪽에 열람권 1장 보너스
       </p>
     </div>
   );

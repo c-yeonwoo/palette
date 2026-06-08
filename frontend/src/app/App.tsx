@@ -1047,6 +1047,7 @@ export default function App() {
           onProfileClick={handleProfileClick}
           onNotificationClick={navigateToNotifications}
           onNavigateToFriends={() => { setFriendConnectFrom(currentScreen); setCurrentScreen("friendConnect"); }}
+          onNavigateToMyPage={() => setCurrentScreen("myPage")}
           unreadNotifications={unreadNotificationCount}
         />
       )}
