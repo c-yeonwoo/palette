@@ -1108,6 +1108,36 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                     placeholder="예: 강남구"
                   />
                 </div>
+
+                {/* DA-004 — 고향 (선택). 백엔드는 받을 준비 OK, UI만 없던 갭 해소 */}
+                <div className="col-span-2 pt-2 border-t border-border/40">
+                  <Label className="block mb-2 text-sm font-semibold">고향 <span className="text-muted-foreground font-normal">(선택)</span></Label>
+                  <p className="text-[11px] text-muted-foreground mb-2">대화 소재 · 같은 고향 추천에 활용돼요</p>
+                </div>
+                <div>
+                  <Input
+                    value={profile.locationInfo.hometownSido || ""}
+                    onChange={(e) =>
+                      setProfile({
+                        ...profile,
+                        locationInfo: { ...profile.locationInfo, hometownSido: e.target.value || null },
+                      })
+                    }
+                    placeholder="고향 시/도"
+                  />
+                </div>
+                <div>
+                  <Input
+                    value={profile.locationInfo.hometownSigungu || ""}
+                    onChange={(e) =>
+                      setProfile({
+                        ...profile,
+                        locationInfo: { ...profile.locationInfo, hometownSigungu: e.target.value || null },
+                      })
+                    }
+                    placeholder="고향 시/군/구"
+                  />
+                </div>
               </div>
             </Section>
 
@@ -1116,6 +1146,12 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
               completionText={lifestyleCount > 0 ? `${lifestyleCount}/3` : "미작성"}
               defaultOpen={lifestyleCount < 2}
             >
+              {/* DA-006 — 가입 시 입력한 값 있으면 안내 (수정 시 혼란 줄임) */}
+              {lifestyleCount > 0 && (
+                <p className="text-[11px] text-muted-foreground mb-3 px-1">
+                  가입 시 입력하신 정보예요. 수정 가능합니다.
+                </p>
+              )}
               <div>
                 <SubLabel>흡연</SubLabel>
                 <div className="flex flex-wrap gap-2">

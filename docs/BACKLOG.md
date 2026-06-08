@@ -164,16 +164,16 @@
 - ✅ **C-3** ProfileDetail colorType 타입 4필드 추가 + "이 사람의 색" + "어울리는 인연" 섹션
 - ✅ **D-1** "자기소개" → "인터뷰 답변" 명칭 정리 (두 화면 동기)
 
-### P3 — 도메인·UI 변경 필요 (다음 sprint)
+### P3 — 도메인·UI 변경 (✅ 완료)
 
-| ID | 내용 | 작업 |
+| ID | 내용 | 상태 |
 |---|---|---|
-| **DA-001** | 이상형 나이/키 범위 (`ageMin/Max`, `heightMin/Max`) 도메인 추가 | 백엔드 IdealType + IdealTypeDto + entity 컬럼 + 매핑. 현재 UI 입력은 받지만 저장·노출 X. |
-| **DA-002** | `careerInfo.position` 백엔드 미존재 | 백엔드 CareerInfoDto/CareerInfo 도메인에 position 필드 추가, 또는 App.tsx 에서 송신 제거 |
-| **DA-003** | `interests` 온보딩 수집 경로 | AIProfileEnhanceScreen 또는 AboutMeScreen 에 관심사 칩 입력 단계 추가. 현재는 가입 후 ProfileEdit 가야만 입력 가능 |
-| **DA-004** | `hometown`(sido/sigungu) 입력 UI 부재 | BasicInfoScreen·ProfileEdit 에 고향 입력 추가 (현재 백엔드는 받을 준비됨, 항상 null) |
-| **DA-005** | 학력 step 3·4 분리 혼선 | 최종학력·학교명·전공을 BasicInfoScreen 한 step 으로 묶기 |
-| **DA-006** | 라이프스타일 온보딩·편집 중복 입력 경험 | AboutMeScreen 라이프스타일 단계와 ProfileEdit 라이프스타일 섹션 동일 데이터 — 온보딩 완료 후 편집 진입 시 "이미 입력했어요" 안내 |
+| **DA-001** | 이상형 나이/키 범위 도메인 추가 | ✅ IdealType + entity + DTO + 양방향 매핑 + ProfileDetail 표시 |
+| **DA-002** | `careerInfo.position` 백엔드 필드 | ✅ CareerInfo 도메인 + entity + DTO 통일 |
+| **DA-003** | `interests` 온보딩 수집 | ✅ AboutMeScreen 에 관심사 칩 풀(20개) + 최대 8개 선택 + App.tsx 흐름 |
+| **DA-004** | `hometown` 입력 UI | ✅ ProfileEditScreen 거주지 섹션에 고향 sido/sigungu 입력 추가 |
+| **DA-005** | 학력 step 3·4 통합 | ✅ BasicInfoScreen step 3 에 최종학력 + 학교명·전공 묶음, step 4 에서 제거 |
+| **DA-006** | 라이프스타일 중복 안내 | ✅ ProfileEdit 라이프스타일 섹션에 "가입 시 입력하신 정보예요" inline 안내 |
 
 ---
 

@@ -31,6 +31,30 @@ interface AboutMeScreenProps {
   };
 }
 
+// DA-003 — 관심사 칩 풀. 자유 입력은 ProfileEdit 으로 미룸 (온보딩은 빠른 선택)
+const INTEREST_PRESET: string[] = [
+  "운동",
+  "맛집",
+  "영화",
+  "여행",
+  "독서",
+  "음악",
+  "카페",
+  "전시",
+  "공연",
+  "사진",
+  "요리",
+  "와인",
+  "캠핑",
+  "드라이브",
+  "게임",
+  "반려동물",
+  "패션",
+  "글쓰기",
+  "그림",
+  "재테크",
+];
+
 const interviewQuestions = [
   {
     id: "hobby",
@@ -91,6 +115,10 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
   const [smoking, setSmoking] = useState(initialData?.lifestyleInfo?.smoking || "");
   const [drinking, setDrinking] = useState(initialData?.lifestyleInfo?.drinking || "");
   const [religion, setReligion] = useState(initialData?.lifestyleInfo?.religion || "");
+  // DA-003 — 관심사 온보딩 수집 (가입 후 ProfileEdit 가야만 입력 가능했던 갭 해소)
+  const [interests, setInterests] = useState<string[]>(
+    initialData?.introduction?.interests || [],
+  );
 
   const updateAnswer = (id: string, value: string) => {
     setAnswers({ ...answers, [id]: value });
@@ -235,12 +263,58 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
           </div>
         </div>
 
+        {/* DA-003 — 관심사 (온보딩 수집) */}
+        <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-5 space-y-3">
+          <div>
+            <h3 className="text-foreground font-semibold">관심사 · 취미</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              최대 8개 · 가입 후 마이프로필에서 더 추가하거나 수정할 수 있어요
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {INTEREST_PRESET.map((item) => {
+              const selected = interests.includes(item);
+              const disabled = !selected && interests.length >= 8;
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => {
+                    if (selected) {
+                      setInterests(interests.filter(i => i !== item));
+                    } else if (interests.length < 8) {
+                      setInterests([...interests, item]);
+                    }
+                  }}
+                  className={
+                    "px-3 py-1.5 rounded-full text-xs font-medium border transition-all " +
+                    (selected
+                      ? "bg-brand-soft text-gold-strong border-brand/40"
+                      : disabled
+                      ? "bg-card text-muted-foreground/40 border-border/40 cursor-not-allowed"
+                      : "bg-card text-muted-foreground border-border hover:border-primary/40")
+                  }
+                >
+                  {item}
+                </button>
+              );
+            })}
+          </div>
+          {interests.length > 0 && (
+            <p className="text-[11px] text-muted-foreground">
+              선택: {interests.length}/8
+            </p>
+          )}
+        </div>
+
         {/* Next Button */}
         <Button
           onClick={() =>
             onNext({
               introduction: {
                 interviewAnswers: answers,
+                interests,           // DA-003
               },
               lifestyleInfo: {
                 smoking,

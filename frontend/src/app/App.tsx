@@ -530,6 +530,8 @@ export default function App() {
       introduction: {
         ...prev.introduction,
         interviewAnswers: data.introduction?.interviewAnswers ?? {},
+        // DA-003 — 관심사 온보딩 수집 (빈 배열 가능, 기존값 보존)
+        interests: data.introduction?.interests ?? prev.introduction.interests ?? [],
       },
       lifestyleInfo: data.lifestyleInfo || prev.lifestyleInfo,
     }));
