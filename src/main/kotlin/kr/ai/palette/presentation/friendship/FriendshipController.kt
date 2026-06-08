@@ -50,6 +50,7 @@ class FriendshipController(
     private val notificationService: NotificationService,
     private val inviteCodeJpaRepository: InviteCodeJpaRepository,
     private val rateLimiter: RateLimiter,
+    private val welcomeBonusService: kr.ai.palette.application.billing.WelcomeBonusService,
 ) {
 
     companion object {
@@ -250,6 +251,16 @@ class FriendshipController(
             body = "${accepterName}님이 친구 요청을 수락했습니다",
             metadata = mapOf("friendshipId" to friendship.id.value.toString())
         )
+
+        // 친구 가입 보너스 — 양쪽에 열람권 1장 (ADR 0041, B-002)
+        // 어뷰징 가드: 수락된 친구는 양방향 1회만 발생 (PENDING → ACCEPTED 전이 1회)
+        runCatching {
+            welcomeBonusService.grantFriendSignupBonus(friendship.user1Id.value.toString())
+            welcomeBonusService.grantFriendSignupBonus(friendship.user2Id.value.toString())
+        }.onFailure { e ->
+            org.slf4j.LoggerFactory.getLogger(FriendshipController::class.java)
+                .warn("친구 가입 보너스 지급 실패 friendship={} error={}", friendship.id.value, e.message)
+        }
 
         return ResponseEntity.ok(mapOf("success" to true, "message" to "친구 요청을 수락했습니다"))
     }

@@ -29,11 +29,57 @@ class BillingService(
 
     private val log = LoggerFactory.getLogger(BillingService::class.java)
 
-    /** 잔액 조회 (row 미존재 시 0/0 으로 lazy 생성 후 반환). */
-    fun getOrCreateBalance(userId: String): UserTicketBalanceEntity =
-        ticketBalanceRepository.findById(userId).orElseGet {
+    /**
+     * 잔액 조회 (row 미존재 시 lazy 생성). 만료된 보너스는 0 으로 reset.
+     */
+    fun getOrCreateBalance(userId: String): UserTicketBalanceEntity {
+        val balance = ticketBalanceRepository.findById(userId).orElseGet {
             ticketBalanceRepository.save(UserTicketBalanceEntity(userId = userId))
         }
+        return expireBonusIfNeeded(balance)
+    }
+
+    /** 만료된 보너스는 조회·소비 시점에 0 으로 reset (lazy expire). */
+    private fun expireBonusIfNeeded(balance: UserTicketBalanceEntity): UserTicketBalanceEntity {
+        val expiresAt = balance.bonusExpiresAt ?: return balance
+        if (Instant.now().isBefore(expiresAt)) return balance
+        if (balance.bonusViewTicketCount == 0 && balance.bonusIntroRequestTicketCount == 0) return balance
+        log.info(
+            "보너스 티켓 만료 user={} view={} intro={}",
+            balance.userId, balance.bonusViewTicketCount, balance.bonusIntroRequestTicketCount,
+        )
+        balance.bonusViewTicketCount = 0
+        balance.bonusIntroRequestTicketCount = 0
+        balance.bonusExpiresAt = null
+        balance.updatedAt = Instant.now()
+        return ticketBalanceRepository.save(balance)
+    }
+
+    /**
+     * 보너스 티켓 지급 (가입 무료체험 / 친구 가입 보너스 등). ADR 0041.
+     * 만료일은 기존 만료일과 새 만료일 중 늦은 쪽으로 갱신(연장 효과).
+     */
+    fun grantBonus(
+        userId: String,
+        viewTickets: Int = 0,
+        introTickets: Int = 0,
+        validDays: Int = 7,
+        reason: String,
+    ): UserTicketBalanceEntity {
+        require(viewTickets >= 0 && introTickets >= 0) { "수량은 0 이상" }
+        require(viewTickets + introTickets > 0) { "최소 1장 이상 지급" }
+        val balance = getOrCreateBalance(userId)
+        balance.bonusViewTicketCount += viewTickets
+        balance.bonusIntroRequestTicketCount += introTickets
+        val newExpiry = Instant.now().plusSeconds(validDays.toLong() * 86_400)
+        balance.bonusExpiresAt = listOfNotNull(balance.bonusExpiresAt, newExpiry).max()
+        balance.updatedAt = Instant.now()
+        log.info(
+            "보너스 지급 user={} +view={} +intro={} validDays={} reason={}",
+            userId, viewTickets, introTickets, validDays, reason,
+        )
+        return ticketBalanceRepository.save(balance)
+    }
 
     /**
      * 베타용 무료 충전 — 결제 검증 없이 잔액만 증가.
@@ -54,24 +100,38 @@ class BillingService(
     }
 
     /**
-     * 티켓 차감. 잔액 부족 시 [InsufficientTicketException].
-     * 호출 측에서 try/catch 로 결제 화면 유도 분기.
+     * 티켓 차감. 보너스 → 유료 순서로 소비 (사용자에 유리).
+     * 잔액 부족 시 [InsufficientTicketException] — 호출 측에서 결제 화면 유도.
      */
     fun consume(userId: String, kind: TicketKind, quantity: Int = 1) {
         require(quantity > 0) { "차감 수량은 1 이상" }
-        val balance = getOrCreateBalance(userId)
-        val current = when (kind) {
+        val balance = getOrCreateBalance(userId)  // expireBonusIfNeeded 포함
+        val bonus = when (kind) {
+            TicketKind.VIEW -> balance.bonusViewTicketCount
+            TicketKind.INTRO_REQUEST -> balance.bonusIntroRequestTicketCount
+        }
+        val paid = when (kind) {
             TicketKind.VIEW -> balance.viewTicketCount
             TicketKind.INTRO_REQUEST -> balance.introRequestTicketCount
         }
-        if (current < quantity) throw InsufficientTicketException(kind, quantity, current)
+        val total = bonus + paid
+        if (total < quantity) throw InsufficientTicketException(kind, quantity, total)
+
+        val fromBonus = minOf(bonus, quantity)
+        val fromPaid = quantity - fromBonus
         when (kind) {
-            TicketKind.VIEW -> balance.viewTicketCount -= quantity
-            TicketKind.INTRO_REQUEST -> balance.introRequestTicketCount -= quantity
+            TicketKind.VIEW -> {
+                balance.bonusViewTicketCount -= fromBonus
+                balance.viewTicketCount -= fromPaid
+            }
+            TicketKind.INTRO_REQUEST -> {
+                balance.bonusIntroRequestTicketCount -= fromBonus
+                balance.introRequestTicketCount -= fromPaid
+            }
         }
         balance.updatedAt = Instant.now()
         ticketBalanceRepository.save(balance)
-        log.info("티켓 차감 user={} kind={} -{}", userId, kind, quantity)
+        log.info("티켓 차감 user={} kind={} -{}(bonus={} paid={})", userId, kind, quantity, fromBonus, fromPaid)
     }
 
     /**

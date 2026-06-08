@@ -334,6 +334,7 @@ class EmailAuthController(
     private val phoneVerificationService: PhoneVerificationService,
     private val refreshTokenRepository: kr.ai.palette.domain.auth.RefreshTokenRepository,
     private val betaCodeValidator: kr.ai.palette.infrastructure.beta.BetaCodeValidator,
+    private val welcomeBonusService: kr.ai.palette.application.billing.WelcomeBonusService,
 ) {
 
     @PostMapping("/signup")
@@ -403,6 +404,9 @@ class EmailAuthController(
         )
 
         val savedUser = userRepository.save(user)
+
+        // 가입 환영 보너스 — 7일간 유효 (ADR 0041, B-001)
+        welcomeBonusService.grantSignupBonus(savedUser.id.value.toString())
 
         // JWT 토큰 생성
         val authToken = AuthToken.create(

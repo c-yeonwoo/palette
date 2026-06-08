@@ -11,8 +11,14 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
 
 data class BalanceResponse(
+    /** 유료 + 보너스 합계 — 사용자에게 노출되는 잔액 */
     val viewTickets: Int,
     val introRequestTickets: Int,
+    /** 보너스 잔액 (만료 임박 표시용) */
+    val bonusViewTickets: Int = 0,
+    val bonusIntroRequestTickets: Int = 0,
+    /** 보너스 만료 시각 (ISO-8601) — null 이면 보너스 없음 */
+    val bonusExpiresAt: String? = null,
 )
 
 data class BundleDto(
@@ -54,7 +60,13 @@ class BillingController(
     fun getBalance(@AuthenticationPrincipal authUser: AuthUser): ResponseEntity<BalanceResponse> {
         val b = billingService.getOrCreateBalance(authUser.userId.value.toString())
         return ResponseEntity.ok(
-            BalanceResponse(viewTickets = b.viewTicketCount, introRequestTickets = b.introRequestTicketCount)
+            BalanceResponse(
+                viewTickets = b.viewTicketCount + b.bonusViewTicketCount,
+                introRequestTickets = b.introRequestTicketCount + b.bonusIntroRequestTicketCount,
+                bonusViewTickets = b.bonusViewTicketCount,
+                bonusIntroRequestTickets = b.bonusIntroRequestTicketCount,
+                bonusExpiresAt = b.bonusExpiresAt?.toString(),
+            )
         )
     }
 
@@ -93,7 +105,13 @@ class BillingController(
             quantity = req.quantity,
         )
         return ResponseEntity.ok(
-            BalanceResponse(viewTickets = b.viewTicketCount, introRequestTickets = b.introRequestTicketCount)
+            BalanceResponse(
+                viewTickets = b.viewTicketCount + b.bonusViewTicketCount,
+                introRequestTickets = b.introRequestTicketCount + b.bonusIntroRequestTicketCount,
+                bonusViewTickets = b.bonusViewTicketCount,
+                bonusIntroRequestTickets = b.bonusIntroRequestTicketCount,
+                bonusExpiresAt = b.bonusExpiresAt?.toString(),
+            )
         )
     }
 

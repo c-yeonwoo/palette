@@ -16,6 +16,7 @@ class AuthenticationServiceImpl(
     private val tokenProvider: TokenProvider,
     private val refreshTokenRepository: RefreshTokenRepository,
     private val betaCodeValidator: kr.ai.palette.infrastructure.beta.BetaCodeValidator,
+    private val welcomeBonusService: kr.ai.palette.application.billing.WelcomeBonusService,
 ) : AuthenticationService {
 
     override fun authenticateOAuth(oauthUserInfo: OAuthUserInfo): AuthenticationResult {
@@ -26,6 +27,7 @@ class AuthenticationServiceImpl(
                 oauthId = oauthUserInfo.providerId
             )
 
+            val isNewSignup = existingUser == null
             val user = if (existingUser != null) {
                 // 기존 사용자: 마지막 로그인 업데이트
                 existingUser.updateLogin()
@@ -39,6 +41,17 @@ class AuthenticationServiceImpl(
 
             // 사용자 저장
             val savedUser = userRepository.save(user)
+
+            // 신규 가입 시 환영 보너스 — 7일 무료 체험 (ADR 0041, B-001)
+            if (isNewSignup) {
+                runCatching {
+                    welcomeBonusService.grantSignupBonus(savedUser.id.value.toString())
+                }.onFailure { e ->
+                    // 보너스 지급 실패는 가입 자체를 막지 않음 — 로그만
+                    org.slf4j.LoggerFactory.getLogger(AuthenticationServiceImpl::class.java)
+                        .warn("가입 보너스 지급 실패 user={} error={}", savedUser.id.value, e.message)
+                }
+            }
 
             // 누락된 필수 정보 체크
             val missingFields = checkMissingRequiredFields(oauthUserInfo)
