@@ -13,6 +13,11 @@ import NiceVerificationModal from "./NiceVerificationModal";
 import { CategoryCard } from "./profile/CategoryCard";
 import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
 import { AccentScope } from "../contexts/AccentScope";
+// D-1/C-2 — datingStyle 라벨 SoT (ProfileDetail 과 공유)
+import {
+  DATING_STYLE_QUESTION_LABELS,
+  DATING_STYLE_OPTION_LABELS,
+} from "../../lib/datingStyleLabels";
 import { ColorTypeAura } from "./color/ColorTypeAura";
 import { ColorTypeBadge } from "./color/ColorTypeBadge";
 import { getMyColorType } from "../../lib/daily-match";
@@ -499,10 +504,20 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
       {activeTab === "about" && (
         <div className="divide-y divide-border">
 
-          {/* 자기소개 */}
+          {/* A-2 — 소개글 자유 텍스트 (편집화면 "소개글" 필드) */}
+          {profile?.introduction.text && (
+            <section className="px-6 py-6">
+              <SectionLabel>소개글</SectionLabel>
+              <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">
+                {profile.introduction.text}
+              </p>
+            </section>
+          )}
+
+          {/* 인터뷰 답변 — D-1: "자기소개" → "인터뷰 답변" 으로 명칭 정리 */}
           {profile?.introduction.interviewAnswers && (
             <section className="px-6 py-6">
-              <SectionLabel>자기소개</SectionLabel>
+              <SectionLabel>인터뷰 답변</SectionLabel>
               <div className="space-y-5">
                 {[
                   { key: "hobby" as const,     q: "쉬는 날엔" },
@@ -890,33 +905,18 @@ function getEducationLabel(v: string): string {
 }
 
 function getDatePreferenceLabel(pref: string): string {
+  // SoT: IdealTypeScreen.tsx DATE_STYLE_OPTIONS — ProfileDetail 과 동일하게 통일 (D-3)
   return {
-    ACTIVE: "액티브한 데이트", INDOOR: "실내 데이트",
-    CULTURE: "문화 데이트", NATURE: "자연 데이트",
-    NIGHT: "야경/술자리", RELAXED: "여유롭게",
+    ACTIVE: "액티브",
+    INDOOR: "인도어",
+    CULTURE: "문화생활",
+    NATURE: "자연 속으로",
+    NIGHT: "야경/술자리",
+    RELAXED: "여유롭게",
   }[pref] ?? pref;
 }
 
-const DATING_STYLE_QUESTION_LABELS: Record<string, string> = {
-  MEET_FREQUENCY: "만남 빈도", CONTACT_STYLE: "연락 스타일",
-  DATE_STYLE: "데이트 스타일", DRINKING_DATE: "음주 스타일",
-  OPPOSITE_FRIENDS: "이성 친구", LEAD_STYLE: "리드 스타일",
-  CONFLICT_STYLE: "갈등 해결", AFFECTION_STYLE: "애정 표현",
-  MARRIAGE_PLAN: "결혼 계획", SNS_PUBLIC: "SNS 공개",
-};
-
-const DATING_STYLE_OPTION_LABELS: Record<string, string> = {
-  WEEKLY_1_2: "주 1~2회", WEEKEND_TOGETHER: "주말은 같이 보내요", WHENEVER_POSSIBLE: "시간 될 때마다",
-  FREQUENT: "자주 연락해요", DAILY_FEW: "하루 몇 번이면 충분", WHENEVER: "생각날 때 연락",
-  OUTDOOR: "나들이·액티비티", INDOOR: "집·카페 인도어", MIX: "둘 다 좋아요",
-  ENJOY: "술자리 즐겨요", SOMETIMES: "가끔 한 잔", NO_NEED: "없어도 충분해요",
-  FREE: "자유롭게 OK", SOME_BOUNDARY: "어느 정도 선은 있어요", UNCOMFORTABLE: "적극적 연락은 불편해요",
-  LEAD: "내가 리드하는 편", FOLLOW: "따라가는 편", ALTERNATE: "번갈아가며",
-  TALK_NOW: "바로 대화해요", COOL_DOWN: "식히고 나서 얘기해요", LET_GO: "웬만하면 넘겨요",
-  PHYSICAL: "스킨십으로", WORDS: "말·문자로", ACTIONS: "챙겨주는 것으로",
-  SERIOUS_FAST: "빠르게 진지하게", SLOW_NATURAL: "천천히 자연스럽게", NOT_YET: "아직 생각 중",
-  LOVE_IT: "커플 인증 좋아요", PRIVATE: "우리끼리만", FOLLOW_PARTNER: "상대 따라갈게요",
-};
+// DATING_STYLE_*_LABELS — 위 import 로 이동됨 (D-1/C-2)
 
 const BUCKET_LABELS: Record<string, string> = {
   JEJU_MONTH: "제주도 한 달 살기", BACKPACKING: "배낭여행", OSAKA: "오사카 2박 3일",

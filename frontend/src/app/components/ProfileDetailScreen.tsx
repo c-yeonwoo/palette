@@ -9,6 +9,10 @@ import { getCompatibilityDeterministic, COLOR_META, COMPAT_STYLE, type ColorType
 import { CategoryCard } from "./profile/CategoryCard";
 import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
 import { onboardingProgress } from "../../lib/onboarding/progress";
+import {
+  DATING_STYLE_QUESTION_LABELS,
+  DATING_STYLE_OPTION_LABELS,
+} from "../../lib/datingStyleLabels";
 import { jobCategoryLabel } from "../../lib/jobCategory";
 
 interface MutualFriend {
@@ -68,6 +72,7 @@ interface ProfileData {
       happiness: string | null;
       motto: string | null;
     } | null;
+    datingStyle?: Record<string, string> | null;   // C-2 — 10문항 연애 스타일
   };
   attachmentProfile?: {
     contactAnxiety: number;
@@ -103,6 +108,11 @@ interface ProfileData {
     name: string | null;
     hex: string | null;
     description: string | null;
+    // C-3 — 백엔드에서 이미 내려주는데 타입에 빠져있던 4개 필드
+    reasoning?: string | null;
+    personalitySummary?: string | null;
+    idealTypeInsight?: string | null;
+    strengths?: string[] | null;
   } | null;
   metrics: {
     trustScore: number;
@@ -564,8 +574,14 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   };
 
   const getDatePreferenceDisplay = (prefs: string[]) => {
+    // SoT: IdealTypeScreen.tsx 의 DATE_STYLE_OPTIONS — 6개 옵션 전체 매핑
     const map: Record<string, string> = {
-      ACTIVE: "활동적인", INDOOR: "실내 데이트", CULTURE: "문화생활", NATURE: "자연/야외"
+      ACTIVE: "액티브",
+      INDOOR: "인도어",
+      CULTURE: "문화생활",
+      NATURE: "자연 속으로",
+      NIGHT: "야경/술자리",
+      RELAXED: "여유롭게",
     };
     return prefs.map(p => map[p] || p);
   };
@@ -739,6 +755,60 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                 </div>
               ) : (
                 <>
+              {/* C-3 — 이 사람의 색 (백엔드 이미 내려주지만 ProfileDetail 에 미노출이었음) */}
+              {profile?.colorType?.name && (
+                <Section title="이 사람의 색">
+                  <div
+                    className="bg-card rounded-lg p-4 space-y-3"
+                    style={accentColor
+                      ? { border: `1px solid ${accentColor}40` }
+                      : { border: "1px solid hsl(var(--border))" }
+                    }
+                  >
+                    <div className="flex items-center gap-2">
+                      {accentColor && (
+                        <span
+                          className="w-4 h-4 rounded-full ring-1 ring-black/5 flex-shrink-0"
+                          style={{ backgroundColor: accentColor }}
+                        />
+                      )}
+                      <p className="text-sm font-bold text-foreground">{profile.colorType.name}</p>
+                    </div>
+                    {profile.colorType.reasoning && (
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {profile.colorType.reasoning}
+                      </p>
+                    )}
+                    {profile.colorType.personalitySummary && (
+                      <div>
+                        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">성향</p>
+                        <p className="text-sm text-foreground leading-relaxed">
+                          {profile.colorType.personalitySummary}
+                        </p>
+                      </div>
+                    )}
+                    {profile.colorType.strengths && profile.colorType.strengths.length > 0 && (
+                      <div>
+                        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">매력 포인트</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {profile.colorType.strengths.map((s, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                              style={accentColor
+                                ? { backgroundColor: `${accentColor}15`, color: accentColor }
+                                : { backgroundColor: "hsl(var(--muted))" }}
+                            >
+                              {s}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </Section>
+              )}
+
               {/* 소개글 — 자유 텍스트 (편집화면의 "소개글" 필드) */}
               {profile?.introduction.text && (
                 <Section title="소개글">
@@ -801,7 +871,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
               )}
 
               {/* Introduction */}
-              <Section title="자기소개">
+              <Section title="인터뷰 답변">
                 {profile?.introduction.interviewAnswers ? (
                   <div
                     className="bg-card rounded-lg p-4"
@@ -881,6 +951,23 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                 <ChipGroup items={getAppearanceStyleDisplay(profile.idealType.appearanceStyles)} />
               </Section>
 
+              {/* C-3 — AI 가 유추한 어울리는 인연 (이상형 탭 최상단) */}
+              {profile.colorType?.idealTypeInsight && (
+                <Section title="팔레트가 본 어울리는 인연">
+                  <div
+                    className="bg-card rounded-lg p-4"
+                    style={accentColor
+                      ? { border: `1px solid ${accentColor}40` }
+                      : { border: "1px solid hsl(var(--border))" }
+                    }
+                  >
+                    <p className="text-sm text-foreground leading-relaxed">
+                      {profile.colorType.idealTypeInsight}
+                    </p>
+                  </div>
+                </Section>
+              )}
+
               {/* Personalities */}
               <Section title="성격">
                 <ChipGroup items={profile.idealType.personalities} />
@@ -900,6 +987,27 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
               <Section title="절대 안 되는 것">
                 <ChipGroup items={getDealBreakerDisplay(profile.idealType.dealBreakers)} />
               </Section>
+
+              {/* C-2 — 연애 스타일 (10문항). 본인 프로필과 동일 매핑 */}
+              {profile?.introduction.datingStyle &&
+                Object.keys(profile.introduction.datingStyle).length > 0 && (
+                  <Section title="연애 스타일">
+                    <div className="bg-card rounded-lg border border-border p-4">
+                      <div className="space-y-2.5">
+                        {Object.entries(profile.introduction.datingStyle).map(([qKey, optKey]) => (
+                          <div key={qKey} className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">
+                              {DATING_STYLE_QUESTION_LABELS[qKey] ?? qKey}
+                            </span>
+                            <span className="text-sm font-medium text-foreground">
+                              {DATING_STYLE_OPTION_LABELS[optKey] ?? optKey}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </Section>
+              )}
             </>
           )}
         </div>

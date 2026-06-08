@@ -665,6 +665,7 @@ export default function App() {
         basicInfo: {
           height: profileData.basicInfo.height || null,
           bodyType: profileData.basicInfo.bodyType ? bodyTypeMap[profileData.basicInfo.bodyType] : null,
+          mbti: profileData.basicInfo.mbti || null,   // A-1 fix: 가입 시 입력한 MBTI 가 저장되지 않던 버그
         },
         careerInfo: {
           category: profileData.careerInfo.category ? jobCategoryMap[profileData.careerInfo.category] : null,

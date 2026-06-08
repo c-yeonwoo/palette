@@ -4,17 +4,15 @@
  * CategoryCard / InfoRow가 이 정의를 읽어 렌더링합니다.
  */
 
+import { JOB_CATEGORY_OPTIONS, jobCategoryLabel } from "./jobCategory";
+
 // ── 필드 값 변환 맵 ──────────────────────────────────────────
 const BODY_TYPE_MAP:  Record<string, string> = { SLIM: "슬림", AVERAGE: "보통", ATHLETIC: "탄탄", MUSCULAR: "건장", CURVY: "통통" };
 const SMOKING_MAP:   Record<string, string> = { NEVER: "비흡연", SOMETIMES: "가끔", OFTEN: "자주" };
 const DRINKING_MAP:  Record<string, string> = { NEVER: "안 마심", SOMETIMES: "가끔", OFTEN: "자주" };
 const RELIGION_MAP:  Record<string, string> = { NONE: "무교", CHRISTIANITY: "기독교", CATHOLICISM: "천주교", BUDDHISM: "불교", OTHER: "기타" };
 const EDUCATION_MAP: Record<string, string> = { HIGH_SCHOOL: "고졸", ASSOCIATE: "전문대", BACHELOR: "대졸", MASTER: "석사", DOCTORATE: "박사" };
-const CAREER_MAP:    Record<string, string> = {
-  IT_DEVELOPMENT: "IT/개발", FINANCE: "금융/보험", EDUCATION: "교육",
-  MEDICAL: "의료/보건", MEDIA: "미디어/광고", SERVICE: "서비스",
-  MANUFACTURING: "제조/생산", PUBLIC_OFFICIAL: "공무원", PROFESSIONAL: "전문직", OTHER: "기타",
-};
+// 직군(CareerCategory) 라벨 — SoT 는 jobCategory.ts (ADR 0036 22개 카테고리). D-4 fix.
 
 // ── 필드 메타 ─────────────────────────────────────────────────
 export interface FieldMeta {
@@ -54,9 +52,9 @@ export const FIELD_META: Record<string, FieldMeta> = {
   // 직업·학력
   jobCategory: {
     label: "직군",
-    format: (v) => CAREER_MAP[v as string] ?? (v as string),
+    format: (v) => jobCategoryLabel(v as string) ?? (v as string),
     widget: "chips",
-    options: Object.entries(CAREER_MAP).map(([value, label]) => ({ value, label })),
+    options: JOB_CATEGORY_OPTIONS.map(({ value, label }) => ({ value, label })),
   },
   company: {
     label: "직장",
