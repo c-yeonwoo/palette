@@ -11,6 +11,7 @@ import { api } from "../../lib/api/apiClient";
 import { tokenStorage } from "../../lib/auth/tokenStorage";
 import { toast } from "sonner";
 import { PaletteInsightPanel } from "./insights/PaletteInsightPanel";
+import { WeeklyColorInsightCard } from "./insights/WeeklyColorInsightCard";
 
 interface MyPageScreenProps {
   onNavigateToProfile: () => void;
@@ -291,6 +292,14 @@ export function MyPageScreen({
             onReanalyze={onReanalyze}
           />
         </div>
+      )}
+
+      {/* L-001 — 색별 위클리 인사이트 카드 (분석 완료된 일반 회원만) */}
+      {!isMatchmakerOnly && profile?.colorType?.type && (
+        <WeeklyColorInsightCard
+          colorType={profile.colorType.type as any}
+          accentHex={profile.colorType.hex}
+        />
       )}
 
       {/* 핸드폰 인증 배너 */}

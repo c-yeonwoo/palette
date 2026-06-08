@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
-import { Heart, Clock, CheckCircle2, XCircle, MessageSquare, Send, Users, ChevronLeft } from "lucide-react";
+import { Heart, Clock, CheckCircle2, XCircle, MessageSquare, Send, Users, ChevronLeft, Sparkles } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
+import { FirstMessageSuggestionModal } from "./intro/FirstMessageSuggestionModal";
 
 interface MatchRequest {
   id: string;
@@ -58,6 +59,8 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
   const [isLoading, setIsLoading] = useState(true);
   const [updatingStage, setUpdatingStage] = useState<string | null>(null);
   const [submittingFeedback, setSubmittingFeedback] = useState<string | null>(null);
+  // S-002 — 첫 메시지 추천 모달 (relationshipId 만 보관, 모달 자체가 비주얼)
+  const [firstMessageOpen, setFirstMessageOpen] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -325,6 +328,24 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
                         </div>
                       )}
 
+                      {/* S-002 — 첫 메시지 추천 (초기 단계 MATCHED 에서만 노출) */}
+                      {rel.stage === "MATCHED" && (
+                        <button
+                          type="button"
+                          onClick={() => setFirstMessageOpen(true)}
+                          className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border border-primary/30 bg-brand-soft/30 hover:bg-brand-soft/50 transition-colors text-left"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-foreground">첫 메시지 어떻게 시작할까요?</p>
+                              <p className="text-[11px] text-muted-foreground">추천 메시지 5개 보기</p>
+                            </div>
+                          </div>
+                          <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground rotate-180" />
+                        </button>
+                      )}
+
                       {/* Stage bar */}
                       <div>
                         <div className="flex items-center gap-1 mb-2">
@@ -391,6 +412,15 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
           </>
         )}
       </div>
+
+      {/* S-002 — 첫 메시지 추천 모달 (color/이름은 베이스라인 미연동, BASELINE 5개만) */}
+      <FirstMessageSuggestionModal
+        myColor={null}
+        theirColor={null}
+        theirName="상대방"
+        open={firstMessageOpen}
+        onClose={() => setFirstMessageOpen(false)}
+      />
     </div>
   );
 }
