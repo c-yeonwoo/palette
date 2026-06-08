@@ -24,6 +24,7 @@ class ProfileMapper(
             careerInfo = CareerInfo(
                 category = entity.careerCategory?.toDomain(),
                 company = entity.company,
+                position = entity.position,                  // DA-002
                 incomeRange = entity.incomeRange?.toDomain()
             ),
             educationInfo = EducationInfo(
@@ -72,7 +73,12 @@ class ProfileMapper(
                     ?.filter { it.isNotBlank() }
                     ?.mapNotNull { try { DealBreaker.valueOf(it) } catch (e: Exception) { null } }
                     ?: emptyList(),
-                bucketList = parseBucketList(entity.bucketList)
+                bucketList = parseBucketList(entity.bucketList),
+                // DA-001
+                ageMin = entity.idealAgeMin,
+                ageMax = entity.idealAgeMax,
+                heightMin = entity.idealHeightMin,
+                heightMax = entity.idealHeightMax,
             ),
             photos = emptyList(), // Photos are managed separately
             videos = emptyList(), // Videos are managed separately
@@ -140,6 +146,7 @@ class ProfileMapper(
             mbti = profile.basicInfo.mbti?.toEntity(),
             careerCategory = profile.careerInfo.category?.toEntity(),
             company = profile.careerInfo.company,
+            position = profile.careerInfo.position,                // DA-002
             incomeRange = profile.careerInfo.incomeRange?.toEntity(),
             educationLevel = profile.educationInfo.level?.toEntity(),
             school = profile.educationInfo.school,
@@ -164,6 +171,11 @@ class ProfileMapper(
             idealPersonalities = profile.idealType.personalities.joinToString(","),
             idealAppearanceStyles = profile.idealType.appearanceStyles.joinToString(","),
             idealDealBreakers = profile.idealType.dealBreakers.joinToString(",") { it.name },
+            // DA-001
+            idealAgeMin = profile.idealType.ageMin,
+            idealAgeMax = profile.idealType.ageMax,
+            idealHeightMin = profile.idealType.heightMin,
+            idealHeightMax = profile.idealType.heightMax,
             bucketList = serializeBucketList(profile.idealType.bucketList),
             personalityTests = serializedTests,
             colorType = profile.colorType?.type?.name,

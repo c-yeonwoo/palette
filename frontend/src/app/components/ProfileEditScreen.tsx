@@ -62,6 +62,12 @@ interface ProfileData {
     appearanceStyles: string[];
     dealBreakers: string[];
     bucketList: string[]; // 시스템 키 or "custom:..." 최대 10개
+    // DA-001 — 나이/키 범위. 가입 시 입력한 값을 편집 화면에서도 보존하기 위해 보유.
+    // 편집 UI 는 추후 추가 (현재는 가입 시점 값을 유지·송신만)
+    ageMin?: number | null;
+    ageMax?: number | null;
+    heightMin?: number | null;
+    heightMax?: number | null;
   };
   personalityTests?: Array<{
     link: string;

@@ -3,7 +3,9 @@ package kr.ai.palette.domain.profile
 data class CareerInfo(
     val category: CareerCategory?,
     val company: String?,
-    val incomeRange: IncomeRange?
+    val incomeRange: IncomeRange?,
+    /** 직책·직급 자유 텍스트 (예: "시니어 개발자", "팀장"). DA-002 — App.tsx 송신 vs 백엔드 무시 갭 해소. */
+    val position: String? = null,
 )
 
 /**

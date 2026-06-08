@@ -39,6 +39,10 @@ class ProfileEntity(
     @Column(name = "company", length = 100)
     var company: String?,
 
+    /** 직책·직급 (DA-002). 자유 텍스트 */
+    @Column(name = "position", length = 80)
+    var position: String? = null,
+
     @Column(name = "income_range", length = 20)
     @Enumerated(EnumType.STRING)
     var incomeRange: IncomeRangeEntity?,
@@ -109,6 +113,16 @@ class ProfileEntity(
 
     @Column(name = "ideal_deal_breakers", columnDefinition = "TEXT")
     var idealDealBreakers: String?, // Comma-separated list: max 3
+
+    // DA-001 — 이상형 나이/키 범위. nullable: 제한 없음.
+    @Column(name = "ideal_age_min")
+    var idealAgeMin: Int? = null,
+    @Column(name = "ideal_age_max")
+    var idealAgeMax: Int? = null,
+    @Column(name = "ideal_height_min")
+    var idealHeightMin: Int? = null,
+    @Column(name = "ideal_height_max")
+    var idealHeightMax: Int? = null,
 
     // TasteStack - stored as JSON map
     @Column(name = "taste_stack", columnDefinition = "TEXT")

@@ -6,7 +6,16 @@ data class IdealType(
     val personalities: List<String>, // 최대 5개
     val appearanceStyles: List<String>, // MaleAppearanceStyle or FemaleAppearanceStyle enum values
     val dealBreakers: List<DealBreaker>, // 최대 3개
-    val bucketList: List<String> = emptyList() // 시스템 키 or "custom:자유입력" 형식, 최대 10개
+    val bucketList: List<String> = emptyList(), // 시스템 키 or "custom:자유입력" 형식, 최대 10개
+    // DA-001 — 나이/키 범위. UI 입력은 있었으나 도메인 부재로 저장·노출 안 되던 갭 해소.
+    /** 선호 최소 연령 (만, 19+). null = 제한 없음 */
+    val ageMin: Int? = null,
+    /** 선호 최대 연령 (만). null = 제한 없음 */
+    val ageMax: Int? = null,
+    /** 선호 최소 키 (cm, 140~210). null = 제한 없음 */
+    val heightMin: Int? = null,
+    /** 선호 최대 키 (cm). null = 제한 없음 */
+    val heightMax: Int? = null,
 )
 
 // 데이트 선호 스타일

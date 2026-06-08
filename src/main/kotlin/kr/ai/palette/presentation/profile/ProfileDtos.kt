@@ -168,12 +168,14 @@ data class BasicInfoDto(
 data class CareerInfoDto(
     val category: String?,
     val company: String?,
+    val position: String? = null,   // DA-002 — 직책·직급 자유 텍스트
     val incomeRange: String?
 ) {
     fun toDomain(): CareerInfo {
         return CareerInfo(
             category = category?.let { CareerCategory.valueOf(it) },
             company = company,
+            position = position,
             incomeRange = incomeRange?.let { IncomeRange.valueOf(it) }
         )
     }
@@ -183,6 +185,7 @@ data class CareerInfoDto(
             return CareerInfoDto(
                 category = careerInfo.category?.name,
                 company = careerInfo.company,
+                position = careerInfo.position,
                 incomeRange = careerInfo.incomeRange?.name
             )
         }
@@ -317,7 +320,12 @@ data class IdealTypeDto(
     val personalities: List<String>, // max 5
     val appearanceStyles: List<String>, // MaleAppearanceStyle or FemaleAppearanceStyle enum values
     val dealBreakers: List<String>, // DealBreaker enum values (max 3)
-    val bucketList: List<String> = emptyList() // 시스템 키 or "custom:..." (max 10)
+    val bucketList: List<String> = emptyList(), // 시스템 키 or "custom:..." (max 10)
+    // DA-001 — 나이/키 범위. 미설정 시 null (제한 없음)
+    val ageMin: Int? = null,
+    val ageMax: Int? = null,
+    val heightMin: Int? = null,
+    val heightMax: Int? = null,
 ) {
     fun toDomain(): IdealType {
         return IdealType(
@@ -332,7 +340,11 @@ data class IdealTypeDto(
             dealBreakers = dealBreakers.mapNotNull {
                 try { DealBreaker.valueOf(it) } catch (e: Exception) { null }
             },
-            bucketList = bucketList
+            bucketList = bucketList,
+            ageMin = ageMin,
+            ageMax = ageMax,
+            heightMin = heightMin,
+            heightMax = heightMax,
         )
     }
 
@@ -344,7 +356,11 @@ data class IdealTypeDto(
                 personalities = idealType.personalities,
                 appearanceStyles = idealType.appearanceStyles,
                 dealBreakers = idealType.dealBreakers.map { it.name },
-                bucketList = idealType.bucketList
+                bucketList = idealType.bucketList,
+                ageMin = idealType.ageMin,
+                ageMax = idealType.ageMax,
+                heightMin = idealType.heightMin,
+                heightMax = idealType.heightMax,
             )
         }
     }

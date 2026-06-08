@@ -86,6 +86,11 @@ interface ProfileData {
     appearanceStyles: string[];
     dealBreakers: string[];
     bucketList?: string[];
+    // DA-001 — 선호 나이·키 범위
+    ageMin?: number | null;
+    ageMax?: number | null;
+    heightMin?: number | null;
+    heightMax?: number | null;
   };
   personalityTests?: Array<{ link: string; title: string }>;
   attachmentProfile?: {

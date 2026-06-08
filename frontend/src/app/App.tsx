@@ -703,6 +703,11 @@ export default function App() {
             style => appearanceStyleMap[style] || style
           ),
           dealBreakers: profileData.idealType.dealBreakers || [],
+          // DA-001 — 나이/키 범위 저장 (IdealTypeScreen 의 슬라이더 입력 → 백엔드 영속화)
+          ageMin: profileData.idealType.ageMin ?? null,
+          ageMax: profileData.idealType.ageMax ?? null,
+          heightMin: profileData.idealType.heightMin ?? null,
+          heightMax: profileData.idealType.heightMax ?? null,
         },
         settings: {
           isAcceptingMatches: true,

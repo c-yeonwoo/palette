@@ -91,6 +91,11 @@ interface ProfileData {
     personalities: string[];
     appearanceStyles: string[];
     dealBreakers: string[];
+    // DA-001 — 나이/키 범위 (선호 조건)
+    ageMin?: number | null;
+    ageMax?: number | null;
+    heightMin?: number | null;
+    heightMax?: number | null;
   };
   personalityTests?: Array<{
     link: string;
@@ -950,6 +955,31 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
               <Section title="외모 스타일">
                 <ChipGroup items={getAppearanceStyleDisplay(profile.idealType.appearanceStyles)} />
               </Section>
+
+              {/* DA-001 — 선호 나이·키 범위 */}
+              {(profile.idealType.ageMin || profile.idealType.ageMax ||
+                profile.idealType.heightMin || profile.idealType.heightMax) && (
+                <Section title="선호 조건">
+                  <div className="bg-card rounded-lg border border-border p-4 space-y-2">
+                    {(profile.idealType.ageMin || profile.idealType.ageMax) && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">나이</span>
+                        <span className="font-medium text-foreground">
+                          {profile.idealType.ageMin ?? "?"}~{profile.idealType.ageMax ?? "?"}세
+                        </span>
+                      </div>
+                    )}
+                    {(profile.idealType.heightMin || profile.idealType.heightMax) && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">키</span>
+                        <span className="font-medium text-foreground">
+                          {profile.idealType.heightMin ?? "?"}~{profile.idealType.heightMax ?? "?"}cm
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </Section>
+              )}
 
               {/* C-3 — AI 가 유추한 어울리는 인연 (이상형 탭 최상단) */}
               {profile.colorType?.idealTypeInsight && (
