@@ -262,6 +262,17 @@ class FriendshipController(
                 .warn("친구 가입 보너스 지급 실패 friendship={} error={}", friendship.id.value, e.message)
         }
 
+        // B-007 retention 트리거 — 양쪽에 "지인이 가입했어요" 알림
+        // (수락 알림과 별개로, 네트워크 가치 증가를 시각화)
+        val requesterName = userRepository.findById(friendship.user1Id)?.publicInfo?.nickname ?: "지인"
+        notificationService.create(
+            userId = friendship.user2Id.value.toString(),
+            type = NotificationType.FRIEND_NEW_SIGNUP,
+            title = "지인 네트워크가 넓어졌어요 🌿",
+            body = "${requesterName}님과 연결됐어요. 친구의 친구가 보일 수 있어요",
+            metadata = mapOf("friendshipId" to friendship.id.value.toString())
+        )
+
         return ResponseEntity.ok(mapOf("success" to true, "message" to "친구 요청을 수락했습니다"))
     }
 

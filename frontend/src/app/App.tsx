@@ -35,6 +35,8 @@ const ColorDetailScreen = lazy(() => import("./components/ColorDetailScreen").th
 const PrivacyPolicyScreen = lazy(() => import("./components/legal/PrivacyPolicyScreen").then(m => ({ default: m.PrivacyPolicyScreen })));
 const TermsOfServiceScreen = lazy(() => import("./components/legal/TermsOfServiceScreen").then(m => ({ default: m.TermsOfServiceScreen })));
 const DeleteAccountScreen = lazy(() => import("./components/legal/DeleteAccountScreen").then(m => ({ default: m.DeleteAccountScreen })));
+const BillingScreen = lazy(() => import("./components/billing/BillingScreen").then(m => ({ default: m.BillingScreen })));
+const InviteWizardScreen = lazy(() => import("./components/onboarding/InviteWizardScreen").then(m => ({ default: m.InviteWizardScreen })));
 const PublicProfileScreen = lazy(() => import("./components/PublicProfileScreen").then(m => ({ default: m.PublicProfileScreen })));
 const FriendConnectScreen = lazy(() => import("./components/FriendConnectScreen").then(m => ({ default: m.FriendConnectScreen })));
 const MatchmakerRewardScreen = lazy(() => import("./components/MatchmakerRewardScreen").then(m => ({ default: m.MatchmakerRewardScreen })));
@@ -102,7 +104,9 @@ type Screen =
   | "inviteHub"
   | "privacyPolicy"
   | "termsOfService"
-  | "deleteAccount";
+  | "deleteAccount"
+  | "billing"
+  | "inviteWizard";
 
 const ONBOARDING_DRAFT_KEY = "palette_onboarding_draft";
 const ONBOARDING_STEP_KEY = "palette_onboarding_step";
@@ -722,8 +726,9 @@ export default function App() {
         setCurrentScreen("myPage");
         toast.success("팔레트가 다시 분석했어요 ✨");
       } else {
-        setCurrentScreen("mainFeed");
-        toast.success("프로필이 성공적으로 생성되었습니다!");
+        // 신규 가입자 — 친구 초대 마법사 1회 노출 (B-005)
+        setCurrentScreen("inviteWizard");
+        toast.success("프로필이 생성되었어요!");
       }
     } catch (error: any) {
       console.error('Failed to complete profile:', error);
@@ -1102,6 +1107,7 @@ export default function App() {
           onNavigatePrivacy={() => setCurrentScreen("privacyPolicy")}
           onNavigateTerms={() => setCurrentScreen("termsOfService")}
           onNavigateDeleteAccount={() => setCurrentScreen("deleteAccount")}
+          onNavigateBilling={() => setCurrentScreen("billing")}
           onLogout={() => {
             localStorage.removeItem(ONBOARDING_DRAFT_KEY);
             localStorage.removeItem(ONBOARDING_STEP_KEY);
@@ -1201,6 +1207,17 @@ export default function App() {
         <TermsOfServiceScreen onBack={() => setCurrentScreen("myPage")} />
       )}
 
+      {currentScreen === "billing" && (
+        <BillingScreen onBack={() => setCurrentScreen("myPage")} />
+      )}
+
+      {currentScreen === "inviteWizard" && (
+        <InviteWizardScreen
+          onSkip={() => setCurrentScreen("mainFeed")}
+          onDone={() => setCurrentScreen("mainFeed")}
+        />
+      )}
+
       {currentScreen === "deleteAccount" && (
         <DeleteAccountScreen
           onBack={() => setCurrentScreen("myPage")}
@@ -1215,7 +1232,7 @@ export default function App() {
       </Suspense>
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding/detail screens */}
-      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "matchDetail", "photoVerify", "colorTest", "colorDetail", "inviteHub", "privacyPolicy", "termsOfService", "deleteAccount"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "matchDetail", "photoVerify", "colorTest", "colorDetail", "inviteHub", "privacyPolicy", "termsOfService", "deleteAccount", "billing", "inviteWizard"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}
