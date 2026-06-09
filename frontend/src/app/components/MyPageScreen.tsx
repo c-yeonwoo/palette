@@ -393,7 +393,7 @@ export function MyPageScreen({
                 <div className="w-8 h-8 rounded-xl bg-brand-soft flex items-center justify-center flex-shrink-0">
                   <Ticket className="w-4 h-4 text-primary" />
                 </div>
-                <span className="text-sm font-medium">티켓 잔액 · 충전</span>
+                <span className="text-sm font-medium">잔액 · 충전</span>
                 <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
               </button>
             )}

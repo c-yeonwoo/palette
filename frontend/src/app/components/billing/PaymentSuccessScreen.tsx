@@ -23,8 +23,8 @@ interface PaymentSuccessScreenProps {
 interface ConfirmResponse {
   status: string;
   transactionId?: string;
-  viewTickets?: number;
-  introRequestTickets?: number;
+  points?: number;        // 새 단일 잔액 모델 (ADR 0042)
+  credited?: number;      // 이번에 적립된 P
   error?: string;
   reason?: string;
 }
@@ -49,15 +49,16 @@ export function PaymentSuccessScreen({ onDone }: PaymentSuccessScreenProps) {
     (async () => {
       try {
         const result = await api.post<ConfirmResponse>("/api/v1/billing/checkout/confirm", {
-          kind: params.kind,
-          quantity: params.quantity,
+          // ADR 0042 — 단일 잔액 모델
+          // BillingScreen 이 OrderRequest 의 quantity 필드에 pointsCredited 를 박아 보냄
+          pointsCredited: params.quantity,
           expectedAmount: params.amount,
           paymentKey: params.paymentKey,
           orderId: params.orderId,
         });
         if (result.status === "OK") {
           setPhase("success");
-          setMessage(`${params.quantity}장 충전이 완료됐어요`);
+          setMessage(`${(result.credited ?? params.quantity).toLocaleString("ko-KR")}P 충전이 완료됐어요`);
         } else if (result.status === "ALREADY_PROCESSED") {
           setPhase("success");
           setMessage("이미 처리된 결제예요");
