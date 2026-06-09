@@ -73,11 +73,28 @@ export function BetaGateScreen({ onPassed }: BetaGateScreenProps) {
       toast.success("환영합니다");
       onPassed();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("INVALID_BETA_CODE") || msg.includes("403")) {
+      // 에러 사유를 사용자에게 명확히 노출 (HTTP code + 백엔드 메시지)
+      const e = err as { status?: number; message?: string };
+      const status = e?.status;
+      const msg = e?.message ?? String(err);
+      if (status === 401) {
+        // 보통 BASE_URL 잘못 설정돼 다른 서버로 호출되는 경우
+        toast.error("서버 인증 오류 (401) — 백엔드 주소 설정을 확인해주세요", {
+          description: msg,
+          duration: 6000,
+        });
+      } else if (status === 403 || msg.includes("INVALID_BETA_CODE")) {
         toast.error("유효하지 않은 베타 코드입니다");
+      } else if (status === 0 || msg.includes("Failed to fetch")) {
+        toast.error("백엔드에 연결할 수 없어요 — 서버가 켜져 있는지 확인", {
+          description: msg,
+          duration: 6000,
+        });
       } else {
-        toast.error("코드 검증에 실패했습니다");
+        toast.error(`코드 검증 실패${status ? ` (HTTP ${status})` : ""}`, {
+          description: msg,
+          duration: 6000,
+        });
       }
     } finally {
       setSubmitting(false);

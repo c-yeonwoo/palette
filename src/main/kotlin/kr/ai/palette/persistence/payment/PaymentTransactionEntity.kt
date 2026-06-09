@@ -43,8 +43,11 @@ class PaymentTransactionEntity(
     @Column(name = "payment_method", nullable = false)
     val paymentMethod: String,
 
-    /** 결제 채널 — TOSS / APPLE_IAP / GOOGLE_PLAY / MOCK (베타) */
-    @Column(name = "provider", nullable = false, length = 16)
+    /**
+     * 결제 채널 — TOSS / APPLE_IAP / GOOGLE_PLAY / MOCK (베타).
+     * columnDefinition DEFAULT 로 기존 row(MOCK) 자동 채움 — ddl-auto=update 시 NOT NULL 추가 가능.
+     */
+    @Column(name = "provider", nullable = false, length = 16, columnDefinition = "VARCHAR(16) DEFAULT 'MOCK'")
     val provider: String = "MOCK",
 
     /** 외부 시스템 영수증 ID — Toss paymentKey / Apple originalTransactionId / Google purchaseToken */
@@ -52,7 +55,7 @@ class PaymentTransactionEntity(
     val providerReceiptId: String? = null,
 
     /** APPROVED / REFUNDED / FAILED */
-    @Column(name = "status", nullable = false, length = 16)
+    @Column(name = "status", nullable = false, length = 16, columnDefinition = "VARCHAR(16) DEFAULT 'APPROVED'")
     var status: String = "APPROVED",
 
     @Column(name = "created_at", nullable = false)
