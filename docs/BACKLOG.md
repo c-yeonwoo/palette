@@ -177,6 +177,59 @@
 
 ---
 
+## 결제 활성화 sprint (PA-) — 2026-06-09 착수
+
+> 베타 무료 운영 종료 + 정식 결제 활성화. 사업자등록 완료 가정. 법적 절차는 사용자가 별도 진행.
+> 전체 예상 ~10주 (가맹 심사 5~10일 × 3 + 백엔드 4~6주 + 프론트 2~3주 + 심사 1~2회 반려).
+
+### Phase A — 가맹·키 발급 (사용자 액션, 코드 작업 unblock 트리거)
+
+| ID | 항목 | 책임 | 상태 |
+|---|---|---|---|
+| **PA-100** | Toss Payments 가맹 신청 + live 키 발급 | 사용자 | ⏸ |
+| **PA-101** | Apple Developer + IAP 상품 4종 등록 + Shared Secret | 사용자 | ⏸ |
+| **PA-102** | Google Play Console + Billing 상품 등록 + service account | 사용자 | ⏸ |
+
+### Phase B — 백엔드 통합 (가맹 미통과여도 작업 가능)
+
+| ID | 항목 | 의존성 | 상태 |
+|---|---|---|---|
+| **PA-001** | `PaymentTransaction` `transactionId` UNIQUE — 결제 중복 차단 | — | ✅ |
+| **PA-002** | Toss `confirm` API 실연동 — test 키로 검증 | Toss test 키 | ⏸ |
+| **PA-003** | Apple receipt 검증 (`/verifyReceipt`) — sandbox 부터 | Apple Shared Secret | ⏸ |
+| **PA-004** | Google Play receipt 검증 (`androidpublisher`) | Play service account | ⏸ |
+| **PA-005** | 결제 webhook 수신: Toss `/v1/payments`, Apple S2S, Google RTDN | live 키 | ⏸ |
+| **PA-006** | `BillingService.consume()` ProfileDetail/소개요청 차감 통합 | — | ⏸ |
+| **PA-007** | 정기결제(구독) 갱신 — Apple SUBSCRIPTION_RENEWED / Google RTDN | live 키 | ⏸ |
+| **PA-008** | 환불 자동화 — 주선자 거절 → `BillingService.refund()` 트리거 | — | ⏸ |
+
+### Phase C — 프론트 통합
+
+| ID | 항목 | 상태 |
+|---|---|---|
+| **PA-010** | Capacitor IAP 플러그인 통합 (iOS/Android Play Billing) | ⏸ |
+| **PA-011** | Toss SDK 통합 (웹·Android 폴백) | ⏸ |
+| **PA-012** | BillingScreen 구매 버튼 → 결제 SDK 호출 | ⏸ |
+| **PA-013** | 구매 복원 (Restore Purchases) — Apple 정책 필수 | ⏸ |
+
+### Phase D — 운영·CS
+
+| ID | 항목 | 상태 |
+|---|---|---|
+| **PA-020** | 결제 실패 모니터링 (Sentry / CloudWatch alarm) | ⏸ |
+| **PA-021** | 환불 CS 운영 매뉴얼 (이미 POLICY §2 정책 있음) | ⏸ |
+| **PA-022** | 매월 정산 자동화 (Toss · Apple · Google → 회계) | ⏸ |
+| **PA-023** | 약관 §결제·환불 정식화 (법무 검토 후) | ⏸ |
+
+### 가맹 통과 전 가능한 작업 (Phase B 일부)
+
+- ✅ **PA-001** — 단순 DB 제약, 가맹 무관
+- ⏸ **PA-002** Toss confirm — Toss test 키만 받으면 즉시
+- ⏸ **PA-003/004** IAP — sandbox 환경 + 더미 key 로 골격
+- ⏸ **PA-006/008** — 도메인·서비스 레벨, 외부 키 무관
+
+---
+
 ## 다크 패턴 회피 — 명시적 금지
 
 - 무한 스와이프 (현재 안 함, 유지)
