@@ -37,6 +37,8 @@ const TermsOfServiceScreen = lazy(() => import("./components/legal/TermsOfServic
 const DeleteAccountScreen = lazy(() => import("./components/legal/DeleteAccountScreen").then(m => ({ default: m.DeleteAccountScreen })));
 const BillingScreen = lazy(() => import("./components/billing/BillingScreen").then(m => ({ default: m.BillingScreen })));
 const InviteWizardScreen = lazy(() => import("./components/onboarding/InviteWizardScreen").then(m => ({ default: m.InviteWizardScreen })));
+const PaymentSuccessScreen = lazy(() => import("./components/billing/PaymentSuccessScreen").then(m => ({ default: m.PaymentSuccessScreen })));
+const PaymentFailScreen = lazy(() => import("./components/billing/PaymentFailScreen").then(m => ({ default: m.PaymentFailScreen })));
 const PublicProfileScreen = lazy(() => import("./components/PublicProfileScreen").then(m => ({ default: m.PublicProfileScreen })));
 const FriendConnectScreen = lazy(() => import("./components/FriendConnectScreen").then(m => ({ default: m.FriendConnectScreen })));
 const MatchmakerRewardScreen = lazy(() => import("./components/MatchmakerRewardScreen").then(m => ({ default: m.MatchmakerRewardScreen })));
@@ -106,7 +108,9 @@ type Screen =
   | "termsOfService"
   | "deleteAccount"
   | "billing"
-  | "inviteWizard";
+  | "inviteWizard"
+  | "paymentSuccess"
+  | "paymentFail";
 
 const ONBOARDING_DRAFT_KEY = "palette_onboarding_draft";
 const ONBOARDING_STEP_KEY = "palette_onboarding_step";
@@ -188,8 +192,20 @@ function applyBrandFromLocalStorage() {
   } catch {}
 }
 
+/**
+ * PA-012 — Toss 결제 위젯 callback 라우팅.
+ * Toss 가 ${origin}/payment-success 또는 /payment-fail 로 리다이렉트하면
+ * SPA 초기 currentScreen 을 그 화면으로 진입시킨다.
+ */
+function detectInitialScreen(): Screen | null {
+  if (typeof window === "undefined") return null;
+  if (window.location.pathname === "/payment-success") return "paymentSuccess";
+  if (window.location.pathname === "/payment-fail") return "paymentFail";
+  return null;
+}
+
 export default function App() {
-  const [currentScreen, setCurrentScreen] = useState<Screen>("login");
+  const [currentScreen, setCurrentScreen] = useState<Screen>(() => detectInitialScreen() ?? "login");
   const [friendConnectFrom, setFriendConnectFrom] = useState<Screen>("myPage");
   // 색 상세 진입점 — myPage / myProfile 둘 다 진입 가능, 돌아갈 화면 추적
   const [colorDetailFrom, setColorDetailFrom] = useState<Screen>("myPage");
@@ -1220,6 +1236,25 @@ export default function App() {
         <BillingScreen onBack={() => setCurrentScreen("myPage")} />
       )}
 
+      {currentScreen === "paymentSuccess" && (
+        <PaymentSuccessScreen
+          onDone={() => {
+            // URL 정리 (사용자가 새로고침해도 재confirm 시도 X)
+            try { window.history.replaceState({}, "", "/"); } catch {}
+            setCurrentScreen(isLoggedIn ? "billing" : "login");
+          }}
+        />
+      )}
+
+      {currentScreen === "paymentFail" && (
+        <PaymentFailScreen
+          onDone={() => {
+            try { window.history.replaceState({}, "", "/"); } catch {}
+            setCurrentScreen(isLoggedIn ? "billing" : "login");
+          }}
+        />
+      )}
+
       {currentScreen === "inviteWizard" && (
         <InviteWizardScreen
           onSkip={() => setCurrentScreen("mainFeed")}
@@ -1241,7 +1276,7 @@ export default function App() {
       </Suspense>
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding/detail screens */}
-      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "matchDetail", "photoVerify", "colorTest", "colorDetail", "inviteHub", "privacyPolicy", "termsOfService", "deleteAccount", "billing", "inviteWizard"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "matchDetail", "photoVerify", "colorTest", "colorDetail", "inviteHub", "privacyPolicy", "termsOfService", "deleteAccount", "billing", "inviteWizard", "paymentSuccess", "paymentFail"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}

@@ -209,7 +209,7 @@
 |---|---|---|
 | **PA-010** | Capacitor IAP 플러그인 통합 (iOS/Android Play Billing) | ⏸ |
 | **PA-011** | Toss SDK 통합 (웹·Android 폴백) | ⏸ |
-| **PA-012** | BillingScreen 구매 버튼 → 결제 SDK 호출 | ⏸ |
+| **PA-012** | BillingScreen 구매 버튼 → 결제 SDK 호출 | ✅ (Toss SDK 통합, IAP 별도) |
 | **PA-013** | 구매 복원 (Restore Purchases) — Apple 정책 필수 | ⏸ |
 
 ### Phase D — 운영·CS

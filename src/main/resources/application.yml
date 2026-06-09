@@ -100,6 +100,16 @@ nice:
   client-secret: ${NICE_CLIENT_SECRET:}
   product-id: ${NICE_PRODUCT_ID:2101979031}
 
+# ── 결제 (PA-002) ────────────────────────────────────────
+# PAYMENT_GATEWAY: mock (베타 기본) | toss (test/live 키 필요)
+# TOSS_SECRET_KEY: 가맹 신청 후 콘솔에서 발급 — test_sk_... / live_sk_...
+payment:
+  gateway: ${PAYMENT_GATEWAY:mock}
+
+toss:
+  payments:
+    secret-key: ${TOSS_SECRET_KEY:dummy}
+
 # Logging
 logging:
   level:

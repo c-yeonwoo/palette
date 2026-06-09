@@ -10,6 +10,8 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Ticket, Gift, MailPlus, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api/apiClient";
+import { isPaymentEnabled, requestTossPayment, type BillingKind } from "@/lib/billing/tossPayment";
+import { authService } from "@/lib/auth/authService";
 
 interface BillingScreenProps {
   onBack: () => void;
@@ -59,8 +61,45 @@ export function BillingScreen({ onBack }: BillingScreenProps) {
       .catch(() => toast.error("잔액 정보를 불러오지 못했어요"));
   }, []);
 
-  const handlePurchase = (b: BundleDto) => {
-    toast.info(`결제는 정식 출시 후 지원될 예정이에요 (${b.quantity}장 ${formatWon(b.priceWon)})`);
+  const [isPurchasing, setIsPurchasing] = useState(false);
+
+  const handlePurchase = async (b: BundleDto) => {
+    // PA-012 — Toss SDK 결제 위젯 호출. 결제 성공 시 successUrl 로 리다이렉트되며
+    // PaymentSuccessScreen 이 paymentKey 받아 백엔드 confirm 호출.
+    if (!isPaymentEnabled()) {
+      toast.info(`결제는 정식 출시 후 지원될 예정이에요 (${b.quantity}장 ${formatWon(b.priceWon)})`);
+      return;
+    }
+    if (isPurchasing) return;
+    setIsPurchasing(true);
+    try {
+      const user = await authService.getCurrentUser();
+      if (!user?.userId) {
+        toast.error("사용자 정보를 불러오지 못했어요");
+        return;
+      }
+      await requestTossPayment(
+        {
+          kind: b.kind as BillingKind,
+          quantity: b.quantity,
+          amount: b.priceWon,
+        },
+        user.userId,   // customerKey — 동일 사용자 결제 이력 묶음용
+      );
+      // requestTossPayment 는 위젯이 successUrl 로 리다이렉트시키므로 여기 도달 X.
+      // 사용자가 위젯을 닫는 경우 SDK 가 에러 throw.
+    } catch (e: any) {
+      const code = e?.code as string | undefined;
+      // PAY_PROCESS_CANCELED / USER_CANCEL — 사용자가 결제창 닫음
+      if (code === "PAY_PROCESS_CANCELED" || code === "USER_CANCEL") {
+        // 침묵 — 사용자 의도된 취소
+      } else {
+        console.error("[Toss] 결제 호출 실패", e);
+        toast.error(e?.message ?? "결제를 시작하지 못했어요");
+      }
+    } finally {
+      setIsPurchasing(false);
+    }
   };
 
   const bonusDays = daysUntil(balance?.bonusExpiresAt ?? null);
