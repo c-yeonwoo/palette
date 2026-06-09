@@ -18,8 +18,17 @@ class MockPaymentGateway : PaymentGateway {
         paymentKey: String?,
         orderId: String?
     ): PaymentGatewayResult {
-        val txId = UUID.randomUUID().toString()
+        val txId = paymentKey?.takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString()
         logger.info("[MOCK PAYMENT] buyer=$buyerUserId target=$targetUserId amount=${amount}원 txId=$txId")
         return PaymentGatewayResult.Success(txId)
+    }
+
+    override fun confirm(
+        orderId: String,
+        paymentKey: String,
+        expectedAmount: Int,
+    ): PaymentGatewayResult {
+        logger.info("[MOCK CONFIRM] orderId={} paymentKey={} amount={}", orderId, paymentKey, expectedAmount)
+        return PaymentGatewayResult.Success(paymentKey.ifBlank { UUID.randomUUID().toString() })
     }
 }

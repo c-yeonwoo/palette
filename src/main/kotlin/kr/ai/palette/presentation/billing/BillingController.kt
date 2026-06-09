@@ -45,6 +45,23 @@ data class TipRequest(
 )
 
 /**
+ * PA-002 — Toss 결제 confirm + 티켓 묶음 적립 요청.
+ *
+ * 프론트 흐름:
+ *  1) `GET /bundles` 로 카탈로그 확인
+ *  2) Toss SDK 결제 위젯 호출 (kind/quantity/priceWon 기반 orderId 생성)
+ *  3) 결제 성공 → `POST /checkout/confirm` 으로 paymentKey 전달
+ *  4) 백엔드가 Toss confirm + 멱등 체크 + grantPaidTickets
+ */
+data class CheckoutConfirmRequest(
+    val kind: String,            // "VIEW" | "INTRO_REQUEST"
+    val quantity: Int,           // 1 / 5 / 10
+    val expectedAmount: Int,     // 위변조 방지 — 프론트가 인지한 금액
+    val paymentKey: String,      // Toss SDK 가 발급
+    val orderId: String,         // 프론트가 생성, 중복 차단용
+)
+
+/**
  * 결제·티켓 잔액 API. ADR 0039.
  *
  * 베타 정책: 충전은 무료 stub (`POST /charge`). Phase 2 Toss 결제 연동 시
@@ -54,6 +71,8 @@ data class TipRequest(
 @RequestMapping("/api/v1/billing")
 class BillingController(
     private val billingService: BillingService,
+    private val paymentGateway: kr.ai.palette.infrastructure.payment.PaymentGateway,
+    private val paymentTransactionRepository: kr.ai.palette.persistence.payment.PaymentTransactionJpaRepository,
 ) {
 
     @GetMapping("/balance")
@@ -113,6 +132,98 @@ class BillingController(
                 bonusExpiresAt = b.bonusExpiresAt?.toString(),
             )
         )
+    }
+
+    /**
+     * PA-002 — Toss confirm + 티켓 묶음 적립.
+     *
+     * 흐름:
+     *  1) PaymentGateway.confirm(orderId, paymentKey, expectedAmount) — 외부 검증
+     *  2) PaymentTransaction 영구 저장 (멱등 UNIQUE: provider + receiptId)
+     *  3) BillingService.grantPaidTickets — 잔액 +
+     *
+     * 베타: payment.gateway=mock 으로 항상 성공 (외부 결제 미연동).
+     * 정식: payment.gateway=toss + toss.payments.secret-key 환경변수 주입 후 동작.
+     */
+    @PostMapping("/checkout/confirm")
+    fun confirmCheckout(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @RequestBody req: CheckoutConfirmRequest,
+    ): ResponseEntity<Map<String, Any>> {
+        val kind = runCatching { TicketKind.valueOf(req.kind) }.getOrNull()
+            ?: return ResponseEntity.badRequest().body(mapOf("error" to "INVALID_KIND"))
+        if (req.quantity !in 1..100) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "INVALID_QUANTITY"))
+        }
+        if (req.expectedAmount <= 0 || req.expectedAmount > 1_000_000) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "INVALID_AMOUNT"))
+        }
+        val userId = authUser.userId.value.toString()
+
+        // 멱등 1단계: 이미 처리된 영수증이면 잔액만 응답 (재시도 안전성)
+        val existing = paymentTransactionRepository
+            .findByProviderAndProviderReceiptId("TOSS", req.paymentKey)
+        if (existing != null) {
+            val b = billingService.getOrCreateBalance(userId)
+            return ResponseEntity.ok(mapOf(
+                "status" to "ALREADY_PROCESSED",
+                "transactionId" to existing.id,
+                "viewTickets" to b.viewTicketCount + b.bonusViewTicketCount,
+                "introRequestTickets" to b.introRequestTicketCount + b.bonusIntroRequestTicketCount,
+            ))
+        }
+
+        // 1) 외부 결제 시스템 검증
+        val result = paymentGateway.confirm(
+            orderId = req.orderId,
+            paymentKey = req.paymentKey,
+            expectedAmount = req.expectedAmount,
+        )
+        if (result is kr.ai.palette.infrastructure.payment.PaymentGatewayResult.Failure) {
+            return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(
+                mapOf("error" to "PAYMENT_FAILED", "reason" to result.reason)
+            )
+        }
+        result as kr.ai.palette.infrastructure.payment.PaymentGatewayResult.Success
+
+        // 2) 영수증 저장 (DB UNIQUE 가 동시성 중복 차단)
+        val tx = try {
+            paymentTransactionRepository.save(
+                kr.ai.palette.persistence.payment.PaymentTransactionEntity(
+                    id = result.transactionId,
+                    buyerUserId = userId,
+                    targetUserId = userId,   // 티켓 충전은 본인 대상
+                    amount = req.expectedAmount,
+                    paymentMethod = "TOSS",
+                    provider = "TOSS",
+                    providerReceiptId = req.paymentKey,
+                )
+            )
+        } catch (e: org.springframework.dao.DataIntegrityViolationException) {
+            // 동시 요청 둘 다 결제 검증 통과한 경우 → 한 쪽만 살림
+            val b = billingService.getOrCreateBalance(userId)
+            return ResponseEntity.ok(mapOf(
+                "status" to "ALREADY_PROCESSED",
+                "viewTickets" to b.viewTicketCount + b.bonusViewTicketCount,
+                "introRequestTickets" to b.introRequestTicketCount + b.bonusIntroRequestTicketCount,
+            ))
+        }
+
+        // 3) 티켓 적립
+        val balance = billingService.grantPaidTickets(
+            userId = userId,
+            kind = kind,
+            quantity = req.quantity,
+            provider = "TOSS",
+            providerReceiptId = req.paymentKey,
+        )
+
+        return ResponseEntity.ok(mapOf(
+            "status" to "OK",
+            "transactionId" to tx.id,
+            "viewTickets" to balance.viewTicketCount + balance.bonusViewTicketCount,
+            "introRequestTickets" to balance.introRequestTicketCount + balance.bonusIntroRequestTicketCount,
+        ))
     }
 
     @PostMapping("/tip")

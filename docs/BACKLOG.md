@@ -195,7 +195,7 @@
 | ID | 항목 | 의존성 | 상태 |
 |---|---|---|---|
 | **PA-001** | `PaymentTransaction` `transactionId` UNIQUE — 결제 중복 차단 | — | ✅ |
-| **PA-002** | Toss `confirm` API 실연동 — test 키로 검증 | Toss test 키 | ⏸ |
+| **PA-002** | Toss `confirm` API 실연동 — test 키로 검증 | Toss test 키 | ✅ |
 | **PA-003** | Apple receipt 검증 (`/verifyReceipt`) — sandbox 부터 | Apple Shared Secret | ⏸ |
 | **PA-004** | Google Play receipt 검증 (`androidpublisher`) | Play service account | ⏸ |
 | **PA-005** | 결제 webhook 수신: Toss `/v1/payments`, Apple S2S, Google RTDN | live 키 | ⏸ |

@@ -82,6 +82,36 @@ class BillingService(
     }
 
     /**
+     * 유료 결제 검증 통과 후 티켓 적립. PA-002.
+     *
+     * 멱등성: 동일 (provider, providerReceiptId) 는 PaymentTransactionEntity UNIQUE
+     * constraint 로 차단 (PA-001). 호출 측이 try/catch 로 DataIntegrityViolation
+     * 핸들링하면 안전.
+     *
+     * 결제 자체는 PaymentGateway.confirm() 가 끝낸 상태라고 가정.
+     */
+    fun grantPaidTickets(
+        userId: String,
+        kind: TicketKind,
+        quantity: Int,
+        provider: String,
+        providerReceiptId: String,
+    ): UserTicketBalanceEntity {
+        require(quantity > 0) { "수량은 1 이상" }
+        val balance = getOrCreateBalance(userId)
+        when (kind) {
+            TicketKind.VIEW -> balance.viewTicketCount += quantity
+            TicketKind.INTRO_REQUEST -> balance.introRequestTicketCount += quantity
+        }
+        balance.updatedAt = Instant.now()
+        log.info(
+            "유료 티켓 적립 user={} kind={} +{} provider={} receipt={}",
+            userId, kind, quantity, provider, providerReceiptId,
+        )
+        return ticketBalanceRepository.save(balance)
+    }
+
+    /**
      * 베타용 무료 충전 — 결제 검증 없이 잔액만 증가.
      * Phase 2: PaymentGateway 검증 통과 후에만 이 메서드 호출.
      */

@@ -252,3 +252,45 @@ keytool -genkey -v -keystore palette-release.keystore -alias palette -keyalg RSA
 - 웹 자산(dist)만 변경 시: `cap sync` 후 재제출 (Apple Live Update 정책상 JS 동적 로딩은 제한, 정적 빌드 권장)
 - 네이티브 플러그인 변경 시: 반드시 새 빌드 번호 + 심사 제출
 - Capacitor Live Updates / Ionic Appflow 도입은 트래픽 확보 후 검토
+
+---
+
+## 11. 결제 활성화 — BACKLOG PA sprint
+
+### 11.1 환경 변수 (application.yml 또는 env)
+
+```bash
+# Toss Payments — 가맹 통과 후 발급
+PAYMENT_GATEWAY=toss             # mock(베타) → toss(정식)
+TOSS_SECRET_KEY=test_sk_...      # test → live_sk_... (가맹 통과 후)
+
+# 참고: application.yml 매핑
+# payment.gateway: ${PAYMENT_GATEWAY:mock}
+# toss.payments.secret-key: ${TOSS_SECRET_KEY:dummy}
+```
+
+### 11.2 Toss 활성화 절차 (PA-002 완료 후)
+
+1. Toss 가맹 신청 → test 키 발급 (즉시) — https://developers.tosspayments.com
+2. `.env` 또는 배포 환경변수에 `PAYMENT_GATEWAY=toss` + `TOSS_SECRET_KEY=test_sk_...`
+3. 백엔드 재시작 → `TossPaymentGateway` 활성, `MockPaymentGateway` 비활성
+4. 프론트 SDK 결제 위젯 호출 → paymentKey 발급 → `POST /api/v1/billing/checkout/confirm`
+5. 백엔드가 `confirm()` → PaymentTransaction 멱등 저장 → `grantPaidTickets`
+6. 정식 출시 직전 live 키 (`live_sk_...`) 로 교체
+
+### 11.3 결제 검증 테스트 (test 키 단계)
+
+```bash
+# Toss 테스트 카드 (4330-1234-1234-1234, CVC 123) 로 위젯 결제 → paymentKey 받음
+curl -X POST "$API_URL/api/v1/billing/checkout/confirm" \
+  -H "Authorization: Bearer $JWT" \
+  -H "Content-Type: application/json" \
+  -d '{"kind":"VIEW","quantity":5,"expectedAmount":4500,"paymentKey":"<TOSS>","orderId":"<UUID>"}'
+# → { "status": "OK", "transactionId": "...", "viewTickets": ... }
+
+# 같은 paymentKey 로 재요청 → "ALREADY_PROCESSED" (PA-001 멱등성)
+```
+
+### 11.4 IAP 활성화 (Apple/Google, PA-003/004)
+
+각각 별도 sprint. 구현 시 RUNBOOK 보강.

@@ -9,6 +9,15 @@ import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientException
 import java.util.Base64
 
+/**
+ * Toss Payments confirm API 연동. PA-002.
+ *
+ * 활성화: `payment.gateway=toss` + `toss.payments.secret-key` (env: TOSS_SECRET_KEY).
+ * - test key: `test_sk_...` (가맹 신청 전에도 발급)
+ * - live key: `live_sk_...` (가맹 통과 후, prod 환경에만)
+ *
+ * Toss API: https://docs.tosspayments.com/reference#payment-요청-검증
+ */
 @Service
 @ConditionalOnProperty(name = ["payment.gateway"], havingValue = "toss")
 class TossPaymentGateway(
@@ -35,9 +44,19 @@ class TossPaymentGateway(
         orderId: String?
     ): PaymentGatewayResult {
         if (paymentKey.isNullOrBlank() || orderId.isNullOrBlank()) {
-            return PaymentGatewayResult.Failure("paymentKey와 orderId가 필요합니다")
+            return PaymentGatewayResult.Failure("paymentKey 와 orderId 가 필요합니다")
         }
+        return confirm(orderId = orderId, paymentKey = paymentKey, expectedAmount = amount)
+    }
 
+    override fun confirm(
+        orderId: String,
+        paymentKey: String,
+        expectedAmount: Int,
+    ): PaymentGatewayResult {
+        if (paymentKey.isBlank() || orderId.isBlank()) {
+            return PaymentGatewayResult.Failure("paymentKey 와 orderId 가 비어있습니다")
+        }
         return try {
             val response = client.post()
                 .uri("/v1/payments/confirm")
@@ -45,21 +64,36 @@ class TossPaymentGateway(
                     mapOf(
                         "paymentKey" to paymentKey,
                         "orderId" to orderId,
-                        "amount" to amount
+                        "amount" to expectedAmount,
                     )
                 )
                 .retrieve()
                 .body(TossConfirmResponse::class.java)
 
-            if (response?.status == "DONE") {
-                logger.info("[TOSS] 결제 승인 완료: paymentKey=$paymentKey orderId=$orderId amount=${amount}원")
-                PaymentGatewayResult.Success(paymentKey)
-            } else {
-                logger.warn("[TOSS] 결제 상태 비정상: status=${response?.status}")
-                PaymentGatewayResult.Failure("결제 상태 비정상: ${response?.status}")
+            when {
+                response == null -> PaymentGatewayResult.Failure("Toss 응답 없음")
+                response.status != "DONE" -> {
+                    logger.warn("[TOSS] 결제 상태 비정상 status={} orderId={}", response.status, orderId)
+                    PaymentGatewayResult.Failure("결제 상태 비정상: ${response.status}")
+                }
+                response.totalAmount != expectedAmount -> {
+                    // 위변조 방지 — 응답 금액 ≠ 백엔드가 인지한 금액
+                    logger.error(
+                        "[TOSS] 금액 불일치 expected={} actual={} orderId={}",
+                        expectedAmount, response.totalAmount, orderId,
+                    )
+                    PaymentGatewayResult.Failure("금액 불일치 (위변조 의심)")
+                }
+                else -> {
+                    logger.info(
+                        "[TOSS] 승인 OK paymentKey={} orderId={} amount={}",
+                        paymentKey, orderId, response.totalAmount,
+                    )
+                    PaymentGatewayResult.Success(paymentKey)
+                }
             }
         } catch (e: RestClientException) {
-            logger.error("[TOSS] 결제 승인 실패: ${e.message}")
+            logger.error("[TOSS] 승인 실패 orderId={} err={}", orderId, e.message)
             PaymentGatewayResult.Failure("Toss 결제 승인 실패: ${e.message}")
         }
     }
@@ -70,5 +104,5 @@ private data class TossConfirmResponse(
     val orderId: String,
     val status: String,
     val totalAmount: Int,
-    val method: String?
+    val method: String?,
 )
