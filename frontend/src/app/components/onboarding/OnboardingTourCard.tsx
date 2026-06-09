@@ -19,24 +19,21 @@ interface OnboardingTourCardProps {
   hasFriends: boolean;          // 친구 1명 이상
   hasViewedProfile: boolean;     // 친친 프로필 1회 이상 열람
   hasSentMatchRequest: boolean;  // 소개 요청 1회 이상 보냄
-  hasColorAnalysis: boolean;     // AI 색 분석 완료
   onNavigateToFriends?: () => void;
-  onNavigateToMyPage?: () => void;
 }
 
 export function OnboardingTourCard({
   hasFriends,
   hasViewedProfile,
   hasSentMatchRequest,
-  hasColorAnalysis,
   onNavigateToFriends,
-  onNavigateToMyPage,
 }: OnboardingTourCardProps) {
   const [dismissed, setDismissed] = useState<boolean>(() => {
     try { return localStorage.getItem(DISMISS_KEY) === "1"; } catch { return false; }
   });
   const [collapsed, setCollapsed] = useState(false);
 
+  // "나의 색" 단계는 제외 — 가입·프로필 완료 시점에 이미 노출되므로 중복.
   const steps = [
     {
       label: "지인 추가",
@@ -53,12 +50,6 @@ export function OnboardingTourCard({
       label: "소개 요청 보내기",
       desc: "공통 지인을 통해 자연스럽게 이어져요",
       done: hasSentMatchRequest,
-    },
-    {
-      label: "나의 색 확인하기",
-      desc: "AI 가 분석한 당신의 성향과 어울리는 인연 유추",
-      done: hasColorAnalysis,
-      onClick: onNavigateToMyPage,
     },
   ];
 

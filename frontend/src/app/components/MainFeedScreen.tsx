@@ -283,9 +283,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
           hasFriends={friendCount > 0}
           hasViewedProfile={onboardingProgress.hasViewedProfile()}
           hasSentMatchRequest={onboardingProgress.hasSentMatchRequest()}
-          hasColorAnalysis={!!userProfile.colorType?.name}
           onNavigateToFriends={onNavigateToFriends}
-          onNavigateToMyPage={onNavigateToMyPage}
         />
       )}
 
