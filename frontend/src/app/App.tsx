@@ -1100,6 +1100,14 @@ export default function App() {
           onNavigateToReward={() => setCurrentScreen("matchmakerReward")}
           onNavigateToFriends={() => { setFriendConnectFrom(currentScreen); setCurrentScreen("friendConnect"); }}
           onNavigateToMarketplace={() => setCurrentScreen("matchmakerMarketplace")}
+          onMemberProfileClick={(userId) => {
+            // 1촌 지인 프로필 — degree=1 + 무료 열람. ProfileDetailScreen 의 detailsHidden 룰로 비공개는 자동 hide (ADR 0035).
+            setSelectedUserId(userId);
+            setSelectedMutualFriends([]);
+            setSelectedDegree(1);
+            setSelectedViewCost(0);
+            setCurrentScreen("profileDetail");
+          }}
         />
       )}
 

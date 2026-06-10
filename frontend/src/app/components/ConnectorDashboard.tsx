@@ -58,6 +58,8 @@ interface ConnectorDashboardProps {
   onNavigateToReward?: () => void;
   onNavigateToFriends?: () => void;
   onNavigateToMarketplace?: () => void;
+  /** 1촌 지인 카드 탭 → ProfileDetailScreen (degree=1, viewCost=0). 비공개 항목은 ADR 0035 룰로 자동 hide. */
+  onMemberProfileClick?: (userId: string) => void;
 }
 
 interface ClientMember {
@@ -172,7 +174,7 @@ const MOCK_NUDGES: NudgeProposal[] = [
   },
 ];
 
-export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFriends }: ConnectorDashboardProps) {
+export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFriends, onMemberProfileClick }: ConnectorDashboardProps) {
   const [matchmakerData, setMatchmakerData] = useState<MatchmakerData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [requests, setRequests] = useState<MatchRequest[]>([]);
@@ -382,32 +384,32 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
               backgroundImage: `linear-gradient(135deg, ${tier.color}1A 0%, ${tier.color}08 60%, transparent 100%)`,
             }}
           >
-            <div className="max-w-2xl mx-auto px-5 py-4 flex items-center gap-3">
-              <span
-                className="flex items-center gap-1.5 font-bold text-sm px-2.5 py-1 rounded-full flex-shrink-0 border"
-                style={{
-                  backgroundColor: `${tier.color}26`,
-                  borderColor: `${tier.color}55`,
-                  color: tier.color,
-                }}
-              >
-                <Award className="w-3.5 h-3.5" /> Lv.{lvl}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold text-foreground truncate leading-none">{tier.name}</span>
-                  <span className="text-xs text-muted-foreground flex-shrink-0 leading-none">
-                    {remaining != null ? `다음 ${next?.name}까지 ${remaining}건` : "최고 등급"}
-                  </span>
-                </div>
-                <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{ width: `${pct}%`, backgroundColor: tier.color }}
-                  />
-                </div>
+            <div className="max-w-2xl mx-auto px-5 py-4">
+              {/* 1줄 — pill + 등급명 + 진행도 텍스트 + chevron, 세로 중앙 정렬 */}
+              <div className="flex items-center gap-3">
+                <span
+                  className="flex items-center gap-1.5 font-bold text-sm px-2.5 py-1 rounded-full flex-shrink-0 border leading-none"
+                  style={{
+                    backgroundColor: `${tier.color}26`,
+                    borderColor: `${tier.color}55`,
+                    color: tier.color,
+                  }}
+                >
+                  <Award className="w-3.5 h-3.5" /> Lv.{lvl}
+                </span>
+                <span className="text-sm font-semibold text-foreground truncate flex-1 leading-none">{tier.name}</span>
+                <span className="text-xs text-muted-foreground flex-shrink-0 leading-none">
+                  {remaining != null ? `다음 ${next?.name}까지 ${remaining}건` : "최고 등급"}
+                </span>
+                {onNavigateToReward && <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
               </div>
-              {onNavigateToReward && <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+              {/* 2줄 — progress bar */}
+              <div className="mt-2.5 h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${pct}%`, backgroundColor: tier.color }}
+                />
+              </div>
             </div>
           </button>
         );
@@ -523,6 +525,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                         key={member.id}
                         member={member}
                         hasActiveNudge={hasNudge}
+                        onProfileClick={onMemberProfileClick ? () => onMemberProfileClick(member.userId) : undefined}
                         onNudge={() => {
                           setNudgeSource(member);
                           setShowNudgeFlow(true);
@@ -1179,34 +1182,43 @@ function MemberCard({
   member,
   hasActiveNudge,
   onNudge,
+  onProfileClick,
 }: {
   member: ClientMember;
   hasActiveNudge?: boolean;
   onNudge?: () => void;
+  /** 카드 본문(아바타+정보) 탭 → 1촌 지인 프로필 (비공개 정보는 ADR 0035 룰로 자동 hide) */
+  onProfileClick?: () => void;
 }) {
   return (
     <div className="bg-card border border-border rounded-2xl overflow-hidden">
-      {/* 아바타 */}
-      <div className="aspect-square bg-muted flex items-center justify-center relative">
-        {member.photoUrl ? (
-          <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-muted-foreground/60">
-            {member.name.charAt(0)}
-          </div>
-        )}
-        {hasActiveNudge && (
-          <span className="absolute top-2 left-2 bg-brand-soft text-gold-strong text-xs font-bold px-1.5 py-0.5 rounded-full">
-            제안중
-          </span>
-        )}
-      </div>
-      {/* 정보 */}
-      <div className="px-2.5 pt-2 pb-2 space-y-1">
-        <p className="text-sm font-semibold text-foreground truncate">{member.name}</p>
-        <p className="text-xs text-muted-foreground">{member.age}세 · {member.region}</p>
-      </div>
-      {/* 연결 제안 버튼 */}
+      {/* 아바타 + 정보 — 클릭하면 1촌 지인 프로필 진입 */}
+      <button
+        type="button"
+        onClick={onProfileClick}
+        disabled={!onProfileClick}
+        className="w-full text-left enabled:hover:bg-muted/30 disabled:cursor-default transition-colors"
+      >
+        <div className="aspect-square bg-muted flex items-center justify-center relative">
+          {member.photoUrl ? (
+            <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-muted-foreground/60">
+              {member.name.charAt(0)}
+            </div>
+          )}
+          {hasActiveNudge && (
+            <span className="absolute top-2 left-2 bg-brand-soft text-gold-strong text-xs font-bold px-1.5 py-0.5 rounded-full">
+              제안중
+            </span>
+          )}
+        </div>
+        <div className="px-2.5 pt-2 pb-2 space-y-1">
+          <p className="text-sm font-semibold text-foreground truncate">{member.name}</p>
+          <p className="text-xs text-muted-foreground">{member.age}세 · {member.region}</p>
+        </div>
+      </button>
+      {/* 연결 제안 버튼 — 프로필 진입과 별개 액션 */}
       {onNudge && (
         <button
           onClick={onNudge}
