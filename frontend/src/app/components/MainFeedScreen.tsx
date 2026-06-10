@@ -544,7 +544,7 @@ function ProfileCard({
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", ...PALETTE_COVER_STYLE }}
           />
 
-          {/* ── 뒷면 (사진) — 공개 상태. 4면 라운드. 정보는 사진 안쪽 frosted glass 오버레이로 (카드 높이 고정) ── */}
+          {/* ── 뒷면 (사진) — 4면 라운드. 하단 살짝 페이드 (info card overlap 영역 자연스럽게) ── */}
           <div
             className="absolute inset-0 rounded-2xl overflow-hidden shadow-card bg-muted"
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
@@ -557,9 +557,9 @@ function ProfileCard({
               </div>
             )}
 
-            {/* 하단 페이드 — frosted glass 정보 카드 영역 가독성 보강 */}
+            {/* 하단 페이드 — info card overlap 부분 (사진 하단 ~20px) 만 살짝 어둡게 */}
             {revealed && (
-              <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent via-black/5 to-black/30 pointer-events-none" />
+              <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-black/15 pointer-events-none" />
             )}
 
             {compat && (
@@ -569,27 +569,26 @@ function ProfileCard({
                 </span>
               </div>
             )}
-
-            {/* ── 정보 카드 — 사진 안쪽 absolute overlay (frosted glass). 카드 전체 높이 변화 X.
-                좌측 컬러 액센트 바로 "각자의 색" 브랜드 강조 (ADR 0001) ── */}
-            {revealed && (
-              <div
-                className="absolute inset-x-2 bottom-2 rounded-xl bg-white/85 backdrop-blur-md py-2.5 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500"
-                style={accentHex ? { boxShadow: `inset 0 1px 0 ${accentHex}40, 0 6px 20px rgba(0,0,0,0.08)` } : undefined}
-              >
-                {accentHex && (
-                  <div className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: accentHex }} aria-hidden />
-                )}
-                <div className="pl-3.5 pr-3">
-                  <CardInfoSection nickname={nickname ?? null} job={job} age={age ?? null} region={location} colorHex={accentHex} colorName={theirMeta?.name ?? null} />
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
 
-      {/* 지인 연결 — 카드 외부 (높이 변화 없음) */}
+      {/* 정보 카드 — 사진 밖, 사진 하단을 ~20px 살짝 overlap. 좌측 컬러 액센트 (ADR 0001 "각자의 색") */}
+      {revealed && (
+        <div
+          className="relative z-10 -mt-5 mx-2 rounded-2xl bg-card px-3 py-2.5 shadow-card overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500"
+          style={accentHex ? { boxShadow: `inset 0 1px 0 ${accentHex}40, 0 4px 14px rgba(0,0,0,0.06)` } : undefined}
+        >
+          {accentHex && (
+            <div className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: accentHex }} aria-hidden />
+          )}
+          <div className="pl-2.5">
+            <CardInfoSection nickname={nickname ?? null} job={job} age={age ?? null} region={location} colorHex={accentHex} colorName={theirMeta?.name ?? null} />
+          </div>
+        </div>
+      )}
+
+      {/* 지인 연결 */}
       <div className="mt-2 px-0.5">
         <RelationshipBadge degree={degree} mutualFriends={mutualFriends} />
       </div>
@@ -929,7 +928,7 @@ function AiSignalCard({
             </div>
           </div>
 
-          {/* ── 뒷면 (사진) — 공개 상태. 4면 라운드. 정보는 사진 안쪽 frosted glass overlay (카드 높이 고정) ── */}
+          {/* ── 뒷면 (사진) — 4면 라운드. 하단 살짝 페이드 (info card overlap 영역) ── */}
           <div
             className="absolute inset-0 rounded-2xl overflow-hidden shadow-card bg-muted"
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
@@ -940,7 +939,7 @@ function AiSignalCard({
               <div className="w-full h-full bg-gradient-to-br from-muted via-accent to-muted/60" />
             )}
             {revealed && (
-              <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent via-black/5 to-black/30 pointer-events-none" />
+              <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-black/15 pointer-events-none" />
             )}
             {rec.isFree && (
               <div className="absolute top-2 right-2">
@@ -954,24 +953,24 @@ function AiSignalCard({
                 </span>
               </div>
             )}
-
-            {/* ── 정보 카드 — 사진 안쪽 absolute overlay (frosted glass) + 좌측 컬러 액센트 ── */}
-            {revealed && (
-              <div
-                className="absolute inset-x-2 bottom-2 rounded-xl bg-white/85 backdrop-blur-md py-2.5 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500"
-                style={accentHex ? { boxShadow: `inset 0 1px 0 ${accentHex}40, 0 6px 20px rgba(0,0,0,0.08)` } : undefined}
-              >
-                {accentHex && (
-                  <div className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: accentHex }} aria-hidden />
-                )}
-                <div className="pl-3.5 pr-3">
-                  <CardInfoSection nickname={null} job={job} age={rec.teaserAge ?? null} region={location} colorHex={accentHex} colorName={theirColor ? COLOR_META[theirColor]?.name ?? null : null} />
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
+
+      {/* 정보 카드 — 사진 밖, 사진 하단을 ~20px 살짝 overlap. 좌측 컬러 액센트 */}
+      {revealed && (
+        <div
+          className="relative z-10 -mt-5 mx-2 rounded-2xl bg-card px-3 py-2.5 shadow-card overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500"
+          style={accentHex ? { boxShadow: `inset 0 1px 0 ${accentHex}40, 0 4px 14px rgba(0,0,0,0.06)` } : undefined}
+        >
+          {accentHex && (
+            <div className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: accentHex }} aria-hidden />
+          )}
+          <div className="pl-2.5">
+            <CardInfoSection nickname={null} job={job} age={rec.teaserAge ?? null} region={location} colorHex={accentHex} colorName={theirColor ? COLOR_META[theirColor]?.name ?? null : null} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
