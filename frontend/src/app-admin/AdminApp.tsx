@@ -5,6 +5,9 @@ import { AdminUsersScreen } from "./components/AdminUsersScreen";
 import { AdminUserDetailScreen } from "./components/AdminUserDetailScreen";
 import { AdminMatchingScreen } from "./components/AdminMatchingScreen";
 import { AdminBillingScreen } from "./components/AdminBillingScreen";
+import { AdminReportsScreen } from "./components/AdminReportsScreen";
+import { AdminWithdrawalsScreen } from "./components/AdminWithdrawalsScreen";
+import { AdminTransactionsScreen } from "./components/AdminTransactionsScreen";
 import { adminAuth, type AdminInfo } from "./lib/adminAuth";
 
 /**
@@ -24,7 +27,10 @@ type Screen =
   | { kind: "users" }
   | { kind: "user-detail"; userId: string }
   | { kind: "matching" }
-  | { kind: "billing" };
+  | { kind: "billing" }
+  | { kind: "reports" }
+  | { kind: "withdrawals" }
+  | { kind: "transactions" };
 
 function pathToScreen(path: string): Screen {
   if (path === "/admin" || path === "/admin/") return { kind: "dashboard" };
@@ -33,6 +39,9 @@ function pathToScreen(path: string): Screen {
   if (m) return { kind: "user-detail", userId: m[1] };
   if (path === "/admin/matching" || path === "/admin/recommendations") return { kind: "matching" };
   if (path === "/admin/billing") return { kind: "billing" };
+  if (path === "/admin/reports") return { kind: "reports" };
+  if (path === "/admin/withdrawals") return { kind: "withdrawals" };
+  if (path === "/admin/transactions") return { kind: "transactions" };
   return { kind: "dashboard" };
 }
 
@@ -92,5 +101,11 @@ export default function AdminApp() {
       return <AdminMatchingScreen onBack={() => navigate("/admin")} />;
     case "billing":
       return <AdminBillingScreen onBack={() => navigate("/admin")} />;
+    case "reports":
+      return <AdminReportsScreen onBack={() => navigate("/admin")} />;
+    case "withdrawals":
+      return <AdminWithdrawalsScreen onBack={() => navigate("/admin")} />;
+    case "transactions":
+      return <AdminTransactionsScreen onBack={() => navigate("/admin")} />;
   }
 }
