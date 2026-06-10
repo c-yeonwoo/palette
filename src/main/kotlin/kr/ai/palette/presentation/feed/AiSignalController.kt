@@ -53,6 +53,8 @@ class AiSignalController(
     private val blockService: kr.ai.palette.application.safety.BlockService,
     private val aiPassRepo: AiPassSubscriptionJpaRepository,
     private val palettePickRecommendationService: kr.ai.palette.palettepick.application.PalettePickRecommendationService,
+    private val compatibilityAnalysisRepository: kr.ai.palette.palettepick.persistence.CompatibilityAnalysisJpaRepository,
+    private val objectMapper: tools.jackson.databind.ObjectMapper,
     @Value("\${toss.payments.secret-key:}") private val paymentSecretKey: String,
 ) {
     companion object {
@@ -143,6 +145,13 @@ class AiSignalController(
         val pass = aiPassRepo.findByUserId(viewerId.value)
         val isSubscriber = pass?.expiresAt?.isAfter(Instant.now()) == true
 
+        // 팔레트픽 LLM 인사이트 캐시 일괄 조회 (N+1 회피) — ADR 0047 §B.3 Stage 3
+        val analysesByCandidate = if (targetIds.isNotEmpty()) {
+            compatibilityAnalysisRepository
+                .findByViewerUserIdAndCandidateUserIdIn(viewerId.value, targetIds)
+                .associateBy { it.candidateUserId }
+        } else emptyMap()
+
         val recommendations = targetIds.mapIndexedNotNull { index, targetUserId ->
             val profile = profileRepository.findByUserId(kr.ai.palette.domain.common.UserId(targetUserId))
                 ?: return@mapIndexedNotNull null
@@ -152,11 +161,13 @@ class AiSignalController(
             val isUnlocked = isFree || isSubscriber || isSecondUnlocked
             val fullProfile = if (isUnlocked) ProfileResponse.from(profile, fileStorageService) else null
             val isOpened = cardOpenJpaRepository.existsByViewerIdAndTargetUserId(viewerId.value, targetUserId)
+            val insight = if (isUnlocked) parseInsight(analysesByCandidate[targetUserId]) else null
 
             AiSignalRecommendation(
                 profile = fullProfile,
-                reason = if (isUnlocked) "프로필 궁합도 기반 추천" else "구독하면 만날 수 있는 오늘의 추천",
-                similarityScore = 0.0,
+                reason = insight?.summary
+                    ?: if (isUnlocked) "프로필 궁합도 기반 추천" else "구독하면 만날 수 있는 오늘의 추천",
+                similarityScore = insight?.score?.toDouble()?.div(100.0) ?: 0.0,
                 isFree = isFree,
                 isUnlocked = isUnlocked,
                 requiresPass = !isUnlocked,
@@ -166,6 +177,7 @@ class AiSignalController(
                 teaserLocation = if (!isUnlocked) profile.locationInfo?.sido else null,
                 // 잠긴 카드도 색 타입은 노출 → 프론트가 궁합 % 티저 계산 (matrix는 프론트 단일 소스)
                 teaserColorType = profile.colorType?.type?.name,
+                insight = insight,
             )
         }
 
@@ -176,6 +188,33 @@ class AiSignalController(
             passPriceMonthly = PASS_PRICE_MONTHLY,
             passExpiresAt = if (isSubscriber) pass?.expiresAt?.toString() else null,
         )
+    }
+
+    /** CompatibilityAnalysisEntity.summaryJson → DTO. 파싱 실패 시 null. */
+    private fun parseInsight(
+        entity: kr.ai.palette.palettepick.persistence.CompatibilityAnalysisEntity?,
+    ): PalettePickInsight? {
+        if (entity == null) return null
+        return try {
+            @Suppress("UNCHECKED_CAST")
+            val map = objectMapper.readValue(entity.summaryJson, Map::class.java) as Map<String, Any?>
+            val summary = (map["summary"] as? String)?.trim().orEmpty()
+            @Suppress("UNCHECKED_CAST")
+            val strengths = (map["strengths"] as? List<String>)?.filter { it.isNotBlank() } ?: emptyList()
+            @Suppress("UNCHECKED_CAST")
+            val watchOuts = (map["watchOuts"] as? List<String>)?.filter { it.isNotBlank() } ?: emptyList()
+            val firstQ = (map["firstQuestion"] as? String)?.trim()?.ifBlank { null }
+            if (summary.isBlank() && strengths.isEmpty()) return null
+            PalettePickInsight(
+                summary = summary,
+                strengths = strengths,
+                watchOuts = watchOuts,
+                firstQuestion = firstQ,
+                score = entity.scoreDeterministic,
+            )
+        } catch (e: Exception) {
+            null
+        }
     }
 
     /**
@@ -272,7 +311,18 @@ data class AiSignalRecommendation(
     val isOpened: Boolean = false,       // 카드를 열어본 여부 (물감 제거 여부)
     val teaserAge: Int? = null,          // 잠금 상태일 때 노출할 나이 티저
     val teaserLocation: String? = null,  // 잠금 상태일 때 노출할 지역 티저
-    val teaserColorType: String? = null  // 잠금 상태일 때도 색 타입은 노출 → 궁합 % 티저
+    val teaserColorType: String? = null, // 잠금 상태일 때도 색 타입은 노출 → 궁합 % 티저
+    /** 팔레트픽 LLM 매칭 인사이트 (ADR 0047 §B.3 Stage 3) — unlock 된 카드만. 캐시 없으면 null. */
+    val insight: PalettePickInsight? = null,
+)
+
+/** 팔레트픽 LLM 매칭 인사이트 — 캐시된 분석 결과의 클라이언트 노출용 sub-DTO. */
+data class PalettePickInsight(
+    val summary: String,
+    val strengths: List<String>,
+    val watchOuts: List<String>,
+    val firstQuestion: String? = null,
+    val score: Int, // 결정적 점수 0..100
 )
 
 data class UnlockResponse(
