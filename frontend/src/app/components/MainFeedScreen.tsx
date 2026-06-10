@@ -544,7 +544,7 @@ function ProfileCard({
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", ...PALETTE_COVER_STYLE }}
           />
 
-          {/* ── 뒷면 (사진) — 공개 상태. 4면 라운드. 하단 그라디언트 오버레이로 정보 섹션과 자연스럽게 연결 ── */}
+          {/* ── 뒷면 (사진) — 공개 상태. 4면 라운드. 정보는 사진 안쪽 frosted glass 오버레이로 (카드 높이 고정) ── */}
           <div
             className="absolute inset-0 rounded-2xl overflow-hidden shadow-card bg-muted"
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
@@ -556,10 +556,12 @@ function ProfileCard({
                 <span className="text-5xl opacity-20 select-none">👤</span>
               </div>
             )}
-            {/* 하단 페이드 — 정보 섹션 오버랩 영역과 부드럽게 이어짐 */}
+
+            {/* 하단 페이드 — frosted glass 정보 카드 영역 가독성 보강 */}
             {revealed && (
-              <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-black/15 pointer-events-none" />
+              <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent via-black/5 to-black/30 pointer-events-none" />
             )}
+
             {compat && (
               <div className="absolute top-2 right-2">
                 <span className="text-xs font-bold bg-white/90 text-foreground rounded-full px-2 py-0.5 shadow-sm">
@@ -567,18 +569,27 @@ function ProfileCard({
                 </span>
               </div>
             )}
+
+            {/* ── 정보 카드 — 사진 안쪽 absolute overlay (frosted glass). 카드 전체 높이 변화 X.
+                좌측 컬러 액센트 바로 "각자의 색" 브랜드 강조 (ADR 0001) ── */}
+            {revealed && (
+              <div
+                className="absolute inset-x-2 bottom-2 rounded-xl bg-white/85 backdrop-blur-md py-2.5 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500"
+                style={accentHex ? { boxShadow: `inset 0 1px 0 ${accentHex}40, 0 6px 20px rgba(0,0,0,0.08)` } : undefined}
+              >
+                {accentHex && (
+                  <div className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: accentHex }} aria-hidden />
+                )}
+                <div className="pl-3.5 pr-3">
+                  <CardInfoSection nickname={nickname ?? null} job={job} age={age ?? null} region={location} colorHex={accentHex} colorName={theirMeta?.name ?? null} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* 소개 섹션 — 사진 하단을 약간 덮으며 등장 (negative margin + fade-in/slide-up) */}
-      {revealed && (
-        <div className="relative z-10 -mt-5 mx-2 rounded-2xl bg-card px-3 py-2.5 shadow-card animate-in fade-in slide-in-from-top-2 duration-500">
-          <CardInfoSection nickname={nickname ?? null} job={job} age={age ?? null} region={location} colorHex={accentHex} colorName={theirMeta?.name ?? null} />
-        </div>
-      )}
-
-      {/* 지인 연결 */}
+      {/* 지인 연결 — 카드 외부 (높이 변화 없음) */}
       <div className="mt-2 px-0.5">
         <RelationshipBadge degree={degree} mutualFriends={mutualFriends} />
       </div>
@@ -602,17 +613,23 @@ function CardInfoSection({
   colorHex: string | null;
   colorName: string | null;
 }) {
-  const sub = [age ? `${age}세` : null, region].filter(Boolean).join(" · ");
+  // 한 줄로 압축 — frosted glass overlay 안에서 컴팩트하게.
+  const detail = [job, age ? `${age}세` : null, region].filter(Boolean).join(" · ");
   return (
     <>
-      {nickname && <p className="text-sm font-extrabold text-foreground truncate leading-tight tracking-tight">{nickname}</p>}
-      {job && <p className="text-xs font-semibold text-foreground/80 truncate mt-0.5">{job}</p>}
-      {sub && <p className="text-[11px] font-semibold text-foreground/60 truncate mt-0.5">{sub}</p>}
-      {colorHex && (
-        <div className="flex items-center gap-1.5 mt-1">
-          <span className="w-2 h-2 rounded-full ring-1 ring-black/5" style={{ backgroundColor: colorHex }} />
-          {colorName && <span className="text-[11px] font-semibold text-foreground/70 truncate">{colorName}</span>}
-        </div>
+      {nickname && (
+        <p className="text-sm font-extrabold text-foreground truncate leading-tight tracking-tight">{nickname}</p>
+      )}
+      {detail && (
+        <p className="text-[11px] font-semibold text-foreground/70 truncate mt-0.5">{detail}</p>
+      )}
+      {colorHex && colorName && (
+        <p
+          className="text-[11px] font-bold truncate mt-1 leading-none"
+          style={{ color: colorHex }}
+        >
+          {colorName}
+        </p>
       )}
     </>
   );
@@ -912,7 +929,7 @@ function AiSignalCard({
             </div>
           </div>
 
-          {/* ── 뒷면 (사진) — 공개 상태. 4면 라운드 + 하단 페이드 (정보 섹션 overlap 영역) ── */}
+          {/* ── 뒷면 (사진) — 공개 상태. 4면 라운드. 정보는 사진 안쪽 frosted glass overlay (카드 높이 고정) ── */}
           <div
             className="absolute inset-0 rounded-2xl overflow-hidden shadow-card bg-muted"
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
@@ -923,7 +940,7 @@ function AiSignalCard({
               <div className="w-full h-full bg-gradient-to-br from-muted via-accent to-muted/60" />
             )}
             {revealed && (
-              <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-black/15 pointer-events-none" />
+              <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent via-black/5 to-black/30 pointer-events-none" />
             )}
             {rec.isFree && (
               <div className="absolute top-2 right-2">
@@ -937,16 +954,24 @@ function AiSignalCard({
                 </span>
               </div>
             )}
+
+            {/* ── 정보 카드 — 사진 안쪽 absolute overlay (frosted glass) + 좌측 컬러 액센트 ── */}
+            {revealed && (
+              <div
+                className="absolute inset-x-2 bottom-2 rounded-xl bg-white/85 backdrop-blur-md py-2.5 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500"
+                style={accentHex ? { boxShadow: `inset 0 1px 0 ${accentHex}40, 0 6px 20px rgba(0,0,0,0.08)` } : undefined}
+              >
+                {accentHex && (
+                  <div className="absolute inset-y-0 left-0 w-1" style={{ backgroundColor: accentHex }} aria-hidden />
+                )}
+                <div className="pl-3.5 pr-3">
+                  <CardInfoSection nickname={null} job={job} age={rec.teaserAge ?? null} region={location} colorHex={accentHex} colorName={theirColor ? COLOR_META[theirColor]?.name ?? null : null} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
-
-      {/* 소개 섹션 — 사진 하단을 약간 덮으며 등장 (negative margin + fade-in/slide-up) */}
-      {revealed && (
-        <div className="relative z-10 -mt-5 mx-2 rounded-2xl bg-card px-3 py-2.5 shadow-card animate-in fade-in slide-in-from-top-2 duration-500">
-          <CardInfoSection nickname={null} job={job} age={rec.teaserAge ?? null} region={location} colorHex={accentHex} colorName={theirColor ? COLOR_META[theirColor]?.name ?? null : null} />
-        </div>
-      )}
     </div>
   );
 }
