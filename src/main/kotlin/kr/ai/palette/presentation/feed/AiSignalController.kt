@@ -301,7 +301,7 @@ data class AiSignalRecommendation(
     val profile: ProfileResponse?,       // 잠금 상태면 null
     val reason: String,
     val similarityScore: Double,
-    val isFree: Boolean,                 // 첫 번째 카드 (무료)
+    val isFree: Boolean,                 // @deprecated ADR 0025 시절 무료 1장 모델. ADR 0044/0045 부터 계정당 첫 달 통째 무료(AiPassSubscription TRIAL)로 대체. 클라이언트 미사용. 다음 sweep 시 제거.
     val isUnlocked: Boolean,             // 열람 가능 여부 (무료/구독/legacy 결제)
     val requiresPass: Boolean = false,   // 구독 패스가 있어야 열리는 카드
     val unlockPrice: Int,                // (legacy) 과금 금액 (원), 무료면 0

@@ -944,11 +944,9 @@ function AiSignalCard({
             {revealed && (
               <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-black/15 pointer-events-none" />
             )}
-            {rec.isFree && (
-              <div className="absolute top-2 right-2">
-                <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-green-500/90 text-white">FREE</span>
-              </div>
-            )}
+            {/* ADR 0025 시절 카드별 'FREE' 뱃지는 ADR 0044/0045 에서 폐기.
+                팔레트픽이 계정당 첫 달 통째 무료(AiPassSubscription TRIAL) + 이후 29,900원/월 구독 모델이라
+                카드 단위 무료/유료 구분이 불필요. 트라이얼 만료 시점은 별도 글로벌 배너로 안내. */}
             {compat && (
               <div className="absolute top-2 left-2">
                 <span className="text-xs font-bold bg-white/90 text-foreground rounded-full px-1.5 py-0.5 shadow-sm">

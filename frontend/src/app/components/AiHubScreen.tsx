@@ -369,11 +369,7 @@ function PaintCard({
             <Sparkles className="w-2.5 h-2.5" /> AI
           </span>
         </div>
-        {rec.isFree && (
-          <div className="absolute top-2 right-2 z-10">
-            <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-green-500/90 text-white">FREE</span>
-          </div>
-        )}
+        {/* ADR 0025 시절 'FREE' 뱃지는 ADR 0044/0045 에서 폐기 — 팔레트픽이 계정당 첫 달 통째 무료 모델로 전환 */}
 
         {revealed && (
           <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2.5">
