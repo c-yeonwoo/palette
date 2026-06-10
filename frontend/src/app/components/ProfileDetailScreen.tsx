@@ -666,12 +666,16 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
         : { backgroundColor: "var(--background)" }
       }
     >
-      {/* Header */}
+      {/* Header — 본문 그라디언트 시작색과 동일 톤으로 페이드, border 제거해 끊김 없이 연결 */}
       <div
-        className="sticky top-0 z-20 backdrop-blur-sm border-b border-border"
+        className="sticky top-0 z-20 backdrop-blur-md"
         style={accentColor
-          ? { backgroundColor: `${accentColor}18`, borderBottomColor: `${accentColor}40` }
-          : { backgroundColor: "hsl(var(--card) / 0.95)" }
+          ? {
+              // 헤더 자체에도 그라디언트: 위(28)→아래(26) — 본문 시작 26 과 매끄럽게 이어짐
+              backgroundImage: `linear-gradient(180deg, ${accentColor}30 0%, ${accentColor}26 100%)`,
+              borderBottom: "1px solid transparent",
+            }
+          : { backgroundColor: "hsl(var(--card) / 0.95)", borderBottom: "1px solid hsl(var(--border))" }
         }
       >
         <div className="px-4 py-3 flex items-center justify-between">
