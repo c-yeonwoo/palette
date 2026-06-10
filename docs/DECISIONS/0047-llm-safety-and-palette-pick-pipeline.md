@@ -78,7 +78,7 @@ kr.ai.palette.palettepick/
 → 향후 트래픽 폭증 시 이 패키지를 별도 모듈/서비스로 추출 가능 (MSA 옵션 열어둠).
 → 현재는 모놀리스 내 패키지 분리만 — over-engineering 회피.
 
-### B.3 3-단계 파이프라인
+### B.3 3-단계 파이프라인 — 양방향 매칭 핵심
 
 ```
 [ 1. Candidate Pool — Cheap ]
@@ -86,12 +86,16 @@ kr.ai.palette.palettepick/
    ↓ 가입 30일 이상 + 프로필 완성도 60%+
    ↓ 매칭 이력 60일 미노출 (ADR 0009)
    ↓
-[ 2. Deterministic Scoring — Free (DB only) ]
-   ↓ 색 궁합 (보완 90 / 유사 75 / 대비 60)
-   ↓ 관심사 overlap (자카드 유사도 × 30)
-   ↓ 활동 모멘텀 (최근 7일 로그인·매칭 시도)
-   ↓ 라이프스타일 (음주·운동·종교 매치)
-   ↓ Top 5-10 후보
+[ 2. Deterministic Scoring — Free (DB + 벡터 코사인) ]
+   ↓ ── 4축 weighted score (max 100) ──
+   ↓ ① 상호 이상형 적합도 (50%) — 매칭의 본질 (곱셈)
+   ↓     cos(A.idealEmb, B.introEmb) × cos(B.idealEmb, A.introEmb)
+   ↓     → 양방향 모두 적합해야 ↑ (한 쪽만 적합 = 짝사랑 페널티)
+   ↓ ② 자기소개 유사도 (15%) — 가치관·결
+   ↓     cos(A.introEmb, B.introEmb)
+   ↓ ③ 색 궁합 (20%) — 보완 90 / 유사 75 / 대비 60 (기존 룰 백엔드 이식)
+   ↓ ④ 활동 모멘텀 (15%) — 최근 7일 로그인·매칭 시도 정규화
+   ↓ → Top 5-10 후보
    ↓
 [ 3. LLM Compatibility Analysis — Expensive ]
    ↓ Top 5-10 만 LLM 으로 종합 분석
@@ -103,6 +107,31 @@ kr.ai.palette.palettepick/
 [ 4. 일일 1-3장 최종 선정 ]
    → DailyRecommendationEntity 저장 (기존 인프라 재사용)
 ```
+
+### B.3a 벡터 임베딩 — 파트 분리 필수
+
+자기소개와 이상형은 **서로 다른 의미공간**. 한 벡터로 합치면 이상형↔자기소개 매칭 불가능.
+→ `ProfileEmbeddingEntity` 에 두 컬럼 분리 저장:
+
+| 필드 | 임베딩 대상 | 사용 |
+|---|---|---|
+| `intro_embedding` | `introduction.text` + `interviewAnswers` + `interests` + `colorReasoning` | A·B intro 유사도, A·B ideal → 상대 intro 매칭 |
+| `ideal_embedding` | `idealType.{personalities · datePreferences · importantValues · dealBreakers}` 를 자연어 prompt 로 변환 | A·B ideal → 상대 intro 매칭 |
+
+**모델**: OpenAI `text-embedding-3-small` (1,536 차원, $0.020/1M, 한국어 충분)
+**저장**: `byte[]` 1,536 × 4 bytes = 6KB/벡터, DB 컬럼 `LONGBLOB`
+**갱신**: Profile 변경 시 async 재임베딩 (`profile.metadata.updatedAt > embedding.updatedAt`)
+**Phase 3 옵션**: pgvector / Pinecone (사용자 1만 명 + 트래픽 폭증 시)
+
+### B.3b 비용 비교
+
+| 항목 | 1구독자/월 |
+|---|---|
+| 임베딩 (신규 + 변경 추정 2회/월) | 0.022원 |
+| LLM compatibility (top 8 × 30일) | 168원 |
+| **합계** | **~168원/월** |
+| 구독료 | 29,900원 |
+| LLM 비용 비율 | **0.56%** |
 
 ### B.4 비용 모델 (1구독자 기준)
 
