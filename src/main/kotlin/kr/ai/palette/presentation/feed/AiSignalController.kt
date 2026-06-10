@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.*
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.util.Random
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -53,6 +52,7 @@ class AiSignalController(
     private val adminBlockedTargetRepo: AdminBlockedTargetJpaRepository,
     private val blockService: kr.ai.palette.application.safety.BlockService,
     private val aiPassRepo: AiPassSubscriptionJpaRepository,
+    private val palettePickRecommendationService: kr.ai.palette.palettepick.application.PalettePickRecommendationService,
     @Value("\${toss.payments.secret-key:}") private val paymentSecretKey: String,
 ) {
     companion object {
@@ -115,57 +115,21 @@ class AiSignalController(
         return ResponseEntity.ok(buildResponse(currentUserId, today, picked))
     }
 
-    /** 후보 계산 — 시드 격리 + 친구/매칭 제외 + 60일 추천 이력 제외 */
+    /**
+     * 후보 계산 — PalettePickRecommendationService 위임 (ADR 0047 §B).
+     *
+     * 시드 사용자 정책만 컨트롤러 단에서 우선 처리하고, 나머지(친구망/차단/숨김/60일/이상형/색/모멘텀)
+     * 는 오케스트레이터가 수행. 베타 단계 — 신규 가입자(친구 0 + 비시드)는 깨끗한 시작.
+     */
     private fun computeNewRecommendations(
         currentUserId: kr.ai.palette.domain.common.UserId,
         currentUser: kr.ai.palette.domain.user.User,
         today: LocalDate,
     ): List<UUID> {
         val firstDegree = friendshipRepository.findFriendIdsByUserId(currentUserId)
-            .map { it.value.toString() }.toSet()
-        val secondDegree = friendshipRepository.findSecondDegreeFriendIds(currentUserId)
-            .map { it.value.toString() }.toSet()
-        val hiddenIds = feedHideRepository.findAllByUserId(currentUserId.value.toString())
-            .map { it.targetUserId }.toSet()
-        val excluded = firstDegree + secondDegree + hiddenIds + currentUserId.value.toString()
-
         val exposeSeed = seedUserPolicy.shouldExposeSeedTo(currentUser)
-
-        // 신규 가입자(친구 0 + 비시드)는 깨끗한 시작
         if (!exposeSeed && firstDegree.isEmpty()) return emptyList()
-
-        // 60일 이내 추천된 적 있는 target 제외 — ADR 0009
-        val since = today.minusDays(RECOMMENDATION_EXCLUSION_DAYS)
-        val recentlyRecommended = dailyRecommendationRepo
-            .findRecentlyRecommendedTargetIds(currentUserId.value, since)
-            .toSet()
-
-        // 운영자 차단 target 제외 — ADR 0011
-        val blockedTargets = adminBlockedTargetRepo
-            .findActiveBlockedTargetIds(currentUserId.value, today)
-            .toSet()
-
-        // 유저간 차단(양방향) 제외 — ADR 0023
-        val userBlockedIds = blockService.blockedCounterpartIds(currentUserId.value)
-
-        val currentGender = currentUser.publicInfo.gender
-
-        // TODO: vector-similarity (Phase 3). 현재는 date+UID seed 랜덤.
-        val candidates = profileRepository.findAll().filter { profile ->
-            val uid = profile.userId.value
-            if (uid.toString() in excluded) return@filter false
-            if (uid in recentlyRecommended) return@filter false
-            if (uid in blockedTargets) return@filter false
-            if (uid in userBlockedIds) return@filter false  // 유저간 차단 양방향 제외 (ADR 0023)
-            if (!profile.settings.canReceiveMatches()) return@filter false  // 소개/주선 받기 off·숨김 제외 (ADR 0022)
-            val user = userRepository.findById(profile.userId) ?: return@filter false
-            if (!exposeSeed && seedUserPolicy.isSeed(user)) return@filter false
-            user.publicInfo.gender != currentGender
-        }
-        if (candidates.isEmpty()) return emptyList()
-
-        val seed = today.toEpochDay() xor currentUserId.value.leastSignificantBits
-        return candidates.shuffled(Random(seed)).take(2).map { it.userId.value }
+        return palettePickRecommendationService.recommend(currentUser, today, topK = 2)
     }
 
     /** 저장된 또는 방금 계산한 target UUID 목록 → 응답 DTO */
