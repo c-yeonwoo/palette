@@ -57,11 +57,14 @@ export function AdminDashboardScreen({ admin, onNavigate }: Props) {
             <p className="text-xs text-muted-foreground mt-3">AI 매칭 (교체·차단) · 주선자 풀</p>
           </button>
 
-          <div className="rounded-2xl border border-border bg-card p-5 opacity-50">
-            <p className="text-sm text-muted-foreground">CS 인입</p>
-            <p className="text-2xl font-bold mt-2 text-foreground">—</p>
-            <p className="text-xs text-muted-foreground mt-3">PR 예정</p>
-          </div>
+          <button
+            onClick={() => onNavigate("/admin/billing")}
+            className="text-left rounded-2xl border border-border bg-card p-5 hover:border-foreground/40 transition-colors"
+          >
+            <p className="text-sm text-muted-foreground">물감 충전</p>
+            <p className="text-2xl font-bold mt-2 text-foreground">→</p>
+            <p className="text-xs text-muted-foreground mt-3">사용자 수동 충전 (보상·환불·이벤트) · 이력</p>
+          </button>
         </div>
       </main>
     </div>

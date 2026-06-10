@@ -4,6 +4,7 @@ import { AdminDashboardScreen } from "./components/AdminDashboardScreen";
 import { AdminUsersScreen } from "./components/AdminUsersScreen";
 import { AdminUserDetailScreen } from "./components/AdminUserDetailScreen";
 import { AdminMatchingScreen } from "./components/AdminMatchingScreen";
+import { AdminBillingScreen } from "./components/AdminBillingScreen";
 import { adminAuth, type AdminInfo } from "./lib/adminAuth";
 
 /**
@@ -22,7 +23,8 @@ type Screen =
   | { kind: "dashboard" }
   | { kind: "users" }
   | { kind: "user-detail"; userId: string }
-  | { kind: "matching" };
+  | { kind: "matching" }
+  | { kind: "billing" };
 
 function pathToScreen(path: string): Screen {
   if (path === "/admin" || path === "/admin/") return { kind: "dashboard" };
@@ -30,6 +32,7 @@ function pathToScreen(path: string): Screen {
   const m = path.match(/^\/admin\/users\/([^/]+)$/);
   if (m) return { kind: "user-detail", userId: m[1] };
   if (path === "/admin/matching" || path === "/admin/recommendations") return { kind: "matching" };
+  if (path === "/admin/billing") return { kind: "billing" };
   return { kind: "dashboard" };
 }
 
@@ -87,5 +90,7 @@ export default function AdminApp() {
       );
     case "matching":
       return <AdminMatchingScreen onBack={() => navigate("/admin")} />;
+    case "billing":
+      return <AdminBillingScreen onBack={() => navigate("/admin")} />;
   }
 }
