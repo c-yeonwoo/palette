@@ -2,6 +2,8 @@ package kr.ai.palette.application.billing
 
 import kr.ai.palette.domain.billing.PointPrice
 import kr.ai.palette.domain.billing.TipDistribution
+import java.time.LocalDate
+import java.time.ZoneId
 import kr.ai.palette.persistence.billing.TipTransactionEntity
 import kr.ai.palette.persistence.billing.TipTransactionJpaRepository
 import kr.ai.palette.persistence.billing.UserTicketBalanceEntity
@@ -18,6 +20,37 @@ import java.time.Instant
  */
 class InsufficientBalanceException(val required: Int, val current: Int)
     : RuntimeException("물감 부족: required=${required} current=${current}")
+
+/**
+ * 트라이얼 정책 상수 SoT. ADR 0045 (신규 트라이얼 시스템).
+ *
+ * 단위는 일(day). 모든 정책값은 application.yml 로 override 가능 (운영 튜닝).
+ */
+object TrialPolicy {
+    /** 프로필 열람 트라이얼 기간 (일) */
+    const val VIEWS_TRIAL_DAYS: Long = 3
+
+    /** 프로필 열람 트라이얼 일일 캡 (명) */
+    const val VIEWS_PER_DAY_CAP: Int = 5
+
+    /** 반값 묶음 트라이얼 기간 (일) */
+    const val HALF_PRICE_TRIAL_DAYS: Long = 3
+
+    /** 무료 소개 요청 횟수 */
+    const val FREE_INTRO_REQUESTS: Int = 1
+
+    /** 무료 소개 요청 만료 (일) */
+    const val FREE_INTRO_EXPIRES_DAYS: Long = 7
+
+    /** 팔레트픽 첫달 무료 기간 (일) */
+    const val PALETTE_PICK_TRIAL_DAYS: Long = 30
+
+    /** 출금 자격 — 가입 후 최소 일수 (ADR 0033 강화) */
+    const val WITHDRAWAL_MIN_AGE_DAYS: Long = 30
+
+    /** 한국 타임존 (일일 카운터 리셋 기준) */
+    val KST: ZoneId = ZoneId.of("Asia/Seoul")
+}
 
 /**
  * 잔액 (P) 관리 + 차감 + 충전 + 옵셔널 팁. ADR 0042 (단일 잔액 모델).
@@ -189,5 +222,121 @@ class BillingService(
             fromUserId, toUserId, amountPoints, matchmakerShare, platformFee, reason,
         )
         return tx
+    }
+
+    // ─── 트라이얼 시스템 (ADR 0045) ──────────────────────────
+
+    /**
+     * 신규 가입자 트라이얼 상태 초기화. ADR 0045.
+     * 가입 hook 에서 1회 호출 (WelcomeBonusService.grantSignupBonus 와 함께).
+     */
+    fun initializeTrial(userId: String, now: Instant = Instant.now()) {
+        val balance = getOrCreateBalance(userId)
+        balance.viewsTrialUntil = now.plusSeconds(TrialPolicy.VIEWS_TRIAL_DAYS * 86_400)
+        balance.viewsUsedToday = 0
+        balance.viewsTodayResetDate = LocalDate.now(TrialPolicy.KST)
+        balance.halfPricePackageUntil = now.plusSeconds(TrialPolicy.HALF_PRICE_TRIAL_DAYS * 86_400)
+        balance.halfPricePackageUsed = false
+        balance.freeIntroRemaining = TrialPolicy.FREE_INTRO_REQUESTS
+        balance.freeIntroExpiresAt = now.plusSeconds(TrialPolicy.FREE_INTRO_EXPIRES_DAYS * 86_400)
+        balance.palettePickTrialUntil = now.plusSeconds(TrialPolicy.PALETTE_PICK_TRIAL_DAYS * 86_400)
+        balance.palettePickFirstUsed = false
+        balance.updatedAt = now
+        balanceRepository.save(balance)
+        log.info("트라이얼 초기화 user={} viewsTrialUntil={} freeIntro={}건 palettePickTrialUntil={}",
+            userId, balance.viewsTrialUntil, balance.freeIntroRemaining, balance.palettePickTrialUntil)
+    }
+
+    /**
+     * 프로필 열람 트라이얼 사용 가능 여부 (3일 + 일 [TrialPolicy.VIEWS_PER_DAY_CAP] 명). ADR 0045.
+     *
+     * 호출 측에서 [tryConsumeFreeView] 로 실제 사용 처리.
+     * @return true 면 무료 열람 가능
+     */
+    fun canUseFreeView(userId: String): Boolean {
+        val balance = getOrCreateBalance(userId)
+        val until = balance.viewsTrialUntil ?: return false
+        if (Instant.now().isAfter(until)) return false
+        val today = LocalDate.now(TrialPolicy.KST)
+        val usedToday = if (balance.viewsTodayResetDate == today) balance.viewsUsedToday else 0
+        return usedToday < TrialPolicy.VIEWS_PER_DAY_CAP
+    }
+
+    /**
+     * 무료 열람 1회 차감 시도. ADR 0045. 잔액 자체는 건드리지 않음 (트라이얼 외 상황은 호출 측 결정).
+     * @return true 면 트라이얼로 처리 (호출 측에서 잔액 consume 스킵)
+     */
+    fun tryConsumeFreeView(userId: String): Boolean {
+        val balance = getOrCreateBalance(userId)
+        val until = balance.viewsTrialUntil ?: return false
+        if (Instant.now().isAfter(until)) return false
+        val today = LocalDate.now(TrialPolicy.KST)
+        if (balance.viewsTodayResetDate != today) {
+            balance.viewsUsedToday = 0
+            balance.viewsTodayResetDate = today
+        }
+        if (balance.viewsUsedToday >= TrialPolicy.VIEWS_PER_DAY_CAP) return false
+        balance.viewsUsedToday += 1
+        balance.updatedAt = Instant.now()
+        balanceRepository.save(balance)
+        log.info("무료 열람 사용 user={} usedToday={}/{}", userId, balance.viewsUsedToday, TrialPolicy.VIEWS_PER_DAY_CAP)
+        return true
+    }
+
+    /** 반값 묶음 트라이얼 자격 여부 (3일 + 미사용 + 110물감 묶음). ADR 0045. */
+    fun canUseHalfPriceBundle(userId: String, pointsCredited: Int): Boolean {
+        if (pointsCredited != kr.ai.palette.domain.billing.PointBundleCatalog.TRIAL_HALF_PRICE_BUNDLE_POINTS) return false
+        val balance = getOrCreateBalance(userId)
+        if (balance.halfPricePackageUsed) return false
+        val until = balance.halfPricePackageUntil ?: return false
+        return !Instant.now().isAfter(until)
+    }
+
+    /** 반값 묶음 사용 마킹 — confirmCheckout 성공 시 호출. */
+    fun markHalfPriceBundleUsed(userId: String) {
+        val balance = getOrCreateBalance(userId)
+        balance.halfPricePackageUsed = true
+        balance.updatedAt = Instant.now()
+        balanceRepository.save(balance)
+        log.info("반값 묶음 사용 완료 user={}", userId)
+    }
+
+    /** 무료 소개 요청 자격 여부 (잔여 회수 + 미만료). ADR 0045. */
+    fun canUseFreeIntroRequest(userId: String): Boolean {
+        val balance = getOrCreateBalance(userId)
+        if (balance.freeIntroRemaining <= 0) return false
+        val until = balance.freeIntroExpiresAt ?: return false
+        return !Instant.now().isAfter(until)
+    }
+
+    /**
+     * 무료 소개 요청 1회 차감. 호출 측에서 동일 주선자 1회 가드는 별도 처리.
+     * @return true 면 트라이얼로 처리 (잔액 consume 스킵)
+     */
+    fun tryConsumeFreeIntroRequest(userId: String): Boolean {
+        val balance = getOrCreateBalance(userId)
+        if (balance.freeIntroRemaining <= 0) return false
+        val until = balance.freeIntroExpiresAt ?: return false
+        if (Instant.now().isAfter(until)) return false
+        balance.freeIntroRemaining -= 1
+        balance.updatedAt = Instant.now()
+        balanceRepository.save(balance)
+        log.info("무료 소개 요청 사용 user={} remaining={}", userId, balance.freeIntroRemaining)
+        return true
+    }
+
+    /** 팔레트픽 첫달 무료 활성 여부 (계정당 1회). ADR 0045. */
+    fun isPalettePickTrialActive(userId: String): Boolean {
+        val balance = getOrCreateBalance(userId)
+        val until = balance.palettePickTrialUntil ?: return false
+        return !Instant.now().isAfter(until)
+    }
+
+    /** 팔레트픽 첫달 무료 사용 완료 마킹 — 결제 진입 시 호출. */
+    fun markPalettePickFirstUsed(userId: String) {
+        val balance = getOrCreateBalance(userId)
+        balance.palettePickFirstUsed = true
+        balance.updatedAt = Instant.now()
+        balanceRepository.save(balance)
     }
 }

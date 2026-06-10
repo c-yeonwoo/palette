@@ -30,6 +30,8 @@ data class ProfileViewCostResponse(
     val unit: String = "P",
     val isAlreadyPaid: Boolean,
     val canView: Boolean,
+    /** ADR 0045 — true 면 트라이얼로 무료 unlock 가능 (잔액 차감 X). */
+    val trialFree: Boolean = false,
 )
 
 data class PayProfileViewRequest(
@@ -106,9 +108,11 @@ class PaymentController(
 
         val degree = getDegree(myId, targetId)
         val cost = costForDegree(degree)
-        val isAlreadyPaid = paidViewRepository.existsByBuyerUserIdAndTargetUserId(
-            myId.value.toString(), targetUserId.toString()
-        )
+        val myIdStr = myId.value.toString()
+        val isAlreadyPaid = paidViewRepository.existsByBuyerUserIdAndTargetUserId(myIdStr, targetUserId.toString())
+
+        // ADR 0045 — 트라이얼 활성 + 일 캡 미달 시 무료 unlock 가능
+        val trialFree = !isAlreadyPaid && cost > 0 && billingService.canUseFreeView(myIdStr)
 
         return ResponseEntity.ok(
             ProfileViewCostResponse(
@@ -116,7 +120,8 @@ class PaymentController(
                 degree = degree,
                 cost = cost,
                 isAlreadyPaid = isAlreadyPaid,
-                canView = cost == 0 || isAlreadyPaid,
+                canView = cost == 0 || isAlreadyPaid || trialFree,
+                trialFree = trialFree,
             )
         )
     }
@@ -165,28 +170,34 @@ class PaymentController(
         }
 
         val reason = if (degree == 2) "view_friend_of_friend" else "view_further"
-        try {
-            billingService.consume(myIdStr, cost, reason)
-        } catch (e: InsufficientBalanceException) {
-            // BillingController @ExceptionHandler 와 동일 페이로드로 응답
-            return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(
-                PaymentResult(
-                    success = false,
-                    transactionId = "",
-                    amount = 0,
-                    message = "INSUFFICIENT_BALANCE",
+
+        // ADR 0045 — 트라이얼 분기: 3일 + 일 5명 캡 충족 시 무료 unlock
+        val freeViaTrial = billingService.tryConsumeFreeView(myIdStr)
+        if (!freeViaTrial) {
+            try {
+                billingService.consume(myIdStr, cost, reason)
+            } catch (e: InsufficientBalanceException) {
+                // BillingController @ExceptionHandler 와 동일 페이로드로 응답
+                return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(
+                    PaymentResult(
+                        success = false,
+                        transactionId = "",
+                        amount = 0,
+                        message = "INSUFFICIENT_BALANCE",
+                    )
                 )
-            )
+            }
         }
         paidViewRepository.save(PaidViewEntity(buyerUserId = myIdStr, targetUserId = request.targetUserId))
-        log.info("프로필 열람 unlock user={} target={} -{}P degree={}", myIdStr, request.targetUserId, cost, degree)
+        log.info("프로필 열람 unlock user={} target={} cost={}P degree={} trial={}",
+            myIdStr, request.targetUserId, if (freeViaTrial) 0 else cost, degree, freeViaTrial)
 
         return ResponseEntity.ok(
             PaymentResult(
                 success = true,
                 transactionId = UUID.randomUUID().toString(),
-                amount = cost,
-                message = "${cost} 물감으로 프로필을 열람했어요",
+                amount = if (freeViaTrial) 0 else cost,
+                message = if (freeViaTrial) "트라이얼 무료 열람으로 처리됐어요" else "${cost} 물감으로 프로필을 열람했어요",
             )
         )
     }

@@ -18,12 +18,31 @@ data class BalanceResponse(
     val bonusPoints: Int = 0,
     /** 보너스 만료 시각 (ISO-8601). null = 보너스 없음 */
     val bonusExpiresAt: String? = null,
+    /** ADR 0045 — 트라이얼 상태 스냅샷 (프론트 배너 표시용) */
+    val trial: TrialStatusDto? = null,
+)
+
+/** 트라이얼 상태 응답. ADR 0045. */
+data class TrialStatusDto(
+    val viewsTrialUntil: String?,
+    val viewsUsedToday: Int,
+    val viewsPerDayCap: Int,
+    val halfPricePackageUntil: String?,
+    val halfPricePackageUsed: Boolean,
+    val freeIntroRemaining: Int,
+    val freeIntroExpiresAt: String?,
+    val palettePickTrialUntil: String?,
 )
 
 data class BundleDto(
     val pointsCredited: Int,
+    /** 사용자가 결제할 금액 (트라이얼 반값 적용 후) */
     val priceWon: Int,
     val bonusPercent: Int,
+    /** ADR 0045 — true 면 반값 트라이얼 적용 (UI 강조 + 취소선) */
+    val isTrialHalfPrice: Boolean = false,
+    /** 트라이얼 적용 전 정가 (취소선용). 비-트라이얼이면 priceWon 과 동일. */
+    val originalPriceWon: Int = 0,
 )
 
 data class BundleCatalogResponse(
@@ -71,22 +90,40 @@ class BillingController(
     @GetMapping("/balance")
     fun getBalance(@AuthenticationPrincipal authUser: AuthUser): ResponseEntity<BalanceResponse> {
         val b = billingService.getOrCreateBalance(authUser.userId.value.toString())
+        // 트라이얼 활성 상태 중 하나라도 있으면 노출 (만료 만으로 결정 — Boolean used 는 묶음만 의미 가짐)
+        val anyTrial = b.viewsTrialUntil != null || b.halfPricePackageUntil != null ||
+            b.freeIntroRemaining > 0 || b.palettePickTrialUntil != null
         return ResponseEntity.ok(
             BalanceResponse(
                 points = billingService.totalPoints(b),
                 bonusPoints = b.bonusPoints,
                 bonusExpiresAt = b.bonusExpiresAt?.toString(),
+                trial = if (anyTrial) TrialStatusDto(
+                    viewsTrialUntil = b.viewsTrialUntil?.toString(),
+                    viewsUsedToday = b.viewsUsedToday,
+                    viewsPerDayCap = kr.ai.palette.application.billing.TrialPolicy.VIEWS_PER_DAY_CAP,
+                    halfPricePackageUntil = b.halfPricePackageUntil?.toString(),
+                    halfPricePackageUsed = b.halfPricePackageUsed,
+                    freeIntroRemaining = b.freeIntroRemaining,
+                    freeIntroExpiresAt = b.freeIntroExpiresAt?.toString(),
+                    palettePickTrialUntil = b.palettePickTrialUntil?.toString(),
+                ) else null,
             )
         )
     }
 
     @GetMapping("/bundles")
-    fun getBundles(): ResponseEntity<BundleCatalogResponse> {
+    fun getBundles(@AuthenticationPrincipal authUser: AuthUser): ResponseEntity<BundleCatalogResponse> {
+        val userId = authUser.userId.value.toString()
         val list = PointBundleCatalog.BUNDLES.map { b: PointBundle ->
+            // ADR 0045 — 110물감 묶음 + 트라이얼 활성 시 반값
+            val halfPrice = billingService.canUseHalfPriceBundle(userId, b.pointsCredited)
             BundleDto(
                 pointsCredited = b.pointsCredited,
-                priceWon = b.priceWon,
+                priceWon = if (halfPrice) b.priceWon / 2 else b.priceWon,
                 bonusPercent = b.bonusPercent(),
+                isTrialHalfPrice = halfPrice,
+                originalPriceWon = b.priceWon,
             )
         }
         return ResponseEntity.ok(BundleCatalogResponse(bundles = list))
@@ -107,15 +144,22 @@ class BillingController(
         @AuthenticationPrincipal authUser: AuthUser,
         @RequestBody req: CheckoutConfirmRequest,
     ): ResponseEntity<Map<String, Any>> {
+        val userId = authUser.userId.value.toString()
+
         // 1) 카탈로그 검증 — 자유 금액 결제 차단
-        val bundle = PointBundleCatalog.BUNDLES.firstOrNull {
-            it.pointsCredited == req.pointsCredited && it.priceWon == req.expectedAmount
-        } ?: return ResponseEntity.badRequest().body(mapOf("error" to "INVALID_BUNDLE"))
+        // ADR 0045 — 트라이얼 반값 묶음: 정가 OR 반값 둘 다 허용 (자격 검증).
+        val bundle = PointBundleCatalog.BUNDLES.firstOrNull { it.pointsCredited == req.pointsCredited }
+            ?: return ResponseEntity.badRequest().body(mapOf("error" to "INVALID_BUNDLE"))
+        val isHalfPrice = req.expectedAmount == bundle.priceWon / 2 &&
+            billingService.canUseHalfPriceBundle(userId, req.pointsCredited)
+        val isFullPrice = req.expectedAmount == bundle.priceWon
+        if (!isHalfPrice && !isFullPrice) {
+            return ResponseEntity.badRequest().body(mapOf("error" to "INVALID_AMOUNT"))
+        }
 
         if (req.paymentKey.isBlank() || req.orderId.isBlank()) {
             return ResponseEntity.badRequest().body(mapOf("error" to "INVALID_REQUEST"))
         }
-        val userId = authUser.userId.value.toString()
 
         // 2) 멱등 1차 — 이미 처리된 영수증이면 잔액만 응답 (재시도·새로고침 안전)
         val existing = paymentTransactionRepository
@@ -171,11 +215,17 @@ class BillingController(
             providerReceiptId = req.paymentKey,
         )
 
+        // 6) ADR 0045 — 반값 묶음 결제였다면 트라이얼 1회 소진 마킹 (계정당 1회)
+        if (isHalfPrice) {
+            billingService.markHalfPriceBundleUsed(userId)
+        }
+
         return ResponseEntity.ok(mapOf(
             "status" to "OK",
             "transactionId" to tx.id,
             "points" to billingService.totalPoints(balance),
             "credited" to bundle.pointsCredited,
+            "halfPriceUsed" to isHalfPrice,
         ))
     }
 

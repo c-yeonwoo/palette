@@ -30,6 +30,8 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
   const [isLoading, setIsLoading] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
   const [isVerificationLoading, setIsVerificationLoading] = useState(false);
+  // ADR 0046 — 외부 송금 금지 약관 §6 동의 (의무)
+  const [agreedNoExternalPay, setAgreedNoExternalPay] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -139,6 +141,11 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
 
     if (!formData.birthDate) {
       toast.error("생년월일을 입력해주세요");
+      return false;
+    }
+
+    if (!agreedNoExternalPay) {
+      toast.error("외부 송금 금지 약관에 동의해주세요");
       return false;
     }
 
@@ -409,15 +416,57 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
               </div>
             </div>
 
+            {/* 주선자 혜택 안내 (ADR 0044) */}
+            <div className="bg-card border border-primary/20 p-4 rounded-lg space-y-3 text-sm">
+              <h3 className="font-semibold text-foreground">주선자 혜택</h3>
+              <ul className="space-y-2 text-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-bold mt-0.5">·</span>
+                  <span>매칭 성사 시 소개 요청(100 물감) 중 <strong>등급별 15~40%</strong> 분배 — Lv.1 15물감 / Lv.5 다이아 40물감</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-bold mt-0.5">·</span>
+                  <span>사용자가 보낸 성의 표시(10~500 물감)의 <strong>90% 수령</strong></span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-bold mt-0.5">·</span>
+                  <span>마일스톤 보너스 1·5·10·20·50·100·150건 누계 도달 시 +5~+1,000 물감</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-bold mt-0.5">·</span>
+                  <span>출금 조건 충족 시(가입 30일 + 매칭 1건 + 본인인증) 1 물감 = 100원 환산</span>
+                </li>
+              </ul>
+            </div>
+
             {/* 주의사항 */}
             <div className="bg-muted p-4 rounded-lg space-y-2 text-sm">
               <h3 className="font-semibold">주선자 가입 안내</h3>
               <ul className="space-y-1 text-muted-foreground">
                 <li>• 핸드폰 본인인증은 필수입니다</li>
-                <li>• 주선 성공 시 포인트를 획득합니다</li>
-                <li>• 레벨별로 커미션율이 상승합니다 (30-50%)</li>
+                <li>• 매칭 성공 시 분배 + 마일스톤 보너스 적립</li>
                 <li>• 신뢰할 수 있는 주선 서비스를 제공해주세요</li>
               </ul>
+            </div>
+
+            {/* ADR 0046 — 외부 송금 금지 약관 §6 동의 (의무) */}
+            <div className="bg-amber-50 border border-amber-300 p-4 rounded-lg space-y-2.5 text-sm">
+              <h3 className="font-semibold text-amber-900">약관 §6 외부 송금 금지</h3>
+              <p className="text-xs text-amber-900/85 leading-relaxed">
+                사용자에게 앱 외부(계좌이체·간편송금·현금)로 감사 표시를 유도하는 행위는 금지됩니다.
+                적발 시 누적 잔액 전액 몰수 + 출금 자격 영구 박탈 + 등급 0 회귀 + 계정 영구 정지됩니다.
+              </p>
+              <label className="flex items-start gap-2 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={agreedNoExternalPay}
+                  onChange={(e) => setAgreedNoExternalPay(e.target.checked)}
+                  className="mt-0.5 w-4 h-4"
+                />
+                <span className="text-xs text-amber-900 font-medium">
+                  위 약관에 동의하며, 모든 감사 표시는 앱 내 팁 기능으로만 받겠습니다 (필수)
+                </span>
+              </label>
             </div>
 
             {/* 가입 버튼 */}

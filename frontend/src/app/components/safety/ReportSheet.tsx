@@ -16,15 +16,17 @@ export type ReportReason =
   | "abusive_language"
   | "commercial"
   | "minor_suspected"
+  | "external_payment_inducement"  // ADR 0046 — 주선자가 외부 송금 유도
   | "etc";
 
 const REASON_LABELS: Record<ReportReason, string> = {
-  fake_profile:        "가짜 프로필 / 사진 도용",
-  inappropriate_photo: "부적절한 사진",
-  abusive_language:    "욕설·비매너 대화",
-  commercial:          "상업적 목적 (홍보, 종교, 다단계)",
-  minor_suspected:     "미성년자 의심",
-  etc:                 "기타",
+  fake_profile:                "가짜 프로필 / 사진 도용",
+  inappropriate_photo:         "부적절한 사진",
+  abusive_language:            "욕설·비매너 대화",
+  commercial:                  "상업적 목적 (홍보, 종교, 다단계)",
+  minor_suspected:             "미성년자 의심",
+  external_payment_inducement: "외부 송금 유도 (주선자)",  // ADR 0046 — 확정 시 +50 물감 보상
+  etc:                         "기타",
 };
 
 interface ReportSheetProps {

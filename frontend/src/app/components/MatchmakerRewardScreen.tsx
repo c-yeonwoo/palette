@@ -287,20 +287,35 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
               <ul className="space-y-3 text-sm">
                 <li className="flex items-start gap-3">
                   <span className="w-8 h-8 rounded-full bg-brand-soft flex items-center justify-center flex-shrink-0">
-                    <Coins className="w-4 h-4 text-primary" />
+                    <Award className="w-4 h-4 text-primary" />
                   </span>
                   <div>
-                    <p className="font-medium text-foreground">수락 즉시 감사 포인트</p>
-                    <p className="text-muted-foreground text-xs mt-0.5">지인 등록 요청 수락 시 100~500P 적립</p>
+                    <p className="font-medium text-foreground">매칭 성사 분배</p>
+                    <p className="text-muted-foreground text-xs mt-0.5">
+                      소개 요청(100 물감) × 등급별 분배율 — Lv.1 15물감 / Lv.5 40물감
+                    </p>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="w-8 h-8 rounded-full bg-brand-soft flex items-center justify-center flex-shrink-0">
-                    <Award className="w-4 h-4 text-primary" />
+                    <Coins className="w-4 h-4 text-primary" />
                   </span>
                   <div>
-                    <p className="font-medium text-foreground">매칭 성사 커미션</p>
-                    <p className="text-muted-foreground text-xs mt-0.5">등급별 30~50% 커미션 + 성사 보너스 1,500P</p>
+                    <p className="font-medium text-foreground">사용자 팁 수령</p>
+                    <p className="text-muted-foreground text-xs mt-0.5">
+                      사용자가 자발적으로 보낸 성의 표시의 90% 수령 (10~500 물감)
+                    </p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="w-8 h-8 rounded-full bg-brand-soft flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                  </span>
+                  <div>
+                    <p className="font-medium text-foreground">마일스톤 보너스</p>
+                    <p className="text-muted-foreground text-xs mt-0.5">
+                      1·5·10·20·50·100·150건 누계 도달 시 +5/+20/+50/+100/+250/+500/+1,000 물감
+                    </p>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
@@ -308,8 +323,10 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
                     <Wallet className="w-4 h-4 text-primary" />
                   </span>
                   <div>
-                    <p className="font-medium text-foreground">현금 출금 가능</p>
-                    <p className="text-muted-foreground text-xs mt-0.5">포인트는 현금 출금하거나 앱 내에서 사용</p>
+                    <p className="font-medium text-foreground">출금 가능 (조건 충족 시)</p>
+                    <p className="text-muted-foreground text-xs mt-0.5">
+                      가입 30일 + 매칭 성사 1건 이상 + 본인인증 완료 후 출금 가능 (1 물감 = 100원)
+                    </p>
                   </div>
                 </li>
               </ul>
@@ -319,6 +336,20 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
               >
                 포인트 & 출금 보기 →
               </button>
+            </div>
+
+            {/* ADR 0046 — 외부 송금 금지 가이드 (약관 §6) */}
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-amber-700 text-sm font-bold">!</span>
+                </span>
+                <p className="font-semibold text-amber-900">외부 송금 유도 금지 (약관 §6)</p>
+              </div>
+              <p className="text-xs text-amber-900/80 leading-relaxed">
+                사용자에게 앱 외부(계좌이체·간편송금)로 감사 표시를 유도하면 안 됩니다. 적발 시 누적 잔액 전액 몰수 + 출금 자격 영구 박탈 + 등급 0 회귀 + 영구 정지됩니다.
+                감사 표시는 반드시 앱 내 팁 기능으로 받아주세요 (90% 수령 + 등급·마일스톤 자동 산정).
+              </p>
             </div>
           </>
         )}
@@ -342,15 +373,15 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
               </div>
 
               <div className="bg-primary/5 rounded-xl p-3 text-sm text-muted-foreground">
-                <p>💡 성사 1건당 1,500P 적립 (커미션 {currentLevelInfo.commission}% 별도 지급)</p>
+                <p>💡 매칭 성사 1건당 소개 요청 100 물감 × {currentLevelInfo.commission}% = {currentLevelInfo.commission} 물감 적립 (ADR 0044)</p>
               </div>
             </div>
 
             {/* Withdraw Section */}
             <div className="bg-card rounded-2xl border border-border/60 shadow-card p-5 space-y-4">
               <div className="flex items-center justify-between">
-                <p className="font-semibold">포인트 출금</p>
-                <span className="text-sm text-muted-foreground">1P = 1원</span>
+                <p className="font-semibold">물감 출금</p>
+                <span className="text-sm text-muted-foreground">1 물감 = 100원</span>
               </div>
 
               {!showWithdrawForm ? (

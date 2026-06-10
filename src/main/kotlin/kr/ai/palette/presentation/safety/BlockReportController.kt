@@ -24,7 +24,7 @@ class BlockReportController(
     private val reportJpaRepository: ReportJpaRepository,
     private val userRepository: UserRepository,
 ) {
-    private val validReasons = setOf("FAKE_PROFILE", "HARASSMENT", "SPAM", "MINOR", "OTHER")
+    private val validReasons = setOf("FAKE_PROFILE", "HARASSMENT", "SPAM", "MINOR", "EXTERNAL_PAYMENT_INDUCEMENT", "OTHER")
 
     @PostMapping("/{userId}/block")
     @Transactional

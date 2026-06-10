@@ -1,7 +1,11 @@
 package kr.ai.palette.presentation.matchmaking
 
+import kr.ai.palette.application.billing.BillingService
+import kr.ai.palette.application.billing.InsufficientBalanceException
 import kr.ai.palette.application.matchmaking.MatchmakingService
+import kr.ai.palette.application.safety.BlockService
 import kr.ai.palette.domain.auth.AuthUser
+import kr.ai.palette.domain.billing.PointPrice
 import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.matchmaking.MatchmakingRequest
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestId
@@ -10,10 +14,10 @@ import kr.ai.palette.domain.matchmaking.MatchmakingRequestStatus
 import kr.ai.palette.domain.notification.PaletteEvent
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.UserRepository
-import kr.ai.palette.application.safety.BlockService
 import kr.ai.palette.infrastructure.ratelimit.RateLimiter
 import org.springframework.context.ApplicationEventPublisher
 import java.time.Duration
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
@@ -28,6 +32,7 @@ class MatchmakingController(
     private val profileRepository: ProfileRepository,
     private val rateLimiter: RateLimiter,
     private val blockService: BlockService,
+    private val billingService: BillingService,
     private val eventPublisher: ApplicationEventPublisher
 ) {
 
@@ -97,6 +102,17 @@ class MatchmakingController(
         // Find matchmaker by real name
         val matchmaker = findUserByRealName(request.matchmakerName)
             ?: return ResponseEntity.badRequest().build()
+
+        // ADR 0044 — 소개 요청 100 물감 차감. ADR 0045 — 무료 소개 1회 트라이얼 우선 소진.
+        val requesterIdStr = requesterId.value.toString()
+        val freeViaTrial = billingService.tryConsumeFreeIntroRequest(requesterIdStr)
+        if (!freeViaTrial) {
+            try {
+                billingService.consume(requesterIdStr, PointPrice.INTRO_REQUEST, "intro_request:to=${request.targetUserId}")
+            } catch (e: InsufficientBalanceException) {
+                return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).build()
+            }
+        }
 
         val matchmakingRequest = MatchmakingRequest.create(
             requesterId = requesterId,

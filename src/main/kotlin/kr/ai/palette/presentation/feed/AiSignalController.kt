@@ -61,8 +61,8 @@ class AiSignalController(
 
         const val UNLOCK_PRICE = 1000  // 원 (legacy)
 
-        /** AI 추천 구독 패스 (ADR 0025) */
-        const val PASS_PRICE_MONTHLY = 9900  // 원/월
+        /** AI 추천 구독 패스 (ADR 0025 → ADR 0044 가격 v2 — 29,900원/월) */
+        const val PASS_PRICE_MONTHLY = 29900  // 원/월 (ADR 0044)
         const val PASS_DURATION_DAYS = 30L
 
         /** 60일 이내 추천된 적 있는 사용자는 후보에서 제외 (ADR 0009) */
