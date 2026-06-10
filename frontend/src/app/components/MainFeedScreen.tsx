@@ -488,7 +488,8 @@ function ProfileCard({
   myColorType: ColorType | null;
   onClick: () => void;
 }) {
-  const { profile, mutualFriends, viewCost = 3000, isOpened = false, nickname = null, age = null } = item;
+  // ADR 0044 — viewCost 는 "물감(P)" 단위. 친친 기본값 20 (커피 한잔값 2,000원).
+  const { profile, mutualFriends, viewCost = 20, isOpened = false, nickname = null, age = null } = item;
   const [revealed, setRevealed] = useState(isOpened);
   const [peeling, setPeeling] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

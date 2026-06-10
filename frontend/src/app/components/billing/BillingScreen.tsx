@@ -10,7 +10,7 @@
  * 가격은 물감 단위로 표시, 결제 시점에만 원화 노출.
  */
 import { useEffect, useState } from "react";
-import { ArrowLeft, Gift, Sparkles, Coins, Plus } from "lucide-react";
+import { ArrowLeft, Gift, Sparkles, Palette as PaletteIcon, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/api/apiClient";
 import { isPaymentEnabled, requestTossPayment } from "@/lib/billing/tossPayment";
@@ -52,10 +52,11 @@ function daysUntil(iso: string | null): number | null {
 }
 
 const PRICE_HINT: Array<{ label: string; cost: string }> = [
-  { label: "친구의 친구 프로필 열람", cost: "10 물감" },
-  { label: "한 다리 더 건너", cost: "20 물감" },
-  { label: "소개 요청 보내기", cost: "30 물감" },
-  { label: "성의 표시 (선택)", cost: "10~100 물감" },
+  // ADR 0044 — 가격 v2
+  { label: "친구의 친구 프로필 열람", cost: "20 물감" },
+  { label: "한 다리 더 건너", cost: "30 물감" },
+  { label: "소개 요청 보내기", cost: "100 물감" },
+  { label: "성의 표시 (선택)", cost: "10~500 물감" },
 ];
 
 export function BillingScreen({ onBack }: BillingScreenProps) {
@@ -130,7 +131,7 @@ export function BillingScreen({ onBack }: BillingScreenProps) {
         {/* 잔액 큰 카드 */}
         <section className="bg-gradient-to-br from-brand-soft to-brand-soft/40 rounded-2xl border border-primary/20 shadow-card p-6 space-y-3">
           <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Coins className="w-4 h-4" />
+            <PaletteIcon className="w-4 h-4" />
             <span className="text-xs font-medium">내 물감</span>
           </div>
           <div className="flex items-baseline gap-2">
@@ -206,7 +207,7 @@ export function BillingScreen({ onBack }: BillingScreenProps) {
                       "w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 " +
                       (isBest ? "bg-primary/15" : "bg-muted")
                     }>
-                      <Coins className={"w-5 h-5 " + (isBest ? "text-primary" : "text-muted-foreground")} />
+                      <PaletteIcon className={"w-5 h-5 " + (isBest ? "text-primary" : "text-muted-foreground")} />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-baseline gap-1.5">
@@ -236,7 +237,7 @@ export function BillingScreen({ onBack }: BillingScreenProps) {
           <Sparkles className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
           <div className="text-xs text-muted-foreground leading-relaxed">
             <p className="font-medium text-foreground mb-1">베타 기간 모든 기능 무료</p>
-            <p>가입 시 30 물감 환영 보너스 + 친구 가입할 때마다 양쪽 10 물감 보너스로 부담 없이 시작.</p>
+            <p>가입 시 60 물감 환영 보너스 + 친구 가입할 때마다 양쪽 10 물감 보너스로 부담 없이 시작.</p>
           </div>
         </div>
       </main>

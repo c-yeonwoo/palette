@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { ChevronLeft, Loader2, Send, Users, ExternalLink, Lock, CreditCard, EyeOff } from "lucide-react";
+import { ChevronLeft, Loader2, Send, Users, ExternalLink, Lock, EyeOff, Palette as PaletteIcon } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { getCompatibilityDeterministic, COLOR_META, COMPAT_STYLE, type ColorType } from "../../lib/colorCompatibility";
@@ -26,8 +26,15 @@ interface ProfileDetailScreenProps {
   onBack: () => void;
   mutualFriends?: MutualFriend[];  // 공통 친구 리스트
   degree?: number;                 // 1=1촌, 2=2촌, 3=3촌
-  viewCost?: number;               // 열람 비용 (0=무료)
+  /**
+   * 열람 비용. ADR 0042 + ADR 0044 (가격 v2) — 단위는 **물감 (P)**, 1 물감 = 100원.
+   * 친친(degree=2) = 20 물감, 한 다리 더 건너(degree=3) = 30 물감, 1촌 = 0.
+   * (legacy 호출자가 원 단위로 넘기던 시기와의 호환을 위해 prop 이름은 유지)
+   */
+  viewCost?: number;
   onNavigateToFriends?: () => void;
+  /** 잔액 부족 시 BillingScreen 으로 이동 (옵셔널 — 미주입 시 토스트만) */
+  onNavigateToBilling?: () => void;
 }
 
 interface PublicUserResponse {
@@ -176,7 +183,7 @@ function PhotoCarousel({ photos }: { photos: Array<{ id: string; url: string }> 
   );
 }
 
-export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree = 2, viewCost = 3000, onNavigateToFriends }: ProfileDetailScreenProps) {
+export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree = 2, viewCost = 20, onNavigateToFriends, onNavigateToBilling }: ProfileDetailScreenProps) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [userInfo, setUserInfo] = useState<PublicUserResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -186,7 +193,8 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   const [selectedMatchmaker, setSelectedMatchmaker] = useState<MutualFriend | null>(null);
   const [requestMessage, setRequestMessage] = useState("");
   const [alreadyRequested, setAlreadyRequested] = useState(false);
-  const [selectedPoints, setSelectedPoints] = useState<100 | 300 | 500>(300);
+  // ADR 0044 — 팁 P 단위(1P=100원). 10/30/50 P → 1,000/3,000/5,000원 상당.
+  const [selectedPoints, setSelectedPoints] = useState<10 | 30 | 50>(30);
 
   // Cooltime state
   const [inCoolTime, setInCoolTime] = useState(false);
@@ -244,16 +252,20 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   const handlePay = async () => {
     setIsProcessingPayment(true);
     try {
-      await api.post("/api/v1/payment/profile-view", {
-        targetUserId: userId,
-        paymentMethod: "MOCK_CARD",
-      });
+      // PA-023 — ADR 0042 단일 잔액(물감) 차감. 백엔드가 BillingService.consume(10, "view_friend_of_friend").
+      await api.post("/api/v1/payment/profile-view", { targetUserId: userId });
       setIsPaid(true);
       setShowPaymentModal(false);
-      toast.success("결제가 완료되었습니다!");
+      toast.success(`${viewCost} 물감으로 프로필을 열람했어요`);
       await fetchProfileData();
-    } catch {
-      toast.error("결제에 실패했습니다");
+    } catch (e: any) {
+      // 402 INSUFFICIENT_BALANCE → 충전 화면으로 유도
+      if (e?.status === 402 || e?.message === "INSUFFICIENT_BALANCE" || /INSUFFICIENT_BALANCE/.test(e?.message ?? "")) {
+        toast.error(`물감이 부족해요 · ${viewCost} 물감이 필요합니다`);
+        if (onNavigateToBilling) onNavigateToBilling();
+      } else {
+        toast.error("열람에 실패했어요");
+      }
     } finally {
       setIsProcessingPayment(false);
     }
@@ -411,7 +423,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     setModalStep(1);
     setSelectedMatchmaker(null);
     setRequestMessage("");
-    setSelectedPoints(300);
+    setSelectedPoints(30);
   };
 
   const getMutualFriendsText = () => {
@@ -458,12 +470,13 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
           )}
 
           <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-xs mb-6">
-            <p className="text-sm text-muted-foreground mb-1">열람 비용</p>
-            <p className="text-3xl font-bold text-primary">
-              {viewCost.toLocaleString()}원
+            <p className="text-sm text-muted-foreground mb-1">필요 물감</p>
+            <p className="text-3xl font-bold text-primary flex items-center justify-center gap-1.5">
+              <PaletteIcon className="w-6 h-6" />
+              {viewCost.toLocaleString()} 물감
             </p>
             <p className="text-xs text-muted-foreground mt-2">
-              결제 후 24시간 동안 프로필을 열람할 수 있습니다
+              잔액에서 자동 차감돼요 · 이 프로필은 다시 무료로 볼 수 있어요
             </p>
           </div>
 
@@ -475,12 +488,12 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
             {isProcessingPayment ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <CreditCard className="w-4 h-4" />
+              <PaletteIcon className="w-4 h-4" />
             )}
-            {isProcessingPayment ? "결제 중..." : `${viewCost.toLocaleString()}원 결제하기`}
+            {isProcessingPayment ? "처리 중..." : `${viewCost.toLocaleString()} 물감 사용하기`}
           </Button>
           <p className="text-xs text-muted-foreground mt-3">
-            결제 후 24시간 동안 프로필을 열람할 수 있습니다
+            1 물감 = 100원 · 잔액 부족 시 충전 화면으로 안내해 드려요
           </p>
 
           <Button variant="ghost" className="mt-4 text-muted-foreground" onClick={onBack}>
@@ -1225,9 +1238,9 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       {([
-                        { points: 100 as const, label: "기본", desc: "~1,000원" },
-                        { points: 300 as const, label: "성의표시", desc: "~3,000원", recommended: true },
-                        { points: 500 as const, label: "적극요청", desc: "~5,000원" },
+                        { points: 10 as const, label: "기본", desc: "~1,000원" },
+                        { points: 30 as const, label: "성의표시", desc: "~3,000원", recommended: true },
+                        { points: 50 as const, label: "적극요청", desc: "~5,000원" },
                       ]).map(({ points, label, desc, recommended }) => (
                         <button
                           key={points}
@@ -1243,7 +1256,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                               추천
                             </span>
                           )}
-                          <p className="font-bold text-base mt-1">{points}P</p>
+                          <p className="font-bold text-base mt-1">{points} 물감</p>
                           <p className="text-xs text-muted-foreground">{label}</p>
                           <p className="text-xs text-muted-foreground/70">{desc}</p>
                         </button>
@@ -1278,7 +1291,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                     이전
                   </Button>
                   <Button className="flex-1 gap-1.5" onClick={handleConfirmMatchRequest}>
-                    {selectedPoints}P로 요청하기
+                    {selectedPoints} 물감으로 요청하기
                   </Button>
                 </div>
               </div>

@@ -872,7 +872,8 @@ export default function App() {
     );
     setSelectedMutualFriends(friends);
     setSelectedDegree(item.degree ?? 2);
-    setSelectedViewCost(item.viewCost ?? 3000);
+    // ADR 0044 — viewCost 는 "물감(P)" 단위. 친친 기본값 20 (2,000원 — 커피 한잔값).
+    setSelectedViewCost(item.viewCost ?? 20);
     setCurrentScreen("profileDetail");
   };
 
@@ -1088,6 +1089,7 @@ export default function App() {
           degree={selectedDegree}
           viewCost={selectedViewCost}
           onNavigateToFriends={() => { setFriendConnectFrom(currentScreen); setCurrentScreen("friendConnect"); }}
+          onNavigateToBilling={() => setCurrentScreen("billing")}
         />
       )}
 

@@ -6,19 +6,21 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 /**
- * 환영/친구 가입 보너스 정책 SoT — ADR 0042 (단일 잔액, 1 물감 = 100원).
+ * 환영/친구 가입 보너스 정책 SoT — ADR 0042 + ADR 0044 (가격 v2, 60 물감) + ADR 0045 (트라이얼).
  *
  * 정책값은 application.yml 에서 주입 가능 (운영 중 튜닝):
- *  · app.bonus.signup-points         가입 환영 물감 (기본 30, = 3,000원 가치 — 열람3+소개1)
+ *  · app.bonus.signup-points         가입 환영 물감 (기본 60, = 6,000원 가치 — 친친 3명 열람)
  *  · app.bonus.signup-valid-days     가입 보너스 유효일 (기본 7)
  *  · app.bonus.friend-signup-points  친구 가입 시 양쪽 보상 물감 (기본 10, = 1,000원)
  *  · app.bonus.friend-signup-valid-days  친구 가입 보너스 유효일 (기본 14)
+ *
+ * 트라이얼 시스템(ADR 0045)은 별도 sprint에서 wire-up 예정 (열람 3일·반값 묶음·무료 소개·팔레트픽).
  */
 @Service
 @Transactional
 class WelcomeBonusService(
     private val billingService: BillingService,
-    @Value("\${app.bonus.signup-points:30}") private val signupPoints: Int,
+    @Value("\${app.bonus.signup-points:60}") private val signupPoints: Int,
     @Value("\${app.bonus.signup-valid-days:7}") private val signupValidDays: Int,
     @Value("\${app.bonus.friend-signup-points:10}") private val friendSignupPoints: Int,
     @Value("\${app.bonus.friend-signup-valid-days:14}") private val friendSignupValidDays: Int,

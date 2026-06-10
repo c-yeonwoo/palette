@@ -1,6 +1,7 @@
 package kr.ai.palette.application.billing
 
 import kr.ai.palette.domain.billing.PointPrice
+import kr.ai.palette.domain.billing.TipDistribution
 import kr.ai.palette.persistence.billing.TipTransactionEntity
 import kr.ai.palette.persistence.billing.TipTransactionJpaRepository
 import kr.ai.palette.persistence.billing.UserTicketBalanceEntity
@@ -149,8 +150,10 @@ class BillingService(
     // ─── 팁 (옵셔널 송금) ────────────────────────────────────
 
     /**
-     * 성의 표시(옵셔널 tip) 송금. 강제 X — 사용자 자발적.
-     * fromUser 잔액에서 차감 → toUser 잔액에 적립 + 거래 이력.
+     * 성의 표시(옵셔널 tip) 송금. ADR 0044 §3 — 90/10 분배.
+     *
+     * fromUser 에서 amount 전액 차감 → toUser 에 90% 적립 → 플랫폼 10% 수수료 (감사 로그만).
+     * 플랫폼 수수료가 있어야 외부 송금 어뷰징 인센티브 ↓ (ADR 0046).
      */
     fun sendTip(fromUserId: String, toUserId: String, amountPoints: Int, reason: String): TipTransactionEntity {
         require(amountPoints in PointPrice.TIP_MIN..PointPrice.TIP_MAX) {
@@ -158,25 +161,33 @@ class BillingService(
         }
         require(fromUserId != toUserId) { "자기 자신에게 팁 송금 불가" }
 
-        // 1) 보내는 사람 차감
+        val matchmakerShare = TipDistribution.matchmakerShare(amountPoints)
+        val platformFee = TipDistribution.platformFee(amountPoints)
+
+        // 1) 보내는 사람 차감 (전액)
         consume(fromUserId, amountPoints, reason = "tip_to:$toUserId")
 
-        // 2) 받는 사람 적립 (paidPoints — 출금 가능)
+        // 2) 받는 사람 적립 — 90% 만 (paidPoints, 출금 가능)
         val receiver = getOrCreateBalance(toUserId)
-        receiver.paidPoints += amountPoints
+        receiver.paidPoints += matchmakerShare
         receiver.updatedAt = Instant.now()
         balanceRepository.save(receiver)
 
-        // 3) 거래 이력
+        // 3) 거래 이력 — 분배 정합성 (matchmaker + platform == amount) 보장
         val tx = tipTransactionRepository.save(
             TipTransactionEntity(
                 fromUserId = fromUserId,
                 toUserId = toUserId,
                 amountPoints = amountPoints,
+                matchmakerCredited = matchmakerShare,
+                platformFee = platformFee,
                 reason = reason,
             )
         )
-        log.info("팁 송금 from={} to={} amount={}P reason={}", fromUserId, toUserId, amountPoints, reason)
+        log.info(
+            "팁 송금 from={} to={} amount={}P (주선자 {}P / 플랫폼 {}P) reason={}",
+            fromUserId, toUserId, amountPoints, matchmakerShare, platformFee, reason,
+        )
         return tx
     }
 }

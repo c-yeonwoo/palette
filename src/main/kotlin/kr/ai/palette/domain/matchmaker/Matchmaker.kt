@@ -1,5 +1,6 @@
 package kr.ai.palette.domain.matchmaker
 
+import kr.ai.palette.domain.billing.PointPrice
 import kr.ai.palette.domain.common.UserId
 import java.time.Instant
 
@@ -38,13 +39,21 @@ data class Matchmaker(
         )
     }
 
+    /**
+     * 매칭 성사 처리. ADR 0044 — 소개요청 분배 모델로 통합.
+     *
+     * 보상은 [PointPrice.INTRO_REQUEST] × **현재 등급의** [MatchmakerLevel.commissionRate] 로 계산:
+     *   - Lv.1 (15%): 15 물감
+     *   - Lv.5 (40%): 40 물감
+     *
+     * **등급 승급 시점**: 보상은 "현재 등급" 기준으로 먼저 적립한 뒤 등급 갱신.
+     * (다이아 막 도달한 매칭은 Lv.4 보상으로 산정 — 다음 매칭부터 Lv.5)
+     */
     fun recordMatchSuccess(): Matchmaker {
         val newStats = stats.incrementSuccess()
         val newLevel = MatchmakerLevel.calculateLevel(newStats)
-        // ADR 0042 — 매칭 1건 기준 보상 20 물감(= 2,000원). 등급별 커미션(ADR 0038)
-        // 적용 후 실 적립은 MatchmakerLevel.commissionRate * 20 (Lv.1 3 / Lv.5 8 물감).
-        // TODO: 실제 커미션 적용은 별도 sprint (현재 호출처에서 곱하기 X)
-        val reward = 20
+        // 현재 등급 기준 보상 (승급은 다음 매칭부터 적용 — Hot-streak 보호)
+        val reward = (PointPrice.INTRO_REQUEST * level.commissionRate).toInt()
         val newEarnings = earnings.addReward(reward)
 
         return copy(

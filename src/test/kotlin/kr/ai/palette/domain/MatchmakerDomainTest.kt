@@ -33,10 +33,18 @@ class MatchmakerDomainTest : DescribeSpec({
             updated.stats.successfulMatches shouldBe 1
         }
 
-        it("성공 시 기준 20 물감 리워드가 추가된다 (ADR 0042)") {
+        it("성공 시 현재 등급 분배율 × INTRO_REQUEST(100) 적립 — Lv.1 = 15 물감 (ADR 0044)") {
             val matchmaker = makeMatchmaker(0)
+            matchmaker.level.level shouldBe 1
             val updated = matchmaker.recordMatchSuccess()
-            updated.earnings.totalPoints shouldBe 20
+            updated.earnings.totalPoints shouldBe 15
+        }
+
+        it("Lv.5 다이아 분배율 40% × 100 = 40 물감 적립 (ADR 0044)") {
+            val matchmaker = makeMatchmaker(successfulMatches = 21)
+            matchmaker.level.level shouldBe 5
+            val updated = matchmaker.recordMatchSuccess()
+            updated.earnings.totalPoints shouldBe 40
         }
 
         it("2건 → 3건 성공 시 레벨이 1에서 2로 올라간다") {
@@ -97,13 +105,13 @@ class MatchmakerDomainTest : DescribeSpec({
 
     describe("Matchmaker.canEarnCommission()") {
 
-        it("레벨 1(커미션 30%)에서 true를 반환한다") {
+        it("레벨 1(커미션 15%)에서 true를 반환한다 (ADR 0044)") {
             val matchmaker = makeMatchmaker(0)
             matchmaker.level.level shouldBe 1
             matchmaker.canEarnCommission() shouldBe true
         }
 
-        it("레벨 5(커미션 50%)에서도 true를 반환한다") {
+        it("레벨 5(커미션 40%)에서도 true를 반환한다 (ADR 0044)") {
             val matchmaker = makeMatchmaker(successfulMatches = 21)
             matchmaker.level.level shouldBe 5
             matchmaker.canEarnCommission() shouldBe true
@@ -149,13 +157,13 @@ class MatchmakerDomainTest : DescribeSpec({
             }
         }
 
-        it("커미션율 경계: Lv1=30%, Lv2=35%, Lv3=40%, Lv4=45%, Lv5=50%") {
+        it("커미션율 경계: Lv1=15%, Lv2=20%, Lv3=25%, Lv4=30%, Lv5=40% (ADR 0044)") {
             val cases = listOf(
-                0 to 0.30,
-                3 to 0.35,
-                6 to 0.40,
-                11 to 0.45,
-                21 to 0.50
+                0 to 0.15,
+                3 to 0.20,
+                6 to 0.25,
+                11 to 0.30,
+                21 to 0.40
             )
             cases.forEach { (matches, expectedRate) ->
                 val stats = MatchmakerStats.initial().copy(successfulMatches = matches)
