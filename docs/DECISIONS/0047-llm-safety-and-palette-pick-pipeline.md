@@ -1,9 +1,16 @@
 # 0047 — LLM 안전바 + 팔레트픽 매칭 파이프라인 아키텍처
 
-- **상태**: Accepted (베타)
+- **상태**: Implemented (B.1·B.2·B.3 완료, B.4 관측·variant tagging)
 - **결정일**: 2026-06-10
+- **마지막 갱신**: 2026-06-11
 - **결정자**: ys.choi
 - **선행**: ADR 0025 (팔레트픽 구독 패스), 0044 (가격 v2 — 팔레트픽 29,900원/월)
+- **구현 PR**:
+  - A 안전바: `palettepick/llm-safety` (merged) — LlmUsageLog · ProfileGenerationCache · OpenAIService 강화 · AdminLlmUsage
+  - B.1 임베딩: `palettepick/b1-embedding` (merged) — ProfileEmbedding · EmbeddingService · MutualFitScoring
+  - B.2 오케스트레이터: `palettepick/b2-orchestrator` (PR 검토) — ColorCompat · ActivityMomentum · CandidatePool · EmbeddingRefresh · RecommendationService · AiSignal 위임
+  - B.3 LLM Stage 3: `palettepick/b3-llm-compat` (PR 검토) — CompatibilityAnalysis · LlmCompatibilityScorer · 자정 KST 배치
+  - B.4 관측: `palettepick/b4-observability` (본 갱신과 함께)
 
 ## 컨텍스트
 
@@ -154,15 +161,15 @@ kr.ai.palette.palettepick/
 - 사용자 매번 5-8초 대기 (UX 최악)
 - LLM 호출 분산 어렵
 
-### B.6 단계적 구현 로드맵
+### B.6 단계적 구현 로드맵 (실제 진행)
 
-| 단계 | 내용 | 기간 |
+| 단계 | 내용 | 상태 |
 |---|---|---|
-| **B.0 (이번 PR)** | ADR 0047 + 패키지 골격 (entity·service stub) — 컴파일만 통과, 실 호출 X | 즉시 |
-| **B.1** | 1·2단계 (Candidate Pool + Deterministic Scoring) — LLM 미사용. 기존 random 대체 | 다음 PR |
-| **B.2** | 3단계 (LlmCompatibilityScorer) — top 8 만 LLM. 캐시 적용 | B.1 + 1 PR |
-| **B.3** | 배치 scheduler — 자정 KST. 점진 ramp-up (시범 사용자 N명부터) | B.2 + 1 PR |
-| **B.4** | A/B 테스트 — 새 파이프라인 vs 기존 random. 구독 전환률·매칭 성사율 비교 | B.3 + 1 PR |
+| **B.0** | ADR 0047 + 패키지 골격 (entity·service stub) | ✅ Done |
+| **B.1** | 임베딩 인프라 — `ProfileEmbeddingEntity` (intro/ideal 분리 LONGBLOB) · `EmbeddingService` · `MutualFitScoringService` · `PalettePickScore` 4축 가중 | ✅ Done |
+| **B.2** | 결정적 스코어링 — `ColorCompatibility` · `ActivityMomentum` · `CandidatePool` · `EmbeddingRefresh` · `PalettePickRecommendationService` orchestrator · `AiSignalController` 위임 | ✅ Done |
+| **B.3** | LLM Stage 3 — `CompatibilityAnalysisEntity` 캐시 · `LlmCompatibilityScorer` (gpt-4o-mini JSON) · `PalettePickBatchService` (자정 KST cron) · AiSignal `PalettePickInsight` 응답 노출 | ✅ Done |
+| **B.4** | **관측 + variant tagging** (이번 갱신) — DailyRecommendation.variant 컬럼으로 추천 출처 기록, 어드민 메트릭에서 variant 별 카드 오픈/매칭 요청 비율 추적. 본격 A/B (control=random)는 사용자 1,000명+ 이후 재검토 | ✅ Done |
 | **B.5** | 옵션: MSA 추출 — 트래픽 폭증 시 별도 deploy. **현재는 too much, 결정 미룸** | 후속 |
 
 ## C. LLM 확장 활용 — 향후 검토 항목
@@ -198,12 +205,14 @@ kr.ai.palette.palettepick/
 
 ## 결과
 
-- **A 안전바 즉시 적용**: LLM 1곳 호출이라도 비용·실패·abuse 보호. 향후 N곳으로 늘려도 동일 인프라 재사용.
-- **B 팔레트픽 파이프라인 골격**: 패키지 분리로 점진 구현. 구독 가치 명확화 + LLM 비용 0.56%/구독 ROI 확보.
-- **C 확장 활용**: 10개 시나리오 우선순위화 — P0 첫 메시지 추천 다음 PR 후보.
+- **A 안전바 적용 완료**: 모든 LLM 호출(profile_generate · profile_embedding_intro · profile_embedding_ideal · palette_pick_score)이 동일한 안전바(stub·cache·timeout·retry·fallback·audit)를 통과. AdminLlmUsage 화면에서 purpose 별 outcome·비용 추적.
+- **B 팔레트픽 파이프라인 구현 완료** (B.1·B.2·B.3): 4축 가중 점수 + 양방향 매칭 + LLM 종합 분석을 자정 KST 배치로 사전 캐시. 추천 응답은 즉시 반환 + `PalettePickInsight` (summary/strengths/watchOuts/firstQuestion) 노출.
+- **B.4 관측**: DailyRecommendation.variant 로 추천 출처 기록. variant 별 카드 오픈률·매칭 요청률을 어드민 메트릭에서 비교 → 추천 품질 회귀 감지.
+- **C 확장 활용**: 10개 시나리오 우선순위화. P0 첫 메시지 추천은 B.3 의 `firstQuestion` 으로 부분 충족, 별도 endpoint 화는 후속.
 
 ## 메모
 
-- 본 ADR 은 단일 호출 시점의 안전바 + 미래 확장의 청사진을 함께 묶었음.
-- B 파이프라인은 본 PR 에서 컴파일 통과되는 골격만, 본격 구현은 B.1-B.3 분리.
+- 본 ADR 은 단일 호출 시점의 안전바 + 매칭 파이프라인 + 확장 청사진을 한 문서에 통합.
+- B 파이프라인 구현은 5개 PR 로 분할 (B.0 골격 → B.1 임베딩 → B.2 오케스트레이터 → B.3 LLM → B.4 관측). 각 PR 은 독립 검증·롤백 가능.
+- 본격 A/B (random 대조군)는 사용자 규모 1,000명+ 이전에는 통계적 유의성 부족 → variant tagging 으로 회귀만 감지하고, 알고리즘 비교는 사용자 확보 후로 미룸.
 - C 시나리오들은 운영 데이터 + 사용자 피드백 누적 후 우선순위 재조정.

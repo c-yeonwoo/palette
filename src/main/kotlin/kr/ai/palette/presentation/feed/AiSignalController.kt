@@ -70,6 +70,9 @@ class AiSignalController(
         /** 60일 이내 추천된 적 있는 사용자는 후보에서 제외 (ADR 0009) */
         const val RECOMMENDATION_EXCLUSION_DAYS = 60L
 
+        /** 추천 알고리즘 variant — ADR 0047 §B.4 관측 태깅 */
+        const val ORCHESTRATOR_VARIANT = "ORCHESTRATOR_V1"
+
         private val KST = ZoneId.of("Asia/Seoul")
     }
 
@@ -100,7 +103,7 @@ class AiSignalController(
             return ResponseEntity.ok(AiSignalResponse(emptyList(), today.toString()))
         }
 
-        // 영속화 — position 1, 2 ...
+        // 영속화 — position 1, 2 ... + variant 태그 (ADR 0047 §B.4)
         picked.forEachIndexed { idx, targetUserId ->
             dailyRecommendationRepo.save(
                 DailyRecommendationEntity(
@@ -110,6 +113,7 @@ class AiSignalController(
                     position = idx + 1,
                     source = RecommendationSourceEntity.AUTO,
                     createdAt = Instant.now(),
+                    variant = ORCHESTRATOR_VARIANT,
                 )
             )
         }
