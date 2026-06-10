@@ -41,7 +41,10 @@ data class Matchmaker(
     fun recordMatchSuccess(): Matchmaker {
         val newStats = stats.incrementSuccess()
         val newLevel = MatchmakerLevel.calculateLevel(newStats)
-        val reward = 1500
+        // ADR 0042 — 매칭 1건 기준 보상 20 물감(= 2,000원). 등급별 커미션(ADR 0038)
+        // 적용 후 실 적립은 MatchmakerLevel.commissionRate * 20 (Lv.1 3 / Lv.5 8 물감).
+        // TODO: 실제 커미션 적용은 별도 sprint (현재 호출처에서 곱하기 X)
+        val reward = 20
         val newEarnings = earnings.addReward(reward)
 
         return copy(

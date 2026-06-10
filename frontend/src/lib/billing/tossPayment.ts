@@ -26,9 +26,11 @@ export interface OrderRequest {
   amount: number;         // 원
 }
 
+// orderName 은 Toss 결제창에 노출 — 사용자에게 보이는 문자열.
+// ADR 0042 단일 잔액 모델 이후 kind 는 사실상 의미 없음 (모두 "물감 충전").
 const KIND_LABEL: Record<BillingKind, string> = {
-  VIEW: "프로필 열람 티켓",
-  INTRO_REQUEST: "소개 요청 티켓",
+  VIEW: "팔레트 물감",
+  INTRO_REQUEST: "팔레트 물감",
 };
 
 /**
@@ -51,7 +53,7 @@ export async function requestTossPayment(order: OrderRequest, customerKey: strin
   await toss.requestPayment("카드", {
     amount: order.amount,
     orderId,
-    orderName: `${KIND_LABEL[order.kind]} ${order.quantity}장`,
+    orderName: `${KIND_LABEL[order.kind]} ${order.quantity.toLocaleString("ko-KR")} 충전`,
     successUrl: `${origin}/payment-success?kind=${order.kind}&quantity=${order.quantity}`,
     failUrl: `${origin}/payment-fail`,
     customerKey,

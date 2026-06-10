@@ -24,7 +24,7 @@ interface ConfirmResponse {
   status: string;
   transactionId?: string;
   points?: number;        // 새 단일 잔액 모델 (ADR 0042)
-  credited?: number;      // 이번에 적립된 P
+  credited?: number;      // 이번에 적립된 물감 (Paint)
   error?: string;
   reason?: string;
 }
@@ -58,7 +58,7 @@ export function PaymentSuccessScreen({ onDone }: PaymentSuccessScreenProps) {
         });
         if (result.status === "OK") {
           setPhase("success");
-          setMessage(`${(result.credited ?? params.quantity).toLocaleString("ko-KR")}P 충전이 완료됐어요`);
+          setMessage(`물감 ${(result.credited ?? params.quantity).toLocaleString("ko-KR")} 충전이 완료됐어요`);
         } else if (result.status === "ALREADY_PROCESSED") {
           setPhase("success");
           setMessage("이미 처리된 결제예요");

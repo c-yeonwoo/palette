@@ -16,7 +16,7 @@ import java.time.Instant
  * @param required 필요 P, @param current 현재 보유 P (보너스 + 유료 합산)
  */
 class InsufficientBalanceException(val required: Int, val current: Int)
-    : RuntimeException("잔액 부족: required=${required}P current=${current}P")
+    : RuntimeException("물감 부족: required=${required} current=${current}")
 
 /**
  * 잔액 (P) 관리 + 차감 + 충전 + 옵셔널 팁. ADR 0042 (단일 잔액 모델).
@@ -154,7 +154,7 @@ class BillingService(
      */
     fun sendTip(fromUserId: String, toUserId: String, amountPoints: Int, reason: String): TipTransactionEntity {
         require(amountPoints in PointPrice.TIP_MIN..PointPrice.TIP_MAX) {
-            "팁은 ${PointPrice.TIP_MIN}~${PointPrice.TIP_MAX}P 범위"
+            "팁은 ${PointPrice.TIP_MIN}~${PointPrice.TIP_MAX} 물감 범위"
         }
         require(fromUserId != toUserId) { "자기 자신에게 팁 송금 불가" }
 

@@ -2,11 +2,12 @@
  * BillingScreen — 단일 잔액 충전 (ADR 0042 / PA-021).
  *
  * 모델:
- *  · 잔액 (P) 한 숫자만 표시 — 모든 사용처 공통 차감
- *  · 충전 시 "보너스 +N P" 강조 (별풍선·카카오톡 초코 메탈 모델)
+ *  · 잔액(물감) 한 숫자만 표시 — 모든 사용처 공통 차감
+ *  · 충전 시 "보너스 +N 물감" 강조 (별풍선·카카오톡 초코 메탈 모델)
  *  · 베타: VITE_TOSS_CLIENT_KEY 미설정 시 안내 토스트만, 키 있으면 위젯 호출
  *
- * 1P = 10원. 가격은 P 로 표시, 결제 시점에만 원화 노출.
+ * 단위: 1 물감 = 100원 (코드 약자는 P = Paint, 사용자 노출은 "물감").
+ * 가격은 물감 단위로 표시, 결제 시점에만 원화 노출.
  */
 import { useEffect, useState } from "react";
 import { ArrowLeft, Gift, Sparkles, Coins, Plus } from "lucide-react";
@@ -39,8 +40,9 @@ function formatWon(won: number): string {
   return won.toLocaleString("ko-KR") + "원";
 }
 
-function formatP(points: number): string {
-  return points.toLocaleString("ko-KR") + "P";
+/** 사용자 노출 단위 — "물감". 1 물감 = 100원. 코드 내부 변수명은 P (Paint) 유지. */
+function formatPaint(points: number): string {
+  return points.toLocaleString("ko-KR") + " 물감";
 }
 
 function daysUntil(iso: string | null): number | null {
@@ -50,10 +52,10 @@ function daysUntil(iso: string | null): number | null {
 }
 
 const PRICE_HINT: Array<{ label: string; cost: string }> = [
-  { label: "친구의 친구 프로필 열람", cost: "100P" },
-  { label: "한 다리 더 건너", cost: "200P" },
-  { label: "소개 요청 보내기", cost: "300P" },
-  { label: "성의 표시 (선택)", cost: "100~1,000P" },
+  { label: "친구의 친구 프로필 열람", cost: "10 물감" },
+  { label: "한 다리 더 건너", cost: "20 물감" },
+  { label: "소개 요청 보내기", cost: "30 물감" },
+  { label: "성의 표시 (선택)", cost: "10~100 물감" },
 ];
 
 export function BillingScreen({ onBack }: BillingScreenProps) {
@@ -72,7 +74,7 @@ export function BillingScreen({ onBack }: BillingScreenProps) {
 
   const handlePurchase = async (b: BundleDto) => {
     if (!isPaymentEnabled()) {
-      toast.info(`결제는 정식 출시 후 지원돼요 (${formatP(b.pointsCredited)} / ${formatWon(b.priceWon)})`);
+      toast.info(`결제는 정식 출시 후 지원돼요 (물감 ${b.pointsCredited.toLocaleString("ko-KR")} / ${formatWon(b.priceWon)})`);
       return;
     }
     if (isPurchasing) return;
@@ -129,15 +131,15 @@ export function BillingScreen({ onBack }: BillingScreenProps) {
         <section className="bg-gradient-to-br from-brand-soft to-brand-soft/40 rounded-2xl border border-primary/20 shadow-card p-6 space-y-3">
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <Coins className="w-4 h-4" />
-            <span className="text-xs font-medium">내 잔액</span>
+            <span className="text-xs font-medium">내 물감</span>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-bold tabular-nums text-foreground">
-              {balance ? formatP(balance.points) : "-"}
+              {balance ? formatPaint(balance.points) : "-"}
             </span>
             {balance && (
               <span className="text-xs text-muted-foreground">
-                ≈ {formatWon(balance.points * 10)}
+                ≈ {formatWon(balance.points * 100)}
               </span>
             )}
           </div>
@@ -145,7 +147,7 @@ export function BillingScreen({ onBack }: BillingScreenProps) {
             <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-card border border-primary/20 text-xs">
               <Gift className="w-3.5 h-3.5 text-primary flex-shrink-0" />
               <span className="text-foreground">
-                보너스 <strong className="text-primary">{formatP(balance!.bonusPoints)}</strong> 포함 · 만료 <strong className="text-primary">{bonusDays}일</strong> 남음
+                보너스 물감 <strong className="text-primary">{balance!.bonusPoints.toLocaleString("ko-KR")}</strong> 포함 · 만료 <strong className="text-primary">{bonusDays}일</strong> 남음
               </span>
             </div>
           )}
@@ -155,7 +157,7 @@ export function BillingScreen({ onBack }: BillingScreenProps) {
         <section className="bg-card rounded-2xl border border-border p-4">
           <div className="flex items-center gap-1.5 mb-3">
             <Sparkles className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">잔액 사용처</span>
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">물감 사용처</span>
           </div>
           <div className="grid grid-cols-1 gap-1.5">
             {PRICE_HINT.map((p, i) => (
@@ -208,14 +210,14 @@ export function BillingScreen({ onBack }: BillingScreenProps) {
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-baseline gap-1.5">
-                        <span className="text-base font-bold tabular-nums">{formatP(b.pointsCredited)}</span>
+                        <span className="text-base font-bold tabular-nums">{formatPaint(b.pointsCredited)}</span>
                         {b.bonusPercent > 0 && (
                           <span className="text-[11px] font-semibold text-primary">+{b.bonusPercent}%</span>
                         )}
                       </div>
                       {b.bonusPercent > 0 && (
                         <div className="text-[11px] text-muted-foreground mt-0.5">
-                          정가 {formatP(b.priceWon / 10)} + 보너스 {formatP(b.pointsCredited - b.priceWon / 10)}
+                          정가 {formatPaint(b.priceWon / 100)} + 보너스 {formatPaint(b.pointsCredited - b.priceWon / 100)}
                         </div>
                       )}
                     </div>
@@ -234,7 +236,7 @@ export function BillingScreen({ onBack }: BillingScreenProps) {
           <Sparkles className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
           <div className="text-xs text-muted-foreground leading-relaxed">
             <p className="font-medium text-foreground mb-1">베타 기간 모든 기능 무료</p>
-            <p>가입 시 300P 환영 보너스 + 친구 가입할 때마다 양쪽 100P 보너스로 부담 없이 시작.</p>
+            <p>가입 시 30 물감 환영 보너스 + 친구 가입할 때마다 양쪽 10 물감 보너스로 부담 없이 시작.</p>
           </div>
         </div>
       </main>

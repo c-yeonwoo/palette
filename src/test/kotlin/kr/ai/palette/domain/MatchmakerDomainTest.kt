@@ -33,10 +33,10 @@ class MatchmakerDomainTest : DescribeSpec({
             updated.stats.successfulMatches shouldBe 1
         }
 
-        it("성공 시 1500 포인트 리워드가 추가된다") {
+        it("성공 시 기준 20 물감 리워드가 추가된다 (ADR 0042)") {
             val matchmaker = makeMatchmaker(0)
             val updated = matchmaker.recordMatchSuccess()
-            updated.earnings.totalPoints shouldBe 1500
+            updated.earnings.totalPoints shouldBe 20
         }
 
         it("2건 → 3건 성공 시 레벨이 1에서 2로 올라간다") {
