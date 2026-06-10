@@ -394,13 +394,13 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                 <Award className="w-3.5 h-3.5" /> Lv.{lvl}
               </span>
               <div className="min-w-0 flex-1">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-sm font-semibold text-foreground truncate">{tier.name}</span>
-                  <span className="text-xs text-muted-foreground flex-shrink-0">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-foreground truncate leading-none">{tier.name}</span>
+                  <span className="text-xs text-muted-foreground flex-shrink-0 leading-none">
                     {remaining != null ? `다음 ${next?.name}까지 ${remaining}건` : "최고 등급"}
                   </span>
                 </div>
-                <div className="mt-1.5 h-2 bg-muted rounded-full overflow-hidden">
+                <div className="mt-2 h-2 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all"
                     style={{ width: `${pct}%`, backgroundColor: tier.color }}
@@ -423,15 +423,15 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
               className="w-full rounded-2xl border border-border bg-card shadow-card p-3 grid grid-cols-3 divide-x divide-border text-center enabled:active:scale-[0.99] transition-transform disabled:cursor-default"
             >
               <div className="px-2">
-                <p className="text-xs text-muted-foreground mb-1">분배율</p>
+                <p className="text-[11px] text-muted-foreground mb-1">내 몫</p>
                 <p className="text-base font-bold text-foreground">{Math.round((matchmakerData.commissionRate ?? 0) * 100)}%</p>
               </div>
               <div className="px-2">
-                <p className="text-xs text-muted-foreground mb-1">사용 가능</p>
+                <p className="text-[11px] text-muted-foreground mb-1">출금 가능</p>
                 <p className="text-base font-bold text-gold-strong">{(matchmakerData.availablePoints ?? 0).toLocaleString()} 물감</p>
               </div>
               <div className="px-2">
-                <p className="text-xs text-muted-foreground mb-1">누적</p>
+                <p className="text-[11px] text-muted-foreground mb-1">총 받음</p>
                 <p className="text-base font-bold text-foreground">{(matchmakerData.totalPoints ?? 0).toLocaleString()} 물감</p>
               </div>
             </button>

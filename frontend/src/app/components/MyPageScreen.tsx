@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { ChevronRight, UserCircle, HeartHandshake, LogOut, Users, Camera, Edit2, Loader2, UserPlus, Shield, Trash2, FileText, Ticket } from "lucide-react";
+import { ChevronRight, UserCircle, HeartHandshake, LogOut, Users, Camera, Edit2, Loader2, UserPlus, Shield, Trash2, FileText, Ticket, Palette as PaletteIcon } from "lucide-react";
 import { SectionHeader } from "./ui/section-header";
 import { ListRow } from "./ui/list-row";
 import { Switch } from "./ui/switch";
@@ -69,6 +69,8 @@ export function MyPageScreen({
   const [matchmaker, setMatchmaker] = useState<MatchmakerData | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // 헤더 우상단 — 잔액 빠른 조회 + 물감샵 진입 (ADR 0044)
+  const [balancePoints, setBalancePoints] = useState<number | null>(null);
 
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editNickname, setEditNickname] = useState("");
@@ -119,6 +121,10 @@ export function MyPageScreen({
       if (response.accountType === "REGULAR" && response.isProfileCompleted) {
         api.get<ProfileData>("/api/v1/profile").then(setProfile).catch(() => {});
       }
+      // 헤더 우상단 잔액 표시 (ADR 0044 — 물감)
+      api.get<{ points: number }>("/api/v1/billing/balance")
+        .then((b) => setBalancePoints(b.points))
+        .catch(() => {});
     } catch {
       toast.error("사용자 정보를 불러오는데 실패했습니다");
     } finally {
@@ -221,19 +227,34 @@ export function MyPageScreen({
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* 통일 헤더 (ADR 0014) */}
+      {/* 통일 헤더 (ADR 0014) — 우상단: 물감 잔액 chip + 물감샵 진입 (ADR 0044) */}
       <header className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border pt-safe-top">
         <div className="max-w-2xl mx-auto px-5 h-16 flex items-center justify-between">
           <h1 className="text-lg font-bold text-foreground">마이페이지</h1>
-          {isMatchmakerOnly && (
-            <button
-              onClick={handleOpenEditDialog}
-              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors"
-              aria-label="프로필 수정"
-            >
-              <Edit2 className="w-[18px] h-[18px] text-foreground" />
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {/* 물감 잔액 chip — 클릭하면 물감샵 진입 */}
+            {onNavigateBilling && (
+              <button
+                onClick={onNavigateBilling}
+                className="flex items-center gap-1.5 h-9 px-3 rounded-full bg-brand-soft border border-primary/20 hover:bg-brand-soft/80 transition-colors"
+                aria-label="물감샵 / 충전"
+              >
+                <PaletteIcon className="w-[15px] h-[15px] text-primary" />
+                <span className="text-xs font-bold text-primary tabular-nums">
+                  {balancePoints !== null ? `${balancePoints.toLocaleString()} 물감` : "물감샵"}
+                </span>
+              </button>
+            )}
+            {isMatchmakerOnly && (
+              <button
+                onClick={handleOpenEditDialog}
+                className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors"
+                aria-label="프로필 수정"
+              >
+                <Edit2 className="w-[18px] h-[18px] text-foreground" />
+              </button>
+            )}
+          </div>
         </div>
       </header>
 

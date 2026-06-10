@@ -188,7 +188,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm opacity-80">커미션율</p>
+                  <p className="text-sm opacity-80">내 몫</p>
                   <p className="text-2xl font-bold">{currentLevelInfo.commission}%</p>
                 </div>
               </div>
@@ -244,7 +244,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
 
             {/* Level Guide */}
             <div className="bg-card rounded-2xl border border-border/60 shadow-card p-4 space-y-3">
-              <p className="text-sm font-semibold">등급별 커미션율</p>
+              <p className="text-sm font-semibold">등급별 내 몫</p>
               {LEVEL_INFO.map(info => (
                 <div
                   key={info.level}
@@ -361,13 +361,13 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
             <div className="bg-card rounded-2xl border border-border/60 shadow-card p-5 space-y-4">
               <div className="flex items-center gap-2">
                 <Wallet className="w-5 h-5 text-primary" />
-                <p className="font-semibold">포인트 현황</p>
+                <p className="font-semibold">물감 현황</p>
               </div>
 
               <div className="space-y-3">
-                <PointRow label="출금 가능 포인트" value={data.availablePoints} highlight />
+                <PointRow label="출금 가능" value={data.availablePoints} highlight />
                 <div className="h-px bg-border" />
-                <PointRow label="총 적립 포인트" value={data.totalPoints} />
+                <PointRow label="총 받음 (누적)" value={data.totalPoints} />
                 <PointRow label="출금 완료" value={data.withdrawnPoints} dimmed />
                 <PointRow label="처리 중" value={data.pendingPoints} dimmed />
               </div>
