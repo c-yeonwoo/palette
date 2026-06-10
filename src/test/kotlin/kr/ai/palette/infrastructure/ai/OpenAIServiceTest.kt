@@ -138,4 +138,6 @@ private fun makeService() = OpenAIService(
     model = "gpt-4o-mini",
     restClientBuilder = org.springframework.web.client.RestClient.builder(),
     objectMapper = jsonMapper { addModule(kotlinModule()) },
+    usageLogRepository = io.mockk.mockk(relaxed = true),
+    cacheRepository = io.mockk.mockk(relaxed = true),
 )

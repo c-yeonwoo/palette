@@ -2,10 +2,18 @@ package kr.ai.palette.infrastructure.ai
 
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.module.kotlin.readValue
+import kr.ai.palette.persistence.ai.LlmUsageLogEntity
+import kr.ai.palette.persistence.ai.LlmUsageLogJpaRepository
+import kr.ai.palette.persistence.ai.ProfileGenerationCacheEntity
+import kr.ai.palette.persistence.ai.ProfileGenerationCacheJpaRepository
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
+import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClient
+import java.security.MessageDigest
+import java.time.Duration
 
 data class ProfileGenerationRequest(
     val introMethod: IntroMethod,
@@ -50,21 +58,56 @@ class OpenAIService(
     private val model: String,
     restClientBuilder: RestClient.Builder,
     private val objectMapper: ObjectMapper,
+    private val usageLogRepository: LlmUsageLogJpaRepository,
+    private val cacheRepository: ProfileGenerationCacheJpaRepository,
 ) {
 
+    private val log = LoggerFactory.getLogger(OpenAIService::class.java)
+
+    // RestClient — timeout (connect 5s, read 15s) 적용. OpenAI 가 행 걸려도 톰캣 워커 보호.
     val restClient: RestClient = restClientBuilder
         .baseUrl("https://api.openai.com")
         .defaultHeader("Authorization", "Bearer $apiKey")
+        .requestFactory(SimpleClientHttpRequestFactory().apply {
+            setConnectTimeout(Duration.ofSeconds(5))
+            setReadTimeout(Duration.ofSeconds(15))
+        })
         .build()
 
     /** 로컬/개발에서 OpenAI 키가 없거나 placeholder 인 경우 stub 으로 빠짐 (회원가입 골든패스 진행용) */
     private val isStubMode: Boolean
         get() = apiKey.isBlank() || apiKey.startsWith("dummy") || apiKey.contains("placeholder")
 
-    fun generateProfile(request: ProfileGenerationRequest): ProfileGenerationResult {
+    /**
+     * 프로필 생성. ADR 0047 안전바:
+     *  1) stub 모드 — 키 없으면 즉시 stub
+     *  2) hash 캐시 — 동일 입력 = 동일 결과 (LLM 안 부름, 비용 0)
+     *  3) try/catch + retry 1회 + fallback stub — 외부 실패에 graceful degrade
+     *  4) timeout (read 15s) — 톰캣 워커 점유 방지
+     *  5) audit log — 모든 호출 outcome/latency/cost 영속화
+     *
+     * @param userId audit log·rate-limit 용 — 호출 측에서 인증된 사용자 ID
+     */
+    fun generateProfile(
+        request: ProfileGenerationRequest,
+        userId: String = "anonymous",
+    ): ProfileGenerationResult {
         if (isStubMode) return stubResult(request)
-        val userPrompt = buildUserPrompt(request)
 
+        // 입력 hash — 같은 답변이면 같은 hash → 캐시 hit
+        val inputJson = objectMapper.writeValueAsString(request)
+        val inputHash = sha256(inputJson)
+
+        // 캐시 hit (audit log 만 기록, LLM 호출 X)
+        cacheRepository.findById(inputHash).orElse(null)?.let { cached ->
+            cached.hitCount += 1
+            cacheRepository.save(cached)
+            logUsage(userId, inputHash, outcome = "CACHED", latencyMs = 0, input = 0, output = 0)
+            log.info("LLM 캐시 hit hash={} hitCount={}", inputHash.take(12), cached.hitCount)
+            return parseResult(cached.responseJson)
+        }
+
+        val userPrompt = buildUserPrompt(request)
         val body = mapOf(
             "model" to model,
             "messages" to listOf(
@@ -72,25 +115,109 @@ class OpenAIService(
                 mapOf("role" to "user", "content" to userPrompt),
             ),
             "response_format" to mapOf("type" to "json_object"),
-            "max_tokens" to 2000,  // 500자+ 소개글 + 근거/성향/이상형 3분석 + 키워드 수용
+            "max_tokens" to 1200,  // 2000 → 1200 — 평균 출력 800~1500 충분
             "temperature" to 0.8,
         )
 
-        val response = restClient.post()
-            .uri("/v1/chat/completions")
-            .contentType(MediaType.APPLICATION_JSON)
-            .body(body)
-            .retrieve()
-            .body(Map::class.java)
-            ?: throw IllegalStateException("No response from OpenAI")
+        val startMs = System.currentTimeMillis()
+        var attempt = 0
+        val maxAttempts = 2
+        var lastError: Exception? = null
 
-        @Suppress("UNCHECKED_CAST")
-        val content = (response["choices"] as List<Map<String, Any>>)
-            .first()
-            .let { it["message"] as Map<String, Any> }
-            .let { it["content"] as String }
+        while (attempt < maxAttempts) {
+            attempt++
+            try {
+                val response = restClient.post()
+                    .uri("/v1/chat/completions")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .body(Map::class.java)
+                    ?: throw IllegalStateException("No response from OpenAI")
 
-        return parseResult(content)
+                @Suppress("UNCHECKED_CAST")
+                val content = (response["choices"] as List<Map<String, Any>>)
+                    .first()
+                    .let { it["message"] as Map<String, Any> }
+                    .let { it["content"] as String }
+
+                val usage = response["usage"] as? Map<String, Any>
+                val inputTokens = (usage?.get("prompt_tokens") as? Number)?.toInt() ?: 0
+                val outputTokens = (usage?.get("completion_tokens") as? Number)?.toInt() ?: 0
+                val latency = System.currentTimeMillis() - startMs
+
+                // 결과 영속화 — 같은 입력 재호출 시 캐시 hit
+                cacheRepository.save(
+                    ProfileGenerationCacheEntity(inputHash = inputHash, responseJson = content, model = model)
+                )
+                logUsage(userId, inputHash, "OK", latency, inputTokens, outputTokens)
+                log.info(
+                    "LLM 호출 성공 user={} hash={} latency={}ms in={} out={} cost={}원",
+                    userId, inputHash.take(12), latency, inputTokens, outputTokens,
+                    estimateCostWon(inputTokens, outputTokens),
+                )
+                return parseResult(content)
+            } catch (e: Exception) {
+                lastError = e
+                log.warn(
+                    "LLM 호출 실패 attempt={}/{} user={} cause={} retry={}",
+                    attempt, maxAttempts, userId, e.javaClass.simpleName,
+                    if (attempt < maxAttempts) "yes" else "no (fallback)",
+                )
+            }
+        }
+
+        // 모든 retry 실패 — fallback stub + audit log
+        val latency = System.currentTimeMillis() - startMs
+        logUsage(
+            userId, inputHash, "FAILED", latency, 0, 0,
+            error = lastError?.let { "${it.javaClass.simpleName}: ${it.message?.take(150)}" },
+        )
+        log.error("LLM 호출 최종 실패 — fallback stub 적용. user={} cause={}", userId, lastError?.message)
+        return stubResult(request)
+    }
+
+    // ─── 안전바 helpers ─────────────────────────────────────────
+
+    private fun sha256(text: String): String {
+        val bytes = MessageDigest.getInstance("SHA-256").digest(text.toByteArray(Charsets.UTF_8))
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
+
+    /** gpt-4o-mini 단가 기준 (input $0.15/1M, output $0.60/1M). USD→KRW 1,400원 가정. */
+    private fun estimateCostWon(inputTokens: Int, outputTokens: Int): Int {
+        val usd = (inputTokens * 0.15 + outputTokens * 0.60) / 1_000_000.0
+        return (usd * 1_400).toInt().coerceAtLeast(0)
+    }
+
+    private fun logUsage(
+        userId: String, inputHash: String?, outcome: String,
+        latencyMs: Long, input: Int, output: Int, error: String? = null,
+    ) {
+        try {
+            usageLogRepository.save(
+                LlmUsageLogEntity(
+                    userId = userId,
+                    purpose = "profile_generate",
+                    model = model,
+                    inputTokens = input,
+                    outputTokens = output,
+                    costWon = estimateCostWon(input, output),
+                    outcome = outcome,
+                    latencyMs = latencyMs,
+                    error = error,
+                    inputHash = inputHash,
+                )
+            )
+        } catch (e: Exception) {
+            // audit 실패가 비즈니스 로직을 막지 않도록 swallow
+            log.warn("LLM usage log 저장 실패 cause={}", e.message)
+        }
+    }
+
+    /** rate-limit 차단 audit (호출 측에서 사용). */
+    fun logRateLimited(userId: String) {
+        logUsage(userId, inputHash = null, outcome = "RATE_LIMITED", latencyMs = 0, input = 0, output = 0)
     }
 
     internal fun buildUserPrompt(request: ProfileGenerationRequest): String = buildString {

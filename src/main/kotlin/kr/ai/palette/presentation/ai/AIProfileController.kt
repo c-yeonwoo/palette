@@ -1,26 +1,53 @@
 package kr.ai.palette.presentation.ai
 
+import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.infrastructure.ai.IdealTypeContext
 import kr.ai.palette.infrastructure.ai.IntroMethod
 import kr.ai.palette.infrastructure.ai.OpenAIService
 import kr.ai.palette.infrastructure.ai.ProfileGenerationRequest
 import kr.ai.palette.infrastructure.ai.ProfileGenerationResult
+import kr.ai.palette.infrastructure.ratelimit.RateLimiter
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.time.Duration
 
 @RestController
 @RequestMapping("/api/v1/ai-profile")
 class AIProfileController(
     private val openAIService: OpenAIService,
+    private val rateLimiter: RateLimiter,
 ) {
 
+    /**
+     * LLM 프로필 생성. ADR 0047 안전바.
+     *
+     * **rate-limit** — `llm:profile-generate:{userId}` per-user 일 5회 (캐시 hit 가 대부분이라
+     * 실제 LLM 호출은 더 적음). 클라이언트 cooldown 24h 와 별개로 백엔드 우회 차단.
+     */
     @PostMapping("/generate")
     fun generate(
+        @AuthenticationPrincipal authUser: AuthUser,
         @RequestBody request: GenerateRequest,
     ): ResponseEntity<GenerateResponse> {
+        val userId = authUser.userId.value.toString()
+
+        // 백엔드 rate limit — 같은 device 우회 시도 차단 (audit 로깅 포함)
+        try {
+            rateLimiter.enforce(
+                key = "llm:profile-generate:$userId",
+                limit = 5,
+                window = Duration.ofDays(1),
+                message = "프로필 분석 요청이 너무 잦습니다. 잠시 후 다시 시도해주세요",
+            )
+        } catch (e: RuntimeException) {
+            openAIService.logRateLimited(userId)
+            throw e
+        }
+
         val result = openAIService.generateProfile(
             ProfileGenerationRequest(
                 introMethod = when (request.introMethod) {
@@ -39,7 +66,8 @@ class AIProfileController(
                         dealBreakers = it.dealBreakers,
                     )
                 },
-            )
+            ),
+            userId = userId,
         )
         return ResponseEntity.ok(result.toResponse())
     }

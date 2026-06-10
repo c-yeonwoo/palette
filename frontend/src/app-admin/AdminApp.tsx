@@ -10,6 +10,7 @@ import { AdminWithdrawalsScreen } from "./components/AdminWithdrawalsScreen";
 import { AdminTransactionsScreen } from "./components/AdminTransactionsScreen";
 import { AdminBlocksScreen } from "./components/AdminBlocksScreen";
 import { AdminTipsScreen } from "./components/AdminTipsScreen";
+import { AdminLlmUsageScreen } from "./components/AdminLlmUsageScreen";
 import { adminAuth, type AdminInfo } from "./lib/adminAuth";
 
 /**
@@ -34,7 +35,8 @@ type Screen =
   | { kind: "withdrawals" }
   | { kind: "transactions" }
   | { kind: "blocks" }
-  | { kind: "tips" };
+  | { kind: "tips" }
+  | { kind: "llm" };
 
 function pathToScreen(path: string): Screen {
   if (path === "/admin" || path === "/admin/") return { kind: "dashboard" };
@@ -48,6 +50,7 @@ function pathToScreen(path: string): Screen {
   if (path === "/admin/transactions") return { kind: "transactions" };
   if (path === "/admin/blocks") return { kind: "blocks" };
   if (path === "/admin/tips") return { kind: "tips" };
+  if (path === "/admin/llm") return { kind: "llm" };
   return { kind: "dashboard" };
 }
 
@@ -117,5 +120,7 @@ export default function AdminApp() {
       return <AdminBlocksScreen onBack={() => navigate("/admin")} />;
     case "tips":
       return <AdminTipsScreen onBack={() => navigate("/admin")} />;
+    case "llm":
+      return <AdminLlmUsageScreen onBack={() => navigate("/admin")} />;
   }
 }

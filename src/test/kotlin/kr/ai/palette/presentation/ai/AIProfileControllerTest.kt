@@ -7,23 +7,55 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kr.ai.palette.domain.auth.AuthUser
+import kr.ai.palette.domain.common.UserId
+import kr.ai.palette.domain.user.AccountType
+import kr.ai.palette.domain.user.UserRole
 import kr.ai.palette.infrastructure.ai.IdealTypeContext
 import kr.ai.palette.infrastructure.ai.IntroMethod
 import kr.ai.palette.infrastructure.ai.OpenAIService
 import kr.ai.palette.infrastructure.ai.ProfileGenerationRequest
 import kr.ai.palette.infrastructure.ai.ProfileGenerationResult
+import kr.ai.palette.infrastructure.ratelimit.RateLimiter
+import org.springframework.core.MethodParameter
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
+import org.springframework.web.bind.support.WebDataBinderFactory
+import org.springframework.web.context.request.NativeWebRequest
+import org.springframework.web.method.support.HandlerMethodArgumentResolver
+import org.springframework.web.method.support.ModelAndViewContainer
+import java.util.UUID
 
 class AIProfileControllerTest : DescribeSpec({
 
-    val openAIService = mockk<OpenAIService>()
-    val controller = AIProfileController(openAIService)
-    val mockMvc: MockMvc = MockMvcBuilders.standaloneSetup(controller).build()
+    val openAIService = mockk<OpenAIService>(relaxed = true)
+    val rateLimiter = mockk<RateLimiter>(relaxed = true)
+    val controller = AIProfileController(openAIService, rateLimiter)
+
+    // standalone MockMvc 에서 @AuthenticationPrincipal AuthUser 를 강제 주입하는 resolver
+    val testAuthUser = AuthUser(
+        userId = UserId(UUID.randomUUID()),
+        nickname = "test",
+        accountType = AccountType.REGULAR,
+        isProfileCompleted = true,
+        role = UserRole.USER,
+    )
+    val authUserResolver = object : HandlerMethodArgumentResolver {
+        override fun supportsParameter(param: MethodParameter): Boolean =
+            param.parameterType == AuthUser::class.java
+        override fun resolveArgument(
+            param: MethodParameter, mav: ModelAndViewContainer?,
+            req: NativeWebRequest, bf: WebDataBinderFactory?,
+        ): Any = testAuthUser
+    }
+
+    val mockMvc: MockMvc = MockMvcBuilders.standaloneSetup(controller)
+        .setCustomArgumentResolvers(authUserResolver)
+        .build()
     val objectMapper = jsonMapper { addModule(kotlinModule()) }
 
     val sampleResult = ProfileGenerationResult(
@@ -38,7 +70,7 @@ class AIProfileControllerTest : DescribeSpec({
 
         context("INTERVIEW 방식으로 요청") {
             it("200 응답과 생성된 프로필을 반환한다") {
-                every { openAIService.generateProfile(any()) } returns sampleResult
+                every { openAIService.generateProfile(any(), any()) } returns sampleResult
 
                 val request = GenerateRequest(
                     introMethod = "INTERVIEW",
@@ -59,7 +91,7 @@ class AIProfileControllerTest : DescribeSpec({
             }
 
             it("OpenAIService에 INTERVIEW introMethod로 요청한다") {
-                every { openAIService.generateProfile(any()) } returns sampleResult
+                every { openAIService.generateProfile(any(), any()) } returns sampleResult
 
                 val request = GenerateRequest(
                     introMethod = "INTERVIEW",
@@ -74,7 +106,8 @@ class AIProfileControllerTest : DescribeSpec({
 
                 verify {
                     openAIService.generateProfile(
-                        match { it.introMethod == IntroMethod.INTERVIEW }
+                        match { it.introMethod == IntroMethod.INTERVIEW },
+                        any(),
                     )
                 }
             }
@@ -82,7 +115,7 @@ class AIProfileControllerTest : DescribeSpec({
 
         context("MANUAL 방식으로 요청") {
             it("OpenAIService에 MANUAL introMethod로 요청한다") {
-                every { openAIService.generateProfile(any()) } returns sampleResult
+                every { openAIService.generateProfile(any(), any()) } returns sampleResult
 
                 val request = GenerateRequest(
                     introMethod = "MANUAL",
@@ -97,7 +130,8 @@ class AIProfileControllerTest : DescribeSpec({
 
                 verify {
                     openAIService.generateProfile(
-                        match { it.introMethod == IntroMethod.MANUAL }
+                        match { it.introMethod == IntroMethod.MANUAL },
+                        any(),
                     )
                 }
             }
@@ -105,7 +139,7 @@ class AIProfileControllerTest : DescribeSpec({
 
         context("이상형 정보가 포함된 요청") {
             it("idealType이 올바르게 전달된다") {
-                every { openAIService.generateProfile(any()) } returns sampleResult
+                every { openAIService.generateProfile(any(), any()) } returns sampleResult
 
                 val request = GenerateRequest(
                     introMethod = "INTERVIEW",
@@ -128,7 +162,8 @@ class AIProfileControllerTest : DescribeSpec({
                         match {
                             it.idealType?.personalities == listOf("다정한", "유머있는") &&
                                 it.idealType?.dealBreakers == listOf("흡연")
-                        }
+                        },
+                        any(),
                     )
                 }
             }
@@ -136,7 +171,7 @@ class AIProfileControllerTest : DescribeSpec({
 
         context("introMethod 기본값") {
             it("introMethod 미입력시 INTERVIEW로 처리된다") {
-                every { openAIService.generateProfile(any()) } returns sampleResult
+                every { openAIService.generateProfile(any(), any()) } returns sampleResult
 
                 val request = GenerateRequest()
 
@@ -148,7 +183,8 @@ class AIProfileControllerTest : DescribeSpec({
 
                 verify {
                     openAIService.generateProfile(
-                        match { it.introMethod == IntroMethod.INTERVIEW }
+                        match { it.introMethod == IntroMethod.INTERVIEW },
+                        any(),
                     )
                 }
             }

@@ -144,6 +144,14 @@ export function AdminDashboardScreen({ admin, onNavigate }: Props) {
           />
         </CategorySection>
 
+        <CategorySection title="운영 인프라">
+          <MenuCard
+            onClick={() => onNavigate("/admin/llm")}
+            title="LLM 사용"
+            desc="호출·비용·캐시 hit률 추적 (ADR 0047)"
+          />
+        </CategorySection>
+
         {/* 트라이얼 현황 (ADR 0045) — KPI 라기보다 인사이트라 별도 섹션 */}
         {metrics?.trial && (
           <section>
