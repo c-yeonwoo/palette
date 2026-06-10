@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { MapPin, SlidersHorizontal, X, Bell, Sparkles } from "lucide-react";
+import { MapPin, SlidersHorizontal, X, Bell, Sparkles, Users } from "lucide-react";
 import { Button } from "./ui/button";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
@@ -588,8 +588,8 @@ function ProfileCard({
         </div>
       )}
 
-      {/* 지인 연결 */}
-      <div className="mt-2 px-0.5">
+      {/* 지인 연결 — 카드 하단 padding 과 정렬(px-3), 살짝 가까이(mt-1.5), 아이콘 prefix 로 안착감 */}
+      <div className="mt-1.5 px-3">
         <RelationshipBadge degree={degree} mutualFriends={mutualFriends} />
       </div>
     </div>
@@ -635,25 +635,28 @@ function CardInfoSection({
 }
 
 function RelationshipBadge({ degree, mutualFriends }: { degree?: number; mutualFriends: MutualFriend[] }) {
-  // 1촌: 직접 연결
+  // 1촌: 직접 연결 — "내 지인" pill + 보조 텍스트
   if (degree === 1) {
     return (
-      <div className="flex items-center gap-1 min-w-0">
-        <span className="flex-shrink-0 text-xs font-bold bg-brand-soft text-primary rounded-full px-1.5 py-0.5 leading-none">
+      <div className="flex items-center gap-1.5 min-w-0">
+        <span className="flex-shrink-0 text-[10px] font-bold bg-brand-soft text-primary rounded-full px-1.5 py-0.5 leading-none">
           내 지인
         </span>
-        <p className="text-xs text-muted-foreground truncate">직접 아는 사이</p>
+        <p className="text-[11px] font-medium text-muted-foreground truncate">직접 아는 사이</p>
       </div>
     );
   }
 
-  // 2촌: 공통 지인 통해
+  // 2촌: 공통 지인 통해 — Users 아이콘 + 라벨로 안착감 (정보 카드 푸터 hint 느낌)
   if (degree === 2 && mutualFriends.length > 0) {
     const connector = mutualFriends[0].name;
     const more = mutualFriends.length - 1;
     const label = more > 0 ? `${connector}님 외 ${more}명의 지인` : `${connector}님의 지인`;
     return (
-      <p className="text-xs font-semibold text-muted-foreground truncate">{label}</p>
+      <div className="flex items-center gap-1.5 min-w-0">
+        <Users className="w-3 h-3 text-muted-foreground/70 flex-shrink-0" aria-hidden />
+        <p className="text-[11px] font-semibold text-muted-foreground truncate">{label}</p>
+      </div>
     );
   }
 
@@ -663,9 +666,9 @@ function RelationshipBadge({ degree, mutualFriends }: { degree?: number; mutualF
     const more = mutualFriends.length - 1;
     const label = more > 0 ? `${name}님 외 ${more}명의 지인` : `${name}님의 지인`;
     return (
-      <div className="flex items-center gap-1 min-w-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40 flex-shrink-0" />
-        <p className="text-xs text-muted-foreground truncate">{label}</p>
+      <div className="flex items-center gap-1.5 min-w-0">
+        <Users className="w-3 h-3 text-muted-foreground/70 flex-shrink-0" aria-hidden />
+        <p className="text-[11px] font-semibold text-muted-foreground truncate">{label}</p>
       </div>
     );
   }
