@@ -207,6 +207,8 @@ function detectInitialScreen(): Screen | null {
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>(() => detectInitialScreen() ?? "login");
   const [friendConnectFrom, setFriendConnectFrom] = useState<Screen>("myPage");
+  /** ProfileDetail 진입 직전 화면 — 뒤로가기 시 정확히 복귀 (메인 피드·주선 대시보드·인연 이력 등) */
+  const [profileDetailFrom, setProfileDetailFrom] = useState<Screen>("mainFeed");
   // 색 상세 진입점 — myPage / myProfile 둘 다 진입 가능, 돌아갈 화면 추적
   const [colorDetailFrom, setColorDetailFrom] = useState<Screen>("myPage");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -874,11 +876,14 @@ export default function App() {
     setSelectedDegree(item.degree ?? 2);
     // ADR 0044 — viewCost 는 "물감(P)" 단위. 친친 기본값 20 (2,000원 — 커피 한잔값).
     setSelectedViewCost(item.viewCost ?? 20);
+    // 뒤로가기 시 복귀할 화면 기록 (현재 화면 = 진입 직전 화면)
+    setProfileDetailFrom(currentScreen);
     setCurrentScreen("profileDetail");
   };
 
   const handleProfileDetailBack = () => {
-    setCurrentScreen("mainFeed");
+    // 진입점에 따라 동적 복귀. 기본값은 mainFeed (소개 탭) — fallback.
+    setCurrentScreen(profileDetailFrom);
   };
 
   // Show loading spinner while checking authentication
@@ -1106,6 +1111,7 @@ export default function App() {
             setSelectedMutualFriends([]);
             setSelectedDegree(1);
             setSelectedViewCost(0);
+            setProfileDetailFrom("connectorDashboard");
             setCurrentScreen("profileDetail");
           }}
         />
@@ -1183,6 +1189,7 @@ export default function App() {
           setSelectedMutualFriends([] as MutualFriend[]);
           setSelectedDegree(2);
           setSelectedViewCost(0);
+          setProfileDetailFrom("aiHub");
           setCurrentScreen("profileDetail");
         }} />
       )}
