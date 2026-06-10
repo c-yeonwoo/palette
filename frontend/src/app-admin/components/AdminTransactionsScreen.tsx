@@ -15,7 +15,9 @@ interface PaymentTx {
   paymentMethod: string;
   provider: string;
   providerReceiptId: string;
+  status: "APPROVED" | "REFUNDED" | "FAILED";
   createdAt: string;
+  refundedAt: string | null;
 }
 
 interface PageResp {
@@ -38,6 +40,7 @@ export function AdminTransactionsScreen({ onBack }: Props) {
   const [data, setData] = useState<PageResp | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true); setError(null);
@@ -50,6 +53,43 @@ export function AdminTransactionsScreen({ onBack }: Props) {
     finally { setLoading(false); }
   };
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [page, filterUserId]);
+
+  /**
+   * 환불 처리 (베타: Toss 외부 API stub — DB·잔액만 갱신).
+   * 운영자 입력: 차감할 물감 수 + 사유.
+   */
+  const refund = async (tx: PaymentTx) => {
+    if (tx.status === "REFUNDED") return;
+    const pointsStr = prompt(
+      `환불할 물감 수 (이 트랜잭션이 충전한 묶음의 pointsCredited):\n` +
+      `구매자: ${tx.buyerUserId.slice(0, 8)}… · 금액: ${tx.amount.toLocaleString()}원`
+    );
+    if (!pointsStr) return;
+    const points = parseInt(pointsStr, 10);
+    if (!Number.isFinite(points) || points <= 0) { alert("물감 수는 1 이상 정수"); return; }
+    const reason = prompt("환불 사유 (필수, 200자)");
+    if (!reason || !reason.trim()) { alert("사유 필수"); return; }
+    if (!confirm(`정말 환불할까요?\n· 물감 ${points} 차감 (paid 우선)\n· Toss 외부 API 는 stub (베타)\n· status → REFUNDED`)) return;
+
+    setBusyId(tx.id);
+    try {
+      const res = await adminApi.post<{
+        deductedFromPaid: number;
+        deductedFromBonus: number;
+        newPaidBalance: number;
+        newBonusBalance: number;
+      }>(`/api/v1/admin/payments/transactions/${tx.id}/refund`, {
+        refundPoints: points,
+        reason: reason.trim(),
+      });
+      alert(`환불 완료\n· paid -${res.deductedFromPaid} / bonus -${res.deductedFromBonus}\n· 현재 잔액 paid ${res.newPaidBalance} / bonus ${res.newBonusBalance}`);
+      await load();
+    } catch (e: unknown) {
+      alert((e as Error).message || "환불 실패");
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
@@ -96,12 +136,13 @@ export function AdminTransactionsScreen({ onBack }: Props) {
                   <th className="text-left px-3 py-2 font-semibold">구매자</th>
                   <th className="text-right px-3 py-2 font-semibold">금액</th>
                   <th className="text-left px-3 py-2 font-semibold">결제 채널</th>
-                  <th className="text-left px-3 py-2 font-semibold">영수증 ID</th>
+                  <th className="text-left px-3 py-2 font-semibold">상태</th>
+                  <th className="text-right px-3 py-2 font-semibold">액션</th>
                 </tr>
               </thead>
               <tbody>
                 {data.transactions.map(tx => (
-                  <tr key={tx.id} className="border-t border-border">
+                  <tr key={tx.id} className={`border-t border-border ${tx.status === "REFUNDED" ? "opacity-60" : ""}`}>
                     <td className="px-3 py-2 tabular-nums text-muted-foreground">{formatDate(tx.createdAt)}</td>
                     <td className="px-3 py-2 font-mono text-[11px] text-foreground/80">{tx.id.slice(0, 12)}…</td>
                     <td className="px-3 py-2 font-mono text-[11px] text-foreground/80">{tx.buyerUserId.slice(0, 8)}…</td>
@@ -116,8 +157,34 @@ export function AdminTransactionsScreen({ onBack }: Props) {
                         {tx.provider}
                       </span>
                     </td>
-                    <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground max-w-[200px] truncate" title={tx.providerReceiptId}>
-                      {tx.providerReceiptId.slice(0, 18)}…
+                    <td className="px-3 py-2">
+                      {tx.status === "REFUNDED" ? (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">
+                          REFUNDED
+                        </span>
+                      ) : tx.status === "FAILED" ? (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800">
+                          FAILED
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-800">
+                          APPROVED
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right whitespace-nowrap">
+                      {tx.status === "APPROVED" ? (
+                        <button
+                          onClick={() => refund(tx)}
+                          disabled={busyId === tx.id}
+                          className="px-2.5 py-1 rounded-lg border border-border text-xs hover:bg-rose-50 hover:border-rose-300 hover:text-rose-700 disabled:opacity-50"
+                          title="환불 (베타: Toss API stub · DB·잔액만 갱신)"
+                        >
+                          {busyId === tx.id ? "처리 중..." : "환불"}
+                        </button>
+                      ) : tx.refundedAt ? (
+                        <span className="text-[10px] text-muted-foreground tabular-nums">{formatDate(tx.refundedAt)}</span>
+                      ) : null}
                     </td>
                   </tr>
                 ))}

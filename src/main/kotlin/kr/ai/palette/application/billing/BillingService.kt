@@ -180,6 +180,42 @@ class BillingService(
         return balanceRepository.save(balance)
     }
 
+    /**
+     * 결제 환불 — 충전됐던 물감을 잔액에서 차감 (반대 방향). ADR 0044 + POLICY §2.
+     *
+     * 차감 순서: paidPoints 우선 → 부족분은 bonusPoints (소비 후 환불 케이스 보호).
+     * 결과 lock: 음수로 떨어지지 않도록 0 으로 클램프.
+     *
+     * @return 차감 결과 (paid·bonus 실차감액 + 새 잔액)
+     */
+    fun refundCharge(userId: String, points: Int, reason: String): RefundChargeResult {
+        require(points > 0) { "환불 차감 P 는 1 이상" }
+        val balance = getOrCreateBalance(userId)
+        val fromPaid = minOf(balance.paidPoints, points)
+        val fromBonus = minOf(balance.bonusPoints, points - fromPaid)
+        balance.paidPoints -= fromPaid
+        balance.bonusPoints -= fromBonus
+        balance.updatedAt = Instant.now()
+        balanceRepository.save(balance)
+        log.info(
+            "결제 환불 차감 user={} -{}P (paid={}, bonus={}) reason={}",
+            userId, points, fromPaid, fromBonus, reason,
+        )
+        return RefundChargeResult(
+            deductedFromPaid = fromPaid,
+            deductedFromBonus = fromBonus,
+            newPaidBalance = balance.paidPoints,
+            newBonusBalance = balance.bonusPoints,
+        )
+    }
+
+    data class RefundChargeResult(
+        val deductedFromPaid: Int,
+        val deductedFromBonus: Int,
+        val newPaidBalance: Int,
+        val newBonusBalance: Int,
+    )
+
     // ─── 팁 (옵셔널 송금) ────────────────────────────────────
 
     /**

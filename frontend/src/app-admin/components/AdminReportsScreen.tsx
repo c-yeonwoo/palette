@@ -32,6 +32,7 @@ interface Props {
 
 export function AdminReportsScreen({ onBack }: Props) {
   const [tab, setTab] = useState<"PENDING" | "REVIEWED">("PENDING");
+  const [reasonFilter, setReasonFilter] = useState<string>("");
   const [items, setItems] = useState<ReportItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,17 +41,27 @@ export function AdminReportsScreen({ onBack }: Props) {
   const load = async () => {
     setLoading(true); setError(null);
     try {
-      const res = await adminApi.get<ReportItem[]>(`/api/v1/admin/reports?status=${tab}`);
+      const qs = new URLSearchParams({ status: tab });
+      if (reasonFilter) qs.set("reason", reasonFilter);
+      const res = await adminApi.get<ReportItem[]>(`/api/v1/admin/reports?${qs.toString()}`);
       setItems(res);
     } catch (e: unknown) { setError((e as Error).message || "조회 실패"); }
     finally { setLoading(false); }
   };
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [tab]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [tab, reasonFilter]);
 
-  const review = async (id: string) => {
+  /**
+   * 처리.
+   * @param confirmReward true → 위반 확정. EXTERNAL_PAYMENT_INDUCEMENT 카테고리면
+   *                       신고자에게 50 물감 자동 보상 (ADR 0046 §E).
+   */
+  const review = async (id: string, confirmReward: boolean) => {
     setBusyId(id);
     try {
-      await adminApi.patch(`/api/v1/admin/reports/${id}/review`);
+      const res = await adminApi.patch<{ rewardedPoints?: number }>(`/api/v1/admin/reports/${id}/review?confirmReward=${confirmReward}`);
+      if (confirmReward && (res?.rewardedPoints ?? 0) > 0) {
+        alert(`처리 완료 · 신고자에게 ${res.rewardedPoints} 물감 보상 지급됨`);
+      }
       await load();
     } catch (e: unknown) {
       alert((e as Error).message || "처리 실패");
@@ -75,7 +86,7 @@ export function AdminReportsScreen({ onBack }: Props) {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8 space-y-4">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {(["PENDING", "REVIEWED"] as const).map(t => (
             <button
               key={t}
@@ -87,6 +98,32 @@ export function AdminReportsScreen({ onBack }: Props) {
               {t === "PENDING" ? "처리 대기" : "처리 완료"}
             </button>
           ))}
+
+          <div className="h-6 w-px bg-border mx-1" aria-hidden />
+
+          {/* 카테고리 필터 — ADR 0046 §6 외부송금 빠른 처리 진입 */}
+          <select
+            value={reasonFilter}
+            onChange={(e) => setReasonFilter(e.target.value)}
+            className="rounded-xl border border-border bg-card px-3 py-2 text-sm"
+          >
+            <option value="">모든 카테고리</option>
+            {Object.entries(REASON_LABEL).map(([k, label]) => (
+              <option key={k} value={k}>{label}</option>
+            ))}
+          </select>
+          <button
+            onClick={() => setReasonFilter("EXTERNAL_PAYMENT_INDUCEMENT")}
+            className={`px-3 py-2 rounded-xl text-xs font-bold transition-colors ${
+              reasonFilter === "EXTERNAL_PAYMENT_INDUCEMENT"
+                ? "bg-rose-600 text-white"
+                : "bg-rose-50 border border-rose-200 text-rose-800 hover:bg-rose-100"
+            }`}
+            title="§6 외부 송금 유도 신고만 빠르게 보기"
+          >
+            §6 외부송금
+          </button>
+
           <button onClick={load} className="ml-auto px-3 py-2 rounded-xl border border-border text-xs hover:bg-muted/50">새로고침</button>
         </div>
 
@@ -130,14 +167,29 @@ export function AdminReportsScreen({ onBack }: Props) {
                       {r.detail || <span className="text-muted-foreground/60">—</span>}
                     </td>
                     {tab === "PENDING" && (
-                      <td className="px-3 py-2 text-right">
-                        <button
-                          onClick={() => review(r.id)}
-                          disabled={busyId === r.id}
-                          className="px-3 py-1 rounded-lg bg-foreground text-background text-xs font-semibold disabled:opacity-50"
-                        >
-                          {busyId === r.id ? "처리 중..." : "처리 완료"}
-                        </button>
+                      <td className="px-3 py-2 text-right whitespace-nowrap">
+                        <div className="inline-flex gap-1.5">
+                          <button
+                            onClick={() => review(r.id, false)}
+                            disabled={busyId === r.id}
+                            className="px-2.5 py-1 rounded-lg border border-border text-xs font-semibold hover:bg-muted/50 disabled:opacity-50"
+                            title="단순 종결 — 위반 미확정 · 보상 X"
+                          >
+                            기각
+                          </button>
+                          <button
+                            onClick={() => review(r.id, true)}
+                            disabled={busyId === r.id}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-semibold disabled:opacity-50 ${
+                              r.reason === "EXTERNAL_PAYMENT_INDUCEMENT"
+                                ? "bg-rose-600 text-white hover:bg-rose-700"
+                                : "bg-foreground text-background"
+                            }`}
+                            title={r.reason === "EXTERNAL_PAYMENT_INDUCEMENT" ? "확정 시 신고자에게 50 물감 자동 보상 (ADR 0046 §E)" : "위반 확정 처리"}
+                          >
+                            {busyId === r.id ? "처리 중..." : r.reason === "EXTERNAL_PAYMENT_INDUCEMENT" ? "확정 + 보상" : "확정"}
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>
