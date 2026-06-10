@@ -5,7 +5,7 @@ import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { getCompatibilityDeterministic, COLOR_META, type ColorType } from "../../lib/colorCompatibility";
 import { DailyMatchBanner } from "./DailyMatchBanner";
-import { jobCategoryLabel, JOB_CATEGORY_OPTIONS } from "../../lib/jobCategory";
+import { jobCategoryLabel } from "../../lib/jobCategory";
 import { OnboardingTourCard } from "./onboarding/OnboardingTourCard";
 import { onboardingProgress } from "../../lib/onboarding/progress";
 
@@ -136,16 +136,8 @@ interface FilterState {
   ageMax: string;
   heightMin: string;
   heightMax: string;
-  region: string;
-  jobCategory: string;
   degree: string;
 }
-
-const REGIONS = ["서울", "경기", "인천", "부산", "대구", "광주", "대전", "울산", "세종", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
-const JOB_CATEGORIES: Array<{ value: string; label: string }> = [
-  { value: "", label: "전체" },
-  ...JOB_CATEGORY_OPTIONS,
-];
 
 // 카드 커버 — 팔레트 '물감(paint)' 이미지. 탭하면 걷히고 사진이 드러난다.
 const PALETTE_COVER_STYLE = {
@@ -167,8 +159,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
   const [friendCount, setFriendCount] = useState<number>(0);
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
-    ageMin: "", ageMax: "", heightMin: "", heightMax: "",
-    region: "", jobCategory: "", degree: ""
+    ageMin: "", ageMax: "", heightMin: "", heightMax: "", degree: ""
   });
   const [pendingFilters, setPendingFilters] = useState<FilterState>({ ...filters });
 
@@ -182,8 +173,6 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
     if (f.ageMax) params.set("ageMax", f.ageMax);
     if (f.heightMin) params.set("heightMin", f.heightMin);
     if (f.heightMax) params.set("heightMax", f.heightMax);
-    if (f.region) params.set("region", f.region);
-    if (f.jobCategory) params.set("jobCategory", f.jobCategory);
     const qs = params.toString();
     return qs ? `?${qs}` : "";
   };
@@ -236,7 +225,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
   };
 
   const resetFilters = () => {
-    const empty: FilterState = { ageMin: "", ageMax: "", heightMin: "", heightMax: "", region: "", jobCategory: "", degree: "" };
+    const empty: FilterState = { ageMin: "", ageMax: "", heightMin: "", heightMax: "", degree: "" };
     setPendingFilters(empty);
     setFilters(empty);
     setShowFilter(false);
@@ -301,14 +290,6 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
                 {filters.heightMin || "?"}-{filters.heightMax || "?"}cm
               </span>
             )}
-            {filters.region && (
-              <span className="text-xs bg-brand-soft text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">{filters.region}</span>
-            )}
-            {filters.jobCategory && (
-              <span className="text-xs bg-brand-soft text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
-                {JOB_CATEGORIES.find(j => j.value === filters.jobCategory)?.label}
-              </span>
-            )}
             <button onClick={resetFilters} className="text-xs text-muted-foreground px-2.5 py-1 rounded-full bg-muted whitespace-nowrap">
               초기화
             </button>
@@ -364,26 +345,6 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
                 </div>
               </FilterSection>
 
-              <FilterSection title="지역">
-                <div className="flex flex-wrap gap-1.5">
-                  <ChipButton active={!pendingFilters.region} onClick={() => setPendingFilters(p => ({ ...p, region: "" }))}>전체</ChipButton>
-                  {REGIONS.map(r => (
-                    <ChipButton key={r} active={pendingFilters.region === r} onClick={() => setPendingFilters(p => ({ ...p, region: p.region === r ? "" : r }))}>
-                      {r}
-                    </ChipButton>
-                  ))}
-                </div>
-              </FilterSection>
-
-              <FilterSection title="직업">
-                <div className="flex flex-wrap gap-1.5">
-                  {JOB_CATEGORIES.map(j => (
-                    <ChipButton key={j.value} active={pendingFilters.jobCategory === j.value} onClick={() => setPendingFilters(p => ({ ...p, jobCategory: j.value }))}>
-                      {j.label}
-                    </ChipButton>
-                  ))}
-                </div>
-              </FilterSection>
             </div>
             <div className="sticky bottom-0 bg-background/90 backdrop-blur-xl border-t border-border px-6 py-4 flex gap-2.5">
               <Button variant="outline" className="flex-1 rounded-xl h-11" onClick={resetFilters}>초기화</Button>
@@ -982,19 +943,6 @@ function FilterSection({ title, children }: { title: string; children: React.Rea
       <p className="text-sm font-semibold">{title}</p>
       {children}
     </div>
-  );
-}
-
-function ChipButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`text-xs px-3 py-1.5 rounded-full font-medium transition-all ${
-        active ? "bg-brand-soft text-gold-strong" : "bg-muted text-muted-foreground hover:bg-accent"
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 
