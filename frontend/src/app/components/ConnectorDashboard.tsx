@@ -423,16 +423,16 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
               className="w-full rounded-2xl border border-border bg-card shadow-card p-3 grid grid-cols-3 divide-x divide-border text-center enabled:active:scale-[0.99] transition-transform disabled:cursor-default"
             >
               <div className="px-2">
-                <p className="text-xs text-muted-foreground mb-1">커미션율</p>
+                <p className="text-xs text-muted-foreground mb-1">분배율</p>
                 <p className="text-base font-bold text-foreground">{Math.round((matchmakerData.commissionRate ?? 0) * 100)}%</p>
               </div>
               <div className="px-2">
                 <p className="text-xs text-muted-foreground mb-1">사용 가능</p>
-                <p className="text-base font-bold text-gold-strong">{(matchmakerData.availablePoints ?? 0).toLocaleString()}P</p>
+                <p className="text-base font-bold text-gold-strong">{(matchmakerData.availablePoints ?? 0).toLocaleString()} 물감</p>
               </div>
               <div className="px-2">
                 <p className="text-xs text-muted-foreground mb-1">누적</p>
-                <p className="text-base font-bold text-foreground">{(matchmakerData.totalPoints ?? 0).toLocaleString()}P</p>
+                <p className="text-base font-bold text-foreground">{(matchmakerData.totalPoints ?? 0).toLocaleString()} 물감</p>
               </div>
             </button>
           </div>
@@ -627,7 +627,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                             <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground/60">{nudge.toMember.name.charAt(0)}</span>
                             <span className="text-sm font-medium">{nudge.toMember.name}</span>
                           </div>
-                          <span className="ml-auto text-xs text-muted-foreground">−{nudge.pointsSpent}P</span>
+                          <span className="ml-auto text-xs text-muted-foreground">−{nudge.pointsSpent} 물감</span>
                         </div>
                         {nudge.message && (
                           <p className="text-xs text-muted-foreground bg-muted rounded-lg px-3 py-2 leading-relaxed">"{nudge.message}"</p>
@@ -737,7 +737,7 @@ function RequestCard({
         <div className="bg-primary/5 border-b border-primary/10 px-4 py-3 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-primary uppercase tracking-wider">수락하면 즉시 받아요</p>
-            <p className="text-xl font-bold text-primary">{points}P</p>
+            <p className="text-xl font-bold text-primary">{points} 물감</p>
           </div>
           <Coins className="w-6 h-6 text-primary/60" />
         </div>
@@ -808,7 +808,7 @@ function RequestCard({
               onClick={(e) => { e.stopPropagation(); onApprove(); }}
             >
               <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-              {points}P 받고 연결하기
+              {points} 물감 받고 연결하기
             </Button>
           </div>
         </div>

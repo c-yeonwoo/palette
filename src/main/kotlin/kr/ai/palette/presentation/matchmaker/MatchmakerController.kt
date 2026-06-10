@@ -38,11 +38,13 @@ class MatchmakerController(
     private val profileRepository: ProfileRepository,
     private val nudgeJpaRepository: NudgeJpaRepository,
     private val withdrawalRequestJpaRepository: WithdrawalRequestJpaRepository,
+    // ADR 0044/0045/0046 — 1 물감 = 100원. 한도·최소 출금 모두 물감(P) 단위.
     @Value("\${app.withdrawal.holding-days:14}") private val withdrawalHoldingDays: Long,
-    @Value("\${app.withdrawal.min-amount:5000}") private val withdrawalMinAmount: Int,
-    @Value("\${app.withdrawal.daily-limit:200000}") private val withdrawalDailyLimit: Int,
-    @Value("\${app.withdrawal.monthly-limit:1000000}") private val withdrawalMonthlyLimit: Int,
-    @Value("\${app.withdrawal.account-min-age-days:7}") private val withdrawalAccountMinAgeDays: Long,
+    @Value("\${app.withdrawal.min-amount:50}") private val withdrawalMinAmount: Int,         // 50 물감 = 5,000원
+    @Value("\${app.withdrawal.daily-limit:2000}") private val withdrawalDailyLimit: Int,     // 2,000 물감 = 200,000원
+    @Value("\${app.withdrawal.monthly-limit:10000}") private val withdrawalMonthlyLimit: Int, // 10,000 물감 = 1,000,000원
+    @Value("\${app.withdrawal.account-min-age-days:30}") private val withdrawalAccountMinAgeDays: Long, // ADR 0045 — 30일 cooling
+    @Value("\${app.withdrawal.min-successful-matches:1}") private val withdrawalMinSuccessfulMatches: Int, // ADR 0046 — 매칭 1건 이상
     private val rateLimiter: RateLimiter,
 ) {
 
@@ -240,12 +242,12 @@ class MatchmakerController(
             return ResponseEntity.status(403).body(mapOf("error" to "출금은 본인인증(휴대폰) 완료 후 가능합니다"))
         }
 
-        // 최소 출금 금액
+        // 최소 출금 금액 (ADR 0044 — 50 물감)
         if (request.amount < withdrawalMinAmount) {
-            return ResponseEntity.badRequest().body(mapOf("error" to "최소 출금 금액은 ${withdrawalMinAmount}P 입니다"))
+            return ResponseEntity.badRequest().body(mapOf("error" to "최소 출금 금액은 ${withdrawalMinAmount} 물감 입니다"))
         }
 
-        // 신규 계정 cooldown (가입 직후 파밍 후 즉시 출금 방지)
+        // ADR 0045 — 신규 계정 cooling (가입 30일) — 파밍·다중 계정 어뷰징 방어
         val now = Instant.now()
         val accountAgeDays = Duration.between(matchmaker.metadata.createdAt, now).toDays()
         if (accountAgeDays < withdrawalAccountMinAgeDays) {
@@ -254,10 +256,17 @@ class MatchmakerController(
             )
         }
 
-        // 가용 포인트
+        // ADR 0046 — 매칭 성사 최소 N건 필수 (실 활동 검증)
+        if (matchmaker.stats.successfulMatches < withdrawalMinSuccessfulMatches) {
+            return ResponseEntity.status(403).body(
+                mapOf("error" to "출금은 매칭 성사 ${withdrawalMinSuccessfulMatches}건 이상 달성한 주선자만 가능합니다")
+            )
+        }
+
+        // 가용 물감
         if (matchmaker.earnings.getAvailablePoints() < request.amount) {
             return ResponseEntity.badRequest().body(
-                mapOf("error" to "출금 가능 포인트가 부족합니다 (가용: ${matchmaker.earnings.getAvailablePoints()}P)")
+                mapOf("error" to "출금 가능 물감이 부족합니다 (가용: ${matchmaker.earnings.getAvailablePoints()} 물감)")
             )
         }
 
@@ -269,10 +278,10 @@ class MatchmakerController(
         val daySum = recent.filter { it.requestedAt.isAfter(dayCutoff) }.sumOf { it.amount }
         val monthSum = recent.sumOf { it.amount }
         if (daySum + request.amount > withdrawalDailyLimit) {
-            return ResponseEntity.badRequest().body(mapOf("error" to "일 출금 한도(${withdrawalDailyLimit}P)를 초과합니다"))
+            return ResponseEntity.badRequest().body(mapOf("error" to "일 출금 한도(${withdrawalDailyLimit} 물감)를 초과합니다"))
         }
         if (monthSum + request.amount > withdrawalMonthlyLimit) {
-            return ResponseEntity.badRequest().body(mapOf("error" to "월 출금 한도(${withdrawalMonthlyLimit}P)를 초과합니다"))
+            return ResponseEntity.badRequest().body(mapOf("error" to "월 출금 한도(${withdrawalMonthlyLimit} 물감)를 초과합니다"))
         }
 
         // 예약(pending) + HOLD 레코드 — holding period 후 자동 확정/관리자 거절 (ADR 0023)
@@ -299,7 +308,7 @@ class MatchmakerController(
                 "availableAt" to availableAt.toString(),
                 "holdingDays" to withdrawalHoldingDays,
                 "remainingAvailable" to updated.earnings.getAvailablePoints(),
-                "message" to "${request.amount}P 출금 신청 완료 — 검토 기간 ${withdrawalHoldingDays}일 후 지급됩니다"
+                "message" to "${request.amount} 물감 출금 신청 완료 — 검토 기간 ${withdrawalHoldingDays}일 후 지급됩니다"
             )
         )
     }

@@ -14,12 +14,16 @@ data class MatchmakerLevel(
     val commissionRate: Double
 ) {
     companion object {
+        /**
+         * 승급 스케줄. ADR 0038 강화 (이전 0/3/6/11/21 → 0/15/40/70/150).
+         * 프론트 `MATCHMAKER_TIERS` SoT 와 정합. POLICY §1.2.
+         */
         fun calculateLevel(stats: MatchmakerStats): MatchmakerLevel {
             return when (stats.successfulMatches) {
-                in 0..2 -> MatchmakerLevel(1, 0.15)
-                in 3..5 -> MatchmakerLevel(2, 0.20)
-                in 6..10 -> MatchmakerLevel(3, 0.25)
-                in 11..20 -> MatchmakerLevel(4, 0.30)
+                in 0..14 -> MatchmakerLevel(1, 0.15)
+                in 15..39 -> MatchmakerLevel(2, 0.20)
+                in 40..69 -> MatchmakerLevel(3, 0.25)
+                in 70..149 -> MatchmakerLevel(4, 0.30)
                 else -> MatchmakerLevel(5, 0.40)
             }
         }

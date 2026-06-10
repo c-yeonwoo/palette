@@ -41,23 +41,21 @@ class MatchmakerDomainTest : DescribeSpec({
         }
 
         it("Lv.5 다이아 분배율 40% × 100 = 40 물감 적립 (ADR 0044)") {
-            val matchmaker = makeMatchmaker(successfulMatches = 21)
+            val matchmaker = makeMatchmaker(successfulMatches = 150)
             matchmaker.level.level shouldBe 5
             val updated = matchmaker.recordMatchSuccess()
             updated.earnings.totalPoints shouldBe 40
         }
 
-        it("2건 → 3건 성공 시 레벨이 1에서 2로 올라간다") {
-            val matchmaker = makeMatchmaker(successfulMatches = 2)
-            // 현재 레벨 1 (0~2건)
+        it("14건 → 15건 성공 시 레벨이 1에서 2로 올라간다 (ADR 0038 강화 스케줄)") {
+            val matchmaker = makeMatchmaker(successfulMatches = 14)
             matchmaker.level.level shouldBe 1
             val updated = matchmaker.recordMatchSuccess()
-            // 3건 완성 → 레벨 2
             updated.level.level shouldBe 2
         }
 
-        it("5건 → 6건 성공 시 레벨이 2에서 3으로 올라간다") {
-            val matchmaker = makeMatchmaker(successfulMatches = 5)
+        it("39건 → 40건 성공 시 레벨이 2에서 3으로 올라간다 (ADR 0038 강화 스케줄)") {
+            val matchmaker = makeMatchmaker(successfulMatches = 39)
             matchmaker.level.level shouldBe 2
             val updated = matchmaker.recordMatchSuccess()
             updated.level.level shouldBe 3
@@ -112,7 +110,7 @@ class MatchmakerDomainTest : DescribeSpec({
         }
 
         it("레벨 5(커미션 40%)에서도 true를 반환한다 (ADR 0044)") {
-            val matchmaker = makeMatchmaker(successfulMatches = 21)
+            val matchmaker = makeMatchmaker(successfulMatches = 150)
             matchmaker.level.level shouldBe 5
             matchmaker.canEarnCommission() shouldBe true
         }
@@ -137,18 +135,18 @@ class MatchmakerDomainTest : DescribeSpec({
 
     describe("MatchmakerLevel 경계값 검증") {
 
-        it("성공 건수 경계: 0건 → Lv1, 3건 → Lv2, 6건 → Lv3, 11건 → Lv4, 21건 → Lv5") {
+        it("성공 건수 경계: 0건 → Lv1, 15건 → Lv2, 40건 → Lv3, 70건 → Lv4, 150건 → Lv5 (ADR 0038 강화)") {
             val cases = listOf(
                 0 to 1,
-                2 to 1,
-                3 to 2,
-                5 to 2,
-                6 to 3,
-                10 to 3,
-                11 to 4,
-                20 to 4,
-                21 to 5,
-                100 to 5
+                14 to 1,
+                15 to 2,
+                39 to 2,
+                40 to 3,
+                69 to 3,
+                70 to 4,
+                149 to 4,
+                150 to 5,
+                500 to 5
             )
             cases.forEach { (matches, expectedLevel) ->
                 val stats = MatchmakerStats.initial().copy(successfulMatches = matches)
@@ -160,10 +158,10 @@ class MatchmakerDomainTest : DescribeSpec({
         it("커미션율 경계: Lv1=15%, Lv2=20%, Lv3=25%, Lv4=30%, Lv5=40% (ADR 0044)") {
             val cases = listOf(
                 0 to 0.15,
-                3 to 0.20,
-                6 to 0.25,
-                11 to 0.30,
-                21 to 0.40
+                15 to 0.20,
+                40 to 0.25,
+                70 to 0.30,
+                150 to 0.40
             )
             cases.forEach { (matches, expectedRate) ->
                 val stats = MatchmakerStats.initial().copy(successfulMatches = matches)

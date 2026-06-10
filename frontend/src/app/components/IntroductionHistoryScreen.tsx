@@ -346,6 +346,21 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
                         </button>
                       )}
 
+                      {/* ADR 0046 — 외부 송금 경고 + 앱 내 팁 권유 (MATCHED·EARLY 등 초기 단계에 노출) */}
+                      {(rel.stage === "MATCHED" || rel.stage === "EARLY") && (
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 flex gap-2">
+                          <span className="text-amber-700 font-bold text-sm flex-shrink-0">!</span>
+                          <div className="text-[11px] text-amber-900 leading-relaxed">
+                            <p className="font-semibold mb-0.5">감사 표시는 앱 내에서 안전하게</p>
+                            <p>
+                              주선자에게 보내는 팁은 앱 내 기능으로만 보내주세요.
+                              계좌이체·간편송금 요구는 약관 §6 위반이며, 사기 위험 + 분쟁 시 보호 X.
+                              발견 시 신고해주시면 50 물감을 드려요.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Stage bar */}
                       <div>
                         <div className="flex items-center gap-1 mb-2">

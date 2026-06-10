@@ -1212,7 +1212,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                 <div className="border-b border-border px-6 py-4">
                   <h3 className="text-lg font-semibold text-center">소개 요청</h3>
                   <p className="text-sm text-muted-foreground text-center mt-1">
-                    주선자에게 감사 포인트를 설정해주세요
+                    성의 표시 금액을 선택하세요 (옵셔널)
                   </p>
                 </div>
 
@@ -1228,12 +1228,20 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                     </div>
                   </div>
 
+                  {/* ADR 0044 — 소개 요청 100 물감 차감 안내 */}
+                  <div className="rounded-xl bg-primary/5 border border-primary/15 px-3.5 py-3">
+                    <p className="text-xs font-semibold text-primary">소개 요청 1회 — 100 물감 (10,000원)</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                      차감 즉시 진행. 매칭 성사 시 주선자에게 등급별 15~40% 분배. 거절·만료 시 자동 환불.
+                    </p>
+                  </div>
+
                   {/* Points selection */}
                   <div className="space-y-3">
                     <div>
-                      <p className="text-sm font-semibold">감사 포인트</p>
+                      <p className="text-sm font-semibold">성의 표시 (옵셔널 팁)</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        주선자가 수락하는 순간 즉시 지급돼요
+                        주선자에게 보내는 자발 팁 — 매칭 성사 후 90% 수령. <strong>외부 송금 금지</strong> (약관 §6).
                       </p>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
@@ -1263,7 +1271,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                       ))}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      ※ 상대방이 거절해도 포인트는 환불되지 않아요
+                      ※ 팁은 주선자 수락 시점에 송금됩니다. 매칭 거절 시 소개 요청 100 물감은 자동 환불돼요.
                     </p>
                   </div>
 
@@ -1291,7 +1299,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                     이전
                   </Button>
                   <Button className="flex-1 gap-1.5" onClick={handleConfirmMatchRequest}>
-                    {selectedPoints} 물감으로 요청하기
+                    100 + {selectedPoints} 물감 요청하기
                   </Button>
                 </div>
               </div>
