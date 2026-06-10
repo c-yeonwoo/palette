@@ -23,6 +23,14 @@ interface MetricsResponse {
   revenue: MetricsBucket;
   queues: { pendingReports: number; holdWithdrawals: number };
   adminGrants: { today: number; total: number };
+  trial?: {
+    viewsTrialActive: number;
+    halfPriceUsed: number;
+    halfPriceUnused: number;
+    freeIntroRemainingTotal: number;
+    palettePickTrialActive: number;
+  };
+  blocks?: { total: number };
   generatedAt: string;
 }
 
@@ -113,6 +121,7 @@ export function AdminDashboardScreen({ admin, onNavigate }: Props) {
         <CategorySection title="결제·정산">
           <MenuCard onClick={() => onNavigate("/admin/billing")} title="물감 충전" desc="사용자 수동 충전 (보상·환불·이벤트) · 이력" />
           <MenuCard onClick={() => onNavigate("/admin/transactions")} title="결제 트랜잭션" desc="Toss / IAP / 영수증 조회" />
+          <MenuCard onClick={() => onNavigate("/admin/tips")} title="팁 트랜잭션" desc="외부송금 가드 모니터링 · 90/10 분배 이력" />
         </CategorySection>
 
         <CategorySection title="Trust & Safety">
@@ -128,7 +137,26 @@ export function AdminDashboardScreen({ admin, onNavigate }: Props) {
             desc="holding 기간 중 의심 거래 거절"
             badge={metrics?.queues.holdWithdrawals}
           />
+          <MenuCard
+            onClick={() => onNavigate("/admin/blocks")}
+            title="차단 관계"
+            desc="유저간 차단 조회·강제 해제"
+          />
         </CategorySection>
+
+        {/* 트라이얼 현황 (ADR 0045) — KPI 라기보다 인사이트라 별도 섹션 */}
+        {metrics?.trial && (
+          <section>
+            <h3 className="text-sm font-bold text-foreground mb-2.5">트라이얼 현황 (ADR 0045)</h3>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <MetricCard label="열람 트라이얼 활성" today={metrics.trial.viewsTrialActive} note="3일 + 일 5명" loading={false} />
+              <MetricCard label="반값 묶음 미사용" today={metrics.trial.halfPriceUnused} note={`사용 완료 ${metrics.trial.halfPriceUsed}`} loading={false} />
+              <MetricCard label="무료 소개 잔여" today={metrics.trial.freeIntroRemainingTotal} note="총 누적 카운터" loading={false} />
+              <MetricCard label="팔레트픽 트라이얼" today={metrics.trial.palettePickTrialActive} note="첫 30일 무료 활성" loading={false} />
+              <MetricCard label="누적 차단 관계" today={metrics.blocks?.total} note="유저간 (단방향)" loading={false} />
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );

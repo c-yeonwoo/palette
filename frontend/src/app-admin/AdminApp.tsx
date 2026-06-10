@@ -8,6 +8,8 @@ import { AdminBillingScreen } from "./components/AdminBillingScreen";
 import { AdminReportsScreen } from "./components/AdminReportsScreen";
 import { AdminWithdrawalsScreen } from "./components/AdminWithdrawalsScreen";
 import { AdminTransactionsScreen } from "./components/AdminTransactionsScreen";
+import { AdminBlocksScreen } from "./components/AdminBlocksScreen";
+import { AdminTipsScreen } from "./components/AdminTipsScreen";
 import { adminAuth, type AdminInfo } from "./lib/adminAuth";
 
 /**
@@ -30,7 +32,9 @@ type Screen =
   | { kind: "billing" }
   | { kind: "reports" }
   | { kind: "withdrawals" }
-  | { kind: "transactions" };
+  | { kind: "transactions" }
+  | { kind: "blocks" }
+  | { kind: "tips" };
 
 function pathToScreen(path: string): Screen {
   if (path === "/admin" || path === "/admin/") return { kind: "dashboard" };
@@ -42,6 +46,8 @@ function pathToScreen(path: string): Screen {
   if (path === "/admin/reports") return { kind: "reports" };
   if (path === "/admin/withdrawals") return { kind: "withdrawals" };
   if (path === "/admin/transactions") return { kind: "transactions" };
+  if (path === "/admin/blocks") return { kind: "blocks" };
+  if (path === "/admin/tips") return { kind: "tips" };
   return { kind: "dashboard" };
 }
 
@@ -107,5 +113,9 @@ export default function AdminApp() {
       return <AdminWithdrawalsScreen onBack={() => navigate("/admin")} />;
     case "transactions":
       return <AdminTransactionsScreen onBack={() => navigate("/admin")} />;
+    case "blocks":
+      return <AdminBlocksScreen onBack={() => navigate("/admin")} />;
+    case "tips":
+      return <AdminTipsScreen onBack={() => navigate("/admin")} />;
   }
 }

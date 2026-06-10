@@ -1,9 +1,11 @@
 package kr.ai.palette.presentation.admin
 
 import kr.ai.palette.persistence.billing.AdminBillingGrantJpaRepository
+import kr.ai.palette.persistence.billing.UserTicketBalanceJpaRepository
 import kr.ai.palette.persistence.matchmaker.WithdrawalRequestJpaRepository
 import kr.ai.palette.persistence.matchmaking.MatchmakingRequestJpaRepository
 import kr.ai.palette.persistence.payment.PaymentTransactionJpaRepository
+import kr.ai.palette.persistence.safety.BlockJpaRepository
 import kr.ai.palette.persistence.safety.ReportJpaRepository
 import kr.ai.palette.persistence.user.UserJpaRepository
 import org.springframework.http.ResponseEntity
@@ -31,6 +33,8 @@ class AdminMetricsController(
     private val reportJpaRepository: ReportJpaRepository,
     private val withdrawalRequestJpaRepository: WithdrawalRequestJpaRepository,
     private val adminBillingGrantJpaRepository: AdminBillingGrantJpaRepository,
+    private val userTicketBalanceJpaRepository: UserTicketBalanceJpaRepository,
+    private val blockJpaRepository: BlockJpaRepository,
 ) {
 
     @GetMapping
@@ -70,6 +74,20 @@ class AdminMetricsController(
         val grantsToday = grants.count { it.grantedAt.isAfter(todayStart) }
         val grantsTotal = grants.size
 
+        // 트라이얼 사용 현황 — ADR 0045
+        val balances = userTicketBalanceJpaRepository.findAll()
+        val nowInst = Instant.now()
+        val viewsTrialActive = balances.count { it.viewsTrialUntil != null && nowInst.isBefore(it.viewsTrialUntil) }
+        val halfPriceUsed = balances.count { it.halfPricePackageUsed }
+        val halfPriceUnused = balances.count {
+            !it.halfPricePackageUsed && it.halfPricePackageUntil != null && nowInst.isBefore(it.halfPricePackageUntil)
+        }
+        val freeIntroRemaining = balances.sumOf { it.freeIntroRemaining }
+        val palettePickTrialActive = balances.count { it.palettePickTrialUntil != null && nowInst.isBefore(it.palettePickTrialUntil) }
+
+        // 차단 관계 카운트
+        val totalBlocks = blockJpaRepository.findAll().size
+
         return ResponseEntity.ok(
             mapOf(
                 "users" to mapOf(
@@ -104,6 +122,16 @@ class AdminMetricsController(
                 "adminGrants" to mapOf(
                     "today" to grantsToday,
                     "total" to grantsTotal,
+                ),
+                "trial" to mapOf(
+                    "viewsTrialActive" to viewsTrialActive,
+                    "halfPriceUsed" to halfPriceUsed,
+                    "halfPriceUnused" to halfPriceUnused,
+                    "freeIntroRemainingTotal" to freeIntroRemaining,
+                    "palettePickTrialActive" to palettePickTrialActive,
+                ),
+                "blocks" to mapOf(
+                    "total" to totalBlocks,
                 ),
                 "generatedAt" to now.toString(),
             )
