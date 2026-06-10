@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { CheckCircle2, XCircle, Coins, Loader2, ChevronLeft, Award, ChevronRight, Users } from "lucide-react";
+import { CheckCircle2, XCircle, Coins, Loader2, ChevronLeft, Award, ChevronRight, Users, Palette as PaletteIcon } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
 import { MessageModal } from "./MessageModal";
@@ -428,11 +428,17 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
               </div>
               <div className="px-2">
                 <p className="text-[11px] text-muted-foreground mb-1">출금 가능</p>
-                <p className="text-base font-bold text-gold-strong">{(matchmakerData.availablePoints ?? 0).toLocaleString()} 물감</p>
+                <p className="text-base font-bold text-gold-strong inline-flex items-center justify-center gap-1">
+                  <PaletteIcon className="w-3.5 h-3.5" aria-hidden />
+                  {(matchmakerData.availablePoints ?? 0).toLocaleString()}
+                </p>
               </div>
               <div className="px-2">
                 <p className="text-[11px] text-muted-foreground mb-1">총 받음</p>
-                <p className="text-base font-bold text-foreground">{(matchmakerData.totalPoints ?? 0).toLocaleString()} 물감</p>
+                <p className="text-base font-bold text-foreground inline-flex items-center justify-center gap-1">
+                  <PaletteIcon className="w-3.5 h-3.5 text-muted-foreground" aria-hidden />
+                  {(matchmakerData.totalPoints ?? 0).toLocaleString()}
+                </p>
               </div>
             </button>
           </div>

@@ -15,8 +15,13 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { Sparkles, Lock, ChevronRight, X, Check, Palette, Star, Heart, Compass, HelpCircle, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { COLOR_META, type ColorType } from "../../../lib/colorCompatibility";
 import { dateCodeFor } from "../../../lib/dateCode";
+
+/** AI 재분석 cooldown — LLM 비용 abuse 방지 (1차 방어, 클라이언트 측). 백엔드 rate limit 은 별도 ADR. */
+const REANALYZE_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24h
+const REANALYZE_LAST_KEY = "palette:lastReanalyzedAt:v1";
 
 interface ProfileLike {
   metrics?: { completionRate: number };
@@ -147,7 +152,24 @@ export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToCol
         <p className="text-xs text-muted-foreground">프로필을 채울수록 더 깊이 알아가요</p>
         {hasAnalysis && onReanalyze && (
           <button
-            onClick={() => setShowReanalyzeConfirm(true)}
+            onClick={() => {
+              // 24h cooldown — 같은 답변으로 LLM 반복 호출 방지 (LLM 비용 abuse 1차 방어)
+              try {
+                const last = localStorage.getItem(REANALYZE_LAST_KEY);
+                if (last) {
+                  const elapsed = Date.now() - Number(last);
+                  if (elapsed < REANALYZE_COOLDOWN_MS) {
+                    const remainingHours = Math.ceil((REANALYZE_COOLDOWN_MS - elapsed) / (60 * 60 * 1000));
+                    toast.info(
+                      `프로필을 수정한 뒤 다시 분석할 수 있어요`,
+                      { description: `최근에 분석했어요 · 약 ${remainingHours}시간 후 재시도 가능` },
+                    );
+                    return;
+                  }
+                }
+              } catch {/* localStorage 차단 환경 — 게이트 통과 */}
+              setShowReanalyzeConfirm(true);
+            }}
             className="inline-flex items-center gap-1 text-xs font-semibold text-gold-strong hover:underline"
           >
             <RefreshCw className="w-3 h-3" />
@@ -191,7 +213,12 @@ export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToCol
                 취소
               </button>
               <button
-                onClick={() => { setShowReanalyzeConfirm(false); onReanalyze?.(); }}
+                onClick={() => {
+                  setShowReanalyzeConfirm(false);
+                  // cooldown 시작 — 다음 24시간 클라이언트 게이트
+                  try { localStorage.setItem(REANALYZE_LAST_KEY, String(Date.now())); } catch {/* ignore */}
+                  onReanalyze?.();
+                }}
                 className="flex-1 py-3 rounded-2xl bg-brand-soft text-gold-strong font-bold shadow-card active:scale-95 transition-transform"
               >
                 다시 분석
