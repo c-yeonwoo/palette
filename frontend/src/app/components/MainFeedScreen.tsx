@@ -544,9 +544,9 @@ function ProfileCard({
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", ...PALETTE_COVER_STYLE }}
           />
 
-          {/* ── 뒷면 (사진만, dim 제거) — 공개 상태. 아래 소개 섹션과 이어지도록 위쪽만 라운드 ── */}
+          {/* ── 뒷면 (사진) — 공개 상태. 4면 라운드. 하단 그라디언트 오버레이로 정보 섹션과 자연스럽게 연결 ── */}
           <div
-            className="absolute inset-0 rounded-t-2xl overflow-hidden shadow-card bg-muted"
+            className="absolute inset-0 rounded-2xl overflow-hidden shadow-card bg-muted"
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
           >
             {profile.primaryPhotoUrl ? (
@@ -555,6 +555,10 @@ function ProfileCard({
               <div className="w-full h-full bg-gradient-to-br from-muted via-accent to-muted/60 flex items-center justify-center">
                 <span className="text-5xl opacity-20 select-none">👤</span>
               </div>
+            )}
+            {/* 하단 페이드 — 정보 섹션 오버랩 영역과 부드럽게 이어짐 */}
+            {revealed && (
+              <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-black/15 pointer-events-none" />
             )}
             {compat && (
               <div className="absolute top-2 right-2">
@@ -567,9 +571,9 @@ function ProfileCard({
         </div>
       </div>
 
-      {/* 소개 섹션 — 사진 바로 밑 (공개 후). 흰색 + 그림자 */}
+      {/* 소개 섹션 — 사진 하단을 약간 덮으며 등장 (negative margin + fade-in/slide-up) */}
       {revealed && (
-        <div className="rounded-b-2xl bg-card px-3 py-3 shadow-card">
+        <div className="relative z-10 -mt-5 mx-2 rounded-2xl bg-card px-3 py-2.5 shadow-card animate-in fade-in slide-in-from-top-2 duration-500">
           <CardInfoSection nickname={nickname ?? null} job={job} age={age ?? null} region={location} colorHex={accentHex} colorName={theirMeta?.name ?? null} />
         </div>
       )}
@@ -601,13 +605,13 @@ function CardInfoSection({
   const sub = [age ? `${age}세` : null, region].filter(Boolean).join(" · ");
   return (
     <>
-      {nickname && <p className="text-base font-extrabold text-foreground truncate leading-tight tracking-tight">{nickname}</p>}
-      {job && <p className="text-xs font-semibold text-foreground/80 truncate mt-1">{job}</p>}
-      {sub && <p className="text-xs font-semibold text-foreground/60 truncate mt-0.5">{sub}</p>}
+      {nickname && <p className="text-sm font-extrabold text-foreground truncate leading-tight tracking-tight">{nickname}</p>}
+      {job && <p className="text-xs font-semibold text-foreground/80 truncate mt-0.5">{job}</p>}
+      {sub && <p className="text-[11px] font-semibold text-foreground/60 truncate mt-0.5">{sub}</p>}
       {colorHex && (
-        <div className="flex items-center gap-1.5 mt-1.5">
-          <span className="w-2.5 h-2.5 rounded-full ring-1 ring-black/5" style={{ backgroundColor: colorHex }} />
-          {colorName && <span className="text-xs font-semibold text-foreground/70 truncate">{colorName}</span>}
+        <div className="flex items-center gap-1.5 mt-1">
+          <span className="w-2 h-2 rounded-full ring-1 ring-black/5" style={{ backgroundColor: colorHex }} />
+          {colorName && <span className="text-[11px] font-semibold text-foreground/70 truncate">{colorName}</span>}
         </div>
       )}
     </>
@@ -908,15 +912,18 @@ function AiSignalCard({
             </div>
           </div>
 
-          {/* ── 뒷면 (사진만, dim 제거) — 공개 상태. 위쪽만 라운드 ── */}
+          {/* ── 뒷면 (사진) — 공개 상태. 4면 라운드 + 하단 페이드 (정보 섹션 overlap 영역) ── */}
           <div
-            className="absolute inset-0 rounded-t-2xl overflow-hidden shadow-card bg-muted"
+            className="absolute inset-0 rounded-2xl overflow-hidden shadow-card bg-muted"
             style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
           >
             {profile.primaryPhotoUrl ? (
               <img src={profile.primaryPhotoUrl} alt="" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-muted via-accent to-muted/60" />
+            )}
+            {revealed && (
+              <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent to-black/15 pointer-events-none" />
             )}
             {rec.isFree && (
               <div className="absolute top-2 right-2">
@@ -934,9 +941,9 @@ function AiSignalCard({
         </div>
       </div>
 
-      {/* 소개 섹션 — 사진 바로 밑 (공개 후). 흰색 + 그림자 */}
+      {/* 소개 섹션 — 사진 하단을 약간 덮으며 등장 (negative margin + fade-in/slide-up) */}
       {revealed && (
-        <div className="rounded-b-2xl bg-card px-3 py-3 shadow-card">
+        <div className="relative z-10 -mt-5 mx-2 rounded-2xl bg-card px-3 py-2.5 shadow-card animate-in fade-in slide-in-from-top-2 duration-500">
           <CardInfoSection nickname={null} job={job} age={rec.teaserAge ?? null} region={location} colorHex={accentHex} colorName={theirColor ? COLOR_META[theirColor]?.name ?? null : null} />
         </div>
       )}
