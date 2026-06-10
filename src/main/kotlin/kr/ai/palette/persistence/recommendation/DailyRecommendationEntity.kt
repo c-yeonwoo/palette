@@ -62,6 +62,14 @@ class DailyRecommendationEntity(
 
     @Column(name = "overridden_at")
     var overriddenAt: Instant? = null,
+
+    /**
+     * 추천 알고리즘 variant 식별 (ADR 0047 §B.4 관측).
+     * 예: ORCHESTRATOR_V1 (B.2 PalettePickRecommendationService), LEGACY_RANDOM (회귀 비교용).
+     * source=AUTO 일 때만 의미. ADMIN_PIN/REPLACE 면 운영자 결정이므로 추적 대상 아님.
+     */
+    @Column(name = "variant", length = 32)
+    var variant: String? = null,
 ) {
     protected constructor() : this(
         viewerUserId = UUID.randomUUID(),
