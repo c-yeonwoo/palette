@@ -187,6 +187,8 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
 
   const [isFeedVisible, setIsFeedVisible] = useState(true);
   const [homeTab, setHomeTab] = useState<"recommend" | "network">("network");
+  // 지인 탭 — 특정 지인(공통 친구)으로 필터 (클라이언트). null = 전체
+  const [selectedConnector, setSelectedConnector] = useState<string | null>(null);
 
   const fetchUserAndFeed = async (f: FilterState = filters) => {
     try {
@@ -523,18 +525,57 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
                     ) : (
                       <FirstTimeGuide onNavigateToFriends={onNavigateToFriends} />
                     )
-                  ) : (
-                    <div className="grid grid-cols-2 gap-3">
-                      {feedItems.map((item) => (
-                        <ProfileCard
-                          key={item.profile.userId}
-                          item={item}
-                          myColorType={myColor}
-                          onClick={() => onProfileClick?.(item)}
-                        />
-                      ))}
-                    </div>
-                  )}
+                  ) : (() => {
+                    // 지인(공통 친구) 칩 필터 — 현재 피드의 공통 친구로 클라이언트 필터
+                    const connectors = Array.from(
+                      new Set(feedItems.flatMap((i) => i.mutualFriends.map((m) => m.name)).filter(Boolean))
+                    ).sort();
+                    const activeConnector = selectedConnector && connectors.includes(selectedConnector) ? selectedConnector : null;
+                    const networkItems = activeConnector
+                      ? feedItems.filter((i) => i.mutualFriends.some((m) => m.name === activeConnector))
+                      : feedItems;
+                    return (
+                      <>
+                        {connectors.length > 1 && (
+                          <div className="flex gap-1.5 overflow-x-auto pb-3 -mx-1 px-1" style={{ scrollbarWidth: "none" }}>
+                            <button
+                              onClick={() => setSelectedConnector(null)}
+                              className={`shrink-0 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                                activeConnector === null
+                                  ? "border-transparent bg-foreground text-background font-semibold"
+                                  : "border-border bg-muted/40 hover:bg-muted text-foreground"
+                              }`}
+                            >
+                              전체
+                            </button>
+                            {connectors.map((name) => (
+                              <button
+                                key={name}
+                                onClick={() => setSelectedConnector(activeConnector === name ? null : name)}
+                                className={`shrink-0 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                                  activeConnector === name
+                                    ? "border-transparent bg-foreground text-background font-semibold"
+                                    : "border-border bg-muted/40 hover:bg-muted text-foreground"
+                                }`}
+                              >
+                                {name}님 소개
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <div className="grid grid-cols-2 gap-3">
+                          {networkItems.map((item) => (
+                            <ProfileCard
+                              key={item.profile.userId}
+                              item={item}
+                              myColorType={myColor}
+                              onClick={() => onProfileClick?.(item)}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </>
             )}
