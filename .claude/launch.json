@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "palette-web",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "cd frontend && npx vite preview --port 4178 --strictPort"],
+      "port": 4178
+    }
+  ]
+}

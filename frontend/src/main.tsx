@@ -11,6 +11,16 @@
 
   createRoot(document.getElementById("root")!).render(
     <ErrorBoundary>
-      {isAdminRoute ? <AdminApp /> : <App />}
+      {isAdminRoute ? (
+        <AdminApp />
+      ) : (
+        // 사용자 앱은 모바일 프레임으로 감싼다 (웹 데스크탑에서도 모바일 폭 고정).
+        // 어드민은 감싸지 않아 풀 화면 유지. 프레임 스타일은 styles/mobile-frame.css.
+        <div className="app-frame-root">
+          <div className="app-frame" id="appScroll">
+            <App />
+          </div>
+        </div>
+      )}
     </ErrorBoundary>
   );
