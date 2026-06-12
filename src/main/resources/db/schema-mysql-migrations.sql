@@ -209,3 +209,27 @@ ALTER TABLE payment_transactions ADD COLUMN provider VARCHAR(16) NOT NULL DEFAUL
 ALTER TABLE payment_transactions ADD COLUMN provider_receipt_id VARCHAR(200);
 ALTER TABLE payment_transactions ADD COLUMN status VARCHAR(16) NOT NULL DEFAULT 'APPROVED';
 ALTER TABLE payment_transactions ADD COLUMN refunded_at DATETIME(6);
+
+-- profiles — ADR 0026/0035/0037 (color 분석 영속화) + DA-001 (이상형 범위) + DA-002 (position)
+-- prod profiles 테이블이 초기 schema-mysql.sql 후 ALTER 안 됨 → 사진 추가/프로필 조회 시
+-- SELECT color_ideal_type_insight 폭발 (#38 deploy 후 발견).
+ALTER TABLE profiles ADD COLUMN color_reasoning TEXT;
+ALTER TABLE profiles ADD COLUMN color_personality_summary TEXT;
+ALTER TABLE profiles ADD COLUMN color_ideal_type_insight TEXT;
+ALTER TABLE profiles ADD COLUMN color_strengths TEXT;
+ALTER TABLE profiles ADD COLUMN details_visible_to_friends BIT;
+ALTER TABLE profiles ADD COLUMN ideal_age_min INT;
+ALTER TABLE profiles ADD COLUMN ideal_age_max INT;
+ALTER TABLE profiles ADD COLUMN ideal_height_min INT;
+ALTER TABLE profiles ADD COLUMN ideal_height_max INT;
+ALTER TABLE profiles ADD COLUMN position VARCHAR(80);
+
+-- profile_photos / profile_videos — s3_key (S3 스토리지 키). 엔티티는 NOT NULL 이나
+-- 기존 row 보호 위해 DB 레벨은 nullable 로 추가 (신규 insert 는 항상 값 제공).
+ALTER TABLE profile_photos ADD COLUMN s3_key VARCHAR(500);
+ALTER TABLE profile_videos ADD COLUMN s3_key VARCHAR(500);
+
+-- matchmaking_requests — ADR 0012 운영자 매칭 풀 (강제 변경 + 메모)
+ALTER TABLE matchmaking_requests ADD COLUMN admin_note TEXT;
+ALTER TABLE matchmaking_requests ADD COLUMN admin_last_updated_at DATETIME(6);
+ALTER TABLE matchmaking_requests ADD COLUMN admin_last_updated_by BINARY(16);
