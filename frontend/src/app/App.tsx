@@ -1078,7 +1078,17 @@ export default function App() {
       )}
 
       {currentScreen === "introductionHistory" && (
-        <IntroductionHistoryScreen />
+        <IntroductionHistoryScreen
+          onViewProfile={(userId) => {
+            // 소개 요청 수신자가 수락 전 상대(요청자) 프로필 확인 — 무료 열람(게이트 없음)
+            setSelectedUserId(userId);
+            setSelectedMutualFriends([]);
+            setSelectedDegree(0);
+            setSelectedViewCost(0);
+            setProfileDetailFrom("introductionHistory");
+            setCurrentScreen("profileDetail");
+          }}
+        />
       )}
 
       {currentScreen === "profileDetail" && selectedUserId && (
