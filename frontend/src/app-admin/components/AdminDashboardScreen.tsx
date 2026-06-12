@@ -112,10 +112,12 @@ export function AdminDashboardScreen({ admin, onNavigate }: Props) {
         {/* ── 카테고리 메뉴 ── */}
         <CategorySection title="사용자">
           <MenuCard onClick={() => onNavigate("/admin/users")} title="회원 관리" desc="목록·검색·차단·휴면" />
+          <MenuCard onClick={() => onNavigate("/admin/activity")} title="유저 액션 히스토리" desc="결제·열람·매칭·출금·팁·운영자 충전 통합 타임라인" />
         </CategorySection>
 
         <CategorySection title="매칭·추천">
           <MenuCard onClick={() => onNavigate("/admin/matching")} title="매칭 관리" desc="AI 매칭 (교체·차단) · 주선자 풀" />
+          <MenuCard onClick={() => onNavigate("/admin/flow")} title="소개 요청 플로우" desc="날짜별 요청 → 주선자 → 수신자 단계별 모니터링" />
         </CategorySection>
 
         <CategorySection title="결제·정산">

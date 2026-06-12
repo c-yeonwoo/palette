@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { adminApi } from "../lib/adminApi";
+import { UserSearchInput } from "./UserSearchInput";
 
 /**
  * 어드민 — 물감 수동 충전 + 이력 조회 (ADR 0044 운영 감사 트랙).
@@ -158,14 +159,12 @@ export function AdminBillingScreen({ onBack }: Props) {
           </div>
 
           <form onSubmit={submit} className="space-y-3">
-            <Field label="수신 사용자 ID (UUID)" required>
-              <input
-                type="text"
+            <Field label="수신 사용자 (이름·닉네임·이메일 검색)" required>
+              <UserSearchInput
                 value={recipientUserId}
-                onChange={(e) => setRecipientUserId(e.target.value)}
-                placeholder="예: 8f086b1f-6984-4047-a83d-bb294718f012"
-                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm font-mono"
+                onChange={(uid) => setRecipientUserId(uid)}
                 disabled={submitting}
+                placeholder="이름·닉네임·이메일 입력 시 자동 검색"
               />
             </Field>
 
@@ -268,13 +267,13 @@ export function AdminBillingScreen({ onBack }: Props) {
           <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-3">
             <h2 className="font-bold text-foreground">충전 이력</h2>
             <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={filterUserId}
-                onChange={(e) => { setFilterUserId(e.target.value); setPage(0); }}
-                placeholder="사용자 ID 로 필터"
-                className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-mono w-72"
-              />
+              <div className="w-80">
+                <UserSearchInput
+                  value={filterUserId}
+                  onChange={(uid) => { setFilterUserId(uid); setPage(0); }}
+                  placeholder="수신자로 필터링 (선택)"
+                />
+              </div>
               <button
                 onClick={loadHistory}
                 className="rounded-lg border border-border px-3 py-1.5 text-xs hover:bg-muted/50"

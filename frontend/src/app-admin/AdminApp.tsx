@@ -11,6 +11,8 @@ import { AdminTransactionsScreen } from "./components/AdminTransactionsScreen";
 import { AdminBlocksScreen } from "./components/AdminBlocksScreen";
 import { AdminTipsScreen } from "./components/AdminTipsScreen";
 import { AdminLlmUsageScreen } from "./components/AdminLlmUsageScreen";
+import { AdminUserActivityScreen } from "./components/AdminUserActivityScreen";
+import { AdminMatchmakingFlowScreen } from "./components/AdminMatchmakingFlowScreen";
 import { adminAuth, type AdminInfo } from "./lib/adminAuth";
 
 /**
@@ -36,7 +38,9 @@ type Screen =
   | { kind: "transactions" }
   | { kind: "blocks" }
   | { kind: "tips" }
-  | { kind: "llm" };
+  | { kind: "llm" }
+  | { kind: "activity" }
+  | { kind: "flow" };
 
 function pathToScreen(path: string): Screen {
   if (path === "/admin" || path === "/admin/") return { kind: "dashboard" };
@@ -51,6 +55,8 @@ function pathToScreen(path: string): Screen {
   if (path === "/admin/blocks") return { kind: "blocks" };
   if (path === "/admin/tips") return { kind: "tips" };
   if (path === "/admin/llm") return { kind: "llm" };
+  if (path === "/admin/activity") return { kind: "activity" };
+  if (path === "/admin/flow") return { kind: "flow" };
   return { kind: "dashboard" };
 }
 
@@ -122,5 +128,9 @@ export default function AdminApp() {
       return <AdminTipsScreen onBack={() => navigate("/admin")} />;
     case "llm":
       return <AdminLlmUsageScreen onBack={() => navigate("/admin")} />;
+    case "activity":
+      return <AdminUserActivityScreen onBack={() => navigate("/admin")} />;
+    case "flow":
+      return <AdminMatchmakingFlowScreen onBack={() => navigate("/admin")} />;
   }
 }
