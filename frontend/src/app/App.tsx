@@ -224,7 +224,7 @@ export default function App() {
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>(undefined);
   const [selectedMutualFriends, setSelectedMutualFriends] = useState<MutualFriend[]>([]);
   const [selectedDegree, setSelectedDegree] = useState<number>(2);
-  const [selectedViewCost, setSelectedViewCost] = useState<number>(3000);
+  const [selectedViewCost, setSelectedViewCost] = useState<number>(20);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [introMethod, setIntroMethod] = useState<"INTERVIEW" | "MANUAL">("INTERVIEW");
   /** AI 인터뷰 재분석 모드 (마이페이지에서 진입 시 true) — 완료 후 마이페이지로 복귀 */

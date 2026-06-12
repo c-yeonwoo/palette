@@ -68,6 +68,10 @@ app:
   base-url: ${APP_BASE_URL:http://localhost:8080}
   # 베타 게이트 — 값이 있으면 회원가입 시 코드 검증, 빈 값이면 비활성
   beta-code: ${BETA_CODE:}
+  # 베타 과금 정책 (BetaPolicy) — true 면 물감 소비(프로필 열람·소개 요청) 전면 무료, 결제/충전 유도 숨김.
+  # 정식 출시 시 BETA_FREE_UNLOCK=false 로 끄면 PointPrice 단가대로 정상 과금.
+  beta:
+    free-unlock: ${BETA_FREE_UNLOCK:true}
   # 주선자 출금 어뷰징 방지 (ADR 0023) — holding 기간 + 한도 + 신규계정 cooldown
   withdrawal:
     holding-days: ${WITHDRAWAL_HOLDING_DAYS:14}
