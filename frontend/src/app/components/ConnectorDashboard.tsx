@@ -719,11 +719,9 @@ function RequestCard({
           <Coins className="w-6 h-6 text-primary/60" />
         </div>
 
-        <div className="p-4 space-y-4">
+        <div className="px-4 py-3 space-y-3">
           {/* Palette 추천 프레임 */}
-          <div className="text-center">
-            <p className="text-xs text-muted-foreground">팔레트가 두 분의 인연을 발견했어요</p>
-          </div>
+          <p className="text-xs text-center text-muted-foreground">팔레트가 두 분의 인연을 발견했어요</p>
 
           {/* Two color profiles (blind) */}
           <div className="flex items-center justify-center gap-4">
@@ -769,23 +767,23 @@ function RequestCard({
           )}
 
           {/* Action buttons */}
-          <div className="flex gap-2.5 pt-1" onClick={(e) => e.stopPropagation()}>
+          <div className="flex gap-2 pt-0.5" onClick={(e) => e.stopPropagation()}>
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 text-muted-foreground"
+              className="flex-1 min-w-0 text-muted-foreground"
               onClick={(e) => { e.stopPropagation(); onDecline(); }}
             >
-              <XCircle className="w-3.5 h-3.5 mr-1" />
-              이번엔 어렵겠어요
+              <XCircle className="w-3.5 h-3.5 mr-1 shrink-0" />
+              어렵겠어요
             </Button>
             <Button
               size="sm"
-              className="flex-1 bg-brand-soft text-gold-strong"
+              className="flex-1 min-w-0 bg-brand-soft text-gold-strong"
               onClick={(e) => { e.stopPropagation(); onApprove(); }}
             >
-              <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-              {points} 물감 받고 연결하기
+              <CheckCircle2 className="w-3.5 h-3.5 mr-1 shrink-0" />
+              연결하기
             </Button>
           </div>
         </div>
