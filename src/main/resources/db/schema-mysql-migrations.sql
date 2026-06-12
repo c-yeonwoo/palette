@@ -201,7 +201,10 @@ ALTER TABLE users ADD COLUMN status_reason VARCHAR(500);
 ALTER TABLE users ADD COLUMN status_updated_at DATETIME(6);
 ALTER TABLE users ADD COLUMN status_updated_by BINARY(16);
 
--- daily_recommendations.variant (ADR 0047 §B.4 관측)
+-- daily_recommendations — ADR 0011 (운영자 override) + ADR 0047 §B.4 (variant)
+-- override_reason 은 schema-mysql.sql 에 있으나 overridden_by/at 는 초기 버전 prod 에 누락 가능.
+ALTER TABLE daily_recommendations ADD COLUMN overridden_by BINARY(16);
+ALTER TABLE daily_recommendations ADD COLUMN overridden_at DATETIME(6);
 ALTER TABLE daily_recommendations ADD COLUMN variant VARCHAR(32);
 
 -- payment_transactions 추가 컬럼 (provider / provider_receipt_id / status / refunded_at)
