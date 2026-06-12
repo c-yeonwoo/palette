@@ -511,7 +511,9 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
                         onChanged={refetchAiSignal}
                         onProfileClick={(item) => {
                           const feedItem = feedItems.find(f => f.profile.userId === item.profile.userId);
-                          onProfileClick?.(feedItem ?? item);
+                          // 팔레트 Pick = 서비스 주선(degree 0). 같은 유저가 지인 피드에 있어도
+                          // 주선자 선택/성의표시 없이 바로 요청되도록 degree 0 강제 (지인 모달 우회).
+                          onProfileClick?.({ ...(feedItem ?? item), degree: 0, viewCost: 0, mutualFriends: [] });
                         }}
                       />
                     ) : (

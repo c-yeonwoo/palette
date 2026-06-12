@@ -1198,12 +1198,12 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
       {/* Matchmaker Selection Modal */}
       {showMatchmakerModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-2xl max-w-md w-full max-h-[80vh] overflow-hidden">
+          <div className="bg-card rounded-2xl max-w-md w-full max-h-[90vh] overflow-hidden">
             {/* Step 1: Select Matchmaker */}
             {modalStep === 1 && (
-              <div className="animate-in fade-in slide-in-from-right duration-300">
+              <div className="flex flex-col max-h-[85vh] animate-in fade-in slide-in-from-right duration-300">
                 {/* Modal Header */}
-                <div className="border-b border-border px-6 py-4">
+                <div className="border-b border-border px-6 py-4 shrink-0">
                   <h3 className="text-lg font-semibold text-center">소개 요청</h3>
                   <p className="text-sm text-muted-foreground text-center mt-1">
                     어떤 분께 소개를 요청하시겠습니까?
@@ -1211,7 +1211,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                 </div>
 
                 {/* Matchmaker List */}
-                <div className="overflow-y-auto max-h-[50vh] p-4">
+                <div className="flex-1 min-h-0 overflow-y-auto p-4">
                   <div className="space-y-2">
                     {mutualFriends.map((friend, index) => (
                       <button
@@ -1259,7 +1259,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                 </div>
 
                 {/* Modal Actions */}
-                <div className="border-t border-border px-6 py-4 flex gap-3">
+                <div className="border-t border-border px-6 py-4 flex gap-3 shrink-0">
                   <Button
                     variant="outline"
                     className="flex-1"
@@ -1280,16 +1280,16 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
 
             {/* Step 2: Points + Message */}
             {modalStep === 2 && (
-              <div className="animate-in fade-in slide-in-from-right duration-300">
+              <div className="flex flex-col max-h-[85vh] animate-in fade-in slide-in-from-right duration-300">
                 {/* Modal Header */}
-                <div className="border-b border-border px-6 py-4">
+                <div className="border-b border-border px-6 py-4 shrink-0">
                   <h3 className="text-lg font-semibold text-center">소개 요청</h3>
                   <p className="text-sm text-muted-foreground text-center mt-1">
                     성의 표시 금액을 선택하세요 (옵셔널)
                   </p>
                 </div>
 
-                <div className="p-5 space-y-5 overflow-y-auto max-h-[65vh]">
+                <div className="flex-1 min-h-0 overflow-y-auto p-5 space-y-5">
                   {/* Selected matchmaker summary */}
                   <div className="flex items-center gap-3 bg-secondary rounded-xl px-4 py-3">
                     <div className="w-9 h-9 rounded-full bg-brand-soft flex items-center justify-center flex-shrink-0">
@@ -1367,7 +1367,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                 </div>
 
                 {/* Modal Actions */}
-                <div className="border-t border-border px-6 py-4 flex gap-2.5">
+                <div className="border-t border-border px-6 py-4 flex gap-2.5 shrink-0">
                   <Button variant="outline" className="flex-1" onClick={() => setModalStep(1)}>
                     이전
                   </Button>
