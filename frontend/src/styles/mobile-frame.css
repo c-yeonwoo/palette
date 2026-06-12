@@ -1,0 +1,45 @@
+/* ============================================================
+   Mobile Frame — 웹(데스크탑) 에서도 사용자 앱을 항상 모바일 폭으로.
+   ------------------------------------------------------------
+   - 사용자 앱(App)만 .app-frame-root 로 감싼다 (main.tsx).
+     어드민(AdminApp)은 감싸지 않으므로 풀 화면 그대로.
+   - ≥768px 에서만 프레임 적용. 모바일/네이티브(Capacitor)는 100% 무변경.
+   - 핵심: .app-frame 에 transform 을 주면 내부 position:fixed 자식
+     (하단 네비 등 `fixed bottom-0 left-0 right-0`) 이 뷰포트가 아니라
+     프레임 박스를 기준으로 배치됨 → 컴포넌트 수정 없이 프레임 안에 갇힘.
+   - .app-frame 이 100dvh 스크롤 컨테이너가 되어 sticky 헤더/하단 네비가
+     프레임 기준으로 고정된다.
+   ============================================================ */
+@media (min-width: 768px) {
+  .app-frame-root {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background:
+      radial-gradient(circle at 50% 0%, #EFEAE3 0%, #E2DCD3 60%, #D8D1C6 100%);
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+  }
+
+  .app-frame {
+    position: relative;
+    flex: 0 0 430px;
+    width: 430px;
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--background);
+    box-shadow: 0 0 48px rgba(40, 32, 24, 0.18);
+    /* position:fixed 자식을 프레임 안에 가두는 containing block 생성 */
+    transform: translateZ(0);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 프레임 내부 스크롤바 슬림 처리 */
+  .app-frame::-webkit-scrollbar { width: 8px; }
+  .app-frame::-webkit-scrollbar-thumb {
+    background: rgba(40, 32, 24, 0.18);
+    border-radius: 4px;
+  }
+}

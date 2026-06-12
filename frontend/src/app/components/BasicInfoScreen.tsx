@@ -138,7 +138,9 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
   const handleNext = () => {
     if (miniStep < 4) {
       setMiniStep((miniStep + 1) as MiniStep);
+      // 데스크탑에선 .app-frame(#appScroll) 이 스크롤 컨테이너 → 그쪽도 같이 리셋
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      document.getElementById('appScroll')?.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       onNext({
         basicInfo: {
