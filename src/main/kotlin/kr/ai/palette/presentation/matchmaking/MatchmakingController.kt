@@ -43,7 +43,7 @@ class MatchmakingController(
         @AuthenticationPrincipal authUser: AuthUser
     ): ResponseEntity<CoolTimeStatusResponse> {
         val requesterId = authUser.userId
-        val coolTimeDays = 10L
+        val coolTimeDays = 5L  // 매칭 완료 후 다음 소개 요청까지 쿨타임
 
         val lastCompleted = matchmakingRequestRepository.findLatestCompletedByRequesterId(requesterId)
 
@@ -73,7 +73,7 @@ class MatchmakingController(
         rateLimiter.enforce("match:${requesterId.value}", 10, Duration.ofDays(1), "매칭 요청이 너무 잦습니다. 잠시 후 다시 시도해주세요")
 
         // Check cooltime (10 days after last successful match)
-        val coolTimeDays = 10L
+        val coolTimeDays = 5L  // 매칭 완료 후 다음 소개 요청까지 쿨타임
         val lastCompleted = matchmakingRequestRepository.findLatestCompletedByRequesterId(requesterId)
 
         if (lastCompleted != null) {
