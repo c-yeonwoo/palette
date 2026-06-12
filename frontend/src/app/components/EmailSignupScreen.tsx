@@ -25,6 +25,7 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
     verificationCode: "",
     birthDate: "",
     gender: "MALE" as "MALE" | "FEMALE",
+    inviteCode: "",  // 옵션 — 유효 시 양쪽 100 물감 보너스 + 자동 1촌 (ADR 0048)
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
@@ -151,6 +152,7 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
         phoneNumber: formData.phoneNumber,
         birthDate: formData.birthDate,
         gender: formData.gender,
+        inviteCode: formData.inviteCode.trim() || undefined,  // 빈 값은 보내지 않음
       }, { requiresAuth: false });
 
       // 토큰 저장
@@ -166,7 +168,11 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
         refreshExpiresAt: refreshTokenExpiry.toISOString(),
       });
 
-      toast.success("회원가입이 완료되었습니다!");
+      if (formData.inviteCode.trim()) {
+        toast.success("회원가입 완료! 초대 코드로 보너스 100 물감 받았어요 🎨", { duration: 4500 });
+      } else {
+        toast.success("회원가입이 완료되었습니다!");
+      }
       onSuccess();
     } catch (error: any) {
       console.error("Signup failed:", error);
@@ -358,6 +364,30 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
             {verificationVerified && (
               <p className="text-xs text-green-600">✓ 인증이 완료되었습니다</p>
             )}
+
+            {/* 초대 코드 (옵션) — 유효 시 양쪽 100 물감 보너스 + 자동 1촌 */}
+            <div className="space-y-2 pt-2">
+              <Label htmlFor="inviteCode" className="flex items-center gap-2">
+                초대 코드
+                <span className="text-[10px] font-normal text-muted-foreground">(선택)</span>
+              </Label>
+              <Input
+                id="inviteCode"
+                name="inviteCode"
+                type="text"
+                placeholder="ABCD1234"
+                value={formData.inviteCode}
+                onChange={(e) => setFormData({ ...formData, inviteCode: e.target.value.toUpperCase().slice(0, 10) })}
+                disabled={isSubmitting}
+                maxLength={10}
+                autoCapitalize="characters"
+                spellCheck={false}
+                className="font-mono tracking-wider"
+              />
+              <p className="text-xs text-muted-foreground">
+                지인에게 받은 코드를 입력하면 양쪽에 <strong className="text-foreground">100 물감</strong> 보너스 + 자동으로 친구가 돼요
+              </p>
+            </div>
 
             {/* 버튼 */}
             <div className="space-y-2 pt-4">

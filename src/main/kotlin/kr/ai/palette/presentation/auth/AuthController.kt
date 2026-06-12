@@ -300,6 +300,7 @@ data class EmailSignupRequest(
     val birthDate: LocalDate,
     val gender: Gender,
     val betaCode: String? = null,   // 베타 게이트 활성 시 필수
+    val inviteCode: String? = null, // 초대 코드(옵션) — 유효 시 양쪽 100 물감 보너스 + 자동 1촌
 )
 
 data class EmailLoginRequest(
@@ -335,7 +336,58 @@ class EmailAuthController(
     private val refreshTokenRepository: kr.ai.palette.domain.auth.RefreshTokenRepository,
     private val betaCodeValidator: kr.ai.palette.infrastructure.beta.BetaCodeValidator,
     private val welcomeBonusService: kr.ai.palette.application.billing.WelcomeBonusService,
+    private val inviteCodeRepo: kr.ai.palette.persistence.friendship.InviteCodeJpaRepository,
+    private val friendshipRepository: kr.ai.palette.domain.friendship.FriendshipRepository,
 ) {
+    private val log = org.slf4j.LoggerFactory.getLogger(EmailAuthController::class.java)
+
+    /**
+     * 초대 코드 사용 처리 — 가입 직후 호출. ADR 0048 (초대 코드 가입 보너스).
+     * 실패해도 가입 자체는 성공해야 하므로 try/catch 로 swallow + 로그.
+     */
+    private fun processInviteCode(rawCode: String?, newUserId: UserId) {
+        if (rawCode.isNullOrBlank()) return
+        try {
+            val code = rawCode.trim().uppercase()
+            val entity = inviteCodeRepo.findByCode(code) ?: run {
+                log.info("초대 코드 무효 — code 미존재 user={} code={}", newUserId.value, code)
+                return
+            }
+            if (entity.expiresAt.isBefore(Instant.now())) {
+                inviteCodeRepo.delete(entity)
+                log.info("초대 코드 만료 user={} code={}", newUserId.value, code)
+                return
+            }
+            val inviterId = UserId(entity.userId)
+            if (inviterId == newUserId) {
+                log.warn("초대 코드 자기 사용 차단 user={}", newUserId.value)
+                return
+            }
+            // 1촌 자동 형성 (이미 있으면 skip — 가입 직후라 보통 없음)
+            if (!friendshipRepository.existsBetweenUsers(inviterId, newUserId)) {
+                val now = Instant.now()
+                friendshipRepository.save(
+                    kr.ai.palette.domain.friendship.Friendship(
+                        id = kr.ai.palette.domain.friendship.FriendshipId.generate(),
+                        user1Id = inviterId,
+                        user2Id = newUserId,
+                        status = kr.ai.palette.domain.friendship.FriendshipStatus.ACCEPTED,
+                        createdAt = now,
+                        acceptedAt = now,
+                    )
+                )
+            }
+            // 양쪽 보상 (각 100 물감 / 30일 보너스)
+            welcomeBonusService.grantInviteCodeReward(
+                inviterUserId = inviterId.value.toString(),
+                newUserId = newUserId.value.toString(),
+            )
+            // 1회용 코드 소비
+            inviteCodeRepo.delete(entity)
+        } catch (e: Exception) {
+            log.warn("초대 코드 처리 실패 (가입은 정상 진행) user={} cause={}", newUserId.value, e.message)
+        }
+    }
 
     @PostMapping("/signup")
     @Transactional
@@ -407,6 +459,9 @@ class EmailAuthController(
 
         // 가입 환영 보너스 — 7일간 유효 (ADR 0041, B-001)
         welcomeBonusService.grantSignupBonus(savedUser.id.value.toString())
+
+        // 초대 코드 사용 시 양쪽 100 물감 + 자동 1촌 (ADR 0048)
+        processInviteCode(request.inviteCode, savedUser.id)
 
         // JWT 토큰 생성
         val authToken = AuthToken.create(
