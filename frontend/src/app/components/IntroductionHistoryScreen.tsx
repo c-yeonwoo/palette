@@ -35,6 +35,7 @@ interface RelationshipStatus {
   encouragementMessage: string | null;
   updatedAt: string;
   photoFeedback: string | null;
+  myMeetingFeedback: string | null;  // MEET_AGAIN / UNSURE / NOT_FOR_ME (ADR 0051)
 }
 
 const PHOTO_FEEDBACK_OPTIONS = [
@@ -51,6 +52,13 @@ const STAGE_STEPS = [
   { key: "DATING", label: "연애 중", emoji: "💕" },
 ];
 
+// 만남 피드백 설문 (ADR 0051) — MET 단계에서 양쪽이 1회씩 답변. 한쪽이라도 NOT_FOR_ME → 종결.
+const MEETING_INTENT_OPTIONS = [
+  { value: "MEET_AGAIN", label: "다시 만나고 싶어요" },
+  { value: "UNSURE", label: "잘 모르겠어요" },
+  { value: "NOT_FOR_ME", label: "인연이 아닌 것 같아요" },
+];
+
 type TabType = "pending" | "completed";
 
 export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: () => void; onViewProfile?: (userId: string) => void }) {
@@ -60,6 +68,7 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
   const [isLoading, setIsLoading] = useState(true);
   const [updatingStage, setUpdatingStage] = useState<string | null>(null);
   const [submittingFeedback, setSubmittingFeedback] = useState<string | null>(null);
+  const [submittingMeeting, setSubmittingMeeting] = useState<string | null>(null);
   // S-002 — 첫 메시지 추천 모달 (relationshipId 만 보관, 모달 자체가 비주얼)
   const [firstMessageOpen, setFirstMessageOpen] = useState(false);
   // 만남 후 주선자 후기 (ADR 0050)
@@ -121,13 +130,43 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
   const updateRelationshipStage = async (requestId: string, stage: string) => {
     setUpdatingStage(requestId + stage);
     try {
-      await api.put(`/api/v1/relationships/${requestId}/stage`, { stage });
-      toast.success("업데이트되었습니다!");
+      const res = await api.put<RelationshipStatus & { conflict?: boolean }>(
+        `/api/v1/relationships/${requestId}/stage`,
+        { stage }
+      );
+      // 상대가 이미 단계를 바꿔둔 경우 — 덮어쓰지 않고 현재 단계를 안내
+      if (res?.conflict) {
+        const label = STAGE_STEPS.find(s => s.key === res.stage)?.label ?? res.stage;
+        toast.info(`이미 '${label}' 상태로 바뀌었어요`);
+      } else {
+        toast.success("업데이트되었습니다!");
+      }
       fetchData();
     } catch {
       toast.error("업데이트에 실패했습니다");
     } finally {
       setUpdatingStage(null);
+    }
+  };
+
+  // 만남 피드백 설문 제출 (ADR 0051). 한쪽이라도 NOT_FOR_ME 면 백엔드가 관계를 ENDED 로 종결.
+  const submitMeetingFeedback = async (requestId: string, intent: string) => {
+    setSubmittingMeeting(requestId);
+    try {
+      const res = await api.post<RelationshipStatus>(
+        `/api/v1/relationships/${requestId}/meeting-feedback`,
+        { intent }
+      );
+      if (res?.stage === "ENDED") {
+        toast.info("이번 인연은 여기서 마무리됐어요");
+      } else {
+        toast.success("소중한 피드백 고마워요!");
+      }
+      fetchData();
+    } catch {
+      toast.error("피드백 제출에 실패했습니다");
+    } finally {
+      setSubmittingMeeting(null);
     }
   };
 
@@ -324,6 +363,19 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
               <div className="space-y-3">
                 {completedItems.map(rel => {
                   const currentStageIdx = STAGE_STEPS.findIndex(s => s.key === rel.stage);
+
+                  // 종결된 인연 (ADR 0051) — 단계바/설문/업데이트 없이 마무리 카드만
+                  if (rel.stage === "ENDED") {
+                    return (
+                      <div key={rel.requestId} className="bg-card rounded-2xl border border-border/60 p-4 space-y-1.5 text-center">
+                        <p className="text-sm font-semibold text-foreground">이번 인연은 여기서 마무리됐어요</p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          소중한 만남이었어요.<br />더 잘 어울리는 색을 곧 다시 찾아드릴게요.
+                        </p>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div key={rel.requestId} className="bg-card rounded-2xl border border-border/60 shadow-card/60 p-4 space-y-4">
                       <div className="flex items-center justify-between">
@@ -387,6 +439,44 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
                         </div>
                       </div>
 
+                      {/* 만남 피드백 설문 (ADR 0051) — MET 단계 결정 지점. 답변 따라 종결 여부 결정 */}
+                      {rel.stage === "MET" && (
+                        rel.myMeetingFeedback ? (
+                          <div className="rounded-xl bg-muted/30 px-3.5 py-2.5">
+                            <p className="text-[11px] text-muted-foreground mb-0.5">내 만남 후기</p>
+                            <p className="text-sm font-medium">
+                              {MEETING_INTENT_OPTIONS.find(o => o.value === rel.myMeetingFeedback)?.label}
+                            </p>
+                            {rel.myMeetingFeedback !== "NOT_FOR_ME" && (
+                              <p className="text-[11px] text-muted-foreground mt-1">
+                                두 분 다 긍정이면 인연을 계속 이어갈 수 있어요
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="rounded-xl border border-primary/30 bg-brand-soft/20 p-3.5 space-y-2.5">
+                            <div>
+                              <p className="text-xs font-semibold text-foreground">만남은 어떠셨어요?</p>
+                              <p className="text-[11px] text-muted-foreground mt-0.5">
+                                한 분이라도 "인연이 아닌 것 같아요"를 고르면 인연이 마무리돼요.
+                              </p>
+                            </div>
+                            <div className="space-y-1.5">
+                              {MEETING_INTENT_OPTIONS.map(opt => (
+                                <button
+                                  key={opt.value}
+                                  disabled={submittingMeeting === rel.requestId}
+                                  onClick={() => submitMeetingFeedback(rel.requestId, opt.value)}
+                                  className="w-full text-left rounded-xl border border-border bg-card hover:bg-muted/40 px-3.5 py-2.5 text-sm transition-colors disabled:opacity-50"
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )
+                      )}
+
                       {/* Photo feedback */}
                       {(rel.stage === "MET" || rel.stage === "DATING") && (
                         <div>
@@ -430,8 +520,8 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
                         )
                       )}
 
-                      {/* Stage update */}
-                      {currentStageIdx < STAGE_STEPS.length - 1 ? (
+                      {/* Stage update — MET 에선 만남 설문에 먼저 답해야 '연애 중'으로 넘어갈 수 있음 */}
+                      {rel.stage === "MET" && !rel.myMeetingFeedback ? null : currentStageIdx >= 0 && currentStageIdx < STAGE_STEPS.length - 1 ? (
                         <Button
                           size="sm"
                           variant="outline"
@@ -441,9 +531,9 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
                         >
                           {STAGE_STEPS[currentStageIdx + 1].label}(으)로 업데이트
                         </Button>
-                      ) : (
+                      ) : currentStageIdx === STAGE_STEPS.length - 1 ? (
                         <p className="text-center text-sm text-pink-500 font-medium">행복한 연애 중이에요</p>
-                      )}
+                      ) : null}
                     </div>
                   );
                 })}
