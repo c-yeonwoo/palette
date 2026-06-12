@@ -203,6 +203,18 @@ CREATE TABLE IF NOT EXISTS post_match_feedbacks (
     INDEX idx_pmf_counterpart (counterpart_user_id)
 ) ENGINE=InnoDB;
 
+-- ── 14. 만남 피드백 설문 (ADR 0051) — '다시 만나고 싶나요?' → 종결 판단 ──────
+CREATE TABLE IF NOT EXISTS meeting_feedbacks (
+    id BINARY(16) NOT NULL,
+    request_id BINARY(16) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    intent VARCHAR(16) NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY idx_meetfb_request_user (request_id, user_id),
+    INDEX idx_meetfb_request (request_id)
+) ENGINE=InnoDB;
+
 -- ============================================================================
 -- 컬럼 추가 — MySQL ALTER COLUMN 은 IF NOT EXISTS 미지원.
 -- 이미 존재 시 ALTER 가 실패하지만 spring.sql.init.continue-on-error=true 라
