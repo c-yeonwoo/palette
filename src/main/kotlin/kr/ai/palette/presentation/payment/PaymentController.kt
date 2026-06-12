@@ -6,7 +6,10 @@ import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.billing.PointPrice
 import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.friendship.FriendshipRepository
+import kr.ai.palette.domain.profile.ColorType
+import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.infrastructure.beta.BetaPolicy
+import kr.ai.palette.palettepick.application.ColorCompatibilityService
 import kr.ai.palette.persistence.payment.PaidViewEntity
 import kr.ai.palette.persistence.payment.PaidViewJpaRepository
 import kr.ai.palette.persistence.payment.PaymentTransactionJpaRepository
@@ -33,6 +36,15 @@ data class ProfileViewCostResponse(
     val canView: Boolean,
     /** ADR 0045 — true 면 트라이얼로 무료 unlock 가능 (잔액 차감 X). */
     val trialFree: Boolean = false,
+    /** 열람 전 궁금증 유발용 색 궁합 teaser (둘 다 색이 있을 때만). 실제 색 궁합 룰 기반. */
+    val teaser: CompatTeaser? = null,
+)
+
+/** 열람 전 노출하는 색 궁합 미리보기 — viewer↔target 컬러타입 기반 (ColorCompatibilityService). */
+data class CompatTeaser(
+    val headline: String,
+    val viewerColorHex: String?,
+    val targetColorHex: String?,
 )
 
 data class PayProfileViewRequest(
@@ -74,7 +86,22 @@ class PaymentController(
     private val paidViewRepository: PaidViewJpaRepository,
     private val transactionRepository: PaymentTransactionJpaRepository,
     private val betaPolicy: BetaPolicy,
+    private val profileRepository: ProfileRepository,
+    private val colorCompatibilityService: ColorCompatibilityService,
 ) {
+
+    /** 색 궁합 teaser — 둘 다 색이 있을 때만. 점수 대신 관계 기반 '문구'로 (과장 없이). */
+    private fun buildCompatTeaser(viewer: ColorType?, target: ColorType?): CompatTeaser? {
+        val a = viewer?.type ?: return null
+        val b = target?.type ?: return null
+        val headline = when {
+            a == b -> "같은 색이에요 — 닮은 감성, 깊은 공감"
+            colorCompatibilityService.score(a, b) >= 0.9 -> "보색 궁합 — 서로의 다름이 끌려요 🎨"
+            colorCompatibilityService.score(a, b) >= 0.75 -> "유사색 궁합 — 같은 결로 편안하게 통해요"
+            else -> "대비 궁합 — 서로를 자극하며 성장하는 색"
+        }
+        return CompatTeaser(headline = headline, viewerColorHex = viewer.hex, targetColorHex = target.hex)
+    }
 
     private val log = LoggerFactory.getLogger(PaymentController::class.java)
 
@@ -117,6 +144,12 @@ class PaymentController(
         // ADR 0045 — 트라이얼 활성 + 일 캡 미달 시 무료 unlock 가능
         val trialFree = !isAlreadyPaid && cost > 0 && billingService.canUseFreeView(myIdStr)
 
+        // 열람 전 색 궁합 teaser (궁금증 유발) — viewer·target 색이 모두 있을 때만
+        val teaser = buildCompatTeaser(
+            profileRepository.findByUserId(myId)?.colorType,
+            profileRepository.findByUserId(targetId)?.colorType,
+        )
+
         return ResponseEntity.ok(
             ProfileViewCostResponse(
                 targetUserId = targetUserId.toString(),
@@ -125,6 +158,7 @@ class PaymentController(
                 isAlreadyPaid = isAlreadyPaid,
                 canView = cost == 0 || isAlreadyPaid || trialFree,
                 trialFree = trialFree,
+                teaser = teaser,
             )
         )
     }

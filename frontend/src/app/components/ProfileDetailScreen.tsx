@@ -201,9 +201,14 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   const [coolTimeRemainingDays, setCoolTimeRemainingDays] = useState(0);
 
   // Payment gate state
-  const [isPaid, setIsPaid] = useState(viewCost === 0);
+  // 게이트 노출 기준은 "degree>=2 && 미열람" — 베타 무료(cost 0)여도 게이트는 띄운다 (열람 동기 유발).
+  const [isPaid, setIsPaid] = useState(degree < 2);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  // 실제 열람 비용(물감) — 백엔드 권위값. 베타엔 0. 버튼/안내 표기에 사용.
+  const [unlockCost, setUnlockCost] = useState<number>(viewCost);
+  // 열람 전 색 궁합 teaser (백엔드 profile-view-cost 가 내려줌)
+  const [teaser, setTeaser] = useState<{ headline: string; viewerColorHex: string | null; targetColorHex: string | null } | null>(null);
 
   // Vouch state
   const [vouchCount, setVouchCount] = useState(0);
@@ -216,26 +221,31 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   const [showHideConfirm, setShowHideConfirm] = useState(false);
 
   useEffect(() => {
-    // If free (1촌), fetch directly; if paid, show gate first
-    if (viewCost === 0) {
+    // 1촌/직접 연결(degree<2)은 게이트 없이 바로 열람. 친친(degree>=2)은 게이트 → 미열람이면 노출.
+    // 베타 무료라도 게이트는 띄우고, '열람하기' 누르면 (무료로) 바로 상세로 넘어간다.
+    if (degree < 2) {
       fetchProfileData();
     } else {
-      // Check if already paid
       checkPaymentStatus();
     }
     checkMatchmakingRequest();
     checkCoolTime();
     fetchVouchInfo();
     // 1촌(mutualFriends가 있으면)이거나 직접 알면 보증 가능 여부 확인
-    setIsFriend(mutualFriends.length > 0 || viewCost === 0);
+    setIsFriend(mutualFriends.length > 0 || degree < 2);
   }, [userId]);
 
   const checkPaymentStatus = async () => {
     try {
-      const data = await api.get<{ canView: boolean; isAlreadyPaid: boolean }>(
-        `/api/v1/payment/profile-view-cost?targetUserId=${userId}`
-      );
-      if (data.canView) {
+      const data = await api.get<{
+        cost: number;
+        isAlreadyPaid: boolean;
+        teaser?: { headline: string; viewerColorHex: string | null; targetColorHex: string | null } | null;
+      }>(`/api/v1/payment/profile-view-cost?targetUserId=${userId}`);
+      setUnlockCost(data.cost);
+      if (data.teaser) setTeaser(data.teaser);
+      // 이미 열람한 프로필만 게이트 생략. (베타 무료여도 첫 열람은 게이트 노출 → 열람 동기)
+      if (data.isAlreadyPaid) {
         setIsPaid(true);
         fetchProfileData();
       } else {
@@ -256,12 +266,12 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
       await api.post("/api/v1/payment/profile-view", { targetUserId: userId });
       setIsPaid(true);
       setShowPaymentModal(false);
-      toast.success(`${viewCost} 물감으로 프로필을 열람했어요`);
+      toast.success(unlockCost > 0 ? `${unlockCost} 물감으로 프로필을 열람했어요` : "프로필을 열었어요");
       await fetchProfileData();
     } catch (e: any) {
       // 402 INSUFFICIENT_BALANCE → 충전 화면으로 유도
       if (e?.status === 402 || e?.message === "INSUFFICIENT_BALANCE" || /INSUFFICIENT_BALANCE/.test(e?.message ?? "")) {
-        toast.error(`물감이 부족해요 · ${viewCost} 물감이 필요합니다`);
+        toast.error(`물감이 부족해요 · ${unlockCost} 물감이 필요합니다`);
         if (onNavigateToBilling) onNavigateToBilling();
       } else {
         toast.error("열람에 실패했어요");
@@ -469,15 +479,48 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
             </p>
           )}
 
+          {/* 열람 전 색 궁합 teaser — 궁금증 유발 (실제 두 사람 컬러타입 궁합 기반) */}
+          {teaser && (
+            <div className="bg-card border border-border rounded-2xl p-5 w-full max-w-xs mb-4">
+              <div className="flex items-center justify-center gap-3 mb-3">
+                <span
+                  className="w-9 h-9 rounded-full border-2 border-background shadow-soft"
+                  style={{ backgroundColor: teaser.viewerColorHex ?? undefined }}
+                  aria-hidden
+                />
+                <span className="text-sm text-muted-foreground">×</span>
+                <span
+                  className="w-9 h-9 rounded-full border-2 border-background shadow-soft"
+                  style={{ backgroundColor: teaser.targetColorHex ?? undefined }}
+                  aria-hidden
+                />
+              </div>
+              <p className="text-xs font-semibold text-primary mb-1">🎨 AI 색 궁합</p>
+              <p className="text-sm font-medium text-foreground leading-snug">{teaser.headline}</p>
+              <p className="text-xs text-muted-foreground mt-2">열람하면 더 깊은 분석을 볼 수 있어요</p>
+            </div>
+          )}
+
           <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-xs mb-6">
-            <p className="text-sm text-muted-foreground mb-1">필요 물감</p>
-            <p className="text-3xl font-bold text-primary flex items-center justify-center gap-1.5">
-              <PaletteIcon className="w-6 h-6" />
-              {viewCost.toLocaleString()} 물감
-            </p>
-            <p className="text-xs text-muted-foreground mt-2">
-              잔액에서 자동 차감돼요 · 이 프로필은 다시 무료로 볼 수 있어요
-            </p>
+            {unlockCost > 0 ? (
+              <>
+                <p className="text-sm text-muted-foreground mb-1">필요 물감</p>
+                <p className="text-3xl font-bold text-primary flex items-center justify-center gap-1.5">
+                  <PaletteIcon className="w-6 h-6" />
+                  {unlockCost.toLocaleString()} 물감
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  잔액에서 자동 차감돼요 · 이 프로필은 다시 무료로 볼 수 있어요
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-2xl font-bold text-primary">베타 기간 무료</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  지금은 베타라 무료로 열람할 수 있어요
+                </p>
+              </>
+            )}
           </div>
 
           <Button
@@ -490,11 +533,13 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
             ) : (
               <PaletteIcon className="w-4 h-4" />
             )}
-            {isProcessingPayment ? "처리 중..." : `${viewCost.toLocaleString()} 물감 사용하기`}
+            {isProcessingPayment ? "처리 중..." : unlockCost > 0 ? `${unlockCost.toLocaleString()} 물감 사용하기` : "지금 열람하기"}
           </Button>
-          <p className="text-xs text-muted-foreground mt-3">
-            1 물감 = 100원 · 잔액 부족 시 충전 화면으로 안내해 드려요
-          </p>
+          {unlockCost > 0 && (
+            <p className="text-xs text-muted-foreground mt-3">
+              1 물감 = 100원 · 잔액 부족 시 충전 화면으로 안내해 드려요
+            </p>
+          )}
 
           <Button variant="ghost" className="mt-4 text-muted-foreground" onClick={onBack}>
             돌아가기
