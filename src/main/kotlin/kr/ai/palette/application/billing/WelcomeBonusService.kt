@@ -29,6 +29,8 @@ class WelcomeBonusService(
     @Value("\${app.bonus.signup-valid-days:7}") private val signupValidDays: Int,
     @Value("\${app.bonus.friend-signup-points:10}") private val friendSignupPoints: Int,
     @Value("\${app.bonus.friend-signup-valid-days:14}") private val friendSignupValidDays: Int,
+    @Value("\${app.bonus.invite-code-points:100}") private val inviteCodePoints: Int,
+    @Value("\${app.bonus.invite-code-valid-days:30}") private val inviteCodeValidDays: Int,
 ) {
     private val log = LoggerFactory.getLogger(WelcomeBonusService::class.java)
 
@@ -78,6 +80,33 @@ class WelcomeBonusService(
             points = friendSignupPoints,
             validDays = friendSignupValidDays,
             reason = "friend_signup",
+        )
+    }
+
+    /**
+     * 초대 코드로 가입 시 양쪽 보상 (기본 100 물감 = 10,000원 상당 / 30일 만료 / 보너스 잔액).
+     *
+     * 친구 가입 보너스(friend_signup, 10P) 와 별개로 누적. 즉 초대 코드로 가입한 사람은
+     * 환영(60) + 초대 코드(100) = 160 물감 시작. 어뷰징 가드는 호출 측 (signup endpoint) 에서:
+     *  · 가입 endpoint 가 코드 1회 소비 (deleteByCode)
+     *  · 같은 사람이 자기 코드로 가입 불가 (보통 본인 가입 시 코드 미발급 상태)
+     */
+    fun grantInviteCodeReward(inviterUserId: String, newUserId: String) {
+        log.info(
+            "초대 코드 보상 inviter={} new={} +{}P/each validDays={}",
+            inviterUserId, newUserId, inviteCodePoints, inviteCodeValidDays,
+        )
+        billingService.grantBonus(
+            userId = inviterUserId,
+            points = inviteCodePoints,
+            validDays = inviteCodeValidDays,
+            reason = "invite_code_inviter",
+        )
+        billingService.grantBonus(
+            userId = newUserId,
+            points = inviteCodePoints,
+            validDays = inviteCodeValidDays,
+            reason = "invite_code_new_user",
         )
     }
 }
