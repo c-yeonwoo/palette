@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
-import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.UUID
 
@@ -77,14 +76,14 @@ class AdminUserActivityController(
                 events += ActivityEvent(
                     type = "PAYMENT",
                     at = p.createdAt,
-                    summary = "결제 ${p.amount.toLocaleString()}원 (${p.paymentMethod} · ${p.status})",
+                    summary = "결제 ${"%,d".format(p.amount)}원 (${p.paymentMethod} · ${p.status})",
                     counterpartUserId = p.targetUserId.takeIf { it.isNotBlank() && it != userId.toString() },
                     amountPoints = null,
                     amountWon = p.amount,
                     meta = mapOf(
                         "method" to p.paymentMethod,
                         "provider" to p.provider,
-                        "status" to (p::class.members.find { it.name == "status" }?.call(p)?.toString() ?: "APPROVED"),
+                        "status" to p.status,
                     ),
                 )
             }
@@ -243,5 +242,4 @@ data class UserActivityResponse(
     val events: List<ActivityEvent>,
 )
 
-private fun Int.toLocaleString(): String = "%,d".format(this)
-private fun LocalDateTime.atZone(zone: ZoneId): java.time.ZonedDateTime = java.time.ZonedDateTime.of(this, zone)
+// LocalDateTime.atZone(ZoneId) 은 java.time 빌트인 — 별도 extension 필요 없음.
