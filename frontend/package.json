@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "build:mobile": "vite build --mode mobile",
+    "assets": "capacitor-assets generate --iconBackgroundColor '#F4EFE7' --splashBackgroundColor '#F4EFE7' --splashBackgroundColorDark '#1C1916'",
+    "sync:ios": "npm run build:mobile && cap sync ios",
+    "ios": "npm run sync:ios && cap open ios"
   },
   "dependencies": {
     "@capacitor/android": "^7.6.6",
