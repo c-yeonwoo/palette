@@ -110,13 +110,16 @@ infrastructure ← * (모든 레이어에서 가능)
 ## 4. 데이터
 
 ### 4.1 Migration
-- 현재: `schema.sql` 부트스트랩 + `ddl-auto=none` (Hibernate 7 + MySQL `SEQUENCES` 버그 회피)
-- Flyway 도입 예정 (BACKLOG P2) — 도입 후 변경 사항 적용
+- 현재: `db/schema-mysql.sql` (초기 부트스트랩) + `db/schema-mysql-migrations.sql` (누적 변경, idempotent) + `ddl-auto=none` (Hibernate 7 + MySQL `SEQUENCES` 버그 회피)
+- prod 는 위 두 SQL 을 `spring.sql.init` 으로 부팅 시 적용. dev/test(H2) 는 `ddl-auto=update`.
+- **drift 가드**: `SchemaDriftTest` 가 빌드 타임에 모든 `@Entity` `@Column` ↔ SQL 대조. 누락 시 빌드 fail → prod "Unknown column" 500 (#34·#38·#39) 을 PR 단계에서 차단.
+- Flyway 풀 전환은 prod 안정화 + DB 백업 체계 후 별도 검토 (현재는 CI drift 검증으로 충분).
 
-### 4.2 Entity 추가
-- nullable 또는 default 값 있는 컬럼만 추가 (기존 row 호환)
-- 마이그레이션 스크립트 동반 (`schema.sql` 임시 갱신, Flyway 전환 후 `V{N}__xxx.sql`)
-- `docs/ARCHITECTURE.md` §3.3 표 갱신
+### 4.2 Entity 추가 (⚠️ 필수 절차 — drift 방지)
+1. `{Domain}Entity` 에 `@Column` 추가 (nullable 또는 default 값 — 기존 row 호환)
+2. **`db/schema-mysql-migrations.sql` 에 `ALTER TABLE {table} ADD COLUMN {col} ...` 추가** (신규 테이블이면 `CREATE TABLE IF NOT EXISTS`). 안 하면 `SchemaDriftTest` 가 빌드 fail.
+3. `docs/ARCHITECTURE.md` §3.3 표 갱신
+4. `./gradlew test` 로 drift 가드 통과 확인
 
 ### 4.3 시드 격리
 - `SeedUserPolicy.isSeed(user)` 로 시드/비시드 판별
