@@ -121,6 +121,35 @@ jobs:
             # 4. 배포 후에도 한번 더 prune — 직전 버전 이미지 정리
             docker image prune -af 2>&1 | tail -2 || true
 
+      # 실패 시 API 컨테이너 로그 덤프 — healthcheck unhealthy 시 원인 파악 (#34 후속)
+      - name: Dump container logs on failure
+        if: failure()
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_EC2_HOST }}
+          username: ${{ secrets.PROD_EC2_USER }}
+          key: ${{ secrets.PROD_EC2_SSH_KEY }}
+          script: |
+            set +e
+            cd /opt/palette
+            echo "====== docker compose ps ======"
+            docker compose -f docker-compose.server.yml ps
+            echo
+            echo "====== palette-api last 200 lines ======"
+            docker logs --tail 200 palette-api-1 2>&1 || true
+            echo
+            echo "====== palette-db last 50 lines ======"
+            docker logs --tail 50 palette-db-1 2>&1 || true
+            echo
+            echo "====== palette-redis last 30 lines ======"
+            docker logs --tail 30 palette-redis-1 2>&1 || true
+            echo
+            echo "====== disk ======"
+            df -h /
+            echo
+            echo "====== mem ======"
+            free -h 2>&1 || vm_stat 2>&1 | head -10
+
       - name: Create GitHub Release note
         if: success()
         run: |

@@ -192,6 +192,15 @@ CREATE TABLE IF NOT EXISTS matchmaker_nudges (
 -- (운영 안정성 > 로그 깔끔함 트레이드오프 — 베타 단계)
 -- ============================================================================
 
+-- users — ADR 0006 (role) · ADR 0008 (status) — 초기 schema-mysql.sql 후 추가된 컬럼.
+-- prod 는 CREATE TABLE IF NOT EXISTS 로 인해 기존 users 테이블 재정의되지 않아 한 번도 ALTER 안 됨.
+-- → admin seed 시 SELECT role 폭발 (#34 deploy 후 발견).
+ALTER TABLE users ADD COLUMN role ENUM('USER','ADMIN') NOT NULL DEFAULT 'USER';
+ALTER TABLE users ADD COLUMN status ENUM('ACTIVE','SUSPENDED','DORMANT') NOT NULL DEFAULT 'ACTIVE';
+ALTER TABLE users ADD COLUMN status_reason VARCHAR(500);
+ALTER TABLE users ADD COLUMN status_updated_at DATETIME(6);
+ALTER TABLE users ADD COLUMN status_updated_by BINARY(16);
+
 -- daily_recommendations.variant (ADR 0047 §B.4 관측)
 ALTER TABLE daily_recommendations ADD COLUMN variant VARCHAR(32);
 
