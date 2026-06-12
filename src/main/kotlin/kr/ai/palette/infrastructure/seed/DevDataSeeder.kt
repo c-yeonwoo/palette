@@ -55,18 +55,20 @@ class DevDataSeeder(
 
     @Transactional
     override fun run(args: ApplicationArguments) {
-        // 멱등성 — 테스트 계정 (고정 UUID) 이 이미 있으면 skip
+        // 운영자 계정은 항상 보장 — 테스트 계정 존재 여부와 무관 (prod 에 admin 빠지면 운영 자체 마비)
+        seedAdminAccount(Instant.now())
+
+        // 모의 데이터 시드는 멱등성 — 테스트 계정 (고정 UUID) 이 이미 있으면 skip
         // 실 유저들이 가입한 상태에서도 안전하게 한 번만 실행됨
         val testAccountId = UUID.fromString("00000000-0000-0000-0000-000000000001")
         if (userRepo.existsById(testAccountId)) {
-            log.info("[Seeder] Test account exists — skipping seed")
+            log.info("[Seeder] Test account exists — skipping mock data seed (admin account already ensured above)")
             return
         }
         log.info("[Seeder] Seeding mock data (test accounts + matchmakers + sample requests)...")
 
         val now = Instant.now()
         val me = seedTestAccount(now)
-        seedAdminAccount(now)
         val regularUsers = seedRegularUsers(now)
         val matchmakerUsers = seedMatchmakerUsers(now)
         val matchmakers = seedMatchmakers(matchmakerUsers, now)
