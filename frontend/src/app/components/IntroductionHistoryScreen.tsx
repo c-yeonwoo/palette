@@ -53,7 +53,7 @@ const STAGE_STEPS = [
 
 type TabType = "pending" | "completed";
 
-export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
+export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: () => void; onViewProfile?: (userId: string) => void }) {
   const [activeTab, setActiveTab] = useState<TabType>("pending");
   const [pendingItems, setPendingItems] = useState<MatchRequestWithRole[]>([]);
   const [completedItems, setCompletedItems] = useState<RelationshipStatus[]>([]);
@@ -276,15 +276,24 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
                           </div>
                         )}
 
-                        {/* Target action buttons */}
+                        {/* Target action buttons — 수락 전 상대 프로필 + 주선자 메시지 확인 */}
                         {isActionNeeded && (
-                          <div className="flex gap-2 pt-1">
-                            <Button variant="outline" className="flex-1 h-10" onClick={() => handleTargetReject(request.id)}>
-                              거절
+                          <div className="space-y-2 pt-1">
+                            <Button
+                              variant="outline"
+                              className="w-full h-10"
+                              onClick={() => onViewProfile?.(request.requesterId)}
+                            >
+                              <Users className="w-4 h-4 mr-1.5" /> 상대방 프로필 먼저 보기
                             </Button>
-                            <Button className="flex-1 h-10" onClick={() => handleTargetAccept(request.id)}>
-                              수락하기 💌
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button variant="outline" className="flex-1 h-10" onClick={() => handleTargetReject(request.id)}>
+                                거절
+                              </Button>
+                              <Button className="flex-1 h-10" onClick={() => handleTargetAccept(request.id)}>
+                                수락하기
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -322,7 +331,6 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
                           <CheckCircle2 className="w-4 h-4 text-green-500" />
                           <span className="font-semibold text-sm">매칭 성사</span>
                         </div>
-                        <span className="text-xl">{STAGE_STEPS[currentStageIdx]?.emoji}</span>
                       </div>
 
                       {rel.encouragementMessage && (
@@ -367,19 +375,16 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
 
                       {/* Stage bar */}
                       <div>
-                        <div className="flex items-center gap-1 mb-2">
+                        <div className="flex items-start gap-1">
                           {STAGE_STEPS.map((step, idx) => (
                             <div key={step.key} className="flex-1 text-center">
                               <div className={`h-1.5 rounded-full mb-1 transition-all ${idx <= currentStageIdx ? "bg-primary" : "bg-muted"}`} />
-                              <span className={`text-xs ${idx === currentStageIdx ? "text-primary font-semibold" : "text-muted-foreground"}`}>
-                                {step.emoji}
+                              <span className={`text-[10px] leading-tight ${idx === currentStageIdx ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+                                {step.label}
                               </span>
                             </div>
                           ))}
                         </div>
-                        <p className="text-xs text-center text-primary font-medium">
-                          {STAGE_STEPS[currentStageIdx]?.label}
-                        </p>
                       </div>
 
                       {/* Photo feedback */}
@@ -413,14 +418,14 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
                       {(rel.stage === "MET" || rel.stage === "DATING") && (
                         feedbackDone.has(rel.requestId) ? (
                           <p className="text-xs text-center text-muted-foreground py-1">
-                            🙏 주선자님께 후기를 전달했어요
+                            주선자님께 후기를 전달했어요
                           </p>
                         ) : (
                           <button
                             onClick={() => setFeedbackSheetFor(rel.requestId)}
                             className="w-full rounded-xl border border-border bg-muted/30 hover:bg-muted/60 px-3 py-2.5 text-xs font-medium text-foreground transition-colors flex items-center justify-center gap-1.5"
                           >
-                            💌 주선자에게 후기 남기기 <span className="text-muted-foreground">(비공개)</span>
+                            주선자에게 후기 남기기 <span className="text-muted-foreground">(비공개)</span>
                           </button>
                         )
                       )}
@@ -434,10 +439,10 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
                           disabled={updatingStage !== null}
                           onClick={() => updateRelationshipStage(rel.requestId, STAGE_STEPS[currentStageIdx + 1].key)}
                         >
-                          {STAGE_STEPS[currentStageIdx + 1].emoji} {STAGE_STEPS[currentStageIdx + 1].label}로 업데이트
+                          {STAGE_STEPS[currentStageIdx + 1].label}(으)로 업데이트
                         </Button>
                       ) : (
-                        <p className="text-center text-sm text-pink-500 font-medium">💕 행복한 연애 중이에요!</p>
+                        <p className="text-center text-sm text-pink-500 font-medium">행복한 연애 중이에요</p>
                       )}
                     </div>
                   );
