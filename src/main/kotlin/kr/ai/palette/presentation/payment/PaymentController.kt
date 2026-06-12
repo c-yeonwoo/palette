@@ -6,6 +6,7 @@ import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.billing.PointPrice
 import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.friendship.FriendshipRepository
+import kr.ai.palette.infrastructure.beta.BetaPolicy
 import kr.ai.palette.persistence.payment.PaidViewEntity
 import kr.ai.palette.persistence.payment.PaidViewJpaRepository
 import kr.ai.palette.persistence.payment.PaymentTransactionJpaRepository
@@ -72,6 +73,7 @@ class PaymentController(
     private val billingService: BillingService,
     private val paidViewRepository: PaidViewJpaRepository,
     private val transactionRepository: PaymentTransactionJpaRepository,
+    private val betaPolicy: BetaPolicy,
 ) {
 
     private val log = LoggerFactory.getLogger(PaymentController::class.java)
@@ -107,7 +109,8 @@ class PaymentController(
         val targetId = UserId(targetUserId)
 
         val degree = getDegree(myId, targetId)
-        val cost = costForDegree(degree)
+        // 베타 기간(BetaPolicy)엔 열람 무료 — cost 0 으로 내려 결제/충전 유도 숨김
+        val cost = if (betaPolicy.freeUnlock) 0 else costForDegree(degree)
         val myIdStr = myId.value.toString()
         val isAlreadyPaid = paidViewRepository.existsByBuyerUserIdAndTargetUserId(myIdStr, targetUserId.toString())
 
@@ -165,6 +168,20 @@ class PaymentController(
                     transactionId = "already-unlocked",
                     amount = 0,
                     message = "이미 열람한 프로필이에요",
+                )
+            )
+        }
+
+        // 베타 기간(BetaPolicy) — 차감 없이 무료 unlock (결제 유도 없음)
+        if (betaPolicy.freeUnlock) {
+            paidViewRepository.save(PaidViewEntity(buyerUserId = myIdStr, targetUserId = request.targetUserId))
+            log.info("프로필 열람 unlock(베타 무료) user={} target={} degree={}", myIdStr, request.targetUserId, degree)
+            return ResponseEntity.ok(
+                PaymentResult(
+                    success = true,
+                    transactionId = UUID.randomUUID().toString(),
+                    amount = 0,
+                    message = "베타 기간 무료로 열람했어요",
                 )
             )
         }

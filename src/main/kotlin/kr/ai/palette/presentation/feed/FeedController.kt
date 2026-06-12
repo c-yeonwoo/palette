@@ -1,8 +1,10 @@
 package kr.ai.palette.presentation.feed
 
 import kr.ai.palette.domain.auth.AuthUser
+import kr.ai.palette.domain.billing.PointPrice
 import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.friendship.FriendshipRepository
+import kr.ai.palette.infrastructure.beta.BetaPolicy
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestRepository
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.UserRepository
@@ -27,6 +29,7 @@ class FeedController(
     private val feedHideRepository: FeedHideJpaRepository,
     private val fileStorageService: FileStorageService,
     private val blockService: kr.ai.palette.application.safety.BlockService,
+    private val betaPolicy: BetaPolicy,
 ) {
 
     @GetMapping
@@ -160,7 +163,8 @@ class FeedController(
                         profile = ProfileResponse.from(profile, fileStorageService),
                         mutualFriends = mutualFriendNames,
                         degree = 2,
-                        viewCost = 3000,
+                        // 친친 열람 = 20 물감 (PointPrice). 베타 기간(BetaPolicy)엔 0 — 결제 유도 숨김.
+                        viewCost = if (betaPolicy.freeUnlock) 0 else PointPrice.FRIEND_OF_FRIEND_VIEW,
                         isOpened = openedIds.contains(userId.value.toString()),
                         nickname = user.publicInfo.nickname,
                         age = user.publicInfo.getAge()
@@ -230,8 +234,8 @@ data class FeedResponse(
 data class FeedProfileItem(
     val profile: ProfileResponse,
     val mutualFriends: List<String>,  // 공통 친구들의 닉네임 리스트
-    val degree: Int = 2,              // 1=1촌(free), 2=2촌(3,000원), 3=3촌(5,000원)
-    val viewCost: Int = 3000,         // 0 for free
+    val degree: Int = 2,              // 1=1촌(무료), 2=친친(20 물감), 3=한 다리 더(30 물감)
+    val viewCost: Int = PointPrice.FRIEND_OF_FRIEND_VIEW,  // 물감(P). 베타엔 0
     val isOpened: Boolean = false,    // 이미 카드를 열어본 여부
     val nickname: String? = null,     // 카드 소개 섹션용
     val age: Int? = null              // 카드 소개 섹션용

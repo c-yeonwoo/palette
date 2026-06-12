@@ -14,6 +14,7 @@ import kr.ai.palette.domain.matchmaking.MatchmakingRequestStatus
 import kr.ai.palette.domain.notification.PaletteEvent
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.UserRepository
+import kr.ai.palette.infrastructure.beta.BetaPolicy
 import kr.ai.palette.infrastructure.ratelimit.RateLimiter
 import org.springframework.context.ApplicationEventPublisher
 import java.time.Duration
@@ -33,7 +34,8 @@ class MatchmakingController(
     private val rateLimiter: RateLimiter,
     private val blockService: BlockService,
     private val billingService: BillingService,
-    private val eventPublisher: ApplicationEventPublisher
+    private val eventPublisher: ApplicationEventPublisher,
+    private val betaPolicy: BetaPolicy,
 ) {
 
     @GetMapping("/cooltime-status")
@@ -103,14 +105,17 @@ class MatchmakingController(
         val matchmaker = findUserByRealName(request.matchmakerName)
             ?: return ResponseEntity.badRequest().build()
 
-        // ADR 0044 — 소개 요청 100 물감 차감. ADR 0045 — 무료 소개 1회 트라이얼 우선 소진.
+        // ADR 0044 — 소개 요청 물감 차감. ADR 0045 — 무료 소개 1회 트라이얼 우선 소진.
+        // 베타 기간(BetaPolicy)엔 차감/트라이얼 스킵 — 무료 (결제 유도 없음).
         val requesterIdStr = requesterId.value.toString()
-        val freeViaTrial = billingService.tryConsumeFreeIntroRequest(requesterIdStr)
-        if (!freeViaTrial) {
-            try {
-                billingService.consume(requesterIdStr, PointPrice.INTRO_REQUEST, "intro_request:to=${request.targetUserId}")
-            } catch (e: InsufficientBalanceException) {
-                return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).build()
+        if (!betaPolicy.freeUnlock) {
+            val freeViaTrial = billingService.tryConsumeFreeIntroRequest(requesterIdStr)
+            if (!freeViaTrial) {
+                try {
+                    billingService.consume(requesterIdStr, PointPrice.INTRO_REQUEST, "intro_request:to=${request.targetUserId}")
+                } catch (e: InsufficientBalanceException) {
+                    return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).build()
+                }
             }
         }
 
