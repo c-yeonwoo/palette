@@ -38,8 +38,32 @@ class FeedController(
         @RequestParam(required = false) heightMax: Int?,
         @RequestParam(required = false) region: String?,
         @RequestParam(required = false) jobCategory: String?,
-        @RequestParam(required = false) degree: Int?  // 1=1촌만, 2=2촌만, null=전체
+        @RequestParam(required = false) degree: Int?,  // 1=1촌만, 2=2촌만, null=전체
+        // ── 추가 필터 (P0 — 컨셉 부합도 우선) ──
+        @RequestParam(required = false) colorTypes: String?,  // CSV: "WARM_ORANGE,CALM_BLUE"
+        @RequestParam(required = false) activeOnly: Boolean?, // true = 최근 7일 로그인
+        @RequestParam(required = false) minTrustTier: String?, // BRONZE / SILVER / GOLD (이상)
     ): ResponseEntity<FeedResponse> {
+        // 색깔 필터 파싱 — CSV → Set<String>
+        val colorTypeSet: Set<String> = colorTypes
+            ?.split(",")
+            ?.mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
+            ?.toSet()
+            .orEmpty()
+
+        // 트러스트 등급 최소 점수 매핑 (POLICY: Bronze 0-40 / Silver 41-70 / Gold 71-100)
+        val minTrustScore: Int? = when (minTrustTier?.uppercase()) {
+            "GOLD" -> 71
+            "SILVER" -> 41
+            "BRONZE" -> 0
+            else -> null
+        }
+
+        // 활성 사용자 기준 — 최근 7일 (KST 무관, Instant 기준)
+        val activeSince: java.time.Instant? = if (activeOnly == true) {
+            java.time.Instant.now().minus(7, java.time.temporal.ChronoUnit.DAYS)
+        } else null
+
         val currentUserId = authUser.userId
 
         // 현재 사용자의 성별 가져오기
@@ -104,6 +128,22 @@ class FeedController(
                     if (!jobCategory.isNullOrBlank()) {
                         val profileJob = profile.careerInfo?.category
                         if (profileJob == null || profileJob.name != jobCategory) return@let null
+                    }
+
+                    // 색깔 필터 (P0) — 선택된 색 중 하나라도 매칭
+                    if (colorTypeSet.isNotEmpty()) {
+                        val profileColor = profile.colorType?.type?.name
+                        if (profileColor == null || profileColor !in colorTypeSet) return@let null
+                    }
+
+                    // 활성 사용자 필터 (P0) — 최근 7일 내 로그인
+                    if (activeSince != null) {
+                        if (user.metadata.lastLoginAt.isBefore(activeSince)) return@let null
+                    }
+
+                    // 트러스트 점수 필터 (P0)
+                    if (minTrustScore != null) {
+                        if (profile.metrics.trustScore < minTrustScore) return@let null
                     }
 
                     // 공통 친구(주선 가능한 1촌) 찾기

@@ -137,6 +137,10 @@ interface FilterState {
   heightMin: string;
   heightMax: string;
   degree: string;
+  // ── 추가 (P0) ──
+  colorTypes: ColorType[];   // 다중 선택. 비어있으면 전체
+  activeOnly: boolean;        // 최근 7일 로그인만
+  minTrustTier: "" | "BRONZE" | "SILVER" | "GOLD";  // 빈값=비활성, GOLD/SILVER/BRONZE = 이상
 }
 
 // 카드 커버 — 팔레트 '물감(paint)' 이미지. 탭하면 걷히고 사진이 드러난다.
@@ -159,7 +163,8 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
   const [friendCount, setFriendCount] = useState<number>(0);
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
-    ageMin: "", ageMax: "", heightMin: "", heightMax: "", degree: ""
+    ageMin: "", ageMax: "", heightMin: "", heightMax: "", degree: "",
+    colorTypes: [], activeOnly: false, minTrustTier: "",
   });
   const [pendingFilters, setPendingFilters] = useState<FilterState>({ ...filters });
 
@@ -173,6 +178,9 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
     if (f.ageMax) params.set("ageMax", f.ageMax);
     if (f.heightMin) params.set("heightMin", f.heightMin);
     if (f.heightMax) params.set("heightMax", f.heightMax);
+    if (f.colorTypes.length > 0) params.set("colorTypes", f.colorTypes.join(","));
+    if (f.activeOnly) params.set("activeOnly", "true");
+    if (f.minTrustTier) params.set("minTrustTier", f.minTrustTier);
     const qs = params.toString();
     return qs ? `?${qs}` : "";
   };
@@ -225,14 +233,23 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
   };
 
   const resetFilters = () => {
-    const empty: FilterState = { ageMin: "", ageMax: "", heightMin: "", heightMax: "", degree: "" };
+    const empty: FilterState = {
+      ageMin: "", ageMax: "", heightMin: "", heightMax: "", degree: "",
+      colorTypes: [], activeOnly: false, minTrustTier: "",
+    };
     setPendingFilters(empty);
     setFilters(empty);
     setShowFilter(false);
     fetchUserAndFeed(empty);
   };
 
-  const hasActiveFilters = Object.entries(filters).some(([k, v]) => k !== "degree" && v !== "");
+  const hasActiveFilters = (
+    !!filters.ageMin || !!filters.ageMax ||
+    !!filters.heightMin || !!filters.heightMax ||
+    filters.colorTypes.length > 0 ||
+    filters.activeOnly ||
+    !!filters.minTrustTier
+  );
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -290,6 +307,21 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
                 {filters.heightMin || "?"}-{filters.heightMax || "?"}cm
               </span>
             )}
+            {filters.colorTypes.length > 0 && (
+              <span className="text-xs bg-brand-soft text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
+                🎨 {filters.colorTypes.length === 1 ? COLOR_META[filters.colorTypes[0]].name : `${filters.colorTypes.length}색`}
+              </span>
+            )}
+            {filters.activeOnly && (
+              <span className="text-xs bg-brand-soft text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
+                ⚡ 최근 7일
+              </span>
+            )}
+            {filters.minTrustTier && (
+              <span className="text-xs bg-brand-soft text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
+                🛡 {filters.minTrustTier === "GOLD" ? "Gold" : filters.minTrustTier === "SILVER" ? "Silver+" : "Bronze+"}
+              </span>
+            )}
             <button onClick={resetFilters} className="text-xs text-muted-foreground px-2.5 py-1 rounded-full bg-muted whitespace-nowrap">
               초기화
             </button>
@@ -343,6 +375,83 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
                   />
                   <span className="text-sm text-muted-foreground">cm</span>
                 </div>
+              </FilterSection>
+
+              {/* 색깔 (8개 chip 다중 선택) — 비어있으면 전체 */}
+              <FilterSection title="색깔">
+                <div className="flex flex-wrap gap-1.5">
+                  {(Object.keys(COLOR_META) as ColorType[]).map((ct) => {
+                    const meta = COLOR_META[ct];
+                    const selected = pendingFilters.colorTypes.includes(ct);
+                    return (
+                      <button
+                        key={ct}
+                        type="button"
+                        onClick={() => setPendingFilters(p => ({
+                          ...p,
+                          colorTypes: selected
+                            ? p.colorTypes.filter(c => c !== ct)
+                            : [...p.colorTypes, ct],
+                        }))}
+                        className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                          selected
+                            ? "border-transparent bg-foreground text-background"
+                            : "border-border bg-muted/40 hover:bg-muted text-foreground"
+                        }`}
+                      >
+                        <span className="mr-1">{meta.emoji}</span>
+                        {meta.name.replace("따뜻한 ", "").replace("차분한 ", "").replace("활기찬 ", "").replace("부드러운 ", "").replace("싱그러운 ", "").replace("우아한 ", "").replace("밝은 ", "").replace("세련된 ", "")}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">아무것도 안 고르면 전체 색이 보여요</p>
+              </FilterSection>
+
+              {/* 활성 사용자 (최근 7일 로그인) — 토글 */}
+              <FilterSection title="최근 활동">
+                <button
+                  type="button"
+                  onClick={() => setPendingFilters(p => ({ ...p, activeOnly: !p.activeOnly }))}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-colors ${
+                    pendingFilters.activeOnly
+                      ? "border-foreground bg-foreground/5"
+                      : "border-border bg-muted/40"
+                  }`}
+                >
+                  <span className="text-sm">
+                    <span className="mr-2">⚡</span>최근 7일 접속한 사람만
+                  </span>
+                  <span className={`text-xs font-bold ${pendingFilters.activeOnly ? "text-foreground" : "text-muted-foreground"}`}>
+                    {pendingFilters.activeOnly ? "ON" : "OFF"}
+                  </span>
+                </button>
+              </FilterSection>
+
+              {/* 신뢰 등급 — 단일 선택 (없음 / Bronze+ / Silver+ / Gold) */}
+              <FilterSection title="신뢰 등급">
+                <div className="grid grid-cols-4 gap-1.5">
+                  {([
+                    ["", "전체"],
+                    ["BRONZE", "Bronze+"],
+                    ["SILVER", "Silver+"],
+                    ["GOLD", "Gold"],
+                  ] as const).map(([val, label]) => (
+                    <button
+                      key={val || "all"}
+                      type="button"
+                      onClick={() => setPendingFilters(p => ({ ...p, minTrustTier: val }))}
+                      className={`text-xs px-2 py-2 rounded-xl border transition-colors ${
+                        pendingFilters.minTrustTier === val
+                          ? "border-transparent bg-foreground text-background font-semibold"
+                          : "border-border bg-muted/40 hover:bg-muted text-foreground"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">사진·영상 인증으로 매겨지는 신뢰도 점수 기준</p>
               </FilterSection>
 
             </div>
