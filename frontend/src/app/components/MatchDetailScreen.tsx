@@ -30,7 +30,7 @@ import { calculateMatchScore } from "../../lib/match-score";
 import { getVisibleProfile } from "../../lib/profile-visibility";
 import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
 import { useTickets } from "../../lib/tickets";
-import { MOCK_MATCHES, type MatchDetail } from "../../data/mock-matches";
+import type { MatchDetail } from "../../data/mock-matches";
 import { EmptyState } from "./ui/empty-state";
 import { cn } from "./ui/utils";
 
@@ -38,18 +38,13 @@ interface MatchDetailScreenProps {
   matchId?: string;
   onBack: () => void;
   onNavigateToChat?: () => void;
-  /** 데모(시드) 계정일 때만 mock 매칭 상세 노출 (lib/mock-account.ts) */
-  isMockData?: boolean;
 }
 
 type Tab = "profile" | "chat";
 
-export function MatchDetailScreen({ matchId, onBack, onNavigateToChat, isMockData = false }: MatchDetailScreenProps) {
-  // 일반 가입 유저는 mock 매칭을 노출하지 않음 — 데모(시드) 계정만 노출
-  // (매칭 상세 백엔드 미구현, MVP 제한 — 별도 issue)
-  const match = isMockData
-    ? (MOCK_MATCHES.find((m) => m.matchId === (matchId ?? "match-001")) ?? MOCK_MATCHES[0])
-    : undefined;
+export function MatchDetailScreen({ matchId, onBack, onNavigateToChat }: MatchDetailScreenProps) {
+  // 매칭 상세 백엔드 미구현 — 항상 빈/안내 상태 (mock 미노출, MVP 제한)
+  const match: MatchDetail | undefined = undefined;
   const { balance, spend, earn } = useTickets();
 
   const [tab, setTab] = useState<Tab>("profile");
@@ -71,8 +66,8 @@ export function MatchDetailScreen({ matchId, onBack, onNavigateToChat, isMockDat
         </div>
         <div className="flex-1 flex items-center justify-center">
           <EmptyState
-            title="아직 매칭이 없어요"
-            description="지인이 소개를 이어주면 여기에서 상대의 프로필과 대화를 확인할 수 있어요."
+            title="매칭 상세는 준비 중이에요"
+            description="매칭 상세 화면을 준비하고 있어요. 곧 상대의 프로필과 대화를 확인할 수 있어요."
           />
         </div>
       </div>
@@ -248,7 +243,7 @@ export function MatchDetailScreen({ matchId, onBack, onNavigateToChat, isMockDat
         </div>
       ) : (
         <div className="flex-1 min-h-0" style={{ height: "calc(100vh - 120px)" }}>
-          <ChatThread match={match} isMockData={isMockData} />
+          <ChatThread match={match} />
         </div>
       )}
 

@@ -8,6 +8,7 @@ import kr.ai.palette.domain.friendship.FriendshipId
 import kr.ai.palette.domain.friendship.FriendshipRepository
 import kr.ai.palette.domain.friendship.FriendshipStatus
 import kr.ai.palette.domain.notification.NotificationType
+import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.UserRepository
 import kr.ai.palette.infrastructure.ratelimit.RateLimiter
 import kr.ai.palette.persistence.friendship.InviteCodeEntity
@@ -51,6 +52,7 @@ class FriendshipController(
     private val inviteCodeJpaRepository: InviteCodeJpaRepository,
     private val rateLimiter: RateLimiter,
     private val welcomeBonusService: kr.ai.palette.application.billing.WelcomeBonusService,
+    private val profileRepository: ProfileRepository,
 ) {
 
     companion object {
@@ -314,6 +316,8 @@ class FriendshipController(
         val result = friendships.mapNotNull { friendship ->
             val friendId = friendship.getOtherUserId(myUserId)
             val friend = userRepository.findById(friendId) ?: return@mapNotNull null
+            // 데이팅 프로필 없는 지인(주선자 전용 등)은 제외 — 데이팅 프로필 있는 지인만 노출
+            if (!profileRepository.existsByUserId(friendId)) return@mapNotNull null
             FriendResponse(
                 id = friendship.id.value.toString(),
                 userId = friendId.value.toString(),

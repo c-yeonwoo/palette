@@ -41,24 +41,30 @@ export function MatchmakerPublicProfileScreen({
 }: MatchmakerPublicProfileScreenProps) {
   const [matchmaker, setMatchmaker] = useState<MatchmakerPublicDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
+  const loadMatchmaker = async () => {
+    setIsLoading(true);
+    setLoadError(false);
+    try {
+      const data = await api.get<MatchmakerPublicDetail>(`/api/v1/matchmakers/${matchmakerId}/public`);
+      setMatchmaker(data);
+    } catch {
+      // 더미로 채우지 않고 정직한 에러 상태 노출
+      setMatchmaker(null);
+      setLoadError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        const data = await api.get<MatchmakerPublicDetail>(`/api/v1/matchmakers/${matchmakerId}/public`);
-        setMatchmaker(data);
-      } catch {
-        // 더미
-        setMatchmaker(DUMMY_DETAIL);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetch();
+    loadMatchmaker();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchmakerId]);
 
   const handleSubmitReview = async () => {
@@ -87,7 +93,30 @@ export function MatchmakerPublicProfileScreen({
     );
   }
 
-  if (!matchmaker) return null;
+  if (loadError || !matchmaker) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <div className="flex items-center px-4 pt-12 pb-4">
+          <button onClick={onBack} className="p-2 hover:bg-muted rounded-lg transition-colors">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
+          <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
+            <Users className="w-7 h-7 text-muted-foreground" />
+          </div>
+          <div className="space-y-1">
+            <p className="font-semibold text-foreground">주선자 정보를 불러올 수 없어요</p>
+            <p className="text-sm text-muted-foreground">잠시 후 다시 시도해주세요</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={loadMatchmaker}>다시 시도</Button>
+            <Button variant="ghost" onClick={onBack}>돌아가기</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const lv = tierFor(matchmaker.level);
   const approvalRate = matchmaker.totalMatchRequests > 0
@@ -277,22 +306,3 @@ export function MatchmakerPublicProfileScreen({
     </div>
   );
 }
-
-const DUMMY_DETAIL: MatchmakerPublicDetail = {
-  matchmakerId: "1",
-  userId: "u1",
-  nickname: "이수진",
-  profilePhotoUrl: null,
-  level: 5,
-  commissionRate: 0.50,
-  successfulMatches: 23,
-  totalMatchRequests: 41,
-  bio: "5년째 주선 활동 중이에요. 제 소개로 만난 커플이 23쌍입니다 😊 IT업계와 금융권 분들 연결을 많이 했어요.",
-  specialties: ["20대", "30대", "서울", "IT/개발", "진지한연애"],
-  averageRating: 4.9,
-  totalReviews: 21,
-  reviews: [
-    { reviewerNickname: "익명", rating: 5, comment: "정말 꼼꼼하게 맞춰주셔서 너무 좋았어요. 지금도 잘 만나고 있습니다!", createdAt: "2025-03-15T00:00:00Z" },
-    { reviewerNickname: "익명", rating: 5, comment: "가치관까지 고려해서 연결해주셔서 만족해요.", createdAt: "2025-02-20T00:00:00Z" },
-  ],
-};
