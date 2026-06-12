@@ -45,7 +45,7 @@ class FeedController(
         // ── 추가 필터 (P0 — 컨셉 부합도 우선) ──
         @RequestParam(required = false) colorTypes: String?,  // CSV: "WARM_ORANGE,CALM_BLUE"
         @RequestParam(required = false) activeOnly: Boolean?, // true = 최근 7일 로그인
-        @RequestParam(required = false) minTrustTier: String?, // BRONZE / SILVER / GOLD (이상)
+        @RequestParam(required = false) minTrustScore: Int?, // 신뢰도(0-100) 최소 점수 — '등급' 아님(브론즈/실버는 주선자 등급)
     ): ResponseEntity<FeedResponse> {
         // 색깔 필터 파싱 — CSV → Set<String>
         val colorTypeSet: Set<String> = colorTypes
@@ -53,14 +53,7 @@ class FeedController(
             ?.mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
             ?.toSet()
             .orEmpty()
-
-        // 트러스트 등급 최소 점수 매핑 (POLICY: Bronze 0-40 / Silver 41-70 / Gold 71-100)
-        val minTrustScore: Int? = when (minTrustTier?.uppercase()) {
-            "GOLD" -> 71
-            "SILVER" -> 41
-            "BRONZE" -> 0
-            else -> null
-        }
+        // minTrustScore 는 param 그대로 사용 (사진·영상 인증 신뢰도 점수 기준)
 
         // 활성 사용자 기준 — 최근 7일 (KST 무관, Instant 기준)
         val activeSince: java.time.Instant? = if (activeOnly == true) {

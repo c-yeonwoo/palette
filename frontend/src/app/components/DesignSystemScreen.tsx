@@ -13,7 +13,6 @@ import { ColorTypeBadge } from "./color/ColorTypeBadge";
 import { tierFor, nextTier } from "../../lib/matchmakerLevels";
 import { ColorTypeAura } from "./color/ColorTypeAura";
 import { MatchPairMark } from "./color/MatchPairMark";
-import { TrustTier } from "./color/TrustTier";
 import { COLOR_TYPES, type ColorTypeKey } from "../../lib/colorTypes";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card";
@@ -425,25 +424,6 @@ export function DesignSystemScreen({ onBack }: DesignSystemScreenProps) {
               <MatchPairMark myColor="pink" theirColor="green" />
               <MatchPairMark myColor="purple" theirColor="yellow" />
               <MatchPairMark myColor="orange" theirColor="orange" />
-            </CardContent>
-          </Card>
-        </section>
-
-        {/* ── TrustTier ── */}
-        <section>
-          <SectionHeader title="TrustTier" subtitle="P3 — 신뢰도 등급" className="mb-4" />
-          <Card variant="flat" className="gap-0">
-            <CardContent className="pt-4 pb-4 space-y-3">
-              <div className="flex items-center gap-4 flex-wrap">
-                <TrustTier score={85} size="sm" />
-                <TrustTier score={55} size="md" />
-                <TrustTier score={25} size="lg" />
-              </div>
-              <div className="space-y-2 pt-2">
-                <TrustTier score={85} showBar showScore />
-                <TrustTier score={55} showBar showScore />
-                <TrustTier score={25} showBar showScore />
-              </div>
             </CardContent>
           </Card>
         </section>

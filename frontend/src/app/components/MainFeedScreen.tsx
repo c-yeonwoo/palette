@@ -140,7 +140,7 @@ interface FilterState {
   // ── 추가 (P0) ──
   colorTypes: ColorType[];   // 다중 선택. 비어있으면 전체
   activeOnly: boolean;        // 최근 7일 로그인만
-  minTrustTier: "" | "BRONZE" | "SILVER" | "GOLD";  // 빈값=비활성, GOLD/SILVER/BRONZE = 이상
+  minTrustScore: "" | "50" | "80";  // 신뢰도(0-100) 최소 점수. 빈값=전체. '등급' 아님(브론즈/실버는 주선자 등급)
 }
 
 // 카드 커버 — 팔레트 '물감(paint)' 이미지. 탭하면 걷히고 사진이 드러난다.
@@ -164,7 +164,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     ageMin: "", ageMax: "", heightMin: "", heightMax: "", degree: "",
-    colorTypes: [], activeOnly: false, minTrustTier: "",
+    colorTypes: [], activeOnly: false, minTrustScore: "",
   });
   const [pendingFilters, setPendingFilters] = useState<FilterState>({ ...filters });
 
@@ -180,7 +180,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
     if (f.heightMax) params.set("heightMax", f.heightMax);
     if (f.colorTypes.length > 0) params.set("colorTypes", f.colorTypes.join(","));
     if (f.activeOnly) params.set("activeOnly", "true");
-    if (f.minTrustTier) params.set("minTrustTier", f.minTrustTier);
+    if (f.minTrustScore) params.set("minTrustScore", f.minTrustScore);
     const qs = params.toString();
     return qs ? `?${qs}` : "";
   };
@@ -235,7 +235,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
   const resetFilters = () => {
     const empty: FilterState = {
       ageMin: "", ageMax: "", heightMin: "", heightMax: "", degree: "",
-      colorTypes: [], activeOnly: false, minTrustTier: "",
+      colorTypes: [], activeOnly: false, minTrustScore: "",
     };
     setPendingFilters(empty);
     setFilters(empty);
@@ -248,7 +248,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
     !!filters.heightMin || !!filters.heightMax ||
     filters.colorTypes.length > 0 ||
     filters.activeOnly ||
-    !!filters.minTrustTier
+    !!filters.minTrustScore
   );
 
   return (
@@ -309,17 +309,17 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
             )}
             {filters.colorTypes.length > 0 && (
               <span className="text-xs bg-brand-soft text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
-                🎨 {filters.colorTypes.length === 1 ? COLOR_META[filters.colorTypes[0]].name : `${filters.colorTypes.length}색`}
+                {filters.colorTypes.length === 1 ? COLOR_META[filters.colorTypes[0]].name : `${filters.colorTypes.length}색`}
               </span>
             )}
             {filters.activeOnly && (
               <span className="text-xs bg-brand-soft text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
-                ⚡ 최근 7일
+                최근 7일
               </span>
             )}
-            {filters.minTrustTier && (
+            {filters.minTrustScore && (
               <span className="text-xs bg-brand-soft text-primary px-2.5 py-1 rounded-full whitespace-nowrap font-medium">
-                🛡 {filters.minTrustTier === "GOLD" ? "Gold" : filters.minTrustTier === "SILVER" ? "Silver+" : "Bronze+"}
+                신뢰도 {filters.minTrustScore}+
               </span>
             )}
             <button onClick={resetFilters} className="text-xs text-muted-foreground px-2.5 py-1 rounded-full bg-muted whitespace-nowrap">
@@ -399,7 +399,6 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
                             : "border-border bg-muted/40 hover:bg-muted text-foreground"
                         }`}
                       >
-                        <span className="mr-1">{meta.emoji}</span>
                         {meta.name.replace("따뜻한 ", "").replace("차분한 ", "").replace("활기찬 ", "").replace("부드러운 ", "").replace("싱그러운 ", "").replace("우아한 ", "").replace("밝은 ", "").replace("세련된 ", "")}
                       </button>
                     );
@@ -419,30 +418,27 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
                       : "border-border bg-muted/40"
                   }`}
                 >
-                  <span className="text-sm">
-                    <span className="mr-2">⚡</span>최근 7일 접속한 사람만
-                  </span>
+                  <span className="text-sm">최근 7일 접속한 사람만</span>
                   <span className={`text-xs font-bold ${pendingFilters.activeOnly ? "text-foreground" : "text-muted-foreground"}`}>
                     {pendingFilters.activeOnly ? "ON" : "OFF"}
                   </span>
                 </button>
               </FilterSection>
 
-              {/* 신뢰 등급 — 단일 선택 (없음 / Bronze+ / Silver+ / Gold) */}
-              <FilterSection title="신뢰 등급">
-                <div className="grid grid-cols-4 gap-1.5">
+              {/* 신뢰도 — 사진·영상 인증 점수 기준 (등급 아님). 단일 선택 */}
+              <FilterSection title="신뢰도">
+                <div className="grid grid-cols-3 gap-1.5">
                   {([
                     ["", "전체"],
-                    ["BRONZE", "Bronze+"],
-                    ["SILVER", "Silver+"],
-                    ["GOLD", "Gold"],
+                    ["50", "보통 이상"],
+                    ["80", "높음"],
                   ] as const).map(([val, label]) => (
                     <button
                       key={val || "all"}
                       type="button"
-                      onClick={() => setPendingFilters(p => ({ ...p, minTrustTier: val }))}
+                      onClick={() => setPendingFilters(p => ({ ...p, minTrustScore: val }))}
                       className={`text-xs px-2 py-2 rounded-xl border transition-colors ${
-                        pendingFilters.minTrustTier === val
+                        pendingFilters.minTrustScore === val
                           ? "border-transparent bg-foreground text-background font-semibold"
                           : "border-border bg-muted/40 hover:bg-muted text-foreground"
                       }`}
