@@ -1068,7 +1068,30 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
               ⏳ 매칭 성사 후 쿨타임 중 · {coolTimeRemainingDays}일 후 새 요청 가능
             </p>
           )}
-          {mutualFriends.length === 0 && !isPalettePick ? (
+          {/**
+           * 하단 액션 분기 정의 (명확):
+           *
+           *  ┌──────────────────────────┬──────────────────┬─────────────────────────────────────┐
+           *  │ 케이스                   │ 조건             │ 표시                                │
+           *  ├──────────────────────────┼──────────────────┼─────────────────────────────────────┤
+           *  │ ① 1촌 (이미 친구)        │ degree === 1     │ "이미 친구" 안내 + 소개 요청 버튼 X │
+           *  │ ② 팔레트 Pick (AI 추천)  │ degree === 0     │ "소개 요청하기" (시스템 직접 연결)  │
+           *  │ ③ 공통 친구 있음         │ mutualFriends>0  │ "소개 요청하기" (주선자 선택)       │
+           *  │ ④ 공통 친구 없음         │ 2·3촌 + mutual=0 │ "공통 친구 필요" sheet (친구 연결)  │
+           *  └──────────────────────────┴──────────────────┴─────────────────────────────────────┘
+           *
+           * 기존 버그: ① 1촌인데 mutualFriends=0 이면 ④ 가 트리거 됐음 (주선자 대시보드 > 지인 진입).
+           */}
+          {degree === 1 ? (
+            // ① 1촌 — 이미 친구. 소개 요청 의미 없음 (지인끼리는 직접 연락)
+            <div className="rounded-2xl bg-muted/40 border border-border p-4 text-center space-y-1">
+              <p className="text-sm font-medium text-foreground">이미 친구예요</p>
+              <p className="text-xs text-muted-foreground">
+                지인끼리는 소개 요청 없이 직접 연락할 수 있어요.
+              </p>
+            </div>
+          ) : !isPalettePick && mutualFriends.length === 0 ? (
+            // ④ 2·3촌 + 공통 친구 0 → 친구 연결 유도
             <div className="rounded-2xl bg-muted/60 border border-border p-4 text-center space-y-3">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">소개 요청을 하려면 공통 친구가 필요해요</p>
@@ -1081,6 +1104,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
               )}
             </div>
           ) : (
+            // ②③ 팔레트 Pick 또는 공통 친구 있음 → 소개 요청 버튼
             <>
               <Button
                 size="lg"
