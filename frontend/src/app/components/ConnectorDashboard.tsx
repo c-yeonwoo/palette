@@ -86,6 +86,18 @@ interface NudgeProposal {
   proposedAt: string;
 }
 
+/** ADR 0050 — 만남 후 사적 후기 (주선자 수신) */
+interface MatchmakerFeedbackItem {
+  requestId: string;
+  authorNickname: string;
+  counterpartNickname: string;
+  metStatus: string;      // MET / NOT_MET / SCHEDULED
+  sentiment: string;      // GOOD / NEUTRAL / DISAPPOINTING
+  message: string | null;
+  wantToMeetAgain: boolean;
+  createdAt: string;
+}
+
 const MOCK_MATCHMAKER_DATA: MatchmakerData = {
   matchmakerId: "mock-001",
   userId: "user-001",
@@ -195,6 +207,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
   const [memberGender, setMemberGender] = useState<"MALE" | "FEMALE">("MALE");
   const [members, setMembers] = useState<ClientMember[]>([]);
   const [nudges, setNudges] = useState<NudgeProposal[]>([]);
+  const [feedbacks, setFeedbacks] = useState<MatchmakerFeedbackItem[]>([]);
   const [nudgeSource, setNudgeSource] = useState<ClientMember | null>(null);
   const [showNudgeFlow, setShowNudgeFlow] = useState(false);
 
@@ -224,6 +237,13 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
         setNudges(nudgesRes.nudges);
       } catch {
         if (import.meta.env.DEV) setNudges(MOCK_NUDGES);
+      }
+      // ADR 0050 — 내가 주선한 매칭의 만남 후 후기
+      try {
+        const fb = await api.get<MatchmakerFeedbackItem[]>('/api/v1/matchmaker/feedback');
+        setFeedbacks(Array.isArray(fb) ? fb : []);
+      } catch {
+        /* 후기 없음 — 무시 */
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -644,6 +664,48 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                       </div>
                     );
                   })}
+                </div>
+              )}
+
+              {/* ADR 0050 — 만남 후 후기 (당사자가 나에게만 남긴 사적 후기) */}
+              {feedbacks.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">받은 후기 💌</p>
+                  {feedbacks.map((fb, idx) => {
+                    const sentimentMeta = {
+                      GOOD: { label: "좋았어요", emoji: "😊", tone: "text-emerald-700 bg-emerald-50" },
+                      NEUTRAL: { label: "보통이에요", emoji: "🙂", tone: "text-slate-700 bg-slate-100" },
+                      DISAPPOINTING: { label: "아쉬웠어요", emoji: "😕", tone: "text-rose-700 bg-rose-50" },
+                    }[fb.sentiment] ?? { label: fb.sentiment, emoji: "💬", tone: "text-slate-700 bg-slate-100" };
+                    const metLabel = { MET: "만남 완료", SCHEDULED: "만날 예정", NOT_MET: "안 만남" }[fb.metStatus] ?? fb.metStatus;
+                    return (
+                      <div key={`${fb.requestId}-${idx}`} className="bg-card border border-border rounded-2xl p-4 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-foreground">
+                            {fb.authorNickname} <span className="text-muted-foreground text-xs">→ {fb.counterpartNickname}</span>
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(fb.createdAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${sentimentMeta.tone}`}>
+                            {sentimentMeta.emoji} {sentimentMeta.label}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground">{metLabel}</span>
+                          {fb.wantToMeetAgain && (
+                            <span className="text-[11px] text-primary font-medium">· 재만남 의향 ✓</span>
+                          )}
+                        </div>
+                        {fb.message && (
+                          <p className="text-xs text-foreground/80 bg-muted rounded-lg px-3 py-2 leading-relaxed">"{fb.message}"</p>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <p className="text-[11px] text-muted-foreground px-1 leading-relaxed">
+                    🔒 이 후기는 당사자가 주선자님께만 남긴 비공개 후기예요. 상대방은 볼 수 없어요.
+                  </p>
                 </div>
               )}
 

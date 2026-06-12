@@ -4,6 +4,7 @@ import { Heart, Clock, CheckCircle2, XCircle, MessageSquare, Send, Users, Chevro
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { FirstMessageSuggestionModal } from "./intro/FirstMessageSuggestionModal";
+import { PostMatchFeedbackSheet } from "./match/PostMatchFeedbackSheet";
 
 interface MatchRequest {
   id: string;
@@ -61,6 +62,9 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
   const [submittingFeedback, setSubmittingFeedback] = useState<string | null>(null);
   // S-002 — 첫 메시지 추천 모달 (relationshipId 만 보관, 모달 자체가 비주얼)
   const [firstMessageOpen, setFirstMessageOpen] = useState(false);
+  // 만남 후 주선자 후기 (ADR 0050)
+  const [feedbackSheetFor, setFeedbackSheetFor] = useState<string | null>(null);
+  const [feedbackDone, setFeedbackDone] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchData();
@@ -405,6 +409,22 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
                         </div>
                       )}
 
+                      {/* 주선자에게 후기 (ADR 0050) — 만난 이후 단계에서 노출 */}
+                      {(rel.stage === "MET" || rel.stage === "DATING") && (
+                        feedbackDone.has(rel.requestId) ? (
+                          <p className="text-xs text-center text-muted-foreground py-1">
+                            🙏 주선자님께 후기를 전달했어요
+                          </p>
+                        ) : (
+                          <button
+                            onClick={() => setFeedbackSheetFor(rel.requestId)}
+                            className="w-full rounded-xl border border-border bg-muted/30 hover:bg-muted/60 px-3 py-2.5 text-xs font-medium text-foreground transition-colors flex items-center justify-center gap-1.5"
+                          >
+                            💌 주선자에게 후기 남기기 <span className="text-muted-foreground">(비공개)</span>
+                          </button>
+                        )
+                      )}
+
                       {/* Stage update */}
                       {currentStageIdx < STAGE_STEPS.length - 1 ? (
                         <Button
@@ -436,6 +456,15 @@ export function IntroductionHistoryScreen({ onBack }: { onBack?: () => void }) {
         open={firstMessageOpen}
         onClose={() => setFirstMessageOpen(false)}
       />
+
+      {/* ADR 0050 — 만남 후 주선자 사적 후기 시트 */}
+      {feedbackSheetFor && (
+        <PostMatchFeedbackSheet
+          requestId={feedbackSheetFor}
+          onClose={() => setFeedbackSheetFor(null)}
+          onSubmitted={() => setFeedbackDone(prev => new Set(prev).add(feedbackSheetFor))}
+        />
+      )}
     </div>
   );
 }

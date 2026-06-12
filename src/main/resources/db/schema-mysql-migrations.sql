@@ -185,6 +185,24 @@ CREATE TABLE IF NOT EXISTS matchmaker_nudges (
     INDEX idx_nudge_matchmaker (matchmaker_user_id, proposed_at)
 ) ENGINE=InnoDB;
 
+-- ── 13. 만남 후 사적 피드백 (ADR 0050) ────────────────────────────
+CREATE TABLE IF NOT EXISTS post_match_feedbacks (
+    id BINARY(16) NOT NULL,
+    request_id BINARY(16) NOT NULL,
+    matchmaker_user_id BINARY(16) NOT NULL,
+    author_user_id BINARY(16) NOT NULL,
+    counterpart_user_id BINARY(16) NOT NULL,
+    met_status VARCHAR(16) NOT NULL,
+    sentiment VARCHAR(16) NOT NULL,
+    message TEXT,
+    want_to_meet_again BIT NOT NULL DEFAULT 0,
+    created_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY idx_pmf_request_author (request_id, author_user_id),
+    INDEX idx_pmf_matchmaker (matchmaker_user_id, created_at),
+    INDEX idx_pmf_counterpart (counterpart_user_id)
+) ENGINE=InnoDB;
+
 -- ============================================================================
 -- 컬럼 추가 — MySQL ALTER COLUMN 은 IF NOT EXISTS 미지원.
 -- 이미 존재 시 ALTER 가 실패하지만 spring.sql.init.continue-on-error=true 라
