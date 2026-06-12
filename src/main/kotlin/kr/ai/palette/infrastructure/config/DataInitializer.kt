@@ -687,7 +687,7 @@ class DataInitializer(
             ),
             level = MatchmakerLevel(
                 level = 1,
-                commissionRate = 0.05
+                commissionRate = 0.15
             ),
             earnings = MatchmakerEarnings(
                 totalPoints = 2000,
@@ -715,7 +715,7 @@ class DataInitializer(
             ),
             level = MatchmakerLevel(
                 level = 1,
-                commissionRate = 0.05
+                commissionRate = 0.15
             ),
             earnings = MatchmakerEarnings(
                 totalPoints = 5500,
@@ -758,7 +758,7 @@ class DataInitializer(
             ),
             level = MatchmakerLevel(
                 level = 1,
-                commissionRate = 0.05
+                commissionRate = 0.15
             ),
             earnings = MatchmakerEarnings(
                 totalPoints = 2500,
@@ -787,7 +787,7 @@ class DataInitializer(
             ),
             level = MatchmakerLevel(
                 level = 3,
-                commissionRate = 0.15
+                commissionRate = 0.25
             ),
             earnings = MatchmakerEarnings(
                 totalPoints = 45000,
@@ -815,7 +815,7 @@ class DataInitializer(
             ),
             level = MatchmakerLevel(
                 level = 2,
-                commissionRate = 0.10
+                commissionRate = 0.20
             ),
             earnings = MatchmakerEarnings(
                 totalPoints = 32000,

@@ -352,7 +352,8 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
             >
               <div className="px-2">
                 <p className="text-[11px] text-muted-foreground mb-1">내 몫</p>
-                <p className="text-base font-bold text-foreground">{Math.round((matchmakerData.commissionRate ?? 0) * 100)}%</p>
+                {/* 커미션 %는 등급에서 파생 (SoT: matchmakerLevels) — 리워드 화면과 동일 */}
+                <p className="text-base font-bold text-foreground">{tierFor(matchmakerData.level).commission}%</p>
               </div>
               <div className="px-2">
                 <p className="text-[11px] text-muted-foreground mb-1">출금 가능</p>
