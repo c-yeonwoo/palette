@@ -21,8 +21,8 @@ export interface AuthUser {
   isPhoneVerified: boolean;
   /**
    * 데모(시드) 계정 여부 — backend `SeedUserPolicy.isSeed(user)` 결과.
-   * frontend mock 데이터 노출 가드의 단일 소스 (lib/mock-account.ts 참조).
-   * 구버전 backend 호환: 필드 없으면 false (lib/mock-account.ts 의 isMockDataAccount() 참조).
+   * frontend 는 더 이상 mock 데이터를 노출하지 않으므로 이 플래그로 분기하지 않는다.
+   * (호환을 위해 응답 필드만 유지)
    */
   isMockDataAccount?: boolean;
 }

@@ -484,9 +484,11 @@ class MatchmakerController(
      */
     private fun toClientMember(userId: UserId, joinedAt: Instant?): ClientMember? {
         val user = userRepository.findById(userId) ?: return null
-        val profile = profileRepository.findByUserId(userId)
-        val colorDto = profile?.colorType?.let { ColorTypeDto.from(it) }
-        val photoUrl = profile?.photos?.firstOrNull { it.isPrimary }?.url?.let {
+        // 데이팅 프로필이 없는 지인(주선자 전용 등)은 지인 카드에서 제외한다.
+        // 카드 탭 → ProfileDetail(데이팅 프로필) 404 dead-end 방지 (데이팅 프로필 있는 지인만 노출).
+        val profile = profileRepository.findByUserId(userId) ?: return null
+        val colorDto = profile.colorType?.let { ColorTypeDto.from(it) }
+        val photoUrl = profile.photos.firstOrNull { it.isPrimary }?.url?.let {
             fileStorageService.getPresignedDownloadUrl(it)
         }
         return ClientMember(
@@ -495,7 +497,7 @@ class MatchmakerController(
             name = user.privateInfo.realName.ifBlank { user.publicInfo.nickname },
             age = user.publicInfo.getAge(),
             gender = user.publicInfo.gender.name,
-            region = profile?.locationInfo?.sido ?: "",
+            region = profile.locationInfo?.sido ?: "",
             colorType = colorDto?.key,
             colorHex = colorDto?.hex,
             colorName = colorDto?.name,

@@ -47,32 +47,14 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
     loadData();
   }, []);
 
-  const MOCK_DATA: MatchmakerData = {
-    matchmakerId: "mock-001",
-    level: 2,
-    commissionRate: 0.35,
-    totalPoints: 4500,
-    availablePoints: 3200,
-    withdrawnPoints: 1000,
-    pendingPoints: 300,
-    totalMatchRequests: 8,
-    approvedRequests: 6,
-    rejectedRequests: 2,
-    successfulMatches: 3,
-    failedMatches: 1,
-    successRate: 0.5,
-  };
-
   const loadData = async () => {
     setIsLoading(true);
     try {
       const res = await api.get<MatchmakerData>("/api/v1/matchmakers/me");
       setData(res);
     } catch {
-      // API 미연결 시 dev 환경에서만 mock 데이터로 fallback
-      if (import.meta.env.DEV) {
-        setData(MOCK_DATA);
-      }
+      // mock 으로 채우지 않고 에러 상태(아래 !data 분기)로 안내
+      setData(null);
     } finally {
       setIsLoading(false);
     }

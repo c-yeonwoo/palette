@@ -98,94 +98,6 @@ interface MatchmakerFeedbackItem {
   createdAt: string;
 }
 
-const MOCK_MATCHMAKER_DATA: MatchmakerData = {
-  matchmakerId: "mock-001",
-  userId: "user-001",
-  level: 2,
-  commissionRate: 0.35,
-  totalPoints: 4500,
-  availablePoints: 3200,
-  withdrawnPoints: 1000,
-  pendingPoints: 300,
-  totalMatchRequests: 8,
-  approvedRequests: 6,
-  rejectedRequests: 2,
-  successfulMatches: 3,
-  failedMatches: 1,
-  successRate: 0.5,
-  profilePhotoUrl: null,
-  createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-};
-
-const MOCK_REQUESTS: MatchRequest[] = [
-  {
-    id: "req-001",
-    requesterId: "user-010",
-    requesterNickname: "김민준",
-    requesterRealName: "김민준",
-    requesterColorType: "blue",
-    targetUserId: "user-020",
-    targetNickname: "이서연",
-    targetRealName: "이서연",
-    targetColorType: "pink",
-    matchmakerId: "mock-001",
-    matchmakerName: "나",
-    message: "잘 어울릴 것 같아서 연결해드려요 😊",
-    offeredPoints: 1500,
-    status: "PENDING_MATCHMAKER",
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "req-002",
-    requesterId: "user-030",
-    requesterNickname: "박지훈",
-    requesterRealName: "박지훈",
-    requesterColorType: "orange",
-    targetUserId: "user-040",
-    targetNickname: "최유나",
-    targetRealName: "최유나",
-    targetColorType: "green",
-    matchmakerId: "mock-001",
-    matchmakerName: "나",
-    message: "서로 관심사가 비슷한 두 분이에요!",
-    offeredPoints: 1500,
-    status: "APPROVED_BY_MATCHMAKER",
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
-const MOCK_MEMBERS: ClientMember[] = [
-  { id: "m1", userId: "u1", name: "김민준", age: 29, gender: "MALE", region: "서울 강남", colorType: "blue", colorHex: "#3B82F6", colorName: "차분한 블루", photoUrl: null, joinedAt: "2026-04-01" },
-  { id: "m2", userId: "u2", name: "박지훈", age: 31, gender: "MALE", region: "서울 마포", colorType: "orange", colorHex: "#F97316", colorName: "따뜻한 오렌지", photoUrl: null, joinedAt: "2026-04-15" },
-  { id: "m3", userId: "u3", name: "이성호", age: 27, gender: "MALE", region: "경기 분당", colorType: "green", colorHex: "#22C55E", colorName: "신선한 그린", photoUrl: null, joinedAt: "2026-04-20" },
-  { id: "m4", userId: "u4", name: "이서연", age: 26, gender: "FEMALE", region: "서울 서초", colorType: "pink", colorHex: "#F9A8D4", colorName: "부드러운 핑크", photoUrl: null, joinedAt: "2026-04-05" },
-  { id: "m5", userId: "u5", name: "최유나", age: 28, gender: "FEMALE", region: "서울 용산", colorType: "purple", colorHex: "#A855F7", colorName: "고급스러운 퍼플", photoUrl: null, joinedAt: "2026-04-18" },
-  { id: "m6", userId: "u6", name: "정수진", age: 30, gender: "FEMALE", region: "서울 강동", colorType: "red", colorHex: "#EF4444", colorName: "생동감있는 레드", photoUrl: null, joinedAt: "2026-04-22" },
-];
-
-const MOCK_NUDGES: NudgeProposal[] = [
-  {
-    id: "n1",
-    fromMember: { id: "m1", userId: "u1", name: "김민준", age: 29, gender: "MALE", region: "서울 강남", colorType: "blue", colorHex: "#3B82F6", colorName: "차분한 블루", photoUrl: null, joinedAt: "2026-04-01" },
-    toMember: { id: "m4", userId: "u4", name: "이서연", age: 26, gender: "FEMALE", region: "서울 서초", colorType: "pink", colorHex: "#F9A8D4", colorName: "부드러운 핑크", photoUrl: null, joinedAt: "2026-04-05" },
-    message: "두 분 모두 여행을 좋아하시더라고요 :)",
-    pointsSpent: 50,
-    status: "PENDING",
-    proposedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: "n2",
-    fromMember: { id: "m2", userId: "u2", name: "박지훈", age: 31, gender: "MALE", region: "서울 마포", colorType: "orange", colorHex: "#F97316", colorName: "따뜻한 오렌지", photoUrl: null, joinedAt: "2026-04-15" },
-    toMember: { id: "m5", userId: "u5", name: "최유나", age: 28, gender: "FEMALE", region: "서울 용산", colorType: "purple", colorHex: "#A855F7", colorName: "고급스러운 퍼플", photoUrl: null, joinedAt: "2026-04-18" },
-    message: null,
-    pointsSpent: 50,
-    status: "BOTH_ACCEPTED",
-    proposedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
-
 export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFriends, onMemberProfileClick }: ConnectorDashboardProps) {
   const [matchmakerData, setMatchmakerData] = useState<MatchmakerData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -225,18 +137,18 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
       setMatchmakerData(matchmakerRes);
       setRequests(requestsResponse.requests);
 
-      // Load members and applications (with mock fallback in dev only)
+      // 지인/연결 제안 — 실패 시 mock 없이 빈 목록 유지
       try {
         const membersRes = await api.get<{ members: ClientMember[] }>('/api/v1/matchmakers/me/members');
         setMembers(membersRes.members);
       } catch {
-        if (import.meta.env.DEV) setMembers(MOCK_MEMBERS);
+        /* 지인 없음 — 빈 상태 유지 */
       }
       try {
         const nudgesRes = await api.get<{ nudges: NudgeProposal[] }>('/api/v1/matchmakers/me/nudges');
         setNudges(nudgesRes.nudges);
       } catch {
-        if (import.meta.env.DEV) setNudges(MOCK_NUDGES);
+        /* 연결 제안 없음 — 빈 상태 유지 */
       }
       // ADR 0050 — 내가 주선한 매칭의 만남 후 후기
       try {
@@ -247,13 +159,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
-      // Use mock data as fallback when API is unavailable (dev only)
-      if (import.meta.env.DEV) {
-        setMatchmakerData(MOCK_MATCHMAKER_DATA);
-        setRequests(MOCK_REQUESTS);
-        setMembers(MOCK_MEMBERS);
-        setNudges(MOCK_NUDGES);
-      }
+      // mock 으로 채우지 않음 — matchmakerData=null 이면 아래 에러/빈 상태 분기 노출
     } finally {
       setIsLoading(false);
     }

@@ -8,31 +8,22 @@ import { MessageBubble } from "./MessageBubble";
 import { MessageComposer } from "./MessageComposer";
 import { ChannelSelector } from "./ChannelSelector";
 import { filterVisibleMessages } from "../../../lib/conversation-visibility";
-import {
-  getMessagesForMatch,
-  type Channel,
-  type Message,
-} from "../../../data/mock-conversations";
+import type { Channel, Message } from "../../../data/mock-conversations";
 import { getColorTypeMeta } from "../../../lib/colorTypes";
 import type { MatchDetail } from "../../../data/mock-matches";
 import { cn } from "../ui/utils";
 
-const VIEWER_ID = "me-001"; // mock: 현재 사용자
+const VIEWER_ID = "me-001"; // 현재 사용자 (채팅 백엔드 연동 시 실제 userId 로 교체)
 
 interface ChatThreadProps {
   match: MatchDetail;
   isMatchmaker?: boolean;
   className?: string;
-  /** 데모(시드) 계정일 때만 mock 메시지 노출 (lib/mock-account.ts) */
-  isMockData?: boolean;
 }
 
-export function ChatThread({ match, isMatchmaker = false, className, isMockData = false }: ChatThreadProps) {
-  // 일반 가입 유저는 빈 대화로 시작 — 데모(시드) 계정만 mock 메시지 노출
-  // (채팅 백엔드 미구현, MVP 제한 — 별도 issue)
-  const [messages, setMessages] = useState<Message[]>(() =>
-    isMockData ? getMessagesForMatch(match.matchId) : [],
-  );
+export function ChatThread({ match, isMatchmaker = false, className }: ChatThreadProps) {
+  // 채팅 백엔드 미구현 — 항상 빈 대화로 시작 (mock 미노출, MVP 제한)
+  const [messages, setMessages] = useState<Message[]>([]);
   const [channel, setChannel] = useState<Channel>("public");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -80,8 +71,8 @@ export function ChatThread({ match, isMatchmaker = false, className, isMockData 
         {visible.length === 0 ? (
           <EmptyState
             icon={<MessageCircle />}
-            title={isMatchmaker ? "양쪽에 한마디씩 남기고 시작해보세요" : "주선자에게 첫 인사를 남겨보세요"}
-            body={isMatchmaker ? "두 분을 이어주는 첫 마디가 중요해요." : "주선자가 두 분을 잘 이어드릴 거예요."}
+            title="대화 내역이 없어요"
+            body={isMatchmaker ? "양쪽에 한마디씩 남기고 시작해보세요." : "주선자에게 첫 인사를 남겨보세요."}
           />
         ) : (
           visible.map((msg) => (

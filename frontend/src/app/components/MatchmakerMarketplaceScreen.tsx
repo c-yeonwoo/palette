@@ -19,13 +19,37 @@ import {
 } from "lucide-react";
 import { cn } from "./ui/utils";
 import { EmptyState, EmptyIllustration } from "./ui/empty-state";
-import { getColorTypeMeta } from "../../lib/colorTypes";
-import {
-  MOCK_MARKETPLACE,
-  SPECIALTY_FILTER_OPTIONS,
-  type MarketplaceMatchmaker,
-} from "../../data/mock-marketplace";
+import { getColorTypeMeta, type ColorTypeKey } from "../../lib/colorTypes";
 import { tierFor } from "../../lib/matchmakerLevels";
+
+type MatchmakerLevel = 1 | 2 | 3 | 4 | 5;
+
+interface MarketplaceMatchmaker {
+  id: string;
+  nickname: string;
+  /** 컬러 타입 (아바타 색상용) */
+  colorType: ColorTypeKey;
+  level: MatchmakerLevel;
+  commissionRate: number;       // 30~50%
+  successfulMatches: number;
+  totalRequests: number;
+  averageRating: number;        // 1.0~5.0
+  totalReviews: number;
+  bio: string;
+  specialties: string[];
+  /** 마지막 활동 ISO */
+  lastActiveAt: string;
+  /** 현재 모집 중 여부 */
+  accepting: boolean;
+}
+
+/** 전문분야 필터 옵션 */
+const SPECIALTY_FILTER_OPTIONS = [
+  "IT/개발", "금융/보험", "의료", "교육", "공무원", "전문직",
+  "20대", "30대", "40대이상",
+  "서울", "경기", "지방",
+  "결혼목적", "진지한연애", "자연스럽게",
+];
 
 type SortKey = "success" | "rating" | "recent";
 
@@ -38,14 +62,11 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
 interface MatchmakerMarketplaceScreenProps {
   onBack: () => void;
   onViewMatchmaker: (matchmakerId: string) => void;
-  /** 데모(시드) 계정일 때만 mock 주선자 노출 (lib/mock-account.ts) */
-  isMockData?: boolean;
 }
 
 export function MatchmakerMarketplaceScreen({
   onBack,
   onViewMatchmaker,
-  isMockData = false,
 }: MatchmakerMarketplaceScreenProps) {
   const [query, setQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
@@ -55,9 +76,8 @@ export function MatchmakerMarketplaceScreen({
   const hasSearch = query.trim().length > 0 || activeFilter !== null;
 
   const filtered = useMemo(() => {
-    // 일반 가입 유저는 빈 풀 — 데모(시드) 계정만 mock 주선자 노출
-    // (마켓플레이스 백엔드 연동 전, MVP 제한 — 별도 issue)
-    let list = isMockData ? [...MOCK_MARKETPLACE] : [];
+    // 마켓플레이스 백엔드 연동 전 — 항상 빈 풀 (mock 미노출, MVP 제한)
+    let list: MarketplaceMatchmaker[] = [];
 
     // 검색어
     if (query.trim()) {
@@ -88,7 +108,7 @@ export function MatchmakerMarketplaceScreen({
     }
 
     return list;
-  }, [query, activeFilter, sort, isMockData]);
+  }, [query, activeFilter, sort]);
 
   const successRatePct = (m: MarketplaceMatchmaker) =>
     m.totalRequests > 0
@@ -203,8 +223,8 @@ export function MatchmakerMarketplaceScreen({
           ) : (
             <EmptyState
               illustration={<EmptyIllustration name="telescope" />}
-              title="아직 추천할 주선자가 없어요"
-              description="지인 네트워크가 넓어지면 어울리는 주선자를 소개해 드릴게요."
+              title="주선자 마켓은 준비 중이에요"
+              description="더 좋은 주선자를 소개해 드리기 위해 준비하고 있어요. 조금만 기다려 주세요."
             />
           )
         ) : (

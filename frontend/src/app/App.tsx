@@ -57,7 +57,6 @@ import { toast } from "sonner";
 import { authService } from "../lib/auth/authService";
 import { tokenStorage } from "../lib/auth/tokenStorage";
 import { api } from "../lib/api/apiClient";
-import { isMockDataAccount } from "../lib/mock-account";
 
 /** lazy 화면 로딩 중 fallback — 경량 spinner (브랜드 톤) */
 function ScreenFallback() {
@@ -221,8 +220,6 @@ export default function App() {
   const [isConvertingToRegular, setIsConvertingToRegular] = useState(false);
   const [userGender, setUserGender] = useState<string | undefined>(undefined);
   const [userAccountType, setUserAccountType] = useState<"REGULAR" | "MATCHMAKER_ONLY" | undefined>(undefined);
-  /** 데모(시드) 계정 여부 — mock 데이터 노출 가드 (ADR 0003, lib/mock-account.ts) */
-  const [isMockAccount, setIsMockAccount] = useState(false);
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>(undefined);
   const [selectedMutualFriends, setSelectedMutualFriends] = useState<MutualFriend[]>([]);
@@ -339,7 +336,6 @@ export default function App() {
           if (user) {
             setIsLoggedIn(true);
             setUserGender(user.gender); // Store user gender for profile editing
-            setIsMockAccount(isMockDataAccount(user));
             const acctType = user.accountType;
             setUserAccountType(acctType);
             // If profile is completed, go to main feed, otherwise restore or start onboarding
@@ -811,7 +807,6 @@ export default function App() {
 
       if (user) {
         setUserGender(user.gender);
-        setIsMockAccount(isMockDataAccount(user));
         const acctType = user.accountType;
         setUserAccountType(acctType);
         if (user.isProfileCompleted) {
@@ -1119,7 +1114,6 @@ export default function App() {
 
       {currentScreen === "matchmakerMarketplace" && (
         <MatchmakerMarketplaceScreen
-          isMockData={isMockAccount}
           onBack={() => setCurrentScreen("connectorDashboard")}
           onViewMatchmaker={(id) => {
             setSelectedMatchmakerId(id);
@@ -1170,7 +1164,6 @@ export default function App() {
 
       {currentScreen === "notifications" && (
         <NotificationScreen
-          isMockData={isMockAccount}
           onBack={() => setCurrentScreen(prevScreen)}
           onOpenMatch={(matchId) => {
             setSelectedMatchId(matchId);
@@ -1202,7 +1195,6 @@ export default function App() {
       {currentScreen === "matchDetail" && (
         <MatchDetailScreen
           matchId={selectedMatchId}
-          isMockData={isMockAccount}
           onBack={() => setCurrentScreen("mainFeed")}
         />
       )}
