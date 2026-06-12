@@ -5,6 +5,7 @@ import { ChevronLeft, Star, TrendingUp, Wallet, RefreshCw, Award, Coins, Sparkle
 import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
 import { MATCHMAKER_TIER_LIST } from "../../lib/matchmakerLevels";
+import { InfoHint } from "./InfoHint";
 
 interface MatchmakerData {
   matchmakerId: string;
@@ -320,18 +321,19 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
               </button>
             </div>
 
-            {/* ADR 0046 — 외부 송금 금지 가이드 (약관 §6) */}
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                  <span className="text-amber-700 text-sm font-bold">!</span>
+            {/* ADR 0046 — 외부 송금 금지 가이드 (압축: 한 줄 + ⓘ) */}
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-amber-700 text-xs font-bold">!</span>
                 </span>
-                <p className="font-semibold text-amber-900">외부 송금 유도 금지 (약관 §6)</p>
+                <p className="font-semibold text-amber-900 text-sm truncate">외부 송금 유도 금지 (약관 §6)</p>
               </div>
-              <p className="text-xs text-amber-900/80 leading-relaxed">
-                사용자에게 앱 외부(계좌이체·간편송금)로 감사 표시를 유도하면 안 됩니다. 적발 시 누적 잔액 전액 몰수 + 출금 자격 영구 박탈 + 등급 0 회귀 + 영구 정지됩니다.
-                감사 표시는 반드시 앱 내 팁 기능으로 받아주세요 (90% 수령 + 등급·마일스톤 자동 산정).
-              </p>
+              <InfoHint summary="자세히" tone="amber" title="외부 송금 유도 금지" contentClassName="w-72">
+                앱 외부(계좌이체·간편송금)로 감사 표시를 유도하면 적발 시 누적 잔액 전액 몰수 + 출금 자격 영구 박탈 +
+                등급 0 회귀 + 영구 정지됩니다. 감사 표시는 반드시 앱 내 팁 기능으로 받아주세요
+                (90% 수령 + 등급·마일스톤 자동 산정).
+              </InfoHint>
             </div>
           </>
         )}

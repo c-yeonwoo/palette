@@ -14,6 +14,7 @@ import {
   DATING_STYLE_OPTION_LABELS,
 } from "../../lib/datingStyleLabels";
 import { jobCategoryLabel } from "../../lib/jobCategory";
+import { InfoHint } from "./InfoHint";
 
 interface MutualFriend {
   name: string;
@@ -1301,21 +1302,21 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                     </div>
                   </div>
 
-                  {/* ADR 0044 — 소개 요청 100 물감 차감 안내 */}
-                  <div className="rounded-xl bg-primary/5 border border-primary/15 px-3.5 py-3">
+                  {/* ADR 0044 — 소개 요청 100 물감 차감 안내 (압축: 헤드라인 + ⓘ) */}
+                  <div className="rounded-xl bg-primary/5 border border-primary/15 px-3.5 py-3 flex items-center justify-between gap-2">
                     <p className="text-xs font-semibold text-primary">소개 요청 1회 — 100 물감 (10,000원)</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-                      차감 즉시 진행. 매칭 성사 시 주선자에게 등급별 15~40% 분배. 거절·만료 시 자동 환불.
-                    </p>
+                    <InfoHint title="100 물감은 이렇게 쓰여요" tone="primary">
+                      차감 즉시 진행돼요. 매칭 성사 시 주선자에게 등급별 15~40% 분배, 거절·만료 시 자동 환불됩니다.
+                    </InfoHint>
                   </div>
 
                   {/* Points selection */}
                   <div className="space-y-3">
-                    <div>
+                    <div className="flex items-center gap-1.5">
                       <p className="text-sm font-semibold">성의 표시 (옵셔널 팁)</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        주선자에게 보내는 자발 팁 — 매칭 성사 후 90% 수령. <strong>외부 송금 금지</strong> (약관 §6).
-                      </p>
+                      <InfoHint title="성의 표시 팁" tone="muted">
+                        주선자에게 보내는 자발 팁이에요. 매칭 성사 후 90% 수령하며, 외부 송금은 약관 §6 위반으로 금지됩니다.
+                      </InfoHint>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                       {([
