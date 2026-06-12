@@ -5,6 +5,7 @@ import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { FirstMessageSuggestionModal } from "./intro/FirstMessageSuggestionModal";
 import { PostMatchFeedbackSheet } from "./match/PostMatchFeedbackSheet";
+import { InfoHint } from "./InfoHint";
 
 interface MatchRequest {
   id: string;
@@ -410,19 +411,12 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
                         </button>
                       )}
 
-                      {/* ADR 0046 — 외부 송금 경고 + 앱 내 팁 권유 (MATCHED·EARLY 등 초기 단계에 노출) */}
+                      {/* ADR 0046 — 외부 송금 경고 (압축: 한 줄 + ⓘ) */}
                       {(rel.stage === "MATCHED" || rel.stage === "EARLY") && (
-                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 flex gap-2">
-                          <span className="text-amber-700 font-bold text-sm flex-shrink-0">!</span>
-                          <div className="text-[11px] text-amber-900 leading-relaxed">
-                            <p className="font-semibold mb-0.5">감사 표시는 앱 내에서 안전하게</p>
-                            <p>
-                              주선자에게 보내는 팁은 앱 내 기능으로만 보내주세요.
-                              계좌이체·간편송금 요구는 약관 §6 위반이며, 사기 위험 + 분쟁 시 보호 X.
-                              발견 시 신고해주시면 50 물감을 드려요.
-                            </p>
-                          </div>
-                        </div>
+                        <InfoHint summary="감사 표시는 앱 내 팁으로만" title="앱 밖 송금은 위험해요" tone="amber">
+                          주선자 팁은 앱 내 기능으로만 보내주세요. 계좌이체·간편송금 요구는 약관 §6 위반이라
+                          사기·분쟁 시 보호받을 수 없어요. 발견 시 신고하면 50 물감을 드려요.
+                        </InfoHint>
                       )}
 
                       {/* Stage bar */}
