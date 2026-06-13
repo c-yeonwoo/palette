@@ -169,6 +169,12 @@ export function AdminDashboardScreen({ admin, onNavigate }: Props) {
             title="온보딩 칩 옵션"
             desc="체형·관심사·성격·가치 등 칩 선택지 관리 (ADR 0057)"
           />
+          <MenuCard
+            tone="sky"
+            onClick={() => onNavigate("/admin/onboarding-fields")}
+            title="온보딩 필드"
+            desc="가입 질문·섹션·순서·라벨·위젯·필수 여부 관리 (ADR 0058)"
+          />
         </CategorySection>
 
         {/* 트라이얼 현황 (ADR 0045) — KPI 라기보다 인사이트라 별도 섹션 */}

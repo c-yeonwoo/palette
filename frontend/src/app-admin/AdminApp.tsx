@@ -15,6 +15,7 @@ import { AdminUserActivityScreen } from "./components/AdminUserActivityScreen";
 import { AdminMatchmakingFlowScreen } from "./components/AdminMatchmakingFlowScreen";
 import { AdminInterviewQuestionsScreen } from "./components/AdminInterviewQuestionsScreen";
 import { AdminFieldOptionsScreen } from "./components/AdminFieldOptionsScreen";
+import { AdminOnboardingFieldsScreen } from "./components/AdminOnboardingFieldsScreen";
 import { adminAuth, type AdminInfo } from "./lib/adminAuth";
 
 /**
@@ -44,7 +45,8 @@ type Screen =
   | { kind: "activity" }
   | { kind: "flow" }
   | { kind: "interviewQuestions" }
-  | { kind: "fieldOptions" };
+  | { kind: "fieldOptions" }
+  | { kind: "onboardingFields" };
 
 function pathToScreen(path: string): Screen {
   if (path === "/admin" || path === "/admin/") return { kind: "dashboard" };
@@ -63,6 +65,7 @@ function pathToScreen(path: string): Screen {
   if (path === "/admin/flow") return { kind: "flow" };
   if (path === "/admin/interview-questions") return { kind: "interviewQuestions" };
   if (path === "/admin/field-options") return { kind: "fieldOptions" };
+  if (path === "/admin/onboarding-fields") return { kind: "onboardingFields" };
   return { kind: "dashboard" };
 }
 
@@ -142,5 +145,7 @@ export default function AdminApp() {
       return <AdminInterviewQuestionsScreen onBack={() => navigate("/admin")} />;
     case "fieldOptions":
       return <AdminFieldOptionsScreen onBack={() => navigate("/admin")} />;
+    case "onboardingFields":
+      return <AdminOnboardingFieldsScreen onBack={() => navigate("/admin")} />;
   }
 }
