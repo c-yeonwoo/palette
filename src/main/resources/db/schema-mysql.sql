@@ -273,7 +273,7 @@
         oauth_provider enum ('APPLE','GOOGLE','KAKAO','NAVER'),
         preferred_contact_method enum ('KAKAOTALK','PHONE'),
         role enum ('USER','ADMIN') not null default 'USER',
-        status enum ('ACTIVE','SUSPENDED','DORMANT') not null default 'ACTIVE',
+        status enum ('ACTIVE','PENDING_APPROVAL','REJECTED','SUSPENDED','DORMANT') not null default 'ACTIVE',
         status_reason varchar(500),
         status_updated_at datetime(6),
         status_updated_by BINARY(16),

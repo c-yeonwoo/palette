@@ -73,8 +73,8 @@ class UserEntity(
     @Enumerated(EnumType.STRING)
     var role: UserRoleEntity = UserRoleEntity.USER,
 
-    // Status (ACTIVE / SUSPENDED / DORMANT) — 탈퇴는 deletedAt
-    @Column(name = "status", nullable = false, length = 16)
+    // Status (ACTIVE / PENDING_APPROVAL / REJECTED / SUSPENDED / DORMANT) — 탈퇴는 deletedAt
+    @Column(name = "status", nullable = false, length = 24)
     @Enumerated(EnumType.STRING)
     var status: UserStatusEntity = UserStatusEntity.ACTIVE,
 
@@ -168,6 +168,8 @@ enum class UserRoleEntity {
 
 enum class UserStatusEntity {
     ACTIVE,
+    PENDING_APPROVAL,
+    REJECTED,
     SUSPENDED,
     DORMANT
 }

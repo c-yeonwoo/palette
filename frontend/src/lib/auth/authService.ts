@@ -25,6 +25,10 @@ export interface AuthUser {
    * (호환을 위해 응답 필드만 유지)
    */
   isMockDataAccount?: boolean;
+  /** ADR 0054 운영자 승인 게이팅. ACTIVE = 승인 완료(정상). PENDING_APPROVAL/REJECTED = 심사 대기/반려 */
+  approvalStatus?: 'ACTIVE' | 'PENDING_APPROVAL' | 'REJECTED' | 'SUSPENDED' | 'DORMANT';
+  /** 반려·정지 사유 (REJECTED/SUSPENDED 일 때) */
+  approvalReason?: string | null;
 }
 
 export interface RefreshTokenResponse {

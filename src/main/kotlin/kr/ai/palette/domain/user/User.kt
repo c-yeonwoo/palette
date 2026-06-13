@@ -44,7 +44,8 @@ data class User(
     }
 
     fun canUseMatchingService(): Boolean {
-        return accountType == AccountType.REGULAR && isProfileCompleted && !metadata.isDeleted()
+        // 운영자 승인(ACTIVE) 완료 + 프로필 완성 + 미탈퇴 (ADR 0054 — 승인 게이팅)
+        return accountType == AccountType.REGULAR && isProfileCompleted && status == UserStatus.ACTIVE && !metadata.isDeleted()
     }
 
     fun canBeMatchmaker(): Boolean {
@@ -52,9 +53,24 @@ data class User(
         return !metadata.isDeleted() && privateInfo.isPhoneVerified
     }
 
+    /**
+     * 프로필 완성 — 신규 사용자는 운영자 승인 대기(PENDING_APPROVAL)로 전환 (ADR 0054).
+     * 이미 ACTIVE 가 아닌 특수 상태(SUSPENDED 등)면 건드리지 않는다.
+     */
     fun completeProfile(): User {
         require(accountType == AccountType.REGULAR) { "Only REGULAR users can complete profile" }
-        return copy(isProfileCompleted = true)
+        val nextStatus = if (status == UserStatus.ACTIVE) UserStatus.PENDING_APPROVAL else status
+        return copy(isProfileCompleted = true, status = nextStatus)
+    }
+
+    /** 운영자 승인 → 정식 서비스 이용 가능 */
+    fun approveProfile(operatorId: UserId, at: java.time.Instant = java.time.Instant.now()): User =
+        copy(status = UserStatus.ACTIVE, statusReason = null, statusUpdatedAt = at, statusUpdatedBy = operatorId, metadata = metadata.copy(updatedAt = at))
+
+    /** 운영자 반려 — 사유 필수. 사용자는 보완 후 재제출 가능 */
+    fun rejectProfile(reason: String, operatorId: UserId, at: java.time.Instant = java.time.Instant.now()): User {
+        require(reason.isNotBlank()) { "반려 사유는 필수입니다" }
+        return copy(status = UserStatus.REJECTED, statusReason = reason, statusUpdatedAt = at, statusUpdatedBy = operatorId, metadata = metadata.copy(updatedAt = at))
     }
 
     fun updatePublicInfo(publicInfo: PublicInfo): User {

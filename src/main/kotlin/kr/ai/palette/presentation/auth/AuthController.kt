@@ -62,7 +62,10 @@ class AuthController(
                 phoneNumber = user.privateInfo.phoneNumber,
                 isPhoneVerified = user.privateInfo.isPhoneVerified,
                 // ADR 0003: 시드(데모) 계정 여부 — frontend mock 데이터 노출 가드의 단일 소스
-                isMockDataAccount = seedUserPolicy.isSeed(user)
+                isMockDataAccount = seedUserPolicy.isSeed(user),
+                // ADR 0054: 운영자 승인 게이팅 — ACTIVE/PENDING_APPROVAL/REJECTED/SUSPENDED/DORMANT
+                approvalStatus = user.status.name,
+                approvalReason = user.statusReason,
             )
         )
     }
@@ -278,7 +281,9 @@ data class UserResponse(
     val gender: String,
     val phoneNumber: String?,
     val isPhoneVerified: Boolean,
-    val isMockDataAccount: Boolean
+    val isMockDataAccount: Boolean,
+    val approvalStatus: String = "ACTIVE",
+    val approvalReason: String? = null,
 )
 
 data class UpdateBasicInfoRequest(
