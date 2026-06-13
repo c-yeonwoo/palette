@@ -29,16 +29,19 @@ spring:
 
   h2:
     console:
-      enabled: true
+      enabled: ${H2_CONSOLE_ENABLED:false}   # prod 기본 off (보안+메모리). 로컬은 H2_CONSOLE_ENABLED=true
       path: /h2-console
 
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    # 요청 전체 동안 DB 커넥션/세션을 붙들지 않음 → 커넥션·스레드 압박↓ (DDL+DTO 매퍼 구조라 안전)
+    open-in-view: false
+    # prod 는 SQL 로깅 off — 매 쿼리 문자열 생성·포맷·로깅이 CPU/메모리/디스크 낭비. 로컬은 JPA_SHOW_SQL=true
+    show-sql: ${JPA_SHOW_SQL:false}
     properties:
       hibernate:
-        format_sql: true
+        format_sql: false
         dialect: org.hibernate.dialect.H2Dialect
 
   # OAuth2 Configuration
