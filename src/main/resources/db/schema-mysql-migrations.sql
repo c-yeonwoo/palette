@@ -315,3 +315,26 @@ ALTER TABLE profiles MODIFY body_type VARCHAR(40);
 ALTER TABLE profiles MODIFY smoking   VARCHAR(40);
 ALTER TABLE profiles MODIFY drinking  VARCHAR(40);
 ALTER TABLE profiles MODIFY religion  VARCHAR(40);
+
+-- ── 18. 온보딩 필드 메타 어드민 관리 (ADR 0058, schema-driven onboarding) ─────
+-- 회원가입 프로필 화면의 필드/섹션/순서/라벨/힌트/위젯/필수 여부를 코드 테이블로.
+-- 부팅 시 OnboardingFieldSeeder 가 현행 3개 화면 필드로 시드. 칩 선택지는 field_options(17) 참조.
+CREATE TABLE IF NOT EXISTS onboarding_fields (
+    id             BINARY(16)   NOT NULL,
+    field_key      VARCHAR(50)  NOT NULL,
+    section        VARCHAR(30)  NOT NULL,
+    section_order  INT          NOT NULL,
+    field_order    INT          NOT NULL,
+    label          VARCHAR(200) NOT NULL,
+    hint           VARCHAR(500),
+    input_type     VARCHAR(30)  NOT NULL,
+    option_set_key VARCHAR(40),
+    required       BIT(1)       NOT NULL DEFAULT b'0',
+    config         TEXT,
+    active         BIT(1)       NOT NULL DEFAULT b'1',
+    created_at     DATETIME(6)  NOT NULL,
+    updated_at     DATETIME(6)  NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_of_field_key (field_key),
+    KEY idx_of_order (section_order, field_order)
+) ENGINE=InnoDB;
