@@ -21,6 +21,10 @@ data class ProfileGenerationRequest(
     val manualAnswers: Map<String, String> = emptyMap(),
     val datingStyle: Map<String, String> = emptyMap(), // questionKey -> optionKey
     val idealType: IdealTypeContext? = null,
+    /** MBTI 4글자 (예: "ENFP"). 색 판별 보강 근거 (ADR 0056) */
+    val mbti: String? = null,
+    /** 생년월일 기반 사주 오행 요약 한 줄 (SajuService.analyze().summary). 색 판별 보강 근거 */
+    val sajuSummary: String? = null,
 )
 
 enum class IntroMethod { INTERVIEW, MANUAL, DATING_STYLE }
@@ -48,6 +52,12 @@ data class ProfileGenerationResult(
     val colorKeywords: List<String> = emptyList(),
     /** 강점 태그 3~5개 ("감수성 깊은 사색가" 등) — 인사이트 카드 노출 (ADR 0037) */
     val strengths: List<String> = emptyList(),
+    /** 색 판별 근거 — 답변에서 (ADR 0056 다근거 분석) */
+    val evidenceFromAnswers: String = "",
+    /** 색 판별 근거 — MBTI 에서 */
+    val evidenceFromMbti: String = "",
+    /** 색 판별 근거 — 사주 오행에서 */
+    val evidenceFromSaju: String = "",
 )
 
 @Service
@@ -256,6 +266,17 @@ class OpenAIService(
             if (ideal.importantValues.isNotEmpty()) appendLine("- 중요하게 보는 것: ${ideal.importantValues.joinToString(", ")}")
             if (ideal.dealBreakers.isNotEmpty()) appendLine("- 절대 안 되는 것: ${ideal.dealBreakers.joinToString(", ")}")
         }
+
+        // ADR 0056 — 보강 근거: MBTI + 사주 오행 (답변과 교차검증)
+        request.mbti?.takeIf { it.isNotBlank() }?.let {
+            appendLine()
+            appendLine("【MBTI】 $it (이 유형의 일반적 성향 지식을 보조 근거로 활용하되, 답변과 충돌하면 답변을 우선)")
+        }
+        request.sajuSummary?.takeIf { it.isNotBlank() }?.let {
+            appendLine()
+            appendLine("【사주 오행(생년월일 기반)】 $it")
+            appendLine("(오행은 성향의 '기운' 참고용 보조 신호 — 답변·MBTI 와 일관된 방향으로만 가볍게 반영)")
+        }
     }
 
     internal fun parseResult(content: String): ProfileGenerationResult {
@@ -277,7 +298,19 @@ class OpenAIService(
             idealTypeInsight = (map["idealTypeInsight"] as? String)?.trim().orEmpty(),
             colorKeywords = keywords,
             strengths = strengths,
+            evidenceFromAnswers = evidenceField(map, "evidenceFromAnswers"),
+            evidenceFromMbti = evidenceField(map, "evidenceFromMbti"),
+            evidenceFromSaju = evidenceField(map, "evidenceFromSaju"),
         )
+    }
+
+    /** evidence 는 중첩 객체("evidence":{...}) 또는 평면 키 둘 다 허용 (모델 출력 변동 대비) */
+    private fun evidenceField(map: Map<String, Any?>, key: String): String {
+        (map[key] as? String)?.trim()?.takeIf { it.isNotBlank() }?.let { return it }
+        @Suppress("UNCHECKED_CAST")
+        val nested = map["evidence"] as? Map<String, Any?>
+        val nestedKey = key.removePrefix("evidenceFrom").replaceFirstChar { it.lowercase() } // fromAnswers→answers
+        return (nested?.get(nestedKey) as? String)?.trim().orEmpty()
     }
 
     /** OpenAI 키가 dummy/placeholder 일 때 사용 — 골든패스 통과용 stub.
@@ -358,35 +391,49 @@ class OpenAIService(
             idealTypeInsight = idealTypeInsight,
             colorKeywords = keywords,
             strengths = stubStrengths,
+            evidenceFromAnswers = if (cited.isNotEmpty()) "답변의 일상·관계 묘사에서 따뜻한 결을 참고했어요." else "",
+            evidenceFromMbti = request.mbti?.takeIf { it.isNotBlank() }?.let { "MBTI $it 의 성향도 함께 고려했어요." } ?: "",
+            evidenceFromSaju = request.sajuSummary?.takeIf { it.isNotBlank() }?.let { "사주 오행($it)도 보조 신호로 반영했어요." } ?: "",
         )
     }
 
     companion object {
         private const val SYSTEM_PROMPT = """
-당신은 데이팅 앱 "팔레트"의 프로필 작성 AI입니다.
-사용자의 자기소개와 이상형 정보를 분석하여 아래 항목을 반환합니다.
+당신은 데이팅 앱 "팔레트"의 프로필 분석 AI입니다.
+사용자의 (1) 자기소개/인터뷰 답변 (2) MBTI (3) 사주 오행(생년월일 기반)을 **종합**해
+가장 잘 맞는 색깔 하나를 신중하게 도출하고, 아래 항목을 반환합니다.
 
 [반환 형식] 반드시 아래 JSON 형식만 출력하세요. 다른 텍스트 없이:
 {
   "colorType": "<색깔 타입 (영문 enum)>",
-  "colorReasoning": "<왜 이 색깔로 분석했는지 — 사용자 답변에서 근거를 직접 인용하며 설명. 2-3문장, 150자 내외>",
-  "personalitySummary": "<이 사람의 성격·연애 성향 요약 — 답변에서 드러난 특징. 2-3문장, 150자 내외>",
-  "idealTypeInsight": "<어떤 이상형을 원하는지 유추 — 답변과 이상형 정보를 근거로 어울리는 상대상을 추론. 2-3문장, 150자 내외>",
-  "strengths": ["<강점 태그 3-5개 (예: '감수성 깊은 사색가', '따뜻한 동반자', '진정성 있는 대화가')>"],
+  "colorReasoning": "<왜 이 색깔인지 — 세 근거(답변·MBTI·사주)를 종합한 결론. 2-3문장, 150자 내외>",
+  "evidenceFromAnswers": "<답변에서 찾은 근거 — 사용자가 쓴 표현을 따옴표로 인용. 1-2문장>",
+  "evidenceFromMbti": "<MBTI 근거 — 해당 유형의 성향이 이 색과 어떻게 닿는지. 1-2문장. MBTI 없으면 빈 문자열>",
+  "evidenceFromSaju": "<사주 오행 근거 — 강한/부족 기운이 성향과 어떻게 연결되는지. 1-2문장. 사주 없으면 빈 문자열>",
+  "personalitySummary": "<성격·연애 성향 요약. 2-3문장, 150자 내외>",
+  "idealTypeInsight": "<어울리는 이상형 유추. 2-3문장, 150자 내외>",
+  "strengths": ["<강점 태그 3-5개 (예: '감수성 깊은 사색가', '따뜻한 동반자')>"],
   "colorKeywords": ["<핵심 키워드 3-5개>"],
   "introduction": "<자기소개글 (500자 이상)>"
 }
 
-[colorType 선택 기준]
-사용자의 성격, 라이프스타일, 가치관을 종합해서 가장 잘 맞는 색깔 하나를 고르세요:
-- WARM_ORANGE: 활발하고 다정함, 사람을 좋아하고 에너지가 넘침
-- CALM_BLUE: 신중하고 깊이 있음, 믿음직하고 안정적
-- VIBRANT_RED: 열정적이고 적극적, 도전을 즐김
-- SOFT_PINK: 섬세하고 낭만적, 감성이 풍부하고 따뜻함
-- FRESH_GREEN: 자연스럽고 편안함, 함께 있으면 마음이 편해지는 타입
-- ELEGANT_PURPLE: 지적이고 감각적, 독특한 매력과 깊은 내면
-- BRIGHT_YELLOW: 긍정적이고 유쾌함, 어디서든 분위기를 밝게 만듦
-- SOPHISTICATED_GRAY: 이성적이고 프로페셔널, 어떤 상황에도 신뢰를 줌
+[색 판별 원칙 — 매우 중요]
+- 키워드 한두 개로 즉단하지 말 것. (예: "다정한·활발한" 단어만 보고 곧장 오렌지로 단정 금지)
+- **세 근거를 각각 따져본 뒤 교차검증**하여 가장 일관된 색을 고른다.
+  · 가중치: 답변(자기 서술) 우선 → MBTI 로 성향 축 보강 → 사주 오행은 '기운' 보조 신호로 가볍게.
+  · 세 근거가 다른 방향을 가리키면, 답변을 기준으로 삼고 그 충돌을 reasoning 에 녹여라.
+- evidenceFromMbti / evidenceFromSaju 는 **실제로 그 근거가 색 선택에 기여한 내용**만. 입력이 없으면 빈 문자열.
+
+[colorType 후보 — 성향 축으로 구분]
+- WARM_ORANGE: 활발·다정, 사람중심·에너지 (MBTI E·F 경향, 오행 화/목)
+- CALM_BLUE: 신중·깊이, 안정·신뢰 (I·T·J, 오행 수)
+- VIBRANT_RED: 열정·적극·도전 (E·T·P, 오행 화)
+- SOFT_PINK: 섬세·낭만·감성 (F, 오행 목/화)
+- FRESH_GREEN: 자연스럽고 편안, 포용 (F·P, 오행 목/토)
+- ELEGANT_PURPLE: 지적·감각·독창 (N·T, 오행 금/수)
+- BRIGHT_YELLOW: 긍정·유쾌·분위기메이커 (E·N·P, 오행 화/토)
+- SOPHISTICATED_GRAY: 이성·프로페셔널·신뢰 (I·T·J, 오행 금)
+(괄호의 MBTI·오행 경향은 참고 힌트일 뿐, 절대 규칙 아님 — 답변이 최우선)
 
 [colorReasoning 작성 기준 — 이 색을 고른 "근거"]
 - 사용자가 직접 쓴 표현을 따옴표로 인용해서 근거 제시 (예: "주말엔 친구들과 맛집을 다닌다" 라고 답하신 부분에서…)
