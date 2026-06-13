@@ -15,6 +15,10 @@ interface ProfileGenerationResult {
   idealTypeInsight?: string;
   colorKeywords?: string[];
   strengths?: string[];
+  // ADR 0056 — 색 판별 다근거 (답변/MBTI/사주)
+  evidenceFromAnswers?: string;
+  evidenceFromMbti?: string;
+  evidenceFromSaju?: string;
 }
 
 interface AIProfileEnhanceScreenProps {
@@ -29,6 +33,12 @@ interface AIProfileEnhanceScreenProps {
       datePreferences?: string[];
       importantValues?: string[];
       dealBreakers?: string[];
+    };
+    basicInfo?: {
+      mbti?: string;
+      birthYear?: string;
+      birthMonth?: string;
+      birthDay?: string;
     };
   };
 }
@@ -199,6 +209,11 @@ export function AIProfileEnhanceScreen({
     startLoadingAnimation();
 
     try {
+      // ADR 0056 — MBTI + 생년월일(사주) 보강. birthDate 는 yyyy-MM-dd (서버가 User 값 우선)
+      const bi = profileData.basicInfo;
+      const birthDate = bi?.birthYear && bi?.birthMonth && bi?.birthDay
+        ? `${bi.birthYear}-${String(bi.birthMonth).padStart(2, "0")}-${String(bi.birthDay).padStart(2, "0")}`
+        : undefined;
       const requestBody = {
         introMethod,
         ...(introMethod === "INTERVIEW"
@@ -210,6 +225,8 @@ export function AIProfileEnhanceScreen({
           importantValues: idealType.importantValues ?? [],
           dealBreakers: idealType.dealBreakers ?? [],
         },
+        ...(bi?.mbti ? { mbti: bi.mbti } : {}),
+        ...(birthDate ? { birthDate } : {}),
       };
 
       const data = await api.post<ProfileGenerationResult>(
@@ -510,6 +527,25 @@ export function AIProfileEnhanceScreen({
                   <p className="text-sm text-foreground leading-relaxed mb-3 whitespace-pre-wrap">
                     {result.colorReasoning}
                   </p>
+                )}
+                {/* ADR 0056 — 답변/MBTI/사주 3출처 근거 */}
+                {(result.evidenceFromAnswers || result.evidenceFromMbti || result.evidenceFromSaju) && (
+                  <div className="space-y-2 mb-3">
+                    {([
+                      { icon: "💬", label: "답변", text: result.evidenceFromAnswers },
+                      { icon: "🧩", label: "MBTI", text: result.evidenceFromMbti },
+                      { icon: "🔮", label: "사주 오행", text: result.evidenceFromSaju },
+                    ] as const)
+                      .filter((e) => e.text && e.text.trim().length > 0)
+                      .map((e) => (
+                        <div key={e.label} className="flex gap-2 rounded-xl bg-muted/40 px-3 py-2">
+                          <span className="text-sm flex-shrink-0">{e.icon}</span>
+                          <p className="text-[13px] leading-relaxed text-foreground/90">
+                            <span className="font-semibold mr-1">{e.label}</span>{e.text}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
                 )}
                 {result.colorKeywords && result.colorKeywords.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 pt-2 border-t border-border">

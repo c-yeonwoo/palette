@@ -1,12 +1,15 @@
 package kr.ai.palette.presentation.ai
 
 import kr.ai.palette.domain.auth.AuthUser
+import kr.ai.palette.domain.user.UserRepository
 import kr.ai.palette.infrastructure.ai.IdealTypeContext
 import kr.ai.palette.infrastructure.ai.IntroMethod
 import kr.ai.palette.infrastructure.ai.OpenAIService
 import kr.ai.palette.infrastructure.ai.ProfileGenerationRequest
 import kr.ai.palette.infrastructure.ai.ProfileGenerationResult
+import kr.ai.palette.infrastructure.ai.SajuService
 import kr.ai.palette.infrastructure.ratelimit.RateLimiter
+import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.PostMapping
@@ -14,13 +17,17 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.time.Duration
+import java.time.LocalDate
 
 @RestController
 @RequestMapping("/api/v1/ai-profile")
 class AIProfileController(
     private val openAIService: OpenAIService,
     private val rateLimiter: RateLimiter,
+    private val userRepository: UserRepository,
+    private val sajuService: SajuService,
 ) {
+    private val log = LoggerFactory.getLogger(AIProfileController::class.java)
 
     /**
      * LLM 프로필 생성. ADR 0047 안전바.
@@ -48,6 +55,16 @@ class AIProfileController(
             throw e
         }
 
+        // ADR 0056 — MBTI + 사주(오행) 보강. 생년월일은 서버 User 값 우선(권위), 없으면 요청값.
+        val mbti = request.mbti?.trim()?.uppercase()?.takeIf { it.length == 4 && it.all { c -> c.isLetter() } }
+        val birthDate = userRepository.findById(authUser.userId)?.publicInfo?.birthDate
+            ?: request.birthDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+        val sajuSummary = birthDate?.let {
+            runCatching { sajuService.analyze(it).summary }
+                .onFailure { e -> log.warn("사주 계산 실패 — 색 분석에서 생략. {}", e.message) }
+                .getOrNull()
+        }
+
         val result = openAIService.generateProfile(
             ProfileGenerationRequest(
                 introMethod = when (request.introMethod) {
@@ -66,6 +83,8 @@ class AIProfileController(
                         dealBreakers = it.dealBreakers,
                     )
                 },
+                mbti = mbti,
+                sajuSummary = sajuSummary,
             ),
             userId = userId,
         )
@@ -79,6 +98,10 @@ data class GenerateRequest(
     val manualAnswers: Map<String, String> = emptyMap(),
     val datingStyle: Map<String, String> = emptyMap(),
     val idealType: IdealTypeRequest? = null,
+    /** 온보딩 draft 의 MBTI (예: "ENFP"). 서버 미저장 시점이라 클라가 전달 (ADR 0056) */
+    val mbti: String? = null,
+    /** 온보딩 draft 의 생년월일(yyyy-MM-dd). 단, 서버 User.birthDate 가 있으면 그쪽 우선 */
+    val birthDate: String? = null,
 )
 
 data class IdealTypeRequest(
@@ -104,6 +127,10 @@ data class GenerateResponse(
     val colorKeywords: List<String> = emptyList(),
     /** 강점 태그 3~5개 — 인사이트 카드 노출 (ADR 0037) */
     val strengths: List<String> = emptyList(),
+    /** ADR 0056 — 색 판별 근거 (답변/MBTI/사주). 빈 문자열이면 미사용 */
+    val evidenceFromAnswers: String = "",
+    val evidenceFromMbti: String = "",
+    val evidenceFromSaju: String = "",
 )
 
 private fun ProfileGenerationResult.toResponse() = GenerateResponse(
@@ -117,4 +144,7 @@ private fun ProfileGenerationResult.toResponse() = GenerateResponse(
     idealTypeInsight = idealTypeInsight,
     colorKeywords = colorKeywords,
     strengths = strengths,
+    evidenceFromAnswers = evidenceFromAnswers,
+    evidenceFromMbti = evidenceFromMbti,
+    evidenceFromSaju = evidenceFromSaju,
 )

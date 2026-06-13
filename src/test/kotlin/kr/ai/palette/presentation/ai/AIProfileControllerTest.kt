@@ -16,6 +16,8 @@ import kr.ai.palette.infrastructure.ai.IntroMethod
 import kr.ai.palette.infrastructure.ai.OpenAIService
 import kr.ai.palette.infrastructure.ai.ProfileGenerationRequest
 import kr.ai.palette.infrastructure.ai.ProfileGenerationResult
+import kr.ai.palette.infrastructure.ai.SajuService
+import kr.ai.palette.domain.user.UserRepository
 import kr.ai.palette.infrastructure.ratelimit.RateLimiter
 import org.springframework.core.MethodParameter
 import org.springframework.http.MediaType
@@ -34,7 +36,8 @@ class AIProfileControllerTest : DescribeSpec({
 
     val openAIService = mockk<OpenAIService>(relaxed = true)
     val rateLimiter = mockk<RateLimiter>(relaxed = true)
-    val controller = AIProfileController(openAIService, rateLimiter)
+    val userRepository = mockk<UserRepository>(relaxed = true)
+    val controller = AIProfileController(openAIService, rateLimiter, userRepository, SajuService())
 
     // standalone MockMvc 에서 @AuthenticationPrincipal AuthUser 를 강제 주입하는 resolver
     val testAuthUser = AuthUser(
