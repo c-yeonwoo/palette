@@ -163,6 +163,12 @@ export function AdminDashboardScreen({ admin, onNavigate }: Props) {
             title="AI 인터뷰 질문"
             desc="질문 선별·추가·수정·순서·노출 관리 (ADR 0055)"
           />
+          <MenuCard
+            tone="sky"
+            onClick={() => onNavigate("/admin/field-options")}
+            title="온보딩 칩 옵션"
+            desc="체형·관심사·성격·가치 등 칩 선택지 관리 (ADR 0057)"
+          />
         </CategorySection>
 
         {/* 트라이얼 현황 (ADR 0045) — KPI 라기보다 인사이트라 별도 섹션 */}
