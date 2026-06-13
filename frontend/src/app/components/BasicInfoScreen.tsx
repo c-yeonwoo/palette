@@ -36,13 +36,12 @@ const regions = [
  *  3 → 커리어/위치 (필수: 직업, 지역)
  *  4 → 추가 정보 (선택: 전화, 회사, 학교)
  */
-type MiniStep = 1 | 2 | 3 | 4;
+type MiniStep = 1 | 2 | 3;
 
 const MINI_STEP_META: Record<MiniStep, { title: string; subtitle: string; emoji: string }> = {
   1: { title: "나를 소개할게요", subtitle: "이름, 생년월일, 성별", emoji: "👋" },
   2: { title: "조금 더 알려주세요", subtitle: "선택사항이에요. 부담없이!", emoji: "✨" },
   3: { title: "어디서 무슨 일을 하나요?", subtitle: "직업과 지역", emoji: "💼" },
-  4: { title: "마지막 단계예요", subtitle: "다 선택 항목 — 건너뛰셔도 돼요", emoji: "🎯" },
 };
 
 interface UserProfile {
@@ -76,7 +75,6 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
     school: initialData?.educationInfo?.school || "",
     major: initialData?.educationInfo?.major || "",
     region: initialData?.locationInfo?.region || "",
-    phoneNumber: "",
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -100,7 +98,6 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
           if (userData.gender) {
             next.gender = { MALE: '남성', FEMALE: '여성' }[userData.gender] ?? userData.gender;
           }
-          if (userData.phoneNumber) next.phoneNumber = userData.phoneNumber;
           return next;
         });
       } catch {
@@ -136,7 +133,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
   };
 
   const handleNext = () => {
-    if (miniStep < 4) {
+    if (miniStep < 3) {
       setMiniStep((miniStep + 1) as MiniStep);
       // 데스크탑에선 .app-frame(#appScroll) 이 스크롤 컨테이너 → 그쪽도 같이 리셋
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -149,7 +146,6 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
           birthMonth: formData.birthMonth,
           birthDay: formData.birthDay,
           gender: formData.gender,
-          phoneNumber: formData.phoneNumber,
           height: formData.height,
           bodyType: formData.bodyType,
           mbti: `${formData.mbtiE}${formData.mbtiS}${formData.mbtiT}${formData.mbtiP}`,
@@ -192,7 +188,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
           </button>
           <div className="text-center">
             <h2 className="text-base font-semibold">기본 정보</h2>
-            <p className="text-xs text-muted-foreground">{miniStep}/4 단계</p>
+            <p className="text-xs text-muted-foreground">{miniStep}/3 단계</p>
           </div>
         </div>
 
@@ -201,7 +197,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
 
         {/* Mini-step dots */}
         <div className="flex justify-center gap-2">
-          {([1, 2, 3, 4] as MiniStep[]).map((s) => (
+          {([1, 2, 3] as MiniStep[]).map((s) => (
             <div
               key={s}
               className={`h-2 rounded-full transition-all duration-300 ${
@@ -430,7 +426,6 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                   <div>
                     <Label className="mb-1.5 block text-xs text-muted-foreground">학교명 (선택)</Label>
                     <Input
-                      placeholder="예: 서울대학교"
                       value={formData.school}
                       onChange={(e) => update('school', e.target.value)}
                       className="h-11 bg-card border-border"
@@ -471,62 +466,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
           </div>
         )}
 
-        {/* ──────────── STEP 4: 선택 정보 ──────────── */}
-        {miniStep === 4 && (
-          <div className="space-y-5">
-            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-primary">
-              💡 추가 정보를 입력하면 신뢰도와 매칭 확률이 올라가요!
-            </div>
-
-            {/* Phone */}
-            <div>
-              <Label className="mb-2 block">핸드폰 번호</Label>
-              <Input
-                type="tel"
-                placeholder="010-1234-5678"
-                value={formData.phoneNumber}
-                onChange={(e) => {
-                  let value = e.target.value.replace(/[^\d]/g, '');
-                  if (value.length > 3 && value.length <= 7) value = `${value.slice(0, 3)}-${value.slice(3)}`;
-                  else if (value.length > 7) value = `${value.slice(0, 3)}-${value.slice(3, 7)}-${value.slice(7, 11)}`;
-                  update('phoneNumber', value);
-                }}
-                className="h-12 bg-card border-border"
-                maxLength={13}
-              />
-            </div>
-
-            {/* Company */}
-            <div>
-              <Label className="mb-2 block">직장명</Label>
-              <Input
-                placeholder="예: 구글"
-                value={formData.company}
-                onChange={(e) => update('company', e.target.value)}
-                className="h-12 bg-card border-border"
-                maxLength={30}
-              />
-            </div>
-
-            {/* DA-005 — 학교명·전공 step 3 으로 통합됨 (학력 칩 옆) */}
-
-            {/* Income */}
-            <div>
-              <Label className="mb-2 block">소득 인증</Label>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full h-12 border-2 border-dashed hover:border-primary/40 hover:bg-secondary"
-                onClick={() => toast.info('홈택스 연동 기능은 준비 중입니다')}
-              >
-                소득인증하기
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                홈택스 연동으로 인증하면 고소득 뱃지가 프로필에 표시됩니다. (연소득 7,500만원 이상)
-              </p>
-            </div>
-          </div>
-        )}
+        {/* STEP 4(전화·직장·소득)는 제거됨 — 전화는 별도 인증 프로세스, 직장·소득은 인증 영역에서 처리 */}
 
         {/* CTA Button */}
         <Button
@@ -534,7 +474,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
           disabled={!isCurrentStepValid()}
           className="w-full h-14 bg-brand-soft text-gold-strong disabled:opacity-50"
         >
-          {miniStep < 4 ? (
+          {miniStep < 3 ? (
             <>
               다음
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -544,8 +484,8 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
           )}
         </Button>
 
-        {/* Skip 버튼 — 선택 단계 (2, 4) 에서 노출 */}
-        {(miniStep === 2 || miniStep === 4) && (
+        {/* Skip 버튼 — 선택 단계 (2) 에서 노출 */}
+        {miniStep === 2 && (
           <Button
             variant="ghost"
             onClick={handleNext}

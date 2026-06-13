@@ -290,12 +290,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
                 <p className="text-xs text-muted-foreground">• 5~30초 분량</p>
                 <p className="text-xs text-muted-foreground">• MP4/MOV 형식</p>
                 <p className="text-xs text-muted-foreground">• 최대 50MB</p>
-                <button
-                  onClick={() => videoInputRef.current?.click()}
-                  className="mt-2 text-xs text-primary underline text-left"
-                >
-                  동영상 선택하기 →
-                </button>
+                <p className="mt-2 text-xs text-muted-foreground/80">왼쪽 칸을 눌러 동영상을 선택하세요</p>
               </div>
             )}
           </div>

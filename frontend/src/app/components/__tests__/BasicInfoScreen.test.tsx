@@ -37,11 +37,11 @@ describe('BasicInfoScreen', () => {
     expect(screen.getByPlaceholderText('본명을 입력해주세요')).toBeInTheDocument();
   });
 
-  it('shows 4 mini-step dots', async () => {
+  it('shows 3 mini-step dots', async () => {
     render(<BasicInfoScreen onNext={onNext} onBack={onBack} />);
     await waitForLoad();
-    // Step indicator "1/4 단계"
-    expect(screen.getByText('1/4 단계')).toBeInTheDocument();
+    // Step indicator "1/3 단계" (step 4 제거됨)
+    expect(screen.getByText('1/3 단계')).toBeInTheDocument();
   });
 
   it('next button is disabled when step 1 fields are empty', async () => {
@@ -78,7 +78,7 @@ describe('BasicInfoScreen', () => {
     // Should show step 2
     await waitFor(() => {
       expect(screen.getByText('조금 더 알려주세요')).toBeInTheDocument();
-      expect(screen.getByText('2/4 단계')).toBeInTheDocument();
+      expect(screen.getByText('2/3 단계')).toBeInTheDocument();
     });
   });
 
@@ -160,7 +160,7 @@ describe('BasicInfoScreen', () => {
     expect(screen.getByText('서울')).toBeInTheDocument();
   });
 
-  it('step 4 shows optional fields and skip button', async () => {
+  it('calls onNext with correct payload when step 3 (final) is submitted', async () => {
     render(<BasicInfoScreen onNext={onNext} onBack={onBack} />);
     await waitForLoad();
 
@@ -182,49 +182,11 @@ describe('BasicInfoScreen', () => {
     fireEvent.click(screen.getByText('P'));
     fireEvent.click(screen.getByRole('button', { name: /다음/ }));
 
-    // Step 3
+    // Step 3 (final) — submit
     await waitFor(() => expect(screen.getByText('어디서 무슨 일을 하나요?')).toBeInTheDocument());
     fireEvent.click(screen.getByText('IT/개발'));
     fireEvent.click(screen.getByText('대졸'));
     fireEvent.click(screen.getByText('서울'));
-    fireEvent.click(screen.getByRole('button', { name: /다음/ }));
-
-    // Step 4
-    await waitFor(() => expect(screen.getByText('마지막 단계예요')).toBeInTheDocument());
-    expect(screen.getByText('지금은 건너뛰기 (나중에 마이프로필에서 추가)')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('010-1234-5678')).toBeInTheDocument();
-  });
-
-  it('calls onNext with correct payload when step 4 is submitted', async () => {
-    render(<BasicInfoScreen onNext={onNext} onBack={onBack} />);
-    await waitForLoad();
-
-    // Step 1
-    fireEvent.change(screen.getByPlaceholderText('본명을 입력해주세요'), { target: { value: '홍길동' } });
-    const selects = screen.getAllByRole('combobox');
-    fireEvent.change(selects[0], { target: { value: '1995' } });
-    fireEvent.change(selects[1], { target: { value: '06' } });
-    fireEvent.change(selects[2], { target: { value: '15' } });
-    fireEvent.click(screen.getByText('남성'));
-    fireEvent.click(screen.getByRole('button', { name: /다음/ }));
-
-    // Step 2
-    await waitFor(() => expect(screen.getByText('조금 더 알려주세요')).toBeInTheDocument());
-    fireEvent.click(screen.getByText('슬림'));
-    fireEvent.click(screen.getByText('E'));
-    fireEvent.click(screen.getByText('N'));
-    fireEvent.click(screen.getByText('F'));
-    fireEvent.click(screen.getByText('P'));
-    fireEvent.click(screen.getByRole('button', { name: /다음/ }));
-
-    // Step 3
-    await waitFor(() => expect(screen.getByText('어디서 무슨 일을 하나요?')).toBeInTheDocument());
-    fireEvent.click(screen.getByText('IT/개발'));
-    fireEvent.click(screen.getByText('대졸'));
-    fireEvent.click(screen.getByText('서울'));
-    fireEvent.click(screen.getByRole('button', { name: /다음/ }));
-
-    // Step 4 — submit
     await waitFor(() => expect(screen.getByText('다음 — 사진 등록')).toBeInTheDocument());
     fireEvent.click(screen.getByText('다음 — 사진 등록'));
 
@@ -262,10 +224,10 @@ describe('BasicInfoScreen', () => {
     fireEvent.click(screen.getByText('남성'));
     fireEvent.click(screen.getByRole('button', { name: /다음/ }));
 
-    await waitFor(() => expect(screen.getByText('2/4 단계')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('2/3 단계')).toBeInTheDocument());
     fireEvent.click(screen.getByLabelText('뒤로 가기'));
 
-    await waitFor(() => expect(screen.getByText('1/4 단계')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('1/3 단계')).toBeInTheDocument());
     expect(onBack).not.toHaveBeenCalled();
   });
 });
