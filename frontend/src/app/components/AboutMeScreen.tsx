@@ -4,6 +4,7 @@ import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
 import { Textarea } from "./ui/textarea";
 import { Sparkles, Heart, Target, Smile, Lightbulb, ArrowLeft } from "lucide-react";
+import { useOnboardingOptions } from "../../lib/onboarding/useOnboardingOptions";
 
 interface AboutMeScreenProps {
   onNext: (data: any) => void;
@@ -30,30 +31,6 @@ interface AboutMeScreenProps {
     };
   };
 }
-
-// DA-003 — 관심사 칩 풀. 자유 입력은 ProfileEdit 으로 미룸 (온보딩은 빠른 선택)
-const INTEREST_PRESET: string[] = [
-  "운동",
-  "맛집",
-  "영화",
-  "여행",
-  "독서",
-  "음악",
-  "카페",
-  "전시",
-  "공연",
-  "사진",
-  "요리",
-  "와인",
-  "캠핑",
-  "드라이브",
-  "게임",
-  "반려동물",
-  "패션",
-  "글쓰기",
-  "그림",
-  "재테크",
-];
 
 const interviewQuestions = [
   {
@@ -104,6 +81,7 @@ const interviewQuestions = [
 ];
 
 export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProps) {
+  const { options } = useOnboardingOptions();   // ADR 0057 — 어드민 관리 칩
   const [answers, setAnswers] = useState({
     hobby: initialData?.introduction?.interviewAnswers?.hobby || "",
     charm: initialData?.introduction?.interviewAnswers?.charm || "",
@@ -206,17 +184,17 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
           <div>
             <Label className="mb-2 block text-sm">흡연 *</Label>
             <div className="grid grid-cols-3 gap-2">
-              {["비흡연", "가끔", "자주"].map((option) => (
+              {(options.smoking ?? []).map((option) => (
                 <button
-                  key={option}
-                  onClick={() => setSmoking(option)}
+                  key={option.code}
+                  onClick={() => setSmoking(option.code)}
                   className={`py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
-                    smoking === option
+                    smoking === option.code
                       ? "bg-brand-soft text-gold-strong border-brand/40"
                       : "bg-card border-border text-muted-foreground hover:border-primary/40"
                   }`}
                 >
-                  {option}
+                  {option.label}
                 </button>
               ))}
             </div>
@@ -226,17 +204,17 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
           <div>
             <Label className="mb-2 block text-sm">음주 *</Label>
             <div className="grid grid-cols-3 gap-2">
-              {["안마심", "가끔", "자주"].map((option) => (
+              {(options.drinking ?? []).map((option) => (
                 <button
-                  key={option}
-                  onClick={() => setDrinking(option)}
+                  key={option.code}
+                  onClick={() => setDrinking(option.code)}
                   className={`py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
-                    drinking === option
+                    drinking === option.code
                       ? "bg-brand-soft text-gold-strong border-brand/40"
                       : "bg-card border-border text-muted-foreground hover:border-primary/40"
                   }`}
                 >
-                  {option}
+                  {option.label}
                 </button>
               ))}
             </div>
@@ -246,17 +224,17 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
           <div>
             <Label className="mb-2 block text-sm">종교 (선택)</Label>
             <div className="grid grid-cols-3 gap-2">
-              {["무교", "기독교", "천주교", "불교", "기타"].map((option) => (
+              {(options.religion ?? []).map((option) => (
                 <button
-                  key={option}
-                  onClick={() => setReligion(option)}
+                  key={option.code}
+                  onClick={() => setReligion(option.code)}
                   className={`py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
-                    religion === option
+                    religion === option.code
                       ? "bg-brand-soft text-gold-strong border-brand/40"
                       : "bg-card border-border text-muted-foreground hover:border-primary/40"
                   }`}
                 >
-                  {option}
+                  {option.label}
                 </button>
               ))}
             </div>
@@ -272,19 +250,19 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
             </p>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {INTEREST_PRESET.map((item) => {
-              const selected = interests.includes(item);
+            {(options.interest ?? []).map((item) => {
+              const selected = interests.includes(item.code);
               const disabled = !selected && interests.length >= 8;
               return (
                 <button
-                  key={item}
+                  key={item.code}
                   type="button"
                   disabled={disabled}
                   onClick={() => {
                     if (selected) {
-                      setInterests(interests.filter(i => i !== item));
+                      setInterests(interests.filter(i => i !== item.code));
                     } else if (interests.length < 8) {
-                      setInterests([...interests, item]);
+                      setInterests([...interests, item.code]);
                     }
                   }}
                   className={
@@ -296,7 +274,7 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
                       : "bg-card text-muted-foreground border-border hover:border-primary/40")
                   }
                 >
-                  {item}
+                  {item.label}
                 </button>
               );
             })}

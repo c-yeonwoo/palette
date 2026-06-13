@@ -590,15 +590,6 @@ export default function App() {
 
       // 프로필 생성 또는 업데이트
 
-      // Convert form data to API format
-      const bodyTypeMap: { [key: string]: string } = {
-        '슬림': 'SLIM',
-        '보통': 'AVERAGE',
-        '탄탄': 'ATHLETIC',
-        '건장': 'MUSCULAR',
-        '풍만': 'CURVY',
-      };
-
       // 직군 한글 라벨 → enum (인터뷰 자연어 응답 → enum value).
       // 풀 라벨/짧은 라벨 둘 다 인식 + 기존(초기 풀) 한글도 호환.
       const jobCategoryMap: { [key: string]: string } = {
@@ -639,60 +630,13 @@ export default function App() {
         '박사': 'DOCTORATE',
       };
 
-      const frequencyMap: { [key: string]: string } = {
-        '비흡연': 'NEVER',
-        '가끔': 'SOMETIMES',
-        '자주': 'OFTEN',
-        '안마심': 'NEVER',
-      };
-
-      const religionMap: { [key: string]: string } = {
-        '무교': 'NONE',
-        '기독교': 'CHRISTIANITY',
-        '천주교': 'CATHOLICISM',
-        '불교': 'BUDDHISM',
-        '기타': 'OTHER',
-      };
-
-      const datePreferenceMap: { [key: string]: string } = {
-        'active': 'ACTIVE',
-        'indoor': 'INDOOR',
-        'culture': 'CULTURE',
-        'nature': 'NATURE',
-      };
-
-      const importantValueMap: { [key: string]: string } = {
-        '성격/성향': 'PERSONALITY',
-        '외모': 'APPEARANCE',
-        '학력': 'EDUCATION',
-        '능력/커리어': 'CAREER',
-        '집안/가족': 'FAMILY',
-        '직업': 'JOB',
-        '경제력': 'WEALTH',
-        '가치관': 'VALUES',
-      };
-
-      const appearanceStyleMap: { [key: string]: string } = {
-        '강아지상': 'PUPPY',
-        '고양이상': 'CAT',
-        '토끼상': 'RABBIT',
-        '여우상': 'FOX',
-        '사슴상': 'DEER',
-        '두부상': 'TOFU',
-        '순두부상': 'SOFT_TOFU',
-        '아랍상': 'ARAB',
-        '일진상': 'BOSS',
-        '상견례입구컷상': 'MOTHER_IN_LAW_APPROVED',
-        '전교회장상': 'STUDENT_COUNCIL',
-        '체대상': 'ATHLETIC',
-        '너드상': 'NERD',
-        '공룡상': 'DINOSAUR',
-      };
+      // ADR 0057 — 체형·흡연/음주·종교·데이트선호·중요가치·외모상 칩은 어드민 관리(코드 직송).
+      // 한글↔enum 변환 맵 제거. jobCategory·education 만 고정 enum 변환 유지.
 
       const apiData = {
         basicInfo: {
           height: profileData.basicInfo.height || null,
-          bodyType: profileData.basicInfo.bodyType ? bodyTypeMap[profileData.basicInfo.bodyType] : null,
+          bodyType: profileData.basicInfo.bodyType || null,   // ADR 0057 — 코드 직송
           mbti: profileData.basicInfo.mbti || null,   // A-1 fix: 가입 시 입력한 MBTI 가 저장되지 않던 버그
         },
         careerInfo: {
@@ -710,9 +654,9 @@ export default function App() {
           sigungu: profileData.locationInfo.district || null,
         },
         lifestyleInfo: {
-          smoking: profileData.lifestyleInfo.smoking ? frequencyMap[profileData.lifestyleInfo.smoking] || null : null,
-          drinking: profileData.lifestyleInfo.drinking ? frequencyMap[profileData.lifestyleInfo.drinking] || null : null,
-          religion: profileData.lifestyleInfo.religion ? religionMap[profileData.lifestyleInfo.religion] || null : null,
+          smoking: profileData.lifestyleInfo.smoking || null,   // ADR 0057 — 코드 직송
+          drinking: profileData.lifestyleInfo.drinking || null,
+          religion: profileData.lifestyleInfo.religion || null,
         },
         introduction: {
           text: result.generatedIntroduction || profileData.introduction.text || null,
@@ -720,16 +664,11 @@ export default function App() {
           interviewAnswers: profileData.introduction.interviewAnswers || null,
         },
         idealType: {
-          datePreferences: (profileData.idealType.datePreferences || []).map(
-            pref => datePreferenceMap[pref] || pref
-          ),
-          importantValues: (profileData.idealType.importantValues || []).map(
-            val => importantValueMap[val] || val
-          ),
+          // ADR 0057 — 칩이 코드를 저장하므로 변환 없이 직송
+          datePreferences: profileData.idealType.datePreferences || [],
+          importantValues: profileData.idealType.importantValues || [],
           personalities: profileData.idealType.personalities || [],
-          appearanceStyles: (profileData.idealType.appearanceStyles || []).map(
-            style => appearanceStyleMap[style] || style
-          ),
+          appearanceStyles: profileData.idealType.appearanceStyles || [],
           dealBreakers: profileData.idealType.dealBreakers || [],
           // DA-001 — 나이/키 범위 저장 (IdealTypeScreen 의 슬라이더 입력 → 백엔드 영속화)
           ageMin: profileData.idealType.ageMin ?? null,

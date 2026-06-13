@@ -23,9 +23,9 @@ class ProfileEntity(
     @Column(name = "height")
     var height: Int?,
 
-    @Column(name = "body_type", length = 20)
-    @Enumerated(EnumType.STRING)
-    var bodyType: BodyTypeEntity?,
+    // ADR 0057 — 어드민 관리 옵션 코드 문자열 (varchar 유지, enum 제약 제거 → 신규 코드 허용)
+    @Column(name = "body_type", length = 40)
+    var bodyType: String?,
 
     @Column(name = "mbti", length = 4)
     @Enumerated(EnumType.STRING)
@@ -65,18 +65,15 @@ class ProfileEntity(
     @Column(name = "sigungu", length = 50)
     var sigungu: String?,
 
-    // LifestyleInfo
-    @Column(name = "smoking", length = 20)
-    @Enumerated(EnumType.STRING)
-    var smoking: FrequencyEntity?,
+    // LifestyleInfo — ADR 0057: 어드민 관리 옵션 코드 문자열 (enum 제약 제거)
+    @Column(name = "smoking", length = 40)
+    var smoking: String?,
 
-    @Column(name = "drinking", length = 20)
-    @Enumerated(EnumType.STRING)
-    var drinking: FrequencyEntity?,
+    @Column(name = "drinking", length = 40)
+    var drinking: String?,
 
-    @Column(name = "religion", length = 20)
-    @Enumerated(EnumType.STRING)
-    var religion: ReligionEntity?,
+    @Column(name = "religion", length = 40)
+    var religion: String?,
 
     // Introduction
     @Column(name = "interests", columnDefinition = "TEXT")

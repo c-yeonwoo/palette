@@ -18,7 +18,7 @@ class ProfileMapper(
             userId = UserId(entity.userId),
             basicInfo = BasicInfo(
                 height = entity.height,
-                bodyType = entity.bodyType?.toDomain(),
+                bodyType = entity.bodyType,            // ADR 0057 — 코드 문자열 직통
                 mbti = entity.mbti?.toDomain()
             ),
             careerInfo = CareerInfo(
@@ -39,9 +39,9 @@ class ProfileMapper(
                 hometownSigungu = entity.hometownSigungu,
             ),
             lifestyleInfo = LifestyleInfo(
-                smoking = entity.smoking?.toDomain(),
-                drinking = entity.drinking?.toDomain(),
-                religion = entity.religion?.toDomain()
+                smoking = entity.smoking,            // ADR 0057 — 코드 문자열 직통
+                drinking = entity.drinking,
+                religion = entity.religion
             ),
             introduction = Introduction(
                 text = entity.introductionText,
@@ -59,20 +59,12 @@ class ProfileMapper(
                 datingStyle = parseDatingStyle(entity.tasteStack) // DB 컬럼 재사용
             ),
             idealType = IdealType(
-                datePreferences = entity.idealDatePreferences?.split(",")
-                    ?.filter { it.isNotBlank() }
-                    ?.mapNotNull { try { DatePreference.valueOf(it) } catch (e: Exception) { null } }
-                    ?: emptyList(),
-                importantValues = entity.idealImportantValues?.split(",")
-                    ?.filter { it.isNotBlank() }
-                    ?.mapNotNull { try { ImportantValue.valueOf(it) } catch (e: Exception) { null } }
-                    ?: emptyList(),
+                // ADR 0057 — 모두 코드 문자열 리스트 (어드민 관리 옵션). valueOf 검증 제거 → 신규 코드 허용.
+                datePreferences = entity.idealDatePreferences?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
+                importantValues = entity.idealImportantValues?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
                 personalities = entity.idealPersonalities?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
                 appearanceStyles = entity.idealAppearanceStyles?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
-                dealBreakers = entity.idealDealBreakers?.split(",")
-                    ?.filter { it.isNotBlank() }
-                    ?.mapNotNull { try { DealBreaker.valueOf(it) } catch (e: Exception) { null } }
-                    ?: emptyList(),
+                dealBreakers = entity.idealDealBreakers?.split(",")?.filter { it.isNotBlank() } ?: emptyList(),
                 bucketList = parseBucketList(entity.bucketList),
                 // DA-001
                 ageMin = entity.idealAgeMin,
@@ -142,7 +134,7 @@ class ProfileMapper(
             id = profile.id.value,
             userId = profile.userId.value,
             height = profile.basicInfo.height,
-            bodyType = profile.basicInfo.bodyType?.toEntity(),
+            bodyType = profile.basicInfo.bodyType,    // ADR 0057 — 코드 문자열 직통
             mbti = profile.basicInfo.mbti?.toEntity(),
             careerCategory = profile.careerInfo.category?.toEntity(),
             company = profile.careerInfo.company,
@@ -156,9 +148,9 @@ class ProfileMapper(
             hometownSido = profile.locationInfo.hometownSido,
             hometownSigungu = profile.locationInfo.hometownSigungu,
             introductionText = profile.introduction.text,
-            smoking = profile.lifestyleInfo.smoking?.toEntity(),
-            drinking = profile.lifestyleInfo.drinking?.toEntity(),
-            religion = profile.lifestyleInfo.religion?.toEntity(),
+            smoking = profile.lifestyleInfo.smoking,
+            drinking = profile.lifestyleInfo.drinking,
+            religion = profile.lifestyleInfo.religion,
             interests = profile.introduction.interests.joinToString(","),
             introductionHobby = profile.introduction.interviewAnswers?.hobby,
             introductionCharm = profile.introduction.interviewAnswers?.charm,
@@ -166,11 +158,11 @@ class ProfileMapper(
             introductionHappiness = profile.introduction.interviewAnswers?.happiness,
             introductionMotto = profile.introduction.interviewAnswers?.motto,
             tasteStack = serializeDatingStyle(profile.introduction.datingStyle),
-            idealDatePreferences = profile.idealType.datePreferences.joinToString(",") { it.name },
-            idealImportantValues = profile.idealType.importantValues.joinToString(",") { it.name },
+            idealDatePreferences = profile.idealType.datePreferences.joinToString(","),
+            idealImportantValues = profile.idealType.importantValues.joinToString(","),
             idealPersonalities = profile.idealType.personalities.joinToString(","),
             idealAppearanceStyles = profile.idealType.appearanceStyles.joinToString(","),
-            idealDealBreakers = profile.idealType.dealBreakers.joinToString(",") { it.name },
+            idealDealBreakers = profile.idealType.dealBreakers.joinToString(","),
             // DA-001
             idealAgeMin = profile.idealType.ageMin,
             idealAgeMax = profile.idealType.ageMax,
@@ -201,10 +193,7 @@ class ProfileMapper(
         )
     }
 
-    // Enum conversions
-    private fun BodyTypeEntity.toDomain(): BodyType = BodyType.valueOf(this.name)
-    private fun BodyType.toEntity(): BodyTypeEntity = BodyTypeEntity.valueOf(this.name)
-
+    // Enum conversions (구조적 고정 enum만 유지 — bodyType/frequency/religion 은 String 코드로 전환됨, ADR 0057)
     private fun MBTIEntity.toDomain(): MBTI = MBTI.valueOf(this.name)
     private fun MBTI.toEntity(): MBTIEntity = MBTIEntity.valueOf(this.name)
 
@@ -216,12 +205,6 @@ class ProfileMapper(
 
     private fun EducationLevelEntity.toDomain(): EducationLevel = EducationLevel.valueOf(this.name)
     private fun EducationLevel.toEntity(): EducationLevelEntity = EducationLevelEntity.valueOf(this.name)
-
-    private fun FrequencyEntity.toDomain(): Frequency = Frequency.valueOf(this.name)
-    private fun Frequency.toEntity(): FrequencyEntity = FrequencyEntity.valueOf(this.name)
-
-    private fun ReligionEntity.toDomain(): Religion = Religion.valueOf(this.name)
-    private fun Religion.toEntity(): ReligionEntity = ReligionEntity.valueOf(this.name)
 
     // JSON serialization for dating style (questionKey -> optionKey)
     @Suppress("UNCHECKED_CAST")

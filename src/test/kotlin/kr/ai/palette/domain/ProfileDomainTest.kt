@@ -121,7 +121,7 @@ class ProfileDomainTest : DescribeSpec({
             val profileWithBasic = Profile.create(
                 userId = userId,
                 mbti = MBTI.INFJ,
-                basicInfo = BasicInfo(height = 175, bodyType = BodyType.SLIM, mbti = MBTI.INFJ)
+                basicInfo = BasicInfo(height = 175, bodyType = BodyType.SLIM.name, mbti = MBTI.INFJ)
             )
             (profileWithBasic.calculateCompletionRate() > minimalRate) shouldBe true
         }
@@ -130,7 +130,7 @@ class ProfileDomainTest : DescribeSpec({
             var profile = Profile.create(
                 userId = userId,
                 mbti = MBTI.INFJ,
-                basicInfo = BasicInfo(height = 175, bodyType = BodyType.SLIM, mbti = MBTI.INFJ),
+                basicInfo = BasicInfo(height = 175, bodyType = BodyType.SLIM.name, mbti = MBTI.INFJ),
                 careerInfo = CareerInfo(category = CareerCategory.IT_DEVELOPMENT, company = "테크", incomeRange = IncomeRange.INCOME_RANGE_3),
                 educationInfo = EducationInfo(level = EducationLevel.BACHELOR, school = "서울대", major = "컴공")
             )
@@ -202,7 +202,7 @@ class ProfileDomainTest : DescribeSpec({
             val profile = Profile.create(
                 userId = userId,
                 mbti = MBTI.ENFP,
-                basicInfo = BasicInfo(180, BodyType.ATHLETIC, MBTI.ENFP),
+                basicInfo = BasicInfo(180, BodyType.ATHLETIC.name, MBTI.ENFP),
                 careerInfo = CareerInfo(CareerCategory.IT_DEVELOPMENT, "회사", IncomeRange.INCOME_RANGE_3)
             )
             val recalculated = profile.recalculateMetrics()

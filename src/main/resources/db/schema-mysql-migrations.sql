@@ -309,3 +309,9 @@ CREATE TABLE IF NOT EXISTS field_options (
     PRIMARY KEY (id),
     KEY idx_fo_set_order (set_key, display_order)
 ) ENGINE=InnoDB;
+
+-- 단일 칩 컬럼을 enum 제약 없는 varchar(40)로 (어드민 신규 코드 길이 여유). MODIFY 는 idempotent.
+ALTER TABLE profiles MODIFY body_type VARCHAR(40);
+ALTER TABLE profiles MODIFY smoking   VARCHAR(40);
+ALTER TABLE profiles MODIFY drinking  VARCHAR(40);
+ALTER TABLE profiles MODIFY religion  VARCHAR(40);

@@ -149,7 +149,7 @@ data class BasicInfoDto(
     fun toDomain(): BasicInfo {
         return BasicInfo(
             height = height,
-            bodyType = bodyType?.let { BodyType.valueOf(it) },
+            bodyType = bodyType,   // ADR 0057 — 코드 문자열 직통
             mbti = mbti?.let { MBTI.valueOf(it) }
         )
     }
@@ -158,7 +158,7 @@ data class BasicInfoDto(
         fun from(basicInfo: BasicInfo): BasicInfoDto {
             return BasicInfoDto(
                 height = basicInfo.height,
-                bodyType = basicInfo.bodyType?.name,
+                bodyType = basicInfo.bodyType,
                 mbti = basicInfo.mbti?.name
             )
         }
@@ -240,18 +240,18 @@ data class LifestyleInfoDto(
 ) {
     fun toDomain(): LifestyleInfo {
         return LifestyleInfo(
-            smoking = smoking?.let { Frequency.valueOf(it) },
-            drinking = drinking?.let { Frequency.valueOf(it) },
-            religion = religion?.let { Religion.valueOf(it) }
+            smoking = smoking,   // ADR 0057 — 코드 문자열 직통
+            drinking = drinking,
+            religion = religion
         )
     }
 
     companion object {
         fun from(lifestyleInfo: LifestyleInfo): LifestyleInfoDto {
             return LifestyleInfoDto(
-                smoking = lifestyleInfo.smoking?.name,
-                drinking = lifestyleInfo.drinking?.name,
-                religion = lifestyleInfo.religion?.name
+                smoking = lifestyleInfo.smoking,
+                drinking = lifestyleInfo.drinking,
+                religion = lifestyleInfo.religion
             )
         }
     }
@@ -329,17 +329,12 @@ data class IdealTypeDto(
 ) {
     fun toDomain(): IdealType {
         return IdealType(
-            datePreferences = datePreferences.mapNotNull {
-                try { DatePreference.valueOf(it) } catch (e: Exception) { null }
-            },
-            importantValues = importantValues.mapNotNull {
-                try { ImportantValue.valueOf(it) } catch (e: Exception) { null }
-            },
+            // ADR 0057 — 코드 문자열 리스트 직통 (어드민 신규 옵션 허용)
+            datePreferences = datePreferences,
+            importantValues = importantValues,
             personalities = personalities,
             appearanceStyles = appearanceStyles,
-            dealBreakers = dealBreakers.mapNotNull {
-                try { DealBreaker.valueOf(it) } catch (e: Exception) { null }
-            },
+            dealBreakers = dealBreakers,
             bucketList = bucketList,
             ageMin = ageMin,
             ageMax = ageMax,
@@ -351,11 +346,11 @@ data class IdealTypeDto(
     companion object {
         fun from(idealType: IdealType): IdealTypeDto {
             return IdealTypeDto(
-                datePreferences = idealType.datePreferences.map { it.name },
-                importantValues = idealType.importantValues.map { it.name },
+                datePreferences = idealType.datePreferences,
+                importantValues = idealType.importantValues,
                 personalities = idealType.personalities,
                 appearanceStyles = idealType.appearanceStyles,
-                dealBreakers = idealType.dealBreakers.map { it.name },
+                dealBreakers = idealType.dealBreakers,
                 bucketList = idealType.bucketList,
                 ageMin = idealType.ageMin,
                 ageMax = idealType.ageMax,

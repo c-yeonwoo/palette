@@ -1,6 +1,6 @@
 # 0057 — 온보딩 칩 옵션 동적 관리 (취향/서술형 enum)
 
-- **상태**: Accepted (1차: 백엔드 카탈로그 + 어드민)
+- **상태**: Accepted (1차 + 2차 완료 — 백엔드 카탈로그·어드민 + 온보딩 연결·enum→String)
 - **결정일**: 2026-06-14
 - **결정자**: ys.choi
 - **선행**: ADR 0055(인터뷰 질문 동적화 패턴), 0056
@@ -25,14 +25,15 @@
 - ✅ 사용자 `GET /api/v1/onboarding/options` (활성 옵션 set 별 그룹 + gender)
 - ✅ 어드민 `AdminFieldOptionsController` CRUD + `AdminFieldOptionsScreen`(set 탭·추가/수정/순서/활성토글/삭제) + AdminApp 라우트 + 대시보드 nav
 
-### 2차 (PR 2b, 후속) — 온보딩 연결 + enum→String
-- 프론트 `BasicInfoScreen`/`AboutMeScreen`/`IdealTypeScreen` 이 하드코딩 칩 대신 옵션 API 로 렌더, `App.tsx` 의 한글↔enum 맵 제거(code 직송).
-- 백엔드 도메인 enum→String 전환(BodyType/Religion/Frequency 단일 + DatePreference/ImportantValue/DealBreaker 리스트) — DB 포맷 동일, 파급 범위는 `ProfileMapper`/`ProfileDtos`/`DataInitializer` 로 confined(스코어링 영향 없음 확인). interests/personalities/appearanceStyles 는 이미 String.
-- 이 전환이 완료되어야 **어드민이 추가한 신규 code 가 온보딩→저장까지 end-to-end** 동작.
+### 2차 (PR 2b) — 온보딩 연결 + enum→String ✅ 완료
+- ✅ 백엔드 도메인 enum→String 전환: `BasicInfo.bodyType`, `LifestyleInfo.{smoking,drinking,religion}` 단일 String + `IdealType.{datePreferences,importantValues,dealBreakers}` `List<String>`. (personalities/appearanceStyles 는 이미 String.) DB 포맷 동일(varchar/콤마 TEXT) → 기존 데이터 무영향. enum 정의는 코드 참조용으로 잔존하나 컬럼 제약 제거.
+- ✅ 파급: `ProfileEntity`(body_type·smoking·drinking·religion → `varchar(40)`), `ProfileMapper`(valueOf/.name 제거, passthrough), `ProfileDtos`, `DataInitializer`·`DevDataSeeder`(시드 리터럴 `.name`), `EmbeddingRefreshService`(라벨 맵 key 를 code 로). 스코어링/매칭 영향 없음 재확인. 마이그레이션 `ALTER profiles MODIFY ... VARCHAR(40)`.
+- ✅ 프론트: `useOnboardingOptions` 훅(`GET /api/v1/onboarding/options`, 실패 시 시드 동일 폴백 + 비어있지 않은 세트만 덮어씀). `BasicInfoScreen`(체형)·`AboutMeScreen`(흡연/음주/종교/관심사)·`IdealTypeScreen`(데이트선호/중요가치/성격/외모상/딜브레이커)이 옵션 API 로 렌더하고 **code 를 저장**. `App.tsx` 의 6개 한글↔enum 맵(body/frequency/religion/datePreference/importantValue/appearanceStyle) 제거 → code 직송. jobCategory·education 맵은 고정 enum 이라 유지.
+- 결과: **어드민이 추가/비활성한 신규 code 가 온보딩→저장까지 end-to-end** 동작.
 
-## 검증 (1차)
-- `./gradlew test`(drift 포함) BUILD SUCCESSFUL · `npm run build` + vitest 39 passed.
-- 로컬: 어드민 칩 옵션 화면에서 set 별 옵션 조회/추가/비활성 확인.
+## 검증
+- 1차: `./gradlew test`(drift 포함) · `npm run build` + vitest 39 passed · 어드민 옵션 화면 set 별 조회/추가/비활성.
+- 2차: enum→String 후 `SPRING_PROFILES_ACTIVE=test ./gradlew test` BUILD SUCCESSFUL(도메인 테스트 code 문자열로 갱신) · `npm run build` + vitest **39 passed**.
 
 ## 결과
-- 운영자가 칩 옵션 카탈로그를 즉시 관리할 수 있는 토대 + 조회 API 완성. 온보딩 화면 연결·enum→String 하위호환은 PR 2b 로 이어 완성.
+- 운영자가 취향/서술형 칩 옵션을 코드 수정·배포 없이 즉시 관리(추가·수정·순서·비활성)할 수 있고, 신규 코드가 온보딩 입력→영속화까지 동작. enum 삭제는 soft-delete 로 과거 프로필 하위호환 보존. 질문·순서·필드 자체의 동적화(schema-driven)는 PR 3(ADR 0058)로 후속.

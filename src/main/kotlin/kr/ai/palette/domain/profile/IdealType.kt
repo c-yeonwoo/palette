@@ -1,11 +1,12 @@
 package kr.ai.palette.domain.profile
 
 data class IdealType(
-    val datePreferences: List<DatePreference>, // 하위호환용 (버킷리스트로 대체됨)
-    val importantValues: List<ImportantValue>, // 최대 3개
-    val personalities: List<String>, // 최대 5개
-    val appearanceStyles: List<String>, // MaleAppearanceStyle or FemaleAppearanceStyle enum values
-    val dealBreakers: List<DealBreaker>, // 최대 3개
+    // ADR 0057 — 아래 3개는 어드민 관리 옵션 코드 문자열 리스트 (기존 enum 값과 호환).
+    val datePreferences: List<String>, // FieldOption set "datePreference"
+    val importantValues: List<String>, // set "importantValue", 최대 3개
+    val personalities: List<String>, // set "personality", 최대 5개
+    val appearanceStyles: List<String>, // set "appearanceStyle"(gender), 코드 문자열
+    val dealBreakers: List<String>, // set "dealBreaker", 최대 3개
     val bucketList: List<String> = emptyList(), // 시스템 키 or "custom:자유입력" 형식, 최대 10개
     // DA-001 — 나이/키 범위. UI 입력은 있었으나 도메인 부재로 저장·노출 안 되던 갭 해소.
     /** 선호 최소 연령 (만, 19+). null = 제한 없음 */
