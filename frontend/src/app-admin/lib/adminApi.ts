@@ -61,6 +61,11 @@ export const adminApi = {
       method: "POST",
       body: data ? JSON.stringify(data) : undefined,
     }),
+  put: <T>(endpoint: string, data?: unknown) =>
+    adminRequest<T>(endpoint, {
+      method: "PUT",
+      body: data ? JSON.stringify(data) : undefined,
+    }),
   patch: <T>(endpoint: string, data?: unknown) =>
     adminRequest<T>(endpoint, {
       method: "PATCH",
