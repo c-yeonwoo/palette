@@ -55,6 +55,7 @@ import { Button } from "./components/ui/button";
 import { Home, User, Trophy, Sparkles, Heart, Waypoints } from "lucide-react";
 import { toast } from "sonner";
 import { authService } from "../lib/auth/authService";
+import { PendingApprovalScreen } from "./components/PendingApprovalScreen";
 import { tokenStorage } from "../lib/auth/tokenStorage";
 import { api } from "../lib/api/apiClient";
 
@@ -109,7 +110,8 @@ type Screen =
   | "billing"
   | "inviteWizard"
   | "paymentSuccess"
-  | "paymentFail";
+  | "paymentFail"
+  | "pendingApproval";
 
 const ONBOARDING_DRAFT_KEY = "palette_onboarding_draft";
 const ONBOARDING_STEP_KEY = "palette_onboarding_step";
@@ -220,6 +222,9 @@ export default function App() {
   const [isConvertingToRegular, setIsConvertingToRegular] = useState(false);
   const [userGender, setUserGender] = useState<string | undefined>(undefined);
   const [userAccountType, setUserAccountType] = useState<"REGULAR" | "MATCHMAKER_ONLY" | undefined>(undefined);
+  // ADR 0054 운영자 승인 게이팅 — 프로필 완성 후 PENDING_APPROVAL/REJECTED 면 심사중 화면만 노출
+  const [approvalStatus, setApprovalStatus] = useState<string | undefined>(undefined);
+  const [approvalReason, setApprovalReason] = useState<string | null>(null);
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>(undefined);
   const [selectedMutualFriends, setSelectedMutualFriends] = useState<MutualFriend[]>([]);
@@ -341,7 +346,14 @@ export default function App() {
             // If profile is completed, go to main feed, otherwise restore or start onboarding
             // ADR 0014: MATCHMAKER_ONLY 는 mainFeed 가 아닌 ConnectorDashboard 로
             if (user.isProfileCompleted) {
-              setCurrentScreen(acctType === "MATCHMAKER_ONLY" ? "connectorDashboard" : "mainFeed");
+              setApprovalStatus(user.approvalStatus);
+              setApprovalReason(user.approvalReason ?? null);
+              // ADR 0054: REGULAR 은 운영자 승인(ACTIVE) 전까지 심사중 화면만
+              if (acctType === "REGULAR" && user.approvalStatus && user.approvalStatus !== "ACTIVE") {
+                setCurrentScreen("pendingApproval");
+              } else {
+                setCurrentScreen(acctType === "MATCHMAKER_ONLY" ? "connectorDashboard" : "mainFeed");
+              }
             } else {
               const savedStep = localStorage.getItem(ONBOARDING_STEP_KEY);
               const validStep = savedStep && ONBOARDING_SCREENS_SET.has(savedStep as Screen)
@@ -748,9 +760,11 @@ export default function App() {
         setCurrentScreen("myPage");
         toast.success("팔레트가 다시 분석했어요 ✨");
       } else {
-        // 신규 가입자 — 친구 초대 마법사 1회 노출 (B-005)
-        setCurrentScreen("inviteWizard");
-        toast.success("프로필이 생성되었어요!");
+        // ADR 0054: 신규 가입자는 프로필 완성 시 운영자 승인 대기로 전환 → 심사중 화면
+        setApprovalStatus("PENDING_APPROVAL");
+        setApprovalReason(null);
+        setCurrentScreen("pendingApproval");
+        toast.success("프로필이 제출됐어요! 운영자 승인 후 시작할 수 있어요.");
       }
     } catch (error: any) {
       console.error('Failed to complete profile:', error);
@@ -810,6 +824,13 @@ export default function App() {
         const acctType = user.accountType;
         setUserAccountType(acctType);
         if (user.isProfileCompleted) {
+          setApprovalStatus(user.approvalStatus);
+          setApprovalReason(user.approvalReason ?? null);
+          // ADR 0054: REGULAR 은 운영자 승인(ACTIVE) 전까지 심사중 화면만
+          if (acctType === "REGULAR" && user.approvalStatus && user.approvalStatus !== "ACTIVE") {
+            setCurrentScreen("pendingApproval");
+            return;
+          }
           // ADR 0014: MATCHMAKER_ONLY 는 mainFeed 가 아닌 ConnectorDashboard 로
           setCurrentScreen(acctType === "MATCHMAKER_ONLY" ? "connectorDashboard" : "mainFeed");
           toast.success("로그인되었습니다!");
@@ -906,6 +927,35 @@ export default function App() {
   return (
     <div className="min-h-screen bg-background">
       <Suspense fallback={<ScreenFallback />}>
+      {currentScreen === "pendingApproval" && (
+        <PendingApprovalScreen
+          status={approvalStatus ?? "PENDING_APPROVAL"}
+          reason={approvalReason}
+          onRefresh={async () => {
+            const user = await authService.getCurrentUser();
+            if (!user) return;
+            setApprovalStatus(user.approvalStatus);
+            setApprovalReason(user.approvalReason ?? null);
+            if (user.approvalStatus === "ACTIVE") {
+              setCurrentScreen(user.accountType === "MATCHMAKER_ONLY" ? "connectorDashboard" : "mainFeed");
+              toast.success("승인됐어요! 팔레트를 시작해보세요 🎨");
+            } else if (user.approvalStatus === "REJECTED") {
+              toast.info("프로필 보완이 필요해요");
+            } else {
+              toast.info("아직 심사 중이에요. 조금만 기다려주세요.");
+            }
+          }}
+          onResubmit={() => setCurrentScreen("profileEdit")}
+          onLogout={() => {
+            localStorage.removeItem(ONBOARDING_DRAFT_KEY);
+            localStorage.removeItem(ONBOARDING_STEP_KEY);
+            tokenStorage.clearTokens();
+            setIsLoggedIn(false);
+            setCurrentScreen("login");
+          }}
+        />
+      )}
+
       {currentScreen === "login" && (
         <LoginScreen
           onEmailLogin={handleEmailLogin}

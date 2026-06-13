@@ -11,7 +11,7 @@ interface UserSummary {
   phoneNumber: string | null;
   accountType: string;
   role: string;
-  status: "ACTIVE" | "SUSPENDED" | "DORMANT";
+  status: "ACTIVE" | "PENDING_APPROVAL" | "REJECTED" | "SUSPENDED" | "DORMANT";
   isProfileCompleted: boolean;
   createdAt: string;
   lastLoginAt: string;
@@ -32,6 +32,8 @@ interface Props {
 
 const STATUS_BADGE: Record<UserSummary["status"], { label: string; cls: string }> = {
   ACTIVE: { label: "활성", cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+  PENDING_APPROVAL: { label: "승인 대기", cls: "bg-blue-100 text-blue-700 border-blue-200" },
+  REJECTED: { label: "반려", cls: "bg-orange-100 text-orange-700 border-orange-200" },
   SUSPENDED: { label: "차단", cls: "bg-red-100 text-red-700 border-red-200" },
   DORMANT: { label: "휴면", cls: "bg-amber-100 text-amber-700 border-amber-200" },
 };
@@ -114,7 +116,7 @@ export function AdminUsersScreen({ onBack, onSelectUser }: Props) {
           </form>
 
           <div className="flex gap-1.5">
-            {(["ALL", "ACTIVE", "SUSPENDED", "DORMANT"] as const).map((s) => (
+            {(["ALL", "PENDING_APPROVAL", "ACTIVE", "REJECTED", "SUSPENDED", "DORMANT"] as const).map((s) => (
               <button
                 key={s}
                 onClick={() => {

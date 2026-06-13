@@ -9,7 +9,7 @@ interface FriendSummary {
   age: number;
   colorType: string | null;
   completionRate: number;
-  status: "ACTIVE" | "SUSPENDED" | "DORMANT";
+  status: "ACTIVE" | "PENDING_APPROVAL" | "REJECTED" | "SUSPENDED" | "DORMANT";
   isDeleted: boolean;
 }
 
@@ -57,7 +57,7 @@ interface UserDetail {
   phoneNumber: string | null;
   accountType: string;
   role: string;
-  status: "ACTIVE" | "SUSPENDED" | "DORMANT";
+  status: "ACTIVE" | "PENDING_APPROVAL" | "REJECTED" | "SUSPENDED" | "DORMANT";
   statusReason: string | null;
   statusUpdatedAt: string | null;
   statusUpdatedBy: string | null;
@@ -134,8 +134,8 @@ export function AdminUserDetailScreen({ userId, onBack }: Props) {
 
   const submit = async () => {
     if (!user) return;
-    if (newStatus === "SUSPENDED" && !reason.trim()) {
-      alert("차단 사유는 필수입니다");
+    if ((newStatus === "SUSPENDED" || newStatus === "REJECTED") && !reason.trim()) {
+      alert(newStatus === "REJECTED" ? "반려 사유는 필수입니다" : "차단 사유는 필수입니다");
       return;
     }
     setSubmitting(true);
@@ -367,18 +367,18 @@ export function AdminUserDetailScreen({ userId, onBack }: Props) {
                 <div className="space-y-3 pt-2 border-t border-border">
                   <div>
                     <label className="text-sm font-medium text-foreground block mb-1.5">새 상태</label>
-                    <div className="flex gap-1.5">
-                      {(["ACTIVE", "SUSPENDED", "DORMANT"] as const).map((s) => (
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {(["ACTIVE", "REJECTED", "PENDING_APPROVAL", "SUSPENDED", "DORMANT"] as const).map((s) => (
                         <button
                           key={s}
                           onClick={() => setNewStatus(s)}
-                          className={`flex-1 h-10 rounded-lg border text-sm font-medium transition-colors ${
+                          className={`h-10 rounded-lg border text-sm font-medium transition-colors ${
                             newStatus === s
                               ? "bg-foreground text-background border-foreground"
                               : "bg-card border-border text-muted-foreground"
                           }`}
                         >
-                          {s === "ACTIVE" ? "활성화" : s === "SUSPENDED" ? "차단" : "휴면"}
+                          {s === "ACTIVE" ? "승인" : s === "REJECTED" ? "반려" : s === "PENDING_APPROVAL" ? "대기" : s === "SUSPENDED" ? "차단" : "휴면"}
                         </button>
                       ))}
                     </div>
@@ -485,6 +485,8 @@ function StatCard({ label, value, sub, children }: { label: string; value?: stri
 function StatusBadge({ status }: { status: UserDetail["status"] }) {
   const map = {
     ACTIVE: { label: "활성", cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+    PENDING_APPROVAL: { label: "승인 대기", cls: "bg-blue-100 text-blue-700 border-blue-200" },
+    REJECTED: { label: "반려", cls: "bg-orange-100 text-orange-700 border-orange-200" },
     SUSPENDED: { label: "차단", cls: "bg-red-100 text-red-700 border-red-200" },
     DORMANT: { label: "휴면", cls: "bg-amber-100 text-amber-700 border-amber-200" },
   } as const;

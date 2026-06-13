@@ -266,3 +266,10 @@ ALTER TABLE profile_videos ADD COLUMN s3_key VARCHAR(500);
 ALTER TABLE matchmaking_requests ADD COLUMN admin_note TEXT;
 ALTER TABLE matchmaking_requests ADD COLUMN admin_last_updated_at DATETIME(6);
 ALTER TABLE matchmaking_requests ADD COLUMN admin_last_updated_by BINARY(16);
+
+-- ── 15. 운영자 승인 게이팅 (ADR 0054) ──────────────────────────────────────
+-- users.status enum 에 PENDING_APPROVAL / REJECTED 추가. MODIFY 는 idempotent.
+-- 기존 row 는 ACTIVE 유지 (= 자동 승인). 신규 가입자만 프로필 완성 시 PENDING_APPROVAL.
+ALTER TABLE users
+    MODIFY status enum ('ACTIVE','PENDING_APPROVAL','REJECTED','SUSPENDED','DORMANT')
+    NOT NULL DEFAULT 'ACTIVE';
