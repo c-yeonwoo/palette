@@ -195,7 +195,7 @@ describe('BasicInfoScreen', () => {
         basicInfo: expect.objectContaining({
           name: '홍길동',
           gender: '남성',
-          bodyType: '슬림',
+          bodyType: 'SLIM',   // ADR 0057 — 칩이 코드를 저장
           mbti: 'ENFP',
         }),
         careerInfo: expect.objectContaining({ category: 'IT/개발' }),

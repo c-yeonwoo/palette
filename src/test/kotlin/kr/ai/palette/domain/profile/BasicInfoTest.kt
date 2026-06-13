@@ -11,12 +11,12 @@ class BasicInfoTest : DescribeSpec({
             it("모든 필드가 올바르게 설정되어야 한다") {
                 val basicInfo = BasicInfo(
                     height = 175,
-                    bodyType = BodyType.ATHLETIC,
+                    bodyType = BodyType.ATHLETIC.name,
                     mbti = MBTI.ENFP
                 )
 
                 basicInfo.height shouldBe 175
-                basicInfo.bodyType shouldBe BodyType.ATHLETIC
+                basicInfo.bodyType shouldBe BodyType.ATHLETIC.name
                 basicInfo.mbti shouldBe MBTI.ENFP
             }
         }
@@ -40,7 +40,7 @@ class BasicInfoTest : DescribeSpec({
                 MBTI.entries.forEach { mbtiType ->
                     val basicInfo = BasicInfo(
                         height = 170,
-                        bodyType = BodyType.AVERAGE,
+                        bodyType = BodyType.AVERAGE.name,
                         mbti = mbtiType
                     )
                     basicInfo.mbti shouldBe mbtiType
@@ -53,10 +53,10 @@ class BasicInfoTest : DescribeSpec({
                 BodyType.entries.forEach { bodyType ->
                     val basicInfo = BasicInfo(
                         height = 170,
-                        bodyType = bodyType,
+                        bodyType = bodyType.name,   // ADR 0057 — String 코드
                         mbti = MBTI.ENFP
                     )
-                    basicInfo.bodyType shouldBe bodyType
+                    basicInfo.bodyType shouldBe bodyType.name
                 }
             }
         }
@@ -65,14 +65,14 @@ class BasicInfoTest : DescribeSpec({
             it("특정 필드만 변경할 수 있어야 한다") {
                 val original = BasicInfo(
                     height = 170,
-                    bodyType = BodyType.SLIM,
+                    bodyType = BodyType.SLIM.name,
                     mbti = MBTI.ENFP
                 )
 
                 val copied = original.copy(mbti = MBTI.INTJ)
 
                 copied.height shouldBe 170
-                copied.bodyType shouldBe BodyType.SLIM
+                copied.bodyType shouldBe BodyType.SLIM.name
                 copied.mbti shouldBe MBTI.INTJ
             }
         }

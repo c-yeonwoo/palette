@@ -302,7 +302,7 @@ class DataInitializer(
             userId = testUserIds["minjun"]!!,
             basicInfo = BasicInfo(
                 height = 178,
-                bodyType = BodyType.ATHLETIC,
+                bodyType = BodyType.ATHLETIC.name,
                 mbti = MBTI.ENFP
             ),
             careerInfo = CareerInfo(
@@ -320,9 +320,9 @@ class DataInitializer(
                 sigungu = "강남구"
             ),
             lifestyleInfo = LifestyleInfo(
-                smoking = Frequency.NEVER,
-                drinking = Frequency.SOMETIMES,
-                religion = Religion.NONE
+                smoking = Frequency.NEVER.name,
+                drinking = Frequency.SOMETIMES.name,
+                religion = Religion.NONE.name
             ),
             introduction = Introduction(
                 text = null,
@@ -336,11 +336,11 @@ class DataInitializer(
                 )
             ),
             idealType = IdealType(
-                datePreferences = listOf(DatePreference.ACTIVE, DatePreference.CULTURE),
-                importantValues = listOf(ImportantValue.PERSONALITY, ImportantValue.CAREER, ImportantValue.VALUES),
+                datePreferences = listOf(DatePreference.ACTIVE.name, DatePreference.CULTURE.name),
+                importantValues = listOf(ImportantValue.PERSONALITY.name, ImportantValue.CAREER.name, ImportantValue.VALUES.name),
                 personalities = listOf("밝은", "유머러스한", "지적인"),
                 appearanceStyles = listOf("CAT"), // 남성 유저 -> 여자 스타일 (하나만 선택)
-                dealBreakers = listOf(DealBreaker.SMOKING, DealBreaker.CONTACTS_EX)
+                dealBreakers = listOf(DealBreaker.SMOKING.name, DealBreaker.CONTACTS_EX.name)
             ),
             photos = emptyList(),
             videos = emptyList(),
@@ -377,7 +377,7 @@ class DataInitializer(
             userId = testUserIds["seoyeon"]!!,
             basicInfo = BasicInfo(
                 height = 165,
-                bodyType = BodyType.SLIM,
+                bodyType = BodyType.SLIM.name,
                 mbti = MBTI.ISFJ
             ),
             careerInfo = CareerInfo(
@@ -395,9 +395,9 @@ class DataInitializer(
                 sigungu = "강남구"
             ),
             lifestyleInfo = LifestyleInfo(
-                smoking = Frequency.NEVER,
-                drinking = Frequency.OFTEN,
-                religion = Religion.CHRISTIANITY
+                smoking = Frequency.NEVER.name,
+                drinking = Frequency.OFTEN.name,
+                religion = Religion.CHRISTIANITY.name
             ),
             introduction = Introduction(
                 text = null,
@@ -411,11 +411,11 @@ class DataInitializer(
                 )
             ),
             idealType = IdealType(
-                datePreferences = listOf(DatePreference.ACTIVE, DatePreference.NATURE),
-                importantValues = listOf(ImportantValue.PERSONALITY, ImportantValue.CAREER, ImportantValue.APPEARANCE),
+                datePreferences = listOf(DatePreference.ACTIVE.name, DatePreference.NATURE.name),
+                importantValues = listOf(ImportantValue.PERSONALITY.name, ImportantValue.CAREER.name, ImportantValue.APPEARANCE.name),
                 personalities = listOf("유머러스한", "배려심있는", "적극적인"),
                 appearanceStyles = listOf("STUDENT_COUNCIL"), // 여성 유저 -> 남자 스타일 (하나만 선택)
-                dealBreakers = listOf(DealBreaker.SMOKING, DealBreaker.UNSTABLE_JOB)
+                dealBreakers = listOf(DealBreaker.SMOKING.name, DealBreaker.UNSTABLE_JOB.name)
             ),
             photos = emptyList(),
             videos = emptyList(),
@@ -447,7 +447,7 @@ class DataInitializer(
             userId = testUserIds["jihoon"]!!,
             basicInfo = BasicInfo(
                 height = 180,
-                bodyType = BodyType.MUSCULAR,
+                bodyType = BodyType.MUSCULAR.name,
                 mbti = MBTI.ENTJ
             ),
             careerInfo = CareerInfo(
@@ -465,9 +465,9 @@ class DataInitializer(
                 sigungu = "영등포구"
             ),
             lifestyleInfo = LifestyleInfo(
-                smoking = Frequency.NEVER,
-                drinking = Frequency.SOMETIMES,
-                religion = Religion.NONE
+                smoking = Frequency.NEVER.name,
+                drinking = Frequency.SOMETIMES.name,
+                religion = Religion.NONE.name
             ),
             introduction = Introduction(
                 text = null,
@@ -481,11 +481,11 @@ class DataInitializer(
                 )
             ),
             idealType = IdealType(
-                datePreferences = listOf(DatePreference.CULTURE, DatePreference.INDOOR),
-                importantValues = listOf(ImportantValue.PERSONALITY, ImportantValue.FAMILY, ImportantValue.VALUES),
+                datePreferences = listOf(DatePreference.CULTURE.name, DatePreference.INDOOR.name),
+                importantValues = listOf(ImportantValue.PERSONALITY.name, ImportantValue.FAMILY.name, ImportantValue.VALUES.name),
                 personalities = listOf("차분한", "이해심있는", "따뜻한"),
                 appearanceStyles = listOf("DEER"), // 남성 유저 -> 여자 스타일 (하나만 선택)
-                dealBreakers = listOf(DealBreaker.SMOKING, DealBreaker.HEAVY_DRINKING, DealBreaker.CONTACTS_EX)
+                dealBreakers = listOf(DealBreaker.SMOKING.name, DealBreaker.HEAVY_DRINKING.name, DealBreaker.CONTACTS_EX.name)
             ),
             photos = emptyList(),
             videos = emptyList(),
@@ -517,7 +517,7 @@ class DataInitializer(
             userId = testUserIds["yujin"]!!,
             basicInfo = BasicInfo(
                 height = 162,
-                bodyType = BodyType.AVERAGE,
+                bodyType = BodyType.AVERAGE.name,
                 mbti = MBTI.INFP
             ),
             careerInfo = CareerInfo(
@@ -535,9 +535,9 @@ class DataInitializer(
                 sigungu = "송파구"
             ),
             lifestyleInfo = LifestyleInfo(
-                smoking = Frequency.NEVER,
-                drinking = Frequency.SOMETIMES,
-                religion = Religion.CATHOLICISM
+                smoking = Frequency.NEVER.name,
+                drinking = Frequency.SOMETIMES.name,
+                religion = Religion.CATHOLICISM.name
             ),
             introduction = Introduction(
                 text = null,
@@ -551,11 +551,11 @@ class DataInitializer(
                 )
             ),
             idealType = IdealType(
-                datePreferences = listOf(DatePreference.INDOOR, DatePreference.CULTURE),
-                importantValues = listOf(ImportantValue.PERSONALITY, ImportantValue.FAMILY, ImportantValue.JOB),
+                datePreferences = listOf(DatePreference.INDOOR.name, DatePreference.CULTURE.name),
+                importantValues = listOf(ImportantValue.PERSONALITY.name, ImportantValue.FAMILY.name, ImportantValue.JOB.name),
                 personalities = listOf("따뜻한", "책임감있는", "가정적인"),
                 appearanceStyles = listOf("TOFU"), // 여성 유저 -> 남자 스타일 (하나만 선택)
-                dealBreakers = listOf(DealBreaker.SMOKING, DealBreaker.HEAVY_DRINKING)
+                dealBreakers = listOf(DealBreaker.SMOKING.name, DealBreaker.HEAVY_DRINKING.name)
             ),
             photos = emptyList(),
             videos = emptyList(),
@@ -587,7 +587,7 @@ class DataInitializer(
             userId = testUserIds["dohyun"]!!,
             basicInfo = BasicInfo(
                 height = 175,
-                bodyType = BodyType.AVERAGE,
+                bodyType = BodyType.AVERAGE.name,
                 mbti = MBTI.INTJ
             ),
             careerInfo = CareerInfo(
@@ -605,9 +605,9 @@ class DataInitializer(
                 sigungu = "종로구"
             ),
             lifestyleInfo = LifestyleInfo(
-                smoking = Frequency.NEVER,
-                drinking = Frequency.NEVER,
-                religion = Religion.BUDDHISM
+                smoking = Frequency.NEVER.name,
+                drinking = Frequency.NEVER.name,
+                religion = Religion.BUDDHISM.name
             ),
             introduction = Introduction(
                 text = null,
@@ -621,11 +621,11 @@ class DataInitializer(
                 )
             ),
             idealType = IdealType(
-                datePreferences = listOf(DatePreference.CULTURE, DatePreference.NATURE),
-                importantValues = listOf(ImportantValue.PERSONALITY, ImportantValue.VALUES, ImportantValue.EDUCATION),
+                datePreferences = listOf(DatePreference.CULTURE.name, DatePreference.NATURE.name),
+                importantValues = listOf(ImportantValue.PERSONALITY.name, ImportantValue.VALUES.name, ImportantValue.EDUCATION.name),
                 personalities = listOf("차분한", "이해심있는", "지적인"),
                 appearanceStyles = listOf("CAT"), // 남성 유저 -> 여자 스타일 (하나만 선택)
-                dealBreakers = listOf(DealBreaker.SMOKING, DealBreaker.HEAVY_DRINKING)
+                dealBreakers = listOf(DealBreaker.SMOKING.name, DealBreaker.HEAVY_DRINKING.name)
             ),
             photos = emptyList(),
             videos = emptyList(),

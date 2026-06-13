@@ -5,6 +5,7 @@ import { Progress } from "./ui/progress";
 import { Badge } from "./ui/badge";
 import { Slider } from "./ui/slider";
 import { Heart, Sparkles, ChevronLeft } from "lucide-react";
+import { useOnboardingOptions, DATE_PREF_DESC } from "../../lib/onboarding/useOnboardingOptions";
 
 // 기본 / 한계 범위
 const AGE_BOUND = { min: 20, max: 60 } as const;
@@ -19,49 +20,18 @@ interface IdealTypeScreenProps {
   userGender?: string; // "MALE" or "FEMALE"
 }
 
-const personalities = [
-  "유머있는", "다정한", "지적인", "활발한", "차분한",
-  "섬세한", "솔직한", "적극적인", "배려심많은", "독립적인"
-];
-
-const datePreferences = [
-  { id: "active", label: "액티브한 데이트", desc: "여행, 운동, 액티비티" },
-  { id: "indoor", label: "실내 데이트", desc: "집, 카페, 영화관" },
-  { id: "culture", label: "문화 데이트", desc: "전시, 공연, 맛집 투어" },
-  { id: "nature", label: "자연 데이트", desc: "산책, 드라이브, 피크닉" },
-];
-
-const importantValues = [
-  "성격/성향", "외모", "학력", "능력/커리어", "집안/가족", "직업", "경제력", "가치관"
-];
-
-// 남자가 선택하는 여자 외모 스타일
-const femaleAppearanceStyles = [
-  "강아지상", "고양이상", "토끼상", "여우상", "사슴상", "두부상", "순두부상", "아랍상", "일진상", "상견례입구컷상"
-];
-
-// 여자가 선택하는 남자 외모 스타일
-const maleAppearanceStyles = [
-  "강아지상", "고양이상", "전교회장상", "체대상", "너드상", "두부상", "아랍상", "공룡상"
-];
-
-// Deal Breakers (절대 안되는 것들) - 최대 3개
-const dealBreakerOptions = [
-  { value: "SMOKING", label: "흡연자" },
-  { value: "HEAVY_DRINKING", label: "과음하는 사람" },
-  { value: "DISLIKES_PETS", label: "반려동물을 싫어하는 사람" },
-  { value: "LONG_DISTANCE", label: "장거리 연애" },
-  { value: "DIFFERENT_RELIGION", label: "종교가 다른 사람" },
-  { value: "NO_MARRIAGE_PLAN", label: "결혼 의사가 없는 사람" },
-  { value: "CHILDREN_PLAN", label: "자녀 계획이 맞지 않는 사람" },
-  { value: "UNSTABLE_JOB", label: "직업이 불안정한 사람" },
-  { value: "CONTACTS_EX", label: "전 연인과 연락하는 사람" },
-  { value: "LARGE_AGE_GAP", label: "나이 차이가 많이 나는 사람" }
-];
-
 export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: IdealTypeScreenProps) {
-  // 사용자 성별에 따라 다른 외모 스타일 옵션 제공
-  const appearanceStyles = userGender === "MALE" ? femaleAppearanceStyles : maleAppearanceStyles;
+  const { options } = useOnboardingOptions();   // ADR 0057 — 어드민 관리 칩
+
+  const personalities = options.personality ?? [];
+  const datePreferences = options.datePreference ?? [];
+  const importantValues = options.importantValue ?? [];
+  const dealBreakerOptions = options.dealBreaker ?? [];
+  // 사용자 성별에 따라 상대 성별의 외모 스타일만 노출
+  const targetGender = userGender === "MALE" ? "FEMALE" : "MALE";
+  const appearanceStyles = (options.appearanceStyle ?? []).filter(
+    (o) => !o.gender || o.gender === targetGender,
+  );
 
   const [selectedDatePreferences, setSelectedDatePreferences] = useState<string[]>(
     initialData?.idealType?.datePreferences || []
@@ -223,16 +193,18 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
           <div className="grid grid-cols-2 gap-3">
             {datePreferences.map((pref) => (
               <button
-                key={pref.id}
-                onClick={() => toggleDatePreference(pref.id)}
+                key={pref.code}
+                onClick={() => toggleDatePreference(pref.code)}
                 className={`p-4 rounded-xl border-2 text-left transition-all ${
-                  selectedDatePreferences.includes(pref.id)
+                  selectedDatePreferences.includes(pref.code)
                     ? "bg-secondary border-primary"
                     : "bg-card border-border hover:border-primary/40"
                 }`}
               >
                 <p className="font-medium text-foreground mb-1">{pref.label}</p>
-                <p className="text-sm text-muted-foreground">{pref.desc}</p>
+                {DATE_PREF_DESC[pref.code] && (
+                  <p className="text-sm text-muted-foreground">{DATE_PREF_DESC[pref.code]}</p>
+                )}
               </button>
             ))}
           </div>
@@ -250,12 +222,12 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
           </div>
           <div className="flex flex-wrap gap-2">
             {importantValues.map((value) => {
-              const rank = selectedImportantValues.indexOf(value); // -1 if not selected
+              const rank = selectedImportantValues.indexOf(value.code); // -1 if not selected
               const isSelected = rank >= 0;
               return (
                 <Badge
-                  key={value}
-                  onClick={() => toggleImportantValue(value)}
+                  key={value.code}
+                  onClick={() => toggleImportantValue(value.code)}
                   className={`relative cursor-pointer px-4 py-2 transition-all ${
                     isSelected
                       ? "bg-brand-soft text-gold-strong border-brand/40"
@@ -271,7 +243,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
                       {rank + 1}
                     </span>
                   )}
-                  {value}
+                  {value.label}
                 </Badge>
               );
             })}
@@ -295,11 +267,11 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
           </div>
           <div className="flex flex-wrap gap-2">
             {personalities.map((personality) => {
-              const isSelected = selectedPersonalities.includes(personality);
+              const isSelected = selectedPersonalities.includes(personality.code);
               return (
                 <Badge
-                  key={personality}
-                  onClick={() => togglePersonality(personality)}
+                  key={personality.code}
+                  onClick={() => togglePersonality(personality.code)}
                   className={`cursor-pointer px-4 py-2 transition-all ${
                     isSelected
                       ? "bg-brand-soft text-gold-strong border-brand/40"
@@ -307,7 +279,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
                   }`}
                   variant={isSelected ? "default" : "outline"}
                 >
-                  {personality}
+                  {personality.label}
                 </Badge>
               );
             })}
@@ -325,16 +297,16 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
           <div className="flex flex-wrap gap-2">
             {appearanceStyles.map((style) => (
               <Badge
-                key={style}
-                onClick={() => toggleAppearanceStyle(style)}
+                key={style.code}
+                onClick={() => toggleAppearanceStyle(style.code)}
                 className={`cursor-pointer px-4 py-2 transition-all ${
-                  selectedAppearanceStyles.includes(style)
+                  selectedAppearanceStyles.includes(style.code)
                     ? "bg-brand-soft text-gold-strong border-brand/40"
                     : "bg-card border-border text-muted-foreground hover:border-primary/40"
                 }`}
-                variant={selectedAppearanceStyles.includes(style) ? "default" : "outline"}
+                variant={selectedAppearanceStyles.includes(style.code) ? "default" : "outline"}
               >
-                {style}
+                {style.label}
               </Badge>
             ))}
           </div>
@@ -353,14 +325,14 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
           <div className="flex flex-wrap gap-2">
             {dealBreakerOptions.map((option) => (
               <Badge
-                key={option.value}
-                onClick={() => toggleDealBreaker(option.value)}
+                key={option.code}
+                onClick={() => toggleDealBreaker(option.code)}
                 className={`cursor-pointer px-4 py-2 transition-all ${
-                  selectedDealBreakers.includes(option.value)
+                  selectedDealBreakers.includes(option.code)
                     ? "bg-brand-soft text-gold-strong border-brand/40"
                     : "bg-card border-border text-muted-foreground hover:border-primary/40"
                 }`}
-                variant={selectedDealBreakers.includes(option.value) ? "default" : "outline"}
+                variant={selectedDealBreakers.includes(option.code) ? "default" : "outline"}
               >
                 {option.label}
               </Badge>

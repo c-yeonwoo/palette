@@ -5,6 +5,7 @@ import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
 import { User, ArrowLeft, ArrowRight } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
+import { useOnboardingOptions } from "../../lib/onboarding/useOnboardingOptions";
 import { toast } from "sonner";
 
 interface BasicInfoScreenProps {
@@ -24,7 +25,6 @@ const jobCategories = [
 ];
 
 const educationLevels = ["고졸", "전문대", "대졸", "석사", "박사"];
-const bodyTypes = ["슬림", "보통", "탄탄", "건장", "통통"];
 const regions = [
   "서울", "경기", "인천", "부산", "대구", "광주", "대전",
   "울산", "세종", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"
@@ -56,6 +56,8 @@ interface UserProfile {
 }
 
 export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreenProps) {
+  const { options } = useOnboardingOptions();   // ADR 0057 — 어드민 관리 칩
+  const bodyTypes = options.bodyType ?? [];
   const [miniStep, setMiniStep] = useState<MiniStep>(1);
   const [formData, setFormData] = useState({
     name: initialData?.basicInfo?.name || "",
@@ -324,15 +326,15 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
               <div className="grid grid-cols-5 gap-2">
                 {bodyTypes.map((type) => (
                   <button
-                    key={type}
-                    onClick={() => update('bodyType', type)}
+                    key={type.code}
+                    onClick={() => update('bodyType', type.code)}
                     className={`py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
-                      formData.bodyType === type
+                      formData.bodyType === type.code
                         ? "bg-brand-soft text-gold-strong border-brand/40"
                         : "bg-card border-border text-muted-foreground hover:border-primary/40"
                     }`}
                   >
-                    {type}
+                    {type.label}
                   </button>
                 ))}
               </div>

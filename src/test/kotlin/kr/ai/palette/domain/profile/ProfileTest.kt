@@ -41,7 +41,7 @@ class ProfileTest : DescribeSpec({
                 val profile = Profile.create(userId, MBTI.ENFP)
                 val newBasicInfo = BasicInfo(
                     height = 180,
-                    bodyType = BodyType.ATHLETIC,
+                    bodyType = BodyType.ATHLETIC.name,
                     mbti = MBTI.INTJ
                 )
 
@@ -60,7 +60,7 @@ class ProfileTest : DescribeSpec({
 
                 val newBasicInfo = BasicInfo(
                     height = 170,
-                    bodyType = BodyType.SLIM,
+                    bodyType = BodyType.SLIM.name,
                     mbti = MBTI.ISFJ
                 )
                 val updated = profile.updateBasicInfo(newBasicInfo)
@@ -118,7 +118,7 @@ class ProfileTest : DescribeSpec({
                 val profile = Profile.create(
                     userId = userId,
                     mbti = MBTI.ENFP,
-                    basicInfo = BasicInfo(180, BodyType.ATHLETIC, MBTI.ENFP)
+                    basicInfo = BasicInfo(180, BodyType.ATHLETIC.name, MBTI.ENFP)
                 )
 
                 val completionRate = profile.calculateCompletionRate()
@@ -134,7 +134,7 @@ class ProfileTest : DescribeSpec({
                 val profileWithBasicInfo = Profile.create(
                     userId = userId,
                     mbti = MBTI.ENFP,
-                    basicInfo = BasicInfo(180, BodyType.ATHLETIC, MBTI.ENFP),
+                    basicInfo = BasicInfo(180, BodyType.ATHLETIC.name, MBTI.ENFP),
                     careerInfo = CareerInfo(CareerCategory.IT_DEVELOPMENT, "회사", IncomeRange.INCOME_RANGE_3),
                     educationInfo = EducationInfo(EducationLevel.BACHELOR, "학교", "전공")
                 )
@@ -151,7 +151,7 @@ class ProfileTest : DescribeSpec({
                 val profile = Profile.create(
                     userId = userId,
                     mbti = MBTI.ENFP,
-                    basicInfo = BasicInfo(180, BodyType.ATHLETIC, MBTI.ENFP)
+                    basicInfo = BasicInfo(180, BodyType.ATHLETIC.name, MBTI.ENFP)
                 )
 
                 val recalculated = profile.recalculateMetrics()

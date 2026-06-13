@@ -101,17 +101,17 @@ class EmbeddingRefreshService(
         }
         if (ideal.datePreferences.isNotEmpty()) {
             appendLine("[데이트 스타일] " + ideal.datePreferences.joinToString(", ") {
-                DATE_PREF_LABEL[it.name] ?: it.name
+                DATE_PREF_LABEL[it] ?: it   // ADR 0057 — 코드 문자열
             })
         }
         if (ideal.importantValues.isNotEmpty()) {
             appendLine("[중요한 가치] " + ideal.importantValues.joinToString(", ") {
-                IMPORTANT_VALUE_LABEL[it.name] ?: it.name
+                IMPORTANT_VALUE_LABEL[it] ?: it
             })
         }
         if (ideal.dealBreakers.isNotEmpty()) {
             appendLine("[절대 안 되는 것] " + ideal.dealBreakers.joinToString(", ") {
-                DEAL_BREAKER_LABEL[it.name] ?: it.name
+                DEAL_BREAKER_LABEL[it] ?: it
             })
         }
         if (ideal.bucketList.isNotEmpty()) {
