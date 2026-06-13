@@ -5,6 +5,7 @@ import kr.ai.palette.domain.profile.ColorType
 import kr.ai.palette.domain.profile.ColorTypeEnum
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.infrastructure.ai.OpenAIService
+import kr.ai.palette.persistence.interview.InterviewQuestionJpaRepository
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.transaction.annotation.Transactional
@@ -14,11 +15,29 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/api/v1/ai-interview")
 class AIInterviewController(
     private val profileRepository: ProfileRepository,
+    private val interviewQuestionRepository: InterviewQuestionJpaRepository,
 ) {
 
     @GetMapping("/questions")
     fun getQuestions(): ResponseEntity<InterviewQuestionsResponse> {
-        return ResponseEntity.ok(InterviewQuestionsResponse(questions = INTERVIEW_QUESTIONS))
+        // ADR 0055 — 어드민이 관리하는 DB 질문(활성, 순서대로). 비어있으면 하드코딩 기본값으로 폴백.
+        val rows = interviewQuestionRepository.findByActiveTrueOrderByDisplayOrderAsc()
+        val questions = if (rows.isEmpty()) {
+            INTERVIEW_QUESTIONS
+        } else {
+            rows.map { row ->
+                InterviewQuestion(
+                    id = row.questionKey,
+                    step = row.displayOrder,
+                    category = row.category,
+                    question = row.question,
+                    hint = row.hint ?: "",
+                    inputType = row.inputType,
+                    chips = row.chips?.split("\n")?.filter { it.isNotBlank() } ?: emptyList(),
+                )
+            }
+        }
+        return ResponseEntity.ok(InterviewQuestionsResponse(questions = questions))
     }
 
     @PostMapping("/complete")

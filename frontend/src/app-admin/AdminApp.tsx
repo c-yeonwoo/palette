@@ -13,6 +13,7 @@ import { AdminTipsScreen } from "./components/AdminTipsScreen";
 import { AdminLlmUsageScreen } from "./components/AdminLlmUsageScreen";
 import { AdminUserActivityScreen } from "./components/AdminUserActivityScreen";
 import { AdminMatchmakingFlowScreen } from "./components/AdminMatchmakingFlowScreen";
+import { AdminInterviewQuestionsScreen } from "./components/AdminInterviewQuestionsScreen";
 import { adminAuth, type AdminInfo } from "./lib/adminAuth";
 
 /**
@@ -40,7 +41,8 @@ type Screen =
   | { kind: "tips" }
   | { kind: "llm" }
   | { kind: "activity" }
-  | { kind: "flow" };
+  | { kind: "flow" }
+  | { kind: "interviewQuestions" };
 
 function pathToScreen(path: string): Screen {
   if (path === "/admin" || path === "/admin/") return { kind: "dashboard" };
@@ -57,6 +59,7 @@ function pathToScreen(path: string): Screen {
   if (path === "/admin/llm") return { kind: "llm" };
   if (path === "/admin/activity") return { kind: "activity" };
   if (path === "/admin/flow") return { kind: "flow" };
+  if (path === "/admin/interview-questions") return { kind: "interviewQuestions" };
   return { kind: "dashboard" };
 }
 
@@ -132,5 +135,7 @@ export default function AdminApp() {
       return <AdminUserActivityScreen onBack={() => navigate("/admin")} />;
     case "flow":
       return <AdminMatchmakingFlowScreen onBack={() => navigate("/admin")} />;
+    case "interviewQuestions":
+      return <AdminInterviewQuestionsScreen onBack={() => navigate("/admin")} />;
   }
 }

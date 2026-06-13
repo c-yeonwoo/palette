@@ -273,3 +273,22 @@ ALTER TABLE matchmaking_requests ADD COLUMN admin_last_updated_by BINARY(16);
 ALTER TABLE users
     MODIFY status enum ('ACTIVE','PENDING_APPROVAL','REJECTED','SUSPENDED','DORMANT')
     NOT NULL DEFAULT 'ACTIVE';
+
+-- ── 16. AI 인터뷰 질문 어드민 관리 (ADR 0055) ──────────────────────────────
+-- 기존 하드코딩 질문을 DB 로 이관. 최초 부팅 시 InterviewQuestionSeeder 가 기본 9개 시드.
+CREATE TABLE IF NOT EXISTS interview_questions (
+    id            BINARY(16)   NOT NULL,
+    question_key  VARCHAR(50)  NOT NULL,
+    display_order INT          NOT NULL,
+    category      VARCHAR(50)  NOT NULL,
+    question      VARCHAR(500) NOT NULL,
+    hint          VARCHAR(500),
+    input_type    VARCHAR(20)  NOT NULL,
+    chips         TEXT,
+    active        BIT(1)       NOT NULL DEFAULT b'1',
+    created_at    DATETIME(6)  NOT NULL,
+    updated_at    DATETIME(6)  NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_iq_question_key (question_key),
+    KEY idx_iq_order (display_order)
+) ENGINE=InnoDB;
