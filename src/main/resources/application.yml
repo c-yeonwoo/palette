@@ -1,5 +1,13 @@
 server:
   port: 8080
+  # 스레드 상한 — t3.small(2GB) 네이티브 메모리 보호. 기본 max=200 은 작은 박스엔 과해
+  # 워커 스레드 스택만으로 네이티브 메모리를 고갈시킬 수 있다 (인시던트 2026-06-13).
+  tomcat:
+    threads:
+      max: 50
+      min-spare: 5
+    accept-count: 100
+    max-connections: 2000
 
 spring:
   application:
@@ -11,6 +19,13 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password:
+    # 커넥션 풀 명시 상한 (prod MySQL 은 env 로 url 만 override, hikari 설정은 공통 적용)
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 10000   # 10s — 풀 고갈 시 무한 대기 대신 빠르게 실패
+      max-lifetime: 600000        # 10m
+      keepalive-time: 120000      # 2m
 
   h2:
     console:
