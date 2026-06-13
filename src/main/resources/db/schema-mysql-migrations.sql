@@ -292,3 +292,20 @@ CREATE TABLE IF NOT EXISTS interview_questions (
     UNIQUE KEY uk_iq_question_key (question_key),
     KEY idx_iq_order (display_order)
 ) ENGINE=InnoDB;
+
+-- ── 17. 온보딩 칩 옵션 어드민 관리 (ADR 0057) ──────────────────────────────
+-- 취향/서술형 칩(체형·관심사·성격·데이트·가치·종교·외모상·딜브레이커·흡연/음주)을 코드 테이블로.
+-- 부팅 시 FieldOptionSeeder 가 현행 enum/칩 값으로 시드. soft-delete(active=false) 로 하위호환.
+CREATE TABLE IF NOT EXISTS field_options (
+    id            BINARY(16)   NOT NULL,
+    set_key       VARCHAR(40)  NOT NULL,
+    code          VARCHAR(80)  NOT NULL,
+    label         VARCHAR(80)  NOT NULL,
+    display_order INT          NOT NULL,
+    gender        VARCHAR(10),
+    active        BIT(1)       NOT NULL DEFAULT b'1',
+    created_at    DATETIME(6)  NOT NULL,
+    updated_at    DATETIME(6)  NOT NULL,
+    PRIMARY KEY (id),
+    KEY idx_fo_set_order (set_key, display_order)
+) ENGINE=InnoDB;
