@@ -6,6 +6,7 @@ import { Progress } from "./ui/progress";
 import { User, ArrowLeft, ArrowRight } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { useOnboardingOptions } from "../../lib/onboarding/useOnboardingOptions";
+import { useOnboardingFields } from "../../lib/onboarding/useOnboardingFields";
 import { toast } from "sonner";
 
 interface BasicInfoScreenProps {
@@ -57,6 +58,7 @@ interface UserProfile {
 
 export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreenProps) {
   const { options } = useOnboardingOptions();   // ADR 0057 — 어드민 관리 칩
+  const fields = useOnboardingFields();         // ADR 0058 3b — 라벨·힌트·노출 메타 (선택 필드)
   const bodyTypes = options.bodyType ?? [];
   const [miniStep, setMiniStep] = useState<MiniStep>(1);
   const [formData, setFormData] = useState({
@@ -301,9 +303,10 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
               지금 부담스러우면 <strong>"건너뛰기"</strong> 버튼을 눌러 다음으로 진행해도 됩니다.
             </div>
             {/* Height */}
+            {fields.visible("height") && (
             <div>
               <Label className="mb-2 block">
-                키
+                {fields.label("height", "키")}
                 <span className="text-muted-foreground font-normal"> — {formData.height}cm</span>
               </Label>
               <input
@@ -319,10 +322,12 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                 <span>220cm</span>
               </div>
             </div>
+            )}
 
             {/* Body Type */}
+            {fields.visible("bodyType") && (
             <div>
-              <Label className="mb-2 block">체형</Label>
+              <Label className="mb-2 block">{fields.label("bodyType", "체형")}</Label>
               <div className="grid grid-cols-5 gap-2">
                 {bodyTypes.map((type) => (
                   <button
@@ -339,10 +344,12 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                 ))}
               </div>
             </div>
+            )}
 
             {/* MBTI */}
+            {fields.visible("mbti") && (
             <div>
-              <Label className="mb-2 block">MBTI <span className="text-primary">*</span></Label>
+              <Label className="mb-2 block">{fields.label("mbti", "MBTI")}</Label>
               <div className="grid grid-cols-4 gap-3">
                 {([ ["E","I","외향/내향","mbtiE"], ["S","N","감각/직관","mbtiS"], ["T","F","사고/감정","mbtiT"], ["P","J","인식/판단","mbtiP"] ] as [string,string,string,keyof typeof formData][]).map(
                   ([a, b, label, field]) => (
@@ -375,15 +382,16 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                 </div>
               )}
             </div>
+            )}
           </div>
         )}
 
         {/* ──────────── STEP 3: 커리어/위치 ──────────── */}
         {miniStep === 3 && (
           <div className="space-y-5">
-            {/* Job Category */}
+            {/* Job Category (구조 필드 — 항상 노출, 라벨만 메타) */}
             <div>
-              <Label className="mb-2 block">직업 분야 <span className="text-primary">*</span></Label>
+              <Label className="mb-2 block">{fields.label("jobCategory", "직업 분야")} <span className="text-primary">*</span></Label>
               <div className="grid grid-cols-2 gap-2">
                 {jobCategories.map((category) => (
                   <button
@@ -402,9 +410,10 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
             </div>
 
             {/* DA-005 — Education 통합: 최종 학력 + 학교명·전공 한 묶음 */}
+            {fields.visible("education") && (
             <div className="space-y-3">
               <div>
-                <Label className="mb-2 block">최종 학력 <span className="text-muted-foreground text-xs font-normal">(선택)</span></Label>
+                <Label className="mb-2 block">{fields.label("education", "최종 학력")} <span className="text-muted-foreground text-xs font-normal">(선택)</span></Label>
                 <div className="grid grid-cols-5 gap-2">
                   {educationLevels.map((level) => (
                     <button
@@ -445,10 +454,11 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
                 </div>
               )}
             </div>
+            )}
 
-            {/* Region */}
+            {/* Region (구조 필드 — 항상 노출, 라벨만 메타) */}
             <div>
-              <Label className="mb-2 block">거주 지역 <span className="text-primary">*</span></Label>
+              <Label className="mb-2 block">{fields.label("region", "거주 지역")} <span className="text-primary">*</span></Label>
               <div className="grid grid-cols-4 gap-2">
                 {regions.map((region) => (
                   <button

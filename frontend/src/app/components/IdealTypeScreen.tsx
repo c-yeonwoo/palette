@@ -6,6 +6,7 @@ import { Badge } from "./ui/badge";
 import { Slider } from "./ui/slider";
 import { Heart, Sparkles, ChevronLeft } from "lucide-react";
 import { useOnboardingOptions, DATE_PREF_DESC } from "../../lib/onboarding/useOnboardingOptions";
+import { useOnboardingFields } from "../../lib/onboarding/useOnboardingFields";
 
 // 기본 / 한계 범위
 const AGE_BOUND = { min: 20, max: 60 } as const;
@@ -22,6 +23,22 @@ interface IdealTypeScreenProps {
 
 export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: IdealTypeScreenProps) {
   const { options } = useOnboardingOptions();   // ADR 0057 — 어드민 관리 칩
+  const fields = useOnboardingFields();         // ADR 0058 3b — 라벨·힌트·노출·필수 메타
+
+  // 메타 기반 노출/필수/최대선택 (미로딩 시 현행 폴백)
+  const ageVisible = fields.visible("ageRange");
+  const heightVisible = fields.visible("heightRange");
+  const datePrefVisible = fields.visible("datePreference");
+  const importantVisible = fields.visible("importantValue");
+  const personalityVisible = fields.visible("personality");
+  const appearanceVisible = fields.visible("appearanceStyle");
+  const dealBreakerVisible = fields.visible("dealBreaker");
+  const datePrefRequired = fields.required("datePreference", true);
+  const importantRequired = fields.required("importantValue", true);
+  const personalityRequired = fields.required("personality", true);
+  const importantMax = Number((fields.config("importantValue")?.maxSelect as number) ?? 3);
+  const personalityMax = Number((fields.config("personality")?.maxSelect as number) ?? 5);
+  const dealBreakerMax = Number((fields.config("dealBreaker")?.maxSelect as number) ?? 3);
 
   const personalities = options.personality ?? [];
   const datePreferences = options.datePreference ?? [];
@@ -68,7 +85,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
   const toggleImportantValue = (value: string) => {
     if (selectedImportantValues.includes(value)) {
       setSelectedImportantValues(selectedImportantValues.filter(v => v !== value));
-    } else if (selectedImportantValues.length < 3) {
+    } else if (selectedImportantValues.length < importantMax) {
       setSelectedImportantValues([...selectedImportantValues, value]);
     }
   };
@@ -76,7 +93,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
   const togglePersonality = (personality: string) => {
     if (selectedPersonalities.includes(personality)) {
       setSelectedPersonalities(selectedPersonalities.filter(p => p !== personality));
-    } else if (selectedPersonalities.length < 5) {
+    } else if (selectedPersonalities.length < personalityMax) {
       setSelectedPersonalities([...selectedPersonalities, personality]);
     }
   };
@@ -92,15 +109,16 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
   const toggleDealBreaker = (value: string) => {
     if (selectedDealBreakers.includes(value)) {
       setSelectedDealBreakers(selectedDealBreakers.filter(d => d !== value));
-    } else if (selectedDealBreakers.length < 3) {
+    } else if (selectedDealBreakers.length < dealBreakerMax) {
       setSelectedDealBreakers([...selectedDealBreakers, value]);
     }
   };
 
+  // ADR 0058 3b — 보이고 필수인 항목만 검증
   const isValid =
-    selectedDatePreferences.length > 0 &&
-    selectedImportantValues.length > 0 &&
-    selectedPersonalities.length > 0;
+    (!datePrefVisible || !datePrefRequired || selectedDatePreferences.length > 0) &&
+    (!importantVisible || !importantRequired || selectedImportantValues.length > 0) &&
+    (!personalityVisible || !personalityRequired || selectedPersonalities.length > 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -134,13 +152,15 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
         </div>
 
         {/* Age & Height Range — dual range sliders */}
+        {(ageVisible || heightVisible) && (
         <div className="bg-card rounded-xl p-6 border border-border space-y-6">
           <Label className="text-base font-semibold block">나이 / 키 범위 (선택)</Label>
 
           {/* 나이 */}
+          {ageVisible && (
           <div className="space-y-3">
             <div className="flex items-baseline justify-between">
-              <p className="text-sm text-muted-foreground">나이 범위</p>
+              <p className="text-sm text-muted-foreground">{fields.label("ageRange", "나이 범위")}</p>
               <p className="text-sm font-semibold text-foreground tabular-nums">
                 {ageRange[0]}세 ~ {ageRange[1]}세
               </p>
@@ -158,11 +178,13 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
               <span>{AGE_BOUND.max}세</span>
             </div>
           </div>
+          )}
 
           {/* 키 */}
+          {heightVisible && (
           <div className="space-y-3">
             <div className="flex items-baseline justify-between">
-              <p className="text-sm text-muted-foreground">키 범위</p>
+              <p className="text-sm text-muted-foreground">{fields.label("heightRange", "키 범위")}</p>
               <p className="text-sm font-semibold text-foreground tabular-nums">
                 {heightRange[0]}cm ~ {heightRange[1]}cm
               </p>
@@ -180,15 +202,18 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
               <span>{HEIGHT_BOUND.max}cm</span>
             </div>
           </div>
+          )}
         </div>
+        )}
 
         {/* Question 1: Date Preferences */}
+        {datePrefVisible && (
         <div className="bg-card rounded-xl p-6 border border-border space-y-4">
           <div>
             <Label className="text-base font-semibold mb-1 block">
-              Q1. 연인과 어떤 데이트를 선호하시나요? *
+              {fields.label("datePreference", "Q1. 연인과 어떤 데이트를 선호하시나요?")}{datePrefRequired && " *"}
             </Label>
-            <p className="text-sm text-muted-foreground mb-3">복수 선택 가능</p>
+            <p className="text-sm text-muted-foreground mb-3">{fields.hint("datePreference", "복수 선택 가능")}</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {datePreferences.map((pref) => (
@@ -209,15 +234,17 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
             ))}
           </div>
         </div>
+        )}
 
         {/* Question 2: Important Values */}
+        {importantVisible && (
         <div className="bg-card rounded-xl p-6 border border-border space-y-4">
           <div>
             <Label className="text-base font-semibold mb-1 block">
-              Q2. 상대방에게서 중요하게 보는 가치는? *
+              {fields.label("importantValue", "Q2. 상대방에게서 중요하게 보는 가치는?")}{importantRequired && " *"}
             </Label>
             <p className="text-sm text-muted-foreground mb-3">
-              최대 3개 선택 ({selectedImportantValues.length}/3)
+              {fields.hint("importantValue", `최대 ${importantMax}개 선택`)} ({selectedImportantValues.length}/{importantMax})
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -254,15 +281,17 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
             </p>
           )}
         </div>
+        )}
 
         {/* Question 3: Personality */}
+        {personalityVisible && (
         <div className="bg-card rounded-xl p-6 border border-border space-y-4">
           <div>
             <Label className="text-base font-semibold mb-1 block">
-              Q3. 어떤 성격의 사람을 선호하시나요? *
+              {fields.label("personality", "Q3. 어떤 성격의 사람을 선호하시나요?")}{personalityRequired && " *"}
             </Label>
             <p className="text-sm text-muted-foreground mb-3">
-              최대 5개 선택 ({selectedPersonalities.length}/5)
+              {fields.hint("personality", `최대 ${personalityMax}개 선택`)} ({selectedPersonalities.length}/{personalityMax})
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -286,13 +315,16 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
           </div>
         </div>
 
+        )}
+
         {/* Question 4: Appearance Style */}
+        {appearanceVisible && (
         <div className="bg-card rounded-xl p-6 border border-border space-y-4">
           <div>
             <Label className="text-base font-semibold mb-1 block">
-              Q4. 선호하는 외모 스타일은?
+              {fields.label("appearanceStyle", "Q4. 선호하는 외모 스타일은?")}
             </Label>
-            <p className="text-sm text-muted-foreground mb-3">하나만 선택 (선택사항)</p>
+            <p className="text-sm text-muted-foreground mb-3">{fields.hint("appearanceStyle", "하나만 선택 (선택사항)")}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {appearanceStyles.map((style) => (
@@ -311,15 +343,17 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
             ))}
           </div>
         </div>
+        )}
 
         {/* Question 5: Deal Breakers */}
+        {dealBreakerVisible && (
         <div className="bg-card rounded-xl p-6 border border-border space-y-4">
           <div>
             <Label className="text-base font-semibold mb-1 block">
-              Q5. 절대 안되는 것들은? (최대 3개)
+              {fields.label("dealBreaker", "Q5. 절대 안되는 것들은?")} (최대 {dealBreakerMax}개)
             </Label>
             <p className="text-sm text-muted-foreground mb-3">
-              선택사항 ({selectedDealBreakers.length}/3)
+              선택사항 ({selectedDealBreakers.length}/{dealBreakerMax})
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -339,6 +373,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
             ))}
           </div>
         </div>
+        )}
 
         {/* Next Button */}
         <Button

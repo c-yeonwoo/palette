@@ -5,6 +5,7 @@ import { Progress } from "./ui/progress";
 import { Textarea } from "./ui/textarea";
 import { Sparkles, Heart, Target, Smile, Lightbulb, ArrowLeft } from "lucide-react";
 import { useOnboardingOptions } from "../../lib/onboarding/useOnboardingOptions";
+import { useOnboardingFields } from "../../lib/onboarding/useOnboardingFields";
 
 interface AboutMeScreenProps {
   onNext: (data: any) => void;
@@ -82,6 +83,7 @@ const interviewQuestions = [
 
 export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProps) {
   const { options } = useOnboardingOptions();   // ADR 0057 — 어드민 관리 칩
+  const fields = useOnboardingFields();         // ADR 0058 3b — 라벨·힌트·노출·필수 메타
   const [answers, setAnswers] = useState({
     hobby: initialData?.introduction?.interviewAnswers?.hobby || "",
     charm: initialData?.introduction?.interviewAnswers?.charm || "",
@@ -102,11 +104,25 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
     setAnswers({ ...answers, [id]: value });
   };
 
+  // ADR 0058 3b — 어드민 메타로 노출/필수/최소답변 구동 (미로딩 시 현행 동작 폴백)
+  const interviewVisible = fields.visible("interview");
+  const interviewRequired = fields.required("interview", true);
+  const minAnswers = Number((fields.config("interview")?.minAnswers as number) ?? 3);
+  const smokingVisible = fields.visible("smoking");
+  const drinkingVisible = fields.visible("drinking");
+  const religionVisible = fields.visible("religion");
+  const interestsVisible = fields.visible("interests");
+  const smokingRequired = fields.required("smoking", true);
+  const drinkingRequired = fields.required("drinking", true);
+  const religionRequired = fields.required("religion", false);
+  const interestsMax = Number((fields.config("interests")?.maxSelect as number) ?? 8);
+
   const filledAnswers = Object.values(answers).filter(v => v.length >= 10);
   const isValid =
-    filledAnswers.length >= 3 &&
-    smoking &&
-    drinking;
+    (!interviewVisible || !interviewRequired || filledAnswers.length >= minAnswers) &&
+    (!smokingVisible || !smokingRequired || !!smoking) &&
+    (!drinkingVisible || !drinkingRequired || !!drinking) &&
+    (!religionVisible || !religionRequired || !!religion);
 
   return (
     <div className="min-h-screen bg-background">
@@ -133,18 +149,20 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
       {/* Content */}
       <div className="max-w-2xl mx-auto px-6 py-8 space-y-8">
         {/* Interview Questions Section */}
+        {interviewVisible && (
         <div className="space-y-2 mb-6">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-semibold text-foreground">인터뷰로 나를 소개해요</h3>
+            <h3 className="text-lg font-semibold text-foreground">{fields.label("interview", "인터뷰로 나를 소개해요")}</h3>
           </div>
           <p className="text-sm text-muted-foreground">
-            5가지 질문 중 최소 3가지에 답해주세요. 더 많이 채울수록 매력적인 프로필이 완성돼요.
+            {fields.hint("interview", `${minAnswers}가지 질문에 답해주세요. 더 많이 채울수록 매력적인 프로필이 완성돼요.`)}
           </p>
         </div>
+        )}
 
         {/* Interview Questions */}
-        {interviewQuestions.map((question) => {
+        {interviewVisible && interviewQuestions.map((question) => {
           const Icon = question.icon;
           const answerLength = answers[question.id as keyof typeof answers]?.length || 0;
           const isAnswerValid = answerLength >= question.minLength;
@@ -181,8 +199,9 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
           <h3 className="text-foreground font-semibold">라이프스타일</h3>
 
           {/* Smoking */}
+          {smokingVisible && (
           <div>
-            <Label className="mb-2 block text-sm">흡연 *</Label>
+            <Label className="mb-2 block text-sm">{fields.label("smoking", "흡연")}{smokingRequired && " *"}</Label>
             <div className="grid grid-cols-3 gap-2">
               {(options.smoking ?? []).map((option) => (
                 <button
@@ -199,10 +218,12 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
               ))}
             </div>
           </div>
+          )}
 
           {/* Drinking */}
+          {drinkingVisible && (
           <div>
-            <Label className="mb-2 block text-sm">음주 *</Label>
+            <Label className="mb-2 block text-sm">{fields.label("drinking", "음주")}{drinkingRequired && " *"}</Label>
             <div className="grid grid-cols-3 gap-2">
               {(options.drinking ?? []).map((option) => (
                 <button
@@ -219,10 +240,12 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
               ))}
             </div>
           </div>
+          )}
 
           {/* Religion */}
+          {religionVisible && (
           <div>
-            <Label className="mb-2 block text-sm">종교 (선택)</Label>
+            <Label className="mb-2 block text-sm">{fields.label("religion", "종교")}{religionRequired ? " *" : " (선택)"}</Label>
             <div className="grid grid-cols-3 gap-2">
               {(options.religion ?? []).map((option) => (
                 <button
@@ -239,20 +262,22 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
               ))}
             </div>
           </div>
+          )}
         </div>
 
         {/* DA-003 — 관심사 (온보딩 수집) */}
+        {interestsVisible && (
         <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-5 space-y-3">
           <div>
-            <h3 className="text-foreground font-semibold">관심사 · 취미</h3>
+            <h3 className="text-foreground font-semibold">{fields.label("interests", "관심사 · 취미")}</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              최대 8개 · 가입 후 마이프로필에서 더 추가하거나 수정할 수 있어요
+              {fields.hint("interests", `최대 ${interestsMax}개 · 가입 후 마이프로필에서 더 추가하거나 수정할 수 있어요`)}
             </p>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {(options.interest ?? []).map((item) => {
               const selected = interests.includes(item.code);
-              const disabled = !selected && interests.length >= 8;
+              const disabled = !selected && interests.length >= interestsMax;
               return (
                 <button
                   key={item.code}
@@ -261,7 +286,7 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
                   onClick={() => {
                     if (selected) {
                       setInterests(interests.filter(i => i !== item.code));
-                    } else if (interests.length < 8) {
+                    } else if (interests.length < interestsMax) {
                       setInterests([...interests, item.code]);
                     }
                   }}
@@ -281,10 +306,11 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
           </div>
           {interests.length > 0 && (
             <p className="text-[11px] text-muted-foreground">
-              선택: {interests.length}/8
+              선택: {interests.length}/{interestsMax}
             </p>
           )}
         </div>
+        )}
 
         {/* Next Button */}
         <Button

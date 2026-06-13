@@ -1,6 +1,6 @@
 # 0058 — Schema-driven 온보딩 (필드·섹션·순서 동적화)
 
-- **상태**: Accepted (3a 완료 — 백엔드 카탈로그 + 어드민. 3b: 프론트 렌더러 후속)
+- **상태**: Accepted (3a + 3b 완료 — 백엔드 카탈로그·어드민 + 프론트 메타 적용)
 - **결정일**: 2026-06-14
 - **결정자**: ys.choi
 - **선행**: ADR 0055(인터뷰 질문 동적화), 0057(칩 옵션 동적화)
@@ -34,13 +34,20 @@ ADR 0055/0057 패턴을 일반화한 단일 테이블:
 - ✅ 어드민 `AdminOnboardingFieldsController` CRUD(`/api/v1/admin/onboarding-fields`, `ToggleActiveRequest` 재사용) + `AdminOnboardingFieldsScreen`(섹션 트리·추가/수정/순서/필수·활성토글/삭제·config JSON 검증) + AdminApp 라우트 `onboardingFields` + 대시보드 nav.
 - ✅ 마이그레이션 `onboarding_fields`(`) ENGINE=InnoDB`, SchemaDriftTest 통과).
 
-### 3b (후속) — 프론트 스키마 렌더러
-- `BasicInfo`/`AboutMe`/`IdealType` 을 `GET /api/v1/onboarding/fields` 기반으로 점진 전환: 필드 순서·라벨·힌트·노출·필수여부를 API 메타로, **위젯 컴포넌트는 field_key 로 기존 것 재사용**(한 번에 위젯까지 갈아엎지 않음 — 위험 최소화). 칩 데이터는 0057 `useOnboardingOptions` 와 결합.
-- 이 단계가 완료되면 어드민이 질문 추가/재배치/숨김·라벨/필수 변경을 배포 없이 반영.
+### 3b (이 PR) — 프론트 메타 적용 ("가벼운 메타 적용") ✅
+사용자 결정: 작동 중인 실시간 가입 플로우 회귀 위험을 최소화하기 위해 **풀 제너릭 렌더러가 아닌 "가벼운 메타 적용"** 채택. 기존 위젯·미니스텝 구조는 그대로 두고, 메타로 **라벨·힌트·노출(active)·필수 여부**만 구동.
+- ✅ `useOnboardingFields` 훅: `GET /api/v1/onboarding/fields` → `byKey` 메타 + `label/hint/required/visible/config` 헬퍼. **API 실패/빈 응답이면 loaded=false → 모든 필드 visible, 화면이 넘긴 현행 기본값 폴백**(네트워크 의존 없이 가입 항상 동작, 회귀 0). 빈 응답을 loaded=true 로 두면 전부 숨겨지는 위험이 있어 명시적으로 폴백 유지.
+- ✅ `AboutMeScreen`: interview(블록 노출·라벨·힌트·minAnswers)·smoking·drinking·religion·interests(maxSelect) 메타 구동. 숨김 필드는 검증에서 제외.
+- ✅ `IdealTypeScreen`: ageRange·heightRange·datePreference·importantValue(maxSelect)·personality(maxSelect)·appearanceStyle·dealBreaker(maxSelect) 메타 구동. 보이고 필수인 항목만 검증.
+- ✅ `BasicInfoScreen`: 선택 필드(height·bodyType·mbti·education) 라벨·노출 + jobCategory·region 라벨(구조 필드라 노출/필수는 고정). 미니스텝 구조 유지.
+- 결과: 어드민이 라벨·힌트·노출·필수·최대선택을 배포 없이 반영. 칩 선택지는 0057 `useOnboardingOptions` 와 결합.
 
-## 검증 (3a)
-- `SPRING_PROFILES_ACTIVE=test ./gradlew test` BUILD SUCCESSFUL (SchemaDriftTest 포함 — `onboarding_fields` 모든 컬럼 매핑 확인).
-- `npm run build` 성공 · `npx vitest run` 39 passed.
+### 향후 (선택) — 풀 스키마 렌더러
+필드/섹션 **순서**까지 동적화하려면 제너릭 렌더러로의 전환이 필요(BasicInfo 미니스텝 구조 재설계 포함). 회귀 위험이 커 별도 결정 필요 시 진행.
+
+## 검증
+- 3a: `SPRING_PROFILES_ACTIVE=test ./gradlew test` BUILD SUCCESSFUL (SchemaDriftTest 포함) · `npm run build` + vitest 39 passed.
+- 3b: `npm run build` 성공 · `npx vitest run` **39 passed**(BasicInfoScreen 테스트는 옵션·필드 API 미스 시 폴백으로 동일 동작 검증).
 
 ## 결과
-- 온보딩 필드 메타를 어드민이 즉시 관리할 토대 + 조회 API 완성. 현행 동작은 시드로 보존. 프론트 스키마 렌더러 연결은 3b 로 이어 완성한다.
+- 온보딩 필드 메타를 어드민이 즉시 관리(라벨·힌트·노출·필수·최대선택) + 조회 API + 프론트 연결 완성. 현행 동작은 시드·폴백으로 보존. 필드/섹션 순서까지의 풀 동적화는 회귀 위험으로 별도 결정 시 진행.
