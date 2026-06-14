@@ -4,12 +4,19 @@ import { Sparkles, RefreshCw, ArrowRight, ChevronDown, ChevronUp, Share2, Check 
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 
+interface IntroductionSection {
+  heading: string;
+  body: string;
+}
+
 interface ProfileGenerationResult {
   colorType: string;
   colorName: string;
   colorHex: string;
   colorDescription: string;
   generatedIntroduction: string;
+  /** 소주제별로 나뉜 소개글 — 자연스러운 흐름의 스토리 (ADR 0059) */
+  introductionSections?: IntroductionSection[];
   colorReasoning?: string;
   personalitySummary?: string;
   idealTypeInsight?: string;
@@ -577,16 +584,34 @@ export function AIProfileEnhanceScreen({
                     to { opacity: 1; transform: translateY(0); }
                   }
                 `}</style>
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 mb-4">
                   <Sparkles className="w-4 h-4 text-primary" />
                   <p className="text-sm font-medium">AI가 완성한 소개글</p>
                 </div>
-                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{result.generatedIntroduction}</p>
-                {result.generatedIntroduction && (
-                  <p className="text-xs text-muted-foreground mt-3 text-right">
-                    {result.generatedIntroduction.length}자
-                  </p>
+                {result.introductionSections && result.introductionSections.length > 0 ? (
+                  <div className="space-y-4">
+                    {result.introductionSections.map((section, i) => (
+                      <div key={i} className="space-y-1.5">
+                        {section.heading && (
+                          <div className="flex items-center gap-2">
+                            <span className="w-1 h-3.5 rounded-full bg-primary/70" />
+                            <h4 className="text-sm font-semibold text-foreground">{section.heading}</h4>
+                          </div>
+                        )}
+                        <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap pl-3">
+                          {section.body}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{result.generatedIntroduction}</p>
                 )}
+                <p className="text-xs text-muted-foreground mt-4 text-right">
+                  {(result.introductionSections && result.introductionSections.length > 0
+                    ? result.introductionSections.reduce((sum, s) => sum + s.body.length, 0)
+                    : result.generatedIntroduction.length)}자
+                </p>
               </div>
             )}
 
