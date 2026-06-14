@@ -1399,8 +1399,11 @@ function BottomNavigation({
         ];
 
   return (
+    // sticky (not fixed): 모바일 프레임(.app-frame)이 transform+overflow 스크롤 컨테이너라
+    // fixed 자식은 콘텐츠에 묶여 같이 스크롤됨("딸려 올라감"). sticky 는 스크롤포트 하단에
+    // 고정되어 모바일 뷰포트/데스크탑 프레임 두 모드 모두 정상 (ADR 0063).
     <div
-      className="fixed bottom-0 left-0 right-0 z-30"
+      className="sticky bottom-0 left-0 right-0 z-30"
       style={{
         background: "hsl(var(--surface) / 0.92)",
         backdropFilter: "blur(16px)",
