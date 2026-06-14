@@ -254,7 +254,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
   );
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-28">
       {/* 통일 헤더 — sticky + bg-card/95 + border-b + h-14 (ADR 0014) */}
       <header className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border">
         <div className="max-w-2xl mx-auto px-5 h-16 flex items-center justify-between">
@@ -482,10 +482,12 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
               </div>
             ) : (
               <>
-                {/* 오늘의 컬러 궁합 — 탭 변화 무관 상시 노출 */}
-                <div className="pt-4">
-                  <DailyMatchBanner />
-                </div>
+                {/* 오늘의 컬러 궁합 — 내 팔레트 컬러가 나온 뒤에만 노출 (mock 제거, ADR 0061) */}
+                {myColor && (
+                  <div className="pt-4">
+                    <DailyMatchBanner myColorType={myColor} />
+                  </div>
+                )}
 
                 {/* 내부 탭 — 지인 / 팔레트 Pick */}
                 <div className="flex gap-1 p-1 mt-4 rounded-2xl bg-surface-sunken">
