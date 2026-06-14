@@ -112,6 +112,8 @@ export function AdminDashboardScreen({ admin, onNavigate }: Props) {
         {/* ── 카테고리 메뉴 ── */}
         {/* ── 카테고리 메뉴 (섹션별 톤으로 시각 구분) ── */}
         <CategorySection title="사용자" tone="slate">
+          <MenuCard tone="rose" onClick={() => onNavigate("/admin/alerts")} title="운영 알림" desc="처리할 항목 모아보기 — 승인 대기·신고·출금" />
+          <MenuCard tone="slate" onClick={() => onNavigate("/admin/approvals")} title="승인 대기" desc="가입자 프로필 검토 후 승인·반려" />
           <MenuCard tone="slate" onClick={() => onNavigate("/admin/users")} title="회원 관리" desc="목록·검색·차단·휴면" />
           <MenuCard tone="slate" onClick={() => onNavigate("/admin/activity")} title="유저 액션 히스토리" desc="결제·열람·매칭·출금·팁·운영자 충전 통합 타임라인" />
         </CategorySection>

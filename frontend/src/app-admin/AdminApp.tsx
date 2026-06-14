@@ -16,6 +16,8 @@ import { AdminMatchmakingFlowScreen } from "./components/AdminMatchmakingFlowScr
 import { AdminInterviewQuestionsScreen } from "./components/AdminInterviewQuestionsScreen";
 import { AdminFieldOptionsScreen } from "./components/AdminFieldOptionsScreen";
 import { AdminOnboardingFieldsScreen } from "./components/AdminOnboardingFieldsScreen";
+import { AdminApprovalsScreen } from "./components/AdminApprovalsScreen";
+import { AdminAlertsScreen } from "./components/AdminAlertsScreen";
 import { adminAuth, type AdminInfo } from "./lib/adminAuth";
 
 /**
@@ -46,7 +48,9 @@ type Screen =
   | { kind: "flow" }
   | { kind: "interviewQuestions" }
   | { kind: "fieldOptions" }
-  | { kind: "onboardingFields" };
+  | { kind: "onboardingFields" }
+  | { kind: "approvals" }
+  | { kind: "alerts" };
 
 function pathToScreen(path: string): Screen {
   if (path === "/admin" || path === "/admin/") return { kind: "dashboard" };
@@ -66,6 +70,8 @@ function pathToScreen(path: string): Screen {
   if (path === "/admin/interview-questions") return { kind: "interviewQuestions" };
   if (path === "/admin/field-options") return { kind: "fieldOptions" };
   if (path === "/admin/onboarding-fields") return { kind: "onboardingFields" };
+  if (path === "/admin/approvals") return { kind: "approvals" };
+  if (path === "/admin/alerts") return { kind: "alerts" };
   return { kind: "dashboard" };
 }
 
@@ -147,5 +153,9 @@ export default function AdminApp() {
       return <AdminFieldOptionsScreen onBack={() => navigate("/admin")} />;
     case "onboardingFields":
       return <AdminOnboardingFieldsScreen onBack={() => navigate("/admin")} />;
+    case "approvals":
+      return <AdminApprovalsScreen onBack={() => navigate("/admin")} />;
+    case "alerts":
+      return <AdminAlertsScreen onBack={() => navigate("/admin")} onNavigate={navigate} />;
   }
 }
