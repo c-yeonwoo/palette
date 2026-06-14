@@ -30,7 +30,8 @@ class ProfilePhotoMapper {
                     rawData = emptyMap() // Simplified: JSON parsing removed for now
                 )
             } else null,
-            createdAt = entity.createdAt
+            createdAt = entity.createdAt,
+            rejected = entity.rejected
         )
     }
 
@@ -52,7 +53,8 @@ class ProfilePhotoMapper {
             aiIsTakenByOthers = photo.aiAnalysis?.isTakenByOthers,
             aiIsOverProcessed = photo.aiAnalysis?.isOverProcessed,
             aiRawData = null, // Simplified: JSON serialization removed for now
-            createdAt = photo.createdAt
+            createdAt = photo.createdAt,
+            rejected = photo.rejected
         )
     }
 

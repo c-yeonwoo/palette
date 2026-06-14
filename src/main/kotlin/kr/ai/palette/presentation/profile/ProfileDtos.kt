@@ -448,7 +448,9 @@ data class ProfilePhotoDto(
     val id: String,
     val url: String,
     val displayOrder: Int,
-    val isPrimary: Boolean
+    val isPrimary: Boolean,
+    /** 운영자가 콕 집어 반려(재촬영 요청)한 사진 (ADR 0060) */
+    val rejected: Boolean = false
 ) {
     companion object {
         fun from(photo: ProfilePhoto, storage: FileStorageService? = null): ProfilePhotoDto {
@@ -458,7 +460,8 @@ data class ProfilePhotoDto(
                 id = photo.id.value.toString(),
                 url = resolvedUrl,
                 displayOrder = photo.displayOrder,
-                isPrimary = photo.isPrimary
+                isPrimary = photo.isPrimary,
+                rejected = photo.rejected
             )
         }
     }

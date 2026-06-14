@@ -26,6 +26,10 @@ class ProfilePhotoEntity(
     @Column(name = "is_primary", nullable = false)
     var isPrimary: Boolean,
 
+    // 운영자가 이 사진을 콕 집어 반려(재촬영 요청)한 경우 true (ADR 0060)
+    @Column(name = "rejected", nullable = false)
+    var rejected: Boolean = false,
+
     // Trust Analysis
     @Column(name = "trust_factor", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)

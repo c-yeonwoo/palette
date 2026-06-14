@@ -33,6 +33,10 @@ export function AdminApprovalsScreen({ onBack }: { onBack: () => void }) {
   const [preview, setPreview] = useState<AdminProfileData | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewError, setPreviewError] = useState<string | null>(null);
+  // 반려 시 콕 집은 사진 id (미리보기 모달에서 선택)
+  const [rejectPhotoIds, setRejectPhotoIds] = useState<string[]>([]);
+  const togglePhotoReject = (photoId: string) =>
+    setRejectPhotoIds((prev) => (prev.includes(photoId) ? prev.filter((x) => x !== photoId) : [...prev, photoId]));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,16 +52,21 @@ export function AdminApprovalsScreen({ onBack }: { onBack: () => void }) {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  const changeStatus = async (u: PendingUser, status: "ACTIVE" | "REJECTED") => {
+  const changeStatus = async (u: PendingUser, status: "ACTIVE" | "REJECTED", photoIds: string[] = []) => {
     if (status === "ACTIVE" && !confirm(`${u.nickname} 님을 승인할까요?`)) return;
     let reason: string | null = null;
     if (status === "REJECTED") {
-      reason = prompt("반려 사유를 입력하세요 (사용자에게 표시)");
+      const hint = photoIds.length > 0 ? ` · 사진 ${photoIds.length}장 재촬영 요청` : "";
+      reason = prompt(`반려 사유를 입력하세요 (사용자에게 표시)${hint}`);
       if (reason == null || !reason.trim()) return;
     }
     setActing(u.userId);
     try {
-      await adminApi.patch(`/api/v1/admin/users/${u.userId}/status`, { status, reason: reason?.trim() || null });
+      await adminApi.patch(`/api/v1/admin/users/${u.userId}/status`, {
+        status,
+        reason: reason?.trim() || null,
+        rejectedPhotoIds: status === "REJECTED" ? photoIds : [],
+      });
       setItems((prev) => prev.filter((x) => x.userId !== u.userId)); // 큐에서 제거
       if (previewUser?.userId === u.userId) closePreview();
     } catch (e) {
@@ -71,6 +80,7 @@ export function AdminApprovalsScreen({ onBack }: { onBack: () => void }) {
     setPreviewUser(u);
     setPreview(null);
     setPreviewError(null);
+    setRejectPhotoIds([]);
     setPreviewLoading(true);
     try {
       setPreview(await adminApi.get<AdminProfileData>(`/api/v1/admin/users/${u.userId}/profile`));
@@ -80,7 +90,7 @@ export function AdminApprovalsScreen({ onBack }: { onBack: () => void }) {
       setPreviewLoading(false);
     }
   };
-  const closePreview = () => { setPreviewUser(null); setPreview(null); setPreviewError(null); };
+  const closePreview = () => { setPreviewUser(null); setPreview(null); setPreviewError(null); setRejectPhotoIds([]); };
 
   return (
     <div className="min-h-screen bg-background">
@@ -140,13 +150,20 @@ export function AdminApprovalsScreen({ onBack }: { onBack: () => void }) {
             <div className="p-5">
               {previewLoading && <p className="text-sm text-muted-foreground">불러오는 중...</p>}
               {previewError && <p className="text-sm text-destructive">{previewError}</p>}
-              {preview && !previewLoading && <AdminProfilePreview data={preview} />}
+              {preview && !previewLoading && (
+                <AdminProfilePreview data={preview} selectedRejectIds={rejectPhotoIds} onToggleReject={togglePhotoReject} />
+              )}
             </div>
-            <div className="sticky bottom-0 bg-card border-t border-border px-5 py-3 flex justify-end gap-2">
-              <button onClick={() => changeStatus(previewUser, "REJECTED")} disabled={acting === previewUser.userId}
-                className="text-sm px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50">반려</button>
-              <button onClick={() => changeStatus(previewUser, "ACTIVE")} disabled={acting === previewUser.userId}
-                className="text-sm px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">승인</button>
+            <div className="sticky bottom-0 bg-card border-t border-border px-5 py-3 flex items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground">
+                {rejectPhotoIds.length > 0 ? `사진 ${rejectPhotoIds.length}장 재촬영 요청` : "사진을 눌러 콕 집어 반려할 수 있어요"}
+              </span>
+              <div className="flex gap-2">
+                <button onClick={() => changeStatus(previewUser, "REJECTED", rejectPhotoIds)} disabled={acting === previewUser.userId}
+                  className="text-sm px-4 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50">반려</button>
+                <button onClick={() => changeStatus(previewUser, "ACTIVE")} disabled={acting === previewUser.userId}
+                  className="text-sm px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50">승인</button>
+              </div>
             </div>
           </div>
         </div>

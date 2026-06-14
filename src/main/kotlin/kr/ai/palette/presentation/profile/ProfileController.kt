@@ -90,7 +90,11 @@ class ProfileController(
                 // 최초 완성 → 운영자 승인 대기 (ADR 0054)
                 userRepository.save(user.completeProfile())
             } else if (user.status == kr.ai.palette.domain.user.UserStatus.REJECTED) {
-                // 반려된 프로필 보완 후 재제출 → 다시 심사 대기 (ADR 0054)
+                // 반려된 프로필 보완 후 재제출 → 다시 심사 대기 (ADR 0054).
+                // 운영자가 콕 집은 사진 반려 표시도 초기화 → 재검토 (ADR 0060)
+                profilePhotoRepository.findByProfileId(savedProfile.id)
+                    .filter { it.rejected }
+                    .forEach { profilePhotoRepository.save(it.clearRejection()) }
                 userRepository.save(user.resubmitForApproval())
             }
         }
