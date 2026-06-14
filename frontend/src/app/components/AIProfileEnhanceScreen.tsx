@@ -96,10 +96,10 @@ const MANUAL_LABELS: Record<string, string> = {
 };
 
 const LOADING_STEPS = [
-  { text: "당신의 이야기를 읽고 있어요", emoji: "📖" },
-  { text: "성격 패턴을 분석하고 있어요", emoji: "🔍" },
-  { text: "나만의 색깔 타입을 찾고 있어요", emoji: "🎨" },
-  { text: "소개글을 완성하고 있어요", emoji: "✍️" },
+  { text: "당신의 이야기를 읽고 있어요" },
+  { text: "성격 패턴을 분석하고 있어요" },
+  { text: "나만의 색깔 타입을 찾고 있어요" },
+  { text: "소개글을 완성하고 있어요" },
 ];
 
 const CONFETTI_COLORS = [
@@ -134,10 +134,10 @@ function generateConfetti(count: number): ConfettiPiece[] {
 }
 
 const WHAT_NEXT_ITEMS = [
-  { icon: "💌", text: "매칭 요청을 받아볼 수 있어요" },
-  { icon: "🌐", text: "지인을 통해 소개받을 수 있어요" },
-  { icon: "⭐", text: "프로필 완성도를 높여 노출을 늘려보세요" },
-  { icon: "🎁", text: "친구를 초대하면 매칭 크레딧을 드려요" },
+  { text: "매칭 요청을 받아볼 수 있어요" },
+  { text: "지인을 통해 소개받을 수 있어요" },
+  { text: "프로필 완성도를 높여 노출을 늘려보세요" },
+  { text: "친구를 초대하면 매칭 크레딧을 드려요" },
 ];
 
 export function AIProfileEnhanceScreen({
@@ -260,7 +260,7 @@ export function AIProfileEnhanceScreen({
       colorDescription: "부드럽고 감성적인 당신만의 색깔이에요.",
       generatedIntroduction: "",
     };
-    toast("🌸 소프트 핑크 타입으로 시작해요!", {
+    toast("소프트 핑크 타입으로 시작해요!", {
       description: "나중에 AI 분석으로 내 진짜 색깔을 찾아보세요",
       duration: 4000,
     });
@@ -269,7 +269,7 @@ export function AIProfileEnhanceScreen({
 
   const handleShare = async () => {
     if (!result) return;
-    const shareText = `나는 팔레트에서 "${result.colorName}" 타입이에요! ${COLOR_SHARE_DESC[result.colorType] ?? ""} 성격의 나와 어울리는 사람을 찾고 있어요 🎨`;
+    const shareText = `나는 팔레트에서 "${result.colorName}" 타입이에요! ${COLOR_SHARE_DESC[result.colorType] ?? ""} 성격의 나와 어울리는 사람을 찾고 있어요`;
 
     if (navigator.share) {
       try {
@@ -288,7 +288,7 @@ export function AIProfileEnhanceScreen({
   const gradient = result
     ? (COLOR_GRADIENT[result.colorType] ?? "from-slate-400 to-gray-500")
     : "";
-  const emoji = result ? (COLOR_EMOJI[result.colorType] ?? "✨") : "";
+  const emoji = result ? (COLOR_EMOJI[result.colorType] ?? "") : "";
 
   return (
     // overflow-hidden 제거 — confetti 는 position:fixed 라 영향 없고, 이게 있으면
@@ -369,7 +369,7 @@ export function AIProfileEnhanceScreen({
               /* 단계별 로딩 UI */
               <div className="space-y-6 py-2">
                 <div className="w-20 h-20 rounded-full bg-brand-soft flex items-center justify-center mx-auto">
-                  <span className="text-4xl animate-bounce">{LOADING_STEPS[loadingStepIdx].emoji}</span>
+                  <Sparkles className="w-9 h-9 text-primary animate-pulse" />
                 </div>
                 <div className="space-y-2">
                   <p className="font-semibold text-foreground text-base">
@@ -388,7 +388,7 @@ export function AIProfileEnhanceScreen({
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    잠깐이면 돼요, 거의 다 됐어요 ✨
+                    잠깐이면 돼요, 거의 다 됐어요
                   </p>
                 </div>
               </div>
@@ -438,14 +438,13 @@ export function AIProfileEnhanceScreen({
             `}</style>
             <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
               <div className="text-center">
-                <span className="text-2xl">🎉</span>
-                <h3 className="font-bold text-lg mt-1">프로필 완성!</h3>
+                <h3 className="font-bold text-lg">프로필 완성!</h3>
                 <p className="text-sm text-muted-foreground mt-1">이제 이런 것들을 할 수 있어요</p>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {WHAT_NEXT_ITEMS.map((item, i) => (
-                  <div key={i} className="flex items-center gap-3 text-sm">
-                    <span className="text-xl">{item.icon}</span>
+                  <div key={i} className="flex items-center gap-2 text-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
                     <span className="text-foreground">{item.text}</span>
                   </div>
                 ))}
@@ -520,8 +519,7 @@ export function AIProfileEnhanceScreen({
                 className="bg-card border border-border rounded-2xl p-5"
                 style={{ animation: revealed ? "fadeInUp 0.5s ease 0.2s both" : "none" }}
               >
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-base">🔍</span>
+                <div className="mb-3">
                   <p className="text-sm font-medium">왜 이 색깔로 분석했나요</p>
                 </div>
                 {result.colorReasoning && (
@@ -533,14 +531,13 @@ export function AIProfileEnhanceScreen({
                 {(result.evidenceFromAnswers || result.evidenceFromMbti || result.evidenceFromSaju) && (
                   <div className="space-y-2 mb-3">
                     {([
-                      { icon: "💬", label: "답변", text: result.evidenceFromAnswers },
-                      { icon: "🧩", label: "MBTI", text: result.evidenceFromMbti },
-                      { icon: "🔮", label: "사주 오행", text: result.evidenceFromSaju },
+                      { label: "답변", text: result.evidenceFromAnswers },
+                      { label: "MBTI", text: result.evidenceFromMbti },
+                      { label: "사주 오행", text: result.evidenceFromSaju },
                     ] as const)
                       .filter((e) => e.text && e.text.trim().length > 0)
                       .map((e) => (
-                        <div key={e.label} className="flex gap-2 rounded-xl bg-muted/40 px-3 py-2">
-                          <span className="text-sm flex-shrink-0">{e.icon}</span>
+                        <div key={e.label} className="rounded-xl bg-muted/40 px-3 py-2">
                           <p className="text-[13px] leading-relaxed text-foreground/90">
                             <span className="font-semibold mr-1">{e.label}</span>{e.text}
                           </p>

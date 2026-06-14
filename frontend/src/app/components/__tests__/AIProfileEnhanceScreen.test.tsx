@@ -94,7 +94,7 @@ describe('AIProfileEnhanceScreen', () => {
 
     // First loading step should be visible immediately
     expect(screen.getByText('당신의 이야기를 읽고 있어요')).toBeInTheDocument();
-    expect(screen.getByText('잠깐이면 돼요, 거의 다 됐어요 ✨')).toBeInTheDocument();
+    expect(screen.getByText('잠깐이면 돼요, 거의 다 됐어요')).toBeInTheDocument();
 
     // Cleanup: reject the dangling promise
     act(() => { rejectFn!(new Error('cleanup')); });

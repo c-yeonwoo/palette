@@ -158,7 +158,7 @@ export function AIInterviewScreen({ onComplete, onBack, initialAnswers }: AIInte
           ...prev,
           {
             type: "ai",
-            content: "모든 답변이 완성됐어요! 🎉\n\n이제 마지막 단계에서 AI가 당신만의 소개글과 색깔 타입을 찾아드릴게요.",
+            content: "모든 답변이 완성됐어요!\n\n이제 마지막 단계에서 AI가 당신만의 소개글과 색깔 타입을 찾아드릴게요.",
           },
         ]);
         setTimeout(() => {
@@ -308,7 +308,7 @@ export function AIInterviewScreen({ onComplete, onBack, initialAnswers }: AIInte
             }
             className="w-full h-12 bg-brand-soft text-gold-strong"
           >
-            {currentStep === questions.length - 1 ? "완성하기 ✨" : "다음"}
+            {currentStep === questions.length - 1 ? "완성하기" : "다음"}
             <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
 
@@ -339,7 +339,7 @@ export function AIInterviewScreen({ onComplete, onBack, initialAnswers }: AIInte
                       ...prev,
                       {
                         type: "ai",
-                        content: `여기까지 답변 주신 ${Object.keys(answers).length}개로도 충분해요! ✨\n\n이제 AI가 당신만의 소개글과 색깔 타입을 찾아드릴게요.`,
+                        content: `여기까지 답변 주신 ${Object.keys(answers).length}개로도 충분해요!\n\n이제 AI가 당신만의 소개글과 색깔 타입을 찾아드릴게요.`,
                       },
                     ]);
                     setTimeout(() => {
