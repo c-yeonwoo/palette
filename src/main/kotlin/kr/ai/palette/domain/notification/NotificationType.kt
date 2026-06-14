@@ -15,5 +15,6 @@ enum class NotificationType {
     DAILY_PICK,                // 본인에게: 오늘의 팔레트 Pick 갱신
     POST_MATCH_NUDGE,          // 본인에게: 매칭 후 D+N "첫 메시지 보내셨나요?"
     MATCHMAKER_WEEKLY_REPORT,  // 주선자에게: 주간 활동 보고
+    PROFILE_APPROVED,          // 본인에게: 운영자 프로필 승인 완료 (ADR 0054/0062)
     SYSTEM                     // 시스템 알림
 }

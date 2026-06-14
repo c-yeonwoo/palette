@@ -5,6 +5,9 @@ import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.friendship.FriendshipRepository
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestRepository
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestStatus
+import kr.ai.palette.application.notification.NotificationService
+import kr.ai.palette.application.notification.PushNotificationService
+import kr.ai.palette.domain.notification.NotificationType
 import kr.ai.palette.domain.profile.ProfilePhotoRepository
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.User
@@ -42,7 +45,11 @@ class AdminUsersController(
     private val matchmakingRequestRepository: MatchmakingRequestRepository,
     private val dailyRecommendationRepo: DailyRecommendationJpaRepository,
     private val fileStorageService: FileStorageService,
+    private val pushNotificationService: PushNotificationService,
+    private val notificationService: NotificationService,
 ) {
+
+    private val log = org.slf4j.LoggerFactory.getLogger(AdminUsersController::class.java)
 
     @GetMapping
     fun list(
@@ -107,6 +114,7 @@ class AdminUsersController(
             throw BusinessRuleViolationException("운영자 계정은 상태 변경 불가 (오작동 방지)")
         }
 
+        val wasActive = target.status == UserStatus.ACTIVE
         val updated = target.changeStatus(newStatus, request.reason, authUser.userId)
         val saved = userRepository.save(updated)
 
@@ -114,7 +122,30 @@ class AdminUsersController(
         // 반려가 아닌 상태로 바꾸면(예: 승인) 모든 사진 반려 표시 해제.
         applyPhotoRejections(target, newStatus, request.rejectedPhotoIds)
 
+        // 승인 완료(ACTIVE 로 전환) 시 본인에게 푸시 + 인앱 알림 (ADR 0062).
+        // 이미 ACTIVE 였던 경우 중복 알림 방지.
+        if (newStatus == UserStatus.ACTIVE && !wasActive) {
+            notifyProfileApproved(target)
+        }
+
         return ResponseEntity.ok(AdminUserDetail.from(saved))
+    }
+
+    /** 프로필 승인 완료 알림 — 외부 의존(푸시) 실패해도 상태 변경 트랜잭션엔 영향 없도록 try/catch */
+    private fun notifyProfileApproved(target: User) {
+        val title = "프로필이 승인됐어요 🎉"
+        val body = "이제부터 팔레트의 모든 기능을 사용할 수 있어요. 마음에 드는 인연을 찾아보세요!"
+        runCatching {
+            notificationService.create(
+                userId = target.id.value.toString(),
+                type = NotificationType.PROFILE_APPROVED,
+                title = title,
+                body = body,
+            )
+        }.onFailure { log.warn("승인 인앱 알림 생성 실패 userId=${target.id.value}", it) }
+        runCatching {
+            pushNotificationService.sendToUser(userId = target.id, title = title, body = body)
+        }.onFailure { log.warn("승인 푸시 발송 실패 userId=${target.id.value}", it) }
     }
 
     /** 대상 유저 프로필 사진 중 rejectedPhotoIds 에 해당하는 것만 반려 표시. 본인 사진만 허용(교차 방지). */

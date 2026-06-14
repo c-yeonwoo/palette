@@ -53,6 +53,7 @@ const InviteHubScreen = lazy(() => import("./components/invite/InviteHubScreen")
 
 import { Toaster } from "./components/ui/sonner";
 import { Button } from "./components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "./components/ui/dialog";
 import { Home, User, Trophy, Sparkles, Heart, Waypoints } from "lucide-react";
 import { toast } from "sonner";
 import { authService } from "../lib/auth/authService";
@@ -227,6 +228,8 @@ export default function App() {
   // ADR 0054 운영자 승인 게이팅 — 프로필 완성 후 PENDING_APPROVAL/REJECTED 면 심사중 화면만 노출
   const [approvalStatus, setApprovalStatus] = useState<string | undefined>(undefined);
   const [approvalReason, setApprovalReason] = useState<string | null>(null);
+  // 승인 완료 축하 다이얼로그 — 새로고침으로 ACTIVE 확인 시 노출, 확인 누르면 진입할 화면
+  const [approvalCelebration, setApprovalCelebration] = useState<Screen | null>(null);
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>(undefined);
   const [selectedMutualFriends, setSelectedMutualFriends] = useState<MutualFriend[]>([]);
@@ -905,8 +908,8 @@ export default function App() {
             setApprovalStatus(user.approvalStatus);
             setApprovalReason(user.approvalReason ?? null);
             if (user.approvalStatus === "ACTIVE") {
-              setCurrentScreen(user.accountType === "MATCHMAKER_ONLY" ? "connectorDashboard" : "mainFeed");
-              toast.success("승인됐어요! 팔레트를 시작해보세요 🎨");
+              // 바로 넘기지 않고 축하 확인창을 띄운 뒤 진입 (확인 시 navigate)
+              setApprovalCelebration(user.accountType === "MATCHMAKER_ONLY" ? "connectorDashboard" : "mainFeed");
             } else if (user.approvalStatus === "REJECTED") {
               toast.info("프로필 보완이 필요해요");
             } else {
@@ -1338,6 +1341,34 @@ export default function App() {
           accountType={userAccountType}
         />
       )}
+
+      {/* 승인 완료 축하 — 새로고침으로 ACTIVE 확인 시 (ADR 0062) */}
+      <Dialog open={approvalCelebration !== null} onOpenChange={(open) => { if (!open) setApprovalCelebration(null); }}>
+        <DialogContent className="sm:max-w-sm text-center">
+          <DialogHeader className="items-center">
+            <div className="w-16 h-16 rounded-full bg-brand-soft flex items-center justify-center mb-2">
+              <Sparkles className="w-8 h-8 text-primary" />
+            </div>
+            <DialogTitle className="text-center">승인 축하드려요! 🎉</DialogTitle>
+            <DialogDescription className="text-center">
+              프로필 심사가 완료됐어요. 이제부터 팔레트의 모든 기능을 사용할 수 있어요.
+              마음에 드는 인연을 찾아보세요.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              className="w-full h-12"
+              onClick={() => {
+                const target = approvalCelebration;
+                setApprovalCelebration(null);
+                if (target) setCurrentScreen(target);
+              }}
+            >
+              팔레트 시작하기
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Toaster position="top-center" />
     </div>
