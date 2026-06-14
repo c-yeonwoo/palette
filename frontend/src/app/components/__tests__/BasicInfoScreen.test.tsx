@@ -187,8 +187,8 @@ describe('BasicInfoScreen', () => {
     fireEvent.click(screen.getByText('IT/개발'));
     fireEvent.click(screen.getByText('대졸'));
     fireEvent.click(screen.getByText('서울'));
-    await waitFor(() => expect(screen.getByText('다음 — 사진 등록')).toBeInTheDocument());
-    fireEvent.click(screen.getByText('다음 — 사진 등록'));
+    await waitFor(() => expect(screen.getByText('어디서 무슨 일을 하나요?')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: '다음' }));
 
     expect(onNext).toHaveBeenCalledWith(
       expect.objectContaining({
