@@ -93,7 +93,7 @@ export function AIInterviewScreen({ onComplete, onBack, initialAnswers }: AIInte
       // Show intro + first question
       const intro = isReanalyze
         ? "다시 분석을 시작할게요. 이전 답변을 미리 채워뒀으니, 바꾸고 싶은 부분만 새로 적어주세요. 그대로 두고 싶으면 다음으로 넘어가도 돼요."
-        : "안녕하세요! 저는 당신의 색깔을 찾아드릴 AI예요.\n\n편하게 대화하듯이 답변해주시면, 당신만의 멋진 프로필을 만들어드릴게요!\n\n10개의 질문이 있어요. 준비되셨나요?";
+        : `안녕하세요! 저는 당신의 색깔을 찾아드릴 AI예요.\n\n편하게 대화하듯이 답변해주시면, 당신만의 멋진 프로필을 만들어드릴게요!\n\n${data.questions.length}개의 질문이 있어요. 준비되셨나요?`;
       setMessages([
         { type: "ai", content: intro },
         {

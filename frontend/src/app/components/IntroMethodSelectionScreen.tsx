@@ -43,11 +43,11 @@ export function IntroMethodSelectionScreen({
                 <span className="text-xs bg-brand-soft text-primary px-2 py-0.5 rounded-full font-medium">추천</span>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                AI와 채팅하듯 10개 질문에 답하면 끝이에요. 어렵지 않게 나를 표현할 수 있어요.
+                AI와 채팅하듯 5개 질문에 답하면 끝이에요. 어렵지 않게 나를 표현할 수 있어요.
               </p>
               <div className="flex items-center gap-1 mt-2 text-xs text-primary">
                 <Clock className="w-3 h-3" />
-                <span>약 5분 소요</span>
+                <span>약 3분 소요</span>
               </div>
             </div>
           </div>
@@ -69,7 +69,7 @@ export function IntroMethodSelectionScreen({
               </p>
               <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
                 <MessageSquare className="w-3 h-3" />
-                <span>약 10분 소요</span>
+                <span>약 5분 소요</span>
               </div>
             </div>
           </div>

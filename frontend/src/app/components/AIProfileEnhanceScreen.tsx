@@ -78,16 +78,12 @@ const COLOR_SHARE_DESC: Record<string, string> = {
   SOPHISTICATED_GRAY: "성숙하고 세련된",
 };
 
+// 색 분석용 스토리 5문항 (job/date/loveValue/attractedTo 는 중복으로 제거됨 — basicInfo/idealType 단일 소스)
 const INTERVIEW_LABELS: Record<string, string> = {
-  job: "직업",
   weekend: "주말 활동",
   personality: "성격",
   passion: "요즘 관심사",
   happiness: "행복한 순간",
-  date: "이상적인 데이트",
-  loveValue: "연애에서 중요한 것",
-  attractedTo: "끌리는 타입",
-  dealBreaker: "절대 안 되는 것",
   motto: "좌우명",
 };
 
