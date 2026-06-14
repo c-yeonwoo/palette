@@ -338,3 +338,10 @@ CREATE TABLE IF NOT EXISTS onboarding_fields (
     UNIQUE KEY uk_of_field_key (field_key),
     KEY idx_of_order (section_order, field_order)
 ) ENGINE=InnoDB;
+
+-- ── 19. AI 인터뷰 중복 문항 비활성화 (온보딩 UX) ──────────────────────────────
+-- job(직업)은 basicInfo, date/loveValue/attractedTo 는 idealType 칩과 의미 중복 →
+-- 자유서술 직후 같은 걸 칩으로 또 고르던 피로 제거. 색 분석 신호는 idealType 데이터로 보존.
+-- 답변 데이터는 보존하고 질문만 숨김(active=0). idempotent.
+UPDATE interview_questions SET active = b'0'
+WHERE question_key IN ('job', 'date', 'loveValue', 'attractedTo');
