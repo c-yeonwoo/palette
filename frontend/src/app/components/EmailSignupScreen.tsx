@@ -169,7 +169,7 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
       });
 
       if (formData.inviteCode.trim()) {
-        toast.success("회원가입 완료! 초대 코드로 보너스 100 물감 받았어요 🎨", { duration: 4500 });
+        toast.success("회원가입 완료! 초대 코드로 보너스 100 물감 받았어요", { duration: 4500 });
       } else {
         toast.success("회원가입이 완료되었습니다!");
       }

@@ -39,10 +39,10 @@ const regions = [
  */
 type MiniStep = 1 | 2 | 3;
 
-const MINI_STEP_META: Record<MiniStep, { title: string; subtitle: string; emoji: string }> = {
-  1: { title: "나를 소개할게요", subtitle: "이름, 생년월일, 성별", emoji: "👋" },
-  2: { title: "조금 더 알려주세요", subtitle: "선택사항이에요. 부담없이!", emoji: "✨" },
-  3: { title: "어디서 무슨 일을 하나요?", subtitle: "직업과 지역", emoji: "💼" },
+const MINI_STEP_META: Record<MiniStep, { title: string; subtitle: string }> = {
+  1: { title: "나를 소개할게요", subtitle: "이름, 생년월일, 성별" },
+  2: { title: "조금 더 알려주세요", subtitle: "선택사항이에요. 부담없이!" },
+  3: { title: "어디서 무슨 일을 하나요?", subtitle: "직업과 지역" },
 };
 
 interface UserProfile {
@@ -215,7 +215,6 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
       <div className="max-w-md mx-auto px-6 py-6 space-y-6">
         {/* Step header card */}
         <div className="text-center py-2">
-          <div className="text-4xl mb-2">{meta.emoji}</div>
           <h3 className="text-xl font-bold text-foreground">{meta.title}</h3>
           <p className="text-sm text-muted-foreground mt-1">{meta.subtitle}</p>
         </div>
@@ -299,7 +298,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
         {miniStep === 2 && (
           <div className="space-y-5">
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700">
-              💡 이 단계는 <strong>모두 선택사항</strong>이에요. 채울수록 매칭이 더 정확해지지만,
+              이 단계는 <strong>모두 선택사항</strong>이에요. 채울수록 매칭이 더 정확해지지만,
               지금 부담스러우면 <strong>"건너뛰기"</strong> 버튼을 눌러 다음으로 진행해도 됩니다.
             </div>
             {/* Height */}

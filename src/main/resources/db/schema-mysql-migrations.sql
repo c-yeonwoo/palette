@@ -345,3 +345,11 @@ CREATE TABLE IF NOT EXISTS onboarding_fields (
 -- 답변 데이터는 보존하고 질문만 숨김(active=0). idempotent.
 UPDATE interview_questions SET active = b'0'
 WHERE question_key IN ('job', 'date', 'loveValue', 'attractedTo');
+
+-- ── 20. AI 인터뷰 질문 이모지 제거 (온보딩 톤 정리) ──────────────────────────
+-- 이미 시드된 prod 질문 텍스트의 끝 이모지 제거. idempotent (이모지 없으면 동일 텍스트로 no-op).
+UPDATE interview_questions SET question = '주말엔 주로 뭐 하시나요?'              WHERE question_key = 'weekend';
+UPDATE interview_questions SET question = '친구들이 당신을 어떻게 표현하나요?'    WHERE question_key = 'personality';
+UPDATE interview_questions SET question = '요즘 빠져있는 게 있나요?'              WHERE question_key = 'passion';
+UPDATE interview_questions SET question = '어떤 순간에 가장 행복하세요?'          WHERE question_key = 'happiness';
+UPDATE interview_questions SET question = '나의 인생 좌우명이나 요즘 마음에 두는 말은?' WHERE question_key = 'motto';

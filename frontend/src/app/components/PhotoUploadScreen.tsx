@@ -123,7 +123,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
   };
 
   const handleShareRequest = async () => {
-    const requestText = "📸 내 Palette 프로필에 올릴 인생샷을 찍어줘! 사진은 여기로 보내줘: https://palette.app/photo-request";
+    const requestText = "내 Palette 프로필에 올릴 인생샷을 찍어줘! 사진은 여기로 보내줘: https://palette.app/photo-request";
     if (navigator.share) {
       try {
         await navigator.share({ text: requestText, title: "인생샷 부탁해!" });
@@ -134,7 +134,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
     }
     try {
       await navigator.clipboard.writeText(requestText);
-      toast.success("📋 친구에게 보낼 메시지가 복사됐어요!");
+      toast.success("친구에게 보낼 메시지가 복사됐어요!");
     } catch {
       toast.error("복사에 실패했어요");
     }
@@ -240,7 +240,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
             ))}
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            💡 권장: 3:4 세로 또는 1:1 정사각형, JPG/PNG/HEIC, 최대 10MB
+            권장: 3:4 세로 또는 1:1 정사각형, JPG/PNG/HEIC, 최대 10MB
           </p>
         </div>
 
@@ -295,7 +295,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            💡 얼굴이 잘 보이는 자연스러운 동영상을 올려주세요
+            얼굴이 잘 보이는 자연스러운 동영상을 올려주세요
           </p>
         </div>
 
@@ -329,7 +329,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
 
         {uploadedCount === 0 && (
           <p className="text-sm text-center text-muted-foreground">
-            💡 사진을 등록하면 매칭 가능성이 높아집니다
+            사진을 등록하면 매칭 가능성이 높아집니다
           </p>
         )}
       </div>
