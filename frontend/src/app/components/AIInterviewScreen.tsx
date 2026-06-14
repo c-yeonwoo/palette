@@ -308,7 +308,7 @@ export function AIInterviewScreen({ onComplete, onBack, initialAnswers }: AIInte
             }
             className="w-full h-12 bg-brand-soft text-gold-strong"
           >
-            {currentStep === questions.length - 1 ? "완성하기" : "다음"}
+            다음
             <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
 

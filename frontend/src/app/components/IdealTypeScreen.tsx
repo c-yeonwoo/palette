@@ -4,7 +4,7 @@ import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
 import { Badge } from "./ui/badge";
 import { Slider } from "./ui/slider";
-import { Heart, Sparkles, ChevronLeft } from "lucide-react";
+import { Heart, ChevronLeft } from "lucide-react";
 import { useOnboardingOptions, DATE_PREF_DESC } from "../../lib/onboarding/useOnboardingOptions";
 import { useOnboardingFields } from "../../lib/onboarding/useOnboardingFields";
 
@@ -255,7 +255,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
                 <Badge
                   key={value.code}
                   onClick={() => toggleImportantValue(value.code)}
-                  className={`relative cursor-pointer px-4 py-2 transition-all ${
+                  className={`relative overflow-visible cursor-pointer px-4 py-2 transition-all ${
                     isSelected
                       ? "bg-brand-soft text-gold-strong border-brand/40"
                       : "bg-card border-border text-muted-foreground hover:border-primary/40"
@@ -393,8 +393,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
           disabled={!isValid}
           className="w-full h-14 bg-brand-soft text-gold-strong disabled:opacity-50"
         >
-          <Sparkles className="w-5 h-5 mr-2" />
-          다음 - AI 프로필 완성
+          다음 — 사진 등록
         </Button>
 
         {!isValid && (

@@ -324,7 +324,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
           disabled={isUploading}
           className="w-full h-14 bg-brand-soft text-gold-strong"
         >
-          {isUploading ? "업로드 중..." : "다음 - AI 인터뷰"}
+          {isUploading ? "업로드 중..." : "다음 — AI 프로필 만들기"}
         </Button>
 
         {uploadedCount === 0 && (

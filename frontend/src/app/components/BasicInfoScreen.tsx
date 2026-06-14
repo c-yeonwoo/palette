@@ -408,50 +408,25 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
               </div>
             </div>
 
-            {/* DA-005 — Education 통합: 최종 학력 + 학교명·전공 한 묶음 */}
+            {/* 최종 학력만 수집 — 학교명·전공은 추후 인증(예: SKY 대학 인증)으로 대체 */}
             {fields.visible("education") && (
-            <div className="space-y-3">
-              <div>
-                <Label className="mb-2 block">{fields.label("education", "최종 학력")} <span className="text-muted-foreground text-xs font-normal">(선택)</span></Label>
-                <div className="grid grid-cols-5 gap-2">
-                  {educationLevels.map((level) => (
-                    <button
-                      key={level}
-                      onClick={() => update('education', level)}
-                      className={`py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
-                        formData.education === level
-                          ? "bg-brand-soft text-gold-strong border-brand/40"
-                          : "bg-card border-border text-muted-foreground hover:border-primary/40"
-                      }`}
-                    >
-                      {level}
-                    </button>
-                  ))}
-                </div>
+            <div>
+              <Label className="mb-2 block">{fields.label("education", "최종 학력")} <span className="text-muted-foreground text-xs font-normal">(선택)</span></Label>
+              <div className="grid grid-cols-5 gap-2">
+                {educationLevels.map((level) => (
+                  <button
+                    key={level}
+                    onClick={() => update('education', level)}
+                    className={`py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
+                      formData.education === level
+                        ? "bg-brand-soft text-gold-strong border-brand/40"
+                        : "bg-card border-border text-muted-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    {level}
+                  </button>
+                ))}
               </div>
-
-              {/* 학력 선택 시에만 학교명·전공 노출 */}
-              {formData.education && formData.education !== "고졸" && (
-                <div className="grid grid-cols-2 gap-3 pt-1">
-                  <div>
-                    <Label className="mb-1.5 block text-xs text-muted-foreground">학교명 (선택)</Label>
-                    <Input
-                      value={formData.school}
-                      onChange={(e) => update('school', e.target.value)}
-                      className="h-11 bg-card border-border"
-                    />
-                  </div>
-                  <div>
-                    <Label className="mb-1.5 block text-xs text-muted-foreground">전공 (선택)</Label>
-                    <Input
-                      placeholder="예: 경영학"
-                      value={formData.major}
-                      onChange={(e) => update('major', e.target.value)}
-                      className="h-11 bg-card border-border"
-                    />
-                  </div>
-                </div>
-              )}
             </div>
             )}
 
@@ -491,7 +466,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
               <ArrowRight className="w-4 h-4 ml-2" />
             </>
           ) : (
-            "다음 — 사진 등록"
+            "다음"
           )}
         </Button>
 
