@@ -1004,7 +1004,14 @@ export default function App() {
               setCurrentScreen("introMethodSelection");
             }
           }}
-          initialAnswers={isReanalyzeMode ? reanalyzeAnswers : null}
+          initialAnswers={
+            isReanalyzeMode
+              ? reanalyzeAnswers
+              // "답변 다시하기"/뒤로가기 시 기존 답변 prefill (있을 때만 재진행 모드)
+              : (Object.keys(profileData.introduction.interviewAnswers ?? {}).length > 0
+                  ? profileData.introduction.interviewAnswers
+                  : null)
+          }
         />
       )}
 
@@ -1033,6 +1040,7 @@ export default function App() {
       {currentScreen === "aiProfileEnhance" && (
         <AIProfileEnhanceScreen
           onComplete={handleAIProfileComplete}
+          onRedoAnswers={() => setCurrentScreen(introMethod === "INTERVIEW" ? "aiInterview" : "aboutMe")}
           introMethod={introMethod}
           profileData={profileData}
         />

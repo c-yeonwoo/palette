@@ -23,6 +23,8 @@ interface ProfileGenerationResult {
 
 interface AIProfileEnhanceScreenProps {
   onComplete: (result: ProfileGenerationResult) => void;
+  /** 인터뷰/자기소개 답변 다시 작성하러 돌아가기 (INTERVIEW→인터뷰 화면, MANUAL→자기소개 화면) */
+  onRedoAnswers?: () => void;
   introMethod: "INTERVIEW" | "MANUAL";
   profileData: {
     introduction: {
@@ -144,6 +146,7 @@ const WHAT_NEXT_ITEMS = [
 
 export function AIProfileEnhanceScreen({
   onComplete,
+  onRedoAnswers,
   introMethod,
   profileData,
 }: AIProfileEnhanceScreenProps) {
@@ -292,7 +295,9 @@ export function AIProfileEnhanceScreen({
   const emoji = result ? (COLOR_EMOJI[result.colorType] ?? "✨") : "";
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    // overflow-hidden 제거 — confetti 는 position:fixed 라 영향 없고, 이게 있으면
+    // 콘텐츠가 화면보다 길 때 마지막 버튼("이 소개글로 완료하기")이 잘림.
+    <div className="min-h-screen bg-background relative">
       {/* Confetti Layer */}
       {confetti.length > 0 && (
         <div className="fixed inset-0 pointer-events-none z-50">
@@ -331,7 +336,7 @@ export function AIProfileEnhanceScreen({
         <p className="text-center text-sm text-muted-foreground mt-1">마지막 단계예요</p>
       </div>
 
-      <div className="max-w-md mx-auto px-6 py-6 space-y-5">
+      <div className="max-w-md mx-auto px-6 py-6 pb-24 space-y-5">
 
         {/* 입력 내용 요약 */}
         <div className="bg-card border border-border rounded-2xl overflow-hidden">
@@ -599,15 +604,27 @@ export function AIProfileEnhanceScreen({
                 animation: revealed ? "fadeInUp 0.5s ease 0.5s both" : "none",
               }}
             >
-              <Button
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                variant="outline"
-                className="w-full h-11 border-border text-primary hover:bg-muted"
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${isGenerating ? "animate-spin" : ""}`} />
-                {isGenerating ? "재생성 중..." : "다시 생성하기"}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleGenerate}
+                  disabled={isGenerating}
+                  variant="outline"
+                  className="flex-1 h-11 border-border text-primary hover:bg-muted"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isGenerating ? "animate-spin" : ""}`} />
+                  {isGenerating ? "재생성 중..." : "다시 생성하기"}
+                </Button>
+                {onRedoAnswers && (
+                  <Button
+                    onClick={onRedoAnswers}
+                    disabled={isGenerating}
+                    variant="outline"
+                    className="flex-1 h-11 border-border text-foreground hover:bg-muted"
+                  >
+                    답변 다시하기
+                  </Button>
+                )}
+              </div>
 
               <Button
                 onClick={handleComplete}

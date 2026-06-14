@@ -48,18 +48,43 @@ export function AIInterviewScreen({ onComplete, onBack, initialAnswers }: AIInte
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // 재진행 모드: 단계 진입 시 이전 답변을 입력창에 미리 채워서 수정 편의 제공
+  // 재진행 모드: 단계 진입 시 이전(최신) 답변을 입력창에 미리 채워서 수정 편의 제공.
+  // answers 는 initialAnswers 로 초기화되고 제출 시 갱신되므로, 뒤로 가서 다시 봐도 최신 값이 보인다.
   useEffect(() => {
     if (!isReanalyze) return;
     const q = questions[currentStep];
-    const prev = q ? (initialAnswers?.[q.id] ?? "") : "";
-    setCurrentInput(prev);
+    const prev = q ? (answers[q.id] ?? "") : "";
+    setCurrentInput(q?.inputType === "chips" ? "" : prev);
     if (q?.inputType === "chips" && prev) {
       setSelectedChips(prev.split(",").map(s => s.trim()).filter(Boolean));
     } else {
       setSelectedChips([]);
     }
-  }, [currentStep, questions, isReanalyze, initialAnswers]);
+    // answers 는 의도적으로 deps 제외 (단계 진입 시 1회만; 입력 중 재실행 방지)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, questions, isReanalyze]);
+
+  /** 이전 질문으로 돌아가 답변 수정. 마지막 user 답변 + 현재 AI 질문 말풍선을 걷어내고 단계 -1. */
+  const handlePrev = () => {
+    if (currentStep === 0 || isAnalyzing) return;
+    const prevStep = currentStep - 1;
+    const prevQ = questions[prevStep];
+    setMessages((prev) => {
+      const copy = [...prev];
+      copy.pop();   // 현재 질문 AI 말풍선
+      copy.pop();   // 직전 답변 user 말풍선
+      return copy;
+    });
+    setCurrentStep(prevStep);
+    const prevAns = answers[prevQ.id] ?? "";
+    if (prevQ.inputType === "chips") {
+      setCurrentInput("");
+      setSelectedChips(prevAns ? prevAns.split(",").map(s => s.trim()).filter(Boolean) : []);
+    } else {
+      setCurrentInput(prevAns);
+      setSelectedChips([]);
+    }
+  };
 
   const fetchQuestions = async () => {
     try {
@@ -256,7 +281,14 @@ export function AIInterviewScreen({ onComplete, onBack, initialAnswers }: AIInte
                 type="text"
                 value={currentInput}
                 onChange={(e) => setCurrentInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSubmitAnswer()}
+                onKeyDown={(e) => {
+                  // 한글 IME 조합 중 Enter 가드 — 조합 확정 Enter 가 제출을 트리거해
+                  // 마지막 외자가 답변을 덮어쓰던 버그 방지. 조합이 끝난 뒤 Enter 만 제출.
+                  if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    handleSubmitAnswer();
+                  }
+                }}
                 placeholder={currentQuestion.hint}
                 className="flex-1 border border-border bg-card rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-primary"
                 autoFocus
@@ -277,7 +309,15 @@ export function AIInterviewScreen({ onComplete, onBack, initialAnswers }: AIInte
             <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
 
-          <div className="flex items-center justify-between gap-2 pt-1">
+          <div className="flex items-center gap-3 pt-1">
+            {currentStep > 0 && (
+              <button
+                onClick={handlePrev}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                ← 이전 답변 수정
+              </button>
+            )}
             {currentQuestion.inputType === "text" && (
               <button
                 onClick={() => {
