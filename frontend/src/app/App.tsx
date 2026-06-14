@@ -20,6 +20,7 @@ const AboutMeScreen = lazy(() => import("./components/AboutMeScreen").then(m => 
 const IdealTypeScreen = lazy(() => import("./components/IdealTypeScreen").then(m => ({ default: m.IdealTypeScreen })));
 const AIProfileEnhanceScreen = lazy(() => import("./components/AIProfileEnhanceScreen").then(m => ({ default: m.AIProfileEnhanceScreen })));
 const AIInterviewScreen = lazy(() => import("./components/AIInterviewScreen").then(m => ({ default: m.AIInterviewScreen })));
+const LifestyleScreen = lazy(() => import("./components/LifestyleScreen").then(m => ({ default: m.LifestyleScreen })));
 const IntroMethodSelectionScreen = lazy(() => import("./components/IntroMethodSelectionScreen").then(m => ({ default: m.IntroMethodSelectionScreen })));
 const MyProfileScreen = lazy(() => import("./components/MyProfileScreen").then(m => ({ default: m.MyProfileScreen })));
 const ProfileEditScreen = lazy(() => import("./components/ProfileEditScreen").then(m => ({ default: m.ProfileEditScreen })));
@@ -80,6 +81,7 @@ type Screen =
   | "photoUpload"
   | "introMethodSelection"
   | "aboutMe"
+  | "lifestyle"
   | "idealType"
   | "aiProfileEnhance"
   | "aiInterview"
@@ -115,7 +117,7 @@ type Screen =
 
 const ONBOARDING_DRAFT_KEY = "palette_onboarding_draft";
 const ONBOARDING_STEP_KEY = "palette_onboarding_step";
-const ONBOARDING_SCREENS: Screen[] = ["basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance"];
+const ONBOARDING_SCREENS: Screen[] = ["basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "lifestyle", "idealType", "aiProfileEnhance"];
 const ONBOARDING_SCREENS_SET = new Set<Screen>(ONBOARDING_SCREENS);
 
 function loadOnboardingDraft() {
@@ -509,7 +511,7 @@ export default function App() {
         interviewAnswers: answers,
       },
     }));
-    setCurrentScreen("idealType");
+    setCurrentScreen("lifestyle");
   };
 
   const handleIntroMethodAIInterview = () => {
@@ -551,12 +553,26 @@ export default function App() {
   };
 
   const handleAboutMeNext = (data: any) => {
+    // 직접 작성 경로 — 인터뷰 textarea 답변만. 라이프스타일/관심사는 공통 lifestyle 스텝으로 이동(UX B).
     setProfileData(prev => ({
       ...prev,
       introduction: {
         ...prev.introduction,
         interviewAnswers: data.introduction?.interviewAnswers ?? {},
-        // DA-003 — 관심사 온보딩 수집 (빈 배열 가능, 기존값 보존)
+      },
+    }));
+    setCurrentScreen("lifestyle");
+  };
+
+  /** 공통 라이프스타일 스텝(흡연/음주/종교/관심사) — 두 경로(인터뷰/직접) 모두 거침 → idealType */
+  const handleLifestyleNext = (data: {
+    lifestyleInfo: { smoking: string; drinking: string; religion: string };
+    introduction: { interests: string[] };
+  }) => {
+    setProfileData(prev => ({
+      ...prev,
+      introduction: {
+        ...prev.introduction,
         interests: data.introduction?.interests ?? prev.introduction.interests ?? [],
       },
       lifestyleInfo: data.lifestyleInfo || prev.lifestyleInfo,
@@ -1021,15 +1037,25 @@ export default function App() {
           onBack={() => setCurrentScreen("introMethodSelection")}
           initialData={{
             introduction: profileData.introduction,
-            lifestyleInfo: profileData.lifestyleInfo,
           }}
         />
       )}
-      
+
+      {currentScreen === "lifestyle" && (
+        <LifestyleScreen
+          onNext={handleLifestyleNext}
+          onBack={() => setCurrentScreen(introMethod === "INTERVIEW" ? "aiInterview" : "aboutMe")}
+          initialData={{
+            lifestyleInfo: profileData.lifestyleInfo,
+            introduction: { interests: profileData.introduction.interests },
+          }}
+        />
+      )}
+
       {currentScreen === "idealType" && (
         <IdealTypeScreen
           onNext={handleIdealTypeNext}
-          onBack={() => introMethod === "INTERVIEW" ? setCurrentScreen("aiInterview") : setCurrentScreen("aboutMe")}
+          onBack={() => setCurrentScreen("lifestyle")}
           initialData={{
             idealType: profileData.idealType,
           }}
@@ -1292,7 +1318,7 @@ export default function App() {
       </Suspense>
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding/detail screens */}
-      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "matchDetail", "photoVerify", "colorTest", "colorDetail", "inviteHub", "privacyPolicy", "termsOfService", "deleteAccount", "billing", "inviteWizard", "paymentSuccess", "paymentFail"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "lifestyle", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "matchDetail", "photoVerify", "colorTest", "colorDetail", "inviteHub", "privacyPolicy", "termsOfService", "deleteAccount", "billing", "inviteWizard", "paymentSuccess", "paymentFail"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}
