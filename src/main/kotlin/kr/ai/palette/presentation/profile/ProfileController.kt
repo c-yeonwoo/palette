@@ -244,10 +244,25 @@ class ProfileController(
 
         profilePhotoRepository.delete(id)
 
+        // 대표사진(첫 사진) 보장 — 삭제 후 displayOrder 재정렬 + 맨 앞만 isPrimary.
+        // 대표를 지웠어도 다음 사진이 대표가 되도록.
+        normalizePrimaryPhoto(profile.id)
+
         // metrics 재계산
         profileRepository.save(profile.recalculateMetrics())
 
         return ResponseEntity.noContent().build()
+    }
+
+    /** 남은 사진을 displayOrder 0..n 으로 재정렬하고 첫 사진만 대표(isPrimary)로 정규화 */
+    private fun normalizePrimaryPhoto(profileId: kr.ai.palette.domain.profile.ProfileId) {
+        val remaining = profilePhotoRepository.findByProfileId(profileId).sortedBy { it.displayOrder }
+        remaining.forEachIndexed { index, p ->
+            val wantPrimary = index == 0
+            if (p.displayOrder != index || p.isPrimary != wantPrimary) {
+                profilePhotoRepository.save(p.copy(displayOrder = index, isPrimary = wantPrimary))
+            }
+        }
     }
 }
 

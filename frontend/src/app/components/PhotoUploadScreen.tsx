@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
-import { Upload, Share2, Camera, Plus, Video, Star, ArrowLeft, X, Play } from "lucide-react";
+import { Share2, Camera, Plus, Video, ArrowLeft, X, Play } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
 
@@ -17,35 +17,21 @@ interface PhotoUploadScreenProps {
 }
 
 export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadScreenProps) {
-  const [photos, setPhotos] = useState<(string | null)[]>(() => {
-    if (initialData?.photos && initialData.photos.length > 0) {
-      const photoArray = Array(6).fill(null);
-      initialData.photos.forEach((photo, index) => {
-        if (index < 6) photoArray[index] = photo;
-      });
-      return photoArray;
-    }
-    return Array(6).fill(null);
-  });
-  const [mainPhotoIndex, setMainPhotoIndex] = useState(initialData?.mainPhotoIndex || 0);
+  const MAX_PHOTOS = 6;
+  const [photos, setPhotos] = useState<string[]>(() =>
+    (initialData?.photos ?? []).filter((p): p is string => !!p).slice(0, MAX_PHOTOS)
+  );
   const [video, setVideo] = useState<string | null>(initialData?.video || null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
-  const [activePhotoSlot, setActivePhotoSlot] = useState<number>(0);
 
-  const uploadedCount = photos.filter(p => p !== null).length;
+  const uploadedCount = photos.length;
 
-  const handlePhotoSlotClick = (index: number) => {
-    if (photos[index]) {
-      // Already has photo - clicking sets it as main
-      setMainPhotoIndex(index);
-    } else {
-      // Empty slot - open file picker
-      setActivePhotoSlot(index);
-      photoInputRef.current?.click();
-    }
+  const openPhotoPicker = () => {
+    if (photos.length >= MAX_PHOTOS) return;
+    photoInputRef.current?.click();
   };
 
   const handlePhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,19 +44,15 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
     const reader = new FileReader();
     reader.onload = (ev) => {
       const dataUrl = ev.target?.result as string;
-      setPhotos(prev => {
-        const next = [...prev];
-        next[activePhotoSlot] = dataUrl;
-        return next;
-      });
-      // Upload to server in background
-      uploadPhotoToServer(file, activePhotoSlot);
+      // 항상 끝에 추가 — 순서대로 채워 첫 사진이 대표가 되도록
+      setPhotos(prev => (prev.length >= MAX_PHOTOS ? prev : [...prev, dataUrl]));
+      uploadPhotoToServer(file);
     };
     reader.readAsDataURL(file);
     e.target.value = "";
   };
 
-  const uploadPhotoToServer = async (file: File, _slot: number) => {
+  const uploadPhotoToServer = async (file: File) => {
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -82,15 +64,8 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
 
   const handleRemovePhoto = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    setPhotos(prev => {
-      const next = [...prev];
-      next[index] = null;
-      return next;
-    });
-    if (mainPhotoIndex === index) {
-      const nextMain = photos.findIndex((p, i) => p !== null && i !== index);
-      setMainPhotoIndex(nextMain >= 0 ? nextMain : 0);
-    }
+    // 삭제 시 뒤 사진이 앞으로 당겨져 첫 사진(대표)이 항상 유지됨
+    setPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleVideoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -193,7 +168,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
             <p className="text-sm text-muted-foreground">{uploadedCount}/6장</p>
           </div>
           <p className="text-sm text-muted-foreground mb-3">
-            <Star className="w-4 h-4 inline text-primary" /> 표시된 사진이 메인 프로필로 사용됩니다
+            첫 번째 사진이 <span className="font-medium text-foreground">대표 사진</span>으로 사용돼요
           </p>
           {/* Hidden file input for photos */}
           <input
@@ -207,37 +182,36 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
             {photos.map((photo, index) => (
               <div
                 key={index}
-                className={`relative aspect-square bg-muted rounded-xl border-2 border-dashed overflow-hidden hover:border-primary/40 transition-colors cursor-pointer ${
-                  index === mainPhotoIndex && photo
-                    ? 'border-primary border-solid ring-2 ring-primary/20'
-                    : 'border-border'
+                className={`relative aspect-square bg-muted rounded-xl border-2 border-solid overflow-hidden ${
+                  index === 0 ? 'border-primary ring-2 ring-primary/20' : 'border-border'
                 }`}
-                onClick={() => handlePhotoSlotClick(index)}
               >
-                {photo ? (
-                  <>
-                    <img src={photo} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
-                    {index === mainPhotoIndex && (
-                      <div className="absolute top-1 left-1 bg-brand-soft text-gold-strong rounded-full p-1">
-                        <Star className="w-3 h-3 fill-current" />
-                      </div>
-                    )}
-                    <button
-                      onClick={(e) => handleRemovePhoto(index, e)}
-                      className="absolute top-0 right-0 w-8 h-8 bg-black/60 text-white rounded-bl-xl flex items-center justify-center"
-                      aria-label="사진 삭제"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </>
-                ) : (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                    <Plus className="w-6 h-6 text-border" />
-                    <span className="text-xs text-muted-foreground/50">사진 추가</span>
+                <img src={photo} alt={`사진 ${index + 1}`} className="w-full h-full object-cover" />
+                {index === 0 && (
+                  <div className="absolute top-1.5 left-1.5 bg-brand-soft text-gold-strong rounded-full px-2 py-0.5 text-xs font-semibold">
+                    대표
                   </div>
                 )}
+                <button
+                  onClick={(e) => handleRemovePhoto(index, e)}
+                  className="absolute top-0 right-0 w-8 h-8 bg-black/60 text-white rounded-bl-xl flex items-center justify-center"
+                  aria-label="사진 삭제"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             ))}
+            {photos.length < MAX_PHOTOS && (
+              <button
+                type="button"
+                onClick={openPhotoPicker}
+                className="relative aspect-square bg-muted rounded-xl border-2 border-dashed border-border hover:border-primary/40 transition-colors flex flex-col items-center justify-center gap-1"
+                aria-label="사진 추가"
+              >
+                <Plus className="w-6 h-6 text-border" />
+                <span className="text-xs text-muted-foreground/50">사진 추가</span>
+              </button>
+            )}
           </div>
           <p className="text-xs text-muted-foreground mt-2">
             권장: 3:4 세로 또는 1:1 정사각형, JPG/PNG/HEIC, 최대 10MB
