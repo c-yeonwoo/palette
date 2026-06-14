@@ -742,8 +742,18 @@ export default function App() {
     setCurrentScreen("mainFeed");
   };
 
-  const handleProfileEditSave = () => {
+  const handleProfileEditSave = async () => {
     setProfileRefreshKey(prev => prev + 1); // Force MyProfileScreen to remount
+    // 반려/심사 상태에서 보완 완료한 경우 → 무조건 심사 대기 화면으로 (ADR 0054).
+    // 백엔드가 REJECTED→PENDING_APPROVAL 로 재제출 처리하므로 최신 상태를 받아 라우팅.
+    const user = await authService.getCurrentUser();
+    if (user && user.approvalStatus && user.approvalStatus !== "ACTIVE") {
+      setApprovalStatus(user.approvalStatus);
+      setApprovalReason(user.approvalReason ?? null);
+      setCurrentScreen("pendingApproval");
+      toast.success("프로필을 보완했어요. 다시 심사를 요청했어요.");
+      return;
+    }
     setCurrentScreen("myProfile");
     toast.success("프로필이 저장되었습니다!");
   };
