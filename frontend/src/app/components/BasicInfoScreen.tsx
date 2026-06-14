@@ -7,6 +7,7 @@ import { User, ArrowLeft, ArrowRight } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { useOnboardingOptions } from "../../lib/onboarding/useOnboardingOptions";
 import { useOnboardingFields } from "../../lib/onboarding/useOnboardingFields";
+import { SIDO_LIST, SIGUNGU } from "../../lib/regions";
 import { toast } from "sonner";
 
 interface BasicInfoScreenProps {
@@ -26,10 +27,6 @@ const jobCategories = [
 ];
 
 const educationLevels = ["고졸", "전문대", "대졸", "석사", "박사"];
-const regions = [
-  "서울", "경기", "인천", "부산", "대구", "광주", "대전",
-  "울산", "세종", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"
-];
 
 /** 4 mini-steps — step 1, 3 만 필수, 2/4 는 건너뛰기 가능
  *  1 → 신원 (필수: 이름, 생년월일, 성별)
@@ -79,6 +76,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
     school: initialData?.educationInfo?.school || "",
     major: initialData?.educationInfo?.major || "",
     region: initialData?.locationInfo?.region || "",
+    district: initialData?.locationInfo?.district || "",
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -123,7 +121,9 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
 
   // Per-step validation — step 2/4 는 선택, 항상 통과 가능
   const isStep1Valid = !!(formData.name && formData.birthYear && formData.birthMonth && formData.birthDay && formData.gender);
-  const isStep3Valid = !!(formData.jobCategory && formData.region);  // 학력 필수에서 제외
+  // 거주지역: 시/도 필수 + 시군구가 있는 시/도면 시군구까지(세종 등 하위 없으면 시/도만)
+  const regionValid = !!formData.region && ((SIGUNGU[formData.region]?.length ?? 0) === 0 || !!formData.district);
+  const isStep3Valid = !!(formData.jobCategory && regionValid);  // 학력 필수에서 제외
 
   const isCurrentStepValid = () => {
     if (miniStep === 1) return isStep1Valid;
@@ -156,7 +156,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
         },
         careerInfo: { category: formData.jobCategory, company: formData.company, incomeRange: "" },
         educationInfo: { level: formData.education, school: formData.school, major: formData.major },
-        locationInfo: { region: formData.region, district: "" },
+        locationInfo: { region: formData.region, district: formData.district },
       });
     }
   };
@@ -430,23 +430,29 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
             </div>
             )}
 
-            {/* Region (구조 필드 — 항상 노출, 라벨만 메타) */}
+            {/* Region (구조 필드) — 시/도 → 시·군·구 2단계 드롭다운 */}
             <div>
               <Label className="mb-2 block">{fields.label("region", "거주 지역")} <span className="text-primary">*</span></Label>
-              <div className="grid grid-cols-4 gap-2">
-                {regions.map((region) => (
-                  <button
-                    key={region}
-                    onClick={() => update('region', region)}
-                    className={`py-2.5 rounded-lg border-2 text-sm font-medium transition-all ${
-                      formData.region === region
-                        ? "bg-brand-soft text-gold-strong border-brand/40"
-                        : "bg-card border-border text-muted-foreground hover:border-primary/40"
-                    }`}
-                  >
-                    {region}
-                  </button>
-                ))}
+              <div className="grid grid-cols-2 gap-3">
+                <select
+                  value={formData.region}
+                  onChange={(e) => setFormData(prev => ({ ...prev, region: e.target.value, district: "" }))}
+                  className="h-12 px-3 rounded-lg border-2 border-border bg-card focus:border-primary text-sm"
+                >
+                  <option value="">시/도</option>
+                  {SIDO_LIST.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <select
+                  value={formData.district}
+                  onChange={(e) => update('district', e.target.value)}
+                  disabled={!formData.region || (SIGUNGU[formData.region]?.length ?? 0) === 0}
+                  className="h-12 px-3 rounded-lg border-2 border-border bg-card focus:border-primary text-sm disabled:opacity-50"
+                >
+                  <option value="">
+                    {!formData.region ? "시/군/구" : (SIGUNGU[formData.region]?.length ?? 0) === 0 ? "해당 없음" : "시/군/구"}
+                  </option>
+                  {(SIGUNGU[formData.region] ?? []).map((g) => <option key={g} value={g}>{g}</option>)}
+                </select>
               </div>
             </div>
           </div>
