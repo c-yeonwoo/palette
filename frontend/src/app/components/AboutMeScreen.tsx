@@ -106,8 +106,8 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
           <h2 className="text-center">자기소개 작성</h2>
         </div>
         <div className="space-y-2">
-          <Progress value={55} className="h-2" />
-          <p className="text-sm text-muted-foreground text-center">내 이야기를 들려주세요</p>
+          <Progress value={40} className="h-2" />
+          <p className="text-sm text-muted-foreground text-center">2/5 단계 · 내 이야기를 들려주세요</p>
         </div>
       </div>
 

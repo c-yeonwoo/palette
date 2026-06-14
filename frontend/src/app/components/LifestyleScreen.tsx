@@ -64,8 +64,8 @@ export function LifestyleScreen({ onNext, onBack, initialData }: LifestyleScreen
           <h2 className="text-center">라이프스타일</h2>
         </div>
         <div className="space-y-2">
-          <Progress value={70} className="h-2" />
-          <p className="text-sm text-muted-foreground text-center">잠깐이면 돼요 · 약 1분</p>
+          <Progress value={60} className="h-2" />
+          <p className="text-sm text-muted-foreground text-center">3/5 단계 · 잠깐이면 돼요</p>
         </div>
       </div>
 

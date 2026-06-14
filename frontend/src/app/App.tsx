@@ -478,7 +478,8 @@ export default function App() {
       locationInfo: data.locationInfo,
     }));
     setUserGender(data.basicInfo.gender); // Store gender for profile editing later
-    setCurrentScreen("photoUpload");
+    // UX C — 사진은 색깔 결과 직전(idealType 후)으로 이동. 기본정보 다음은 소개 방식 선택.
+    setCurrentScreen("introMethodSelection");
   };
 
   const handleBasicInfoBack = () => {
@@ -500,7 +501,8 @@ export default function App() {
       mainPhotoIndex: data.mainPhotoIndex,
       video: data.video,
     }));
-    setCurrentScreen("introMethodSelection");
+    // UX C — 사진 다음은 AI 분석(색깔 생성)
+    setCurrentScreen("aiProfileEnhance");
   };
 
   const handleAIInterviewComplete = (answers: Record<string, string>) => {
@@ -549,7 +551,7 @@ export default function App() {
   };
 
   const handlePhotoBack = () => {
-    setCurrentScreen("basicInfo");
+    setCurrentScreen("idealType");
   };
 
   const handleAboutMeNext = (data: any) => {
@@ -586,7 +588,8 @@ export default function App() {
       ...prev,
       idealType: data.idealType,
     }));
-    setCurrentScreen("aiProfileEnhance");
+    // UX C — 이상형 다음은 사진 등록 → AI 분석
+    setCurrentScreen("photoUpload");
   };
 
   const handleAIProfileComplete = async (result: { colorType: string; colorName: string; colorHex: string; colorDescription: string; generatedIntroduction: string; colorReasoning?: string; personalitySummary?: string; idealTypeInsight?: string; strengths?: string[] }) => {
@@ -1004,7 +1007,7 @@ export default function App() {
         <IntroMethodSelectionScreen
           onSelectAIInterview={handleIntroMethodAIInterview}
           onSelectManual={handleIntroMethodManual}
-          onBack={() => setCurrentScreen("photoUpload")}
+          onBack={() => setCurrentScreen("basicInfo")}
         />
       )}
 
