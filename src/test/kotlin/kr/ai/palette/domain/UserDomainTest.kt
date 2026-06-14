@@ -107,6 +107,27 @@ class UserDomainTest : DescribeSpec({
                 user.completeProfile()
             }
         }
+
+        it("REGULAR 유저는 완성 시 PENDING_APPROVAL 로 전환된다 (ADR 0054)") {
+            val user = makeUser(AccountType.REGULAR, isProfileCompleted = false)
+            user.completeProfile().status shouldBe UserStatus.PENDING_APPROVAL
+        }
+    }
+
+    describe("User.resubmitForApproval()") {
+
+        it("REJECTED 유저가 재제출하면 PENDING_APPROVAL 로 전환되고 사유가 비워진다") {
+            val rejected = makeUser(AccountType.REGULAR, isProfileCompleted = true)
+                .rejectProfile("사진 보완 필요", UserId(UUID.randomUUID()))
+            val resubmitted = rejected.resubmitForApproval()
+            resubmitted.status shouldBe UserStatus.PENDING_APPROVAL
+            resubmitted.statusReason shouldBe null
+        }
+
+        it("ACTIVE 유저는 재제출해도 상태가 그대로 유지된다 (단순 프로필 수정 보호)") {
+            val active = makeUser(AccountType.REGULAR, isProfileCompleted = true)
+            active.resubmitForApproval().status shouldBe UserStatus.ACTIVE
+        }
     }
 
     describe("User.verifyPhone()") {

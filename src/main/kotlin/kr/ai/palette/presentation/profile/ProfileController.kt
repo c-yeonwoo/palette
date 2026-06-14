@@ -85,9 +85,14 @@ class ProfileController(
 
         // Mark user profile as completed if not already (only for REGULAR users)
         val user = userRepository.findById(authUser.userId)
-        if (user != null && !user.isProfileCompleted && user.accountType == kr.ai.palette.domain.user.AccountType.REGULAR) {
-            val updatedUser = user.completeProfile()
-            userRepository.save(updatedUser)
+        if (user != null && user.accountType == kr.ai.palette.domain.user.AccountType.REGULAR) {
+            if (!user.isProfileCompleted) {
+                // 최초 완성 → 운영자 승인 대기 (ADR 0054)
+                userRepository.save(user.completeProfile())
+            } else if (user.status == kr.ai.palette.domain.user.UserStatus.REJECTED) {
+                // 반려된 프로필 보완 후 재제출 → 다시 심사 대기 (ADR 0054)
+                userRepository.save(user.resubmitForApproval())
+            }
         }
 
         return ResponseEntity.ok(ProfileResponse.from(savedProfile, fileStorageService))

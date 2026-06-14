@@ -73,6 +73,20 @@ data class User(
         return copy(status = UserStatus.REJECTED, statusReason = reason, statusUpdatedAt = at, statusUpdatedBy = operatorId, metadata = metadata.copy(updatedAt = at))
     }
 
+    /**
+     * 반려된 프로필 보완 후 재제출 → 다시 운영자 승인 대기(PENDING_APPROVAL)로 전환 (ADR 0054 보완).
+     * REJECTED 가 아닐 땐 변화 없음(이미 완성한 프로필을 단순 수정하는 경우 보호).
+     */
+    fun resubmitForApproval(at: java.time.Instant = java.time.Instant.now()): User {
+        if (status != UserStatus.REJECTED) return this
+        return copy(
+            status = UserStatus.PENDING_APPROVAL,
+            statusReason = null,
+            statusUpdatedAt = at,
+            metadata = metadata.copy(updatedAt = at),
+        )
+    }
+
     fun updatePublicInfo(publicInfo: PublicInfo): User {
         return copy(publicInfo = publicInfo)
     }
