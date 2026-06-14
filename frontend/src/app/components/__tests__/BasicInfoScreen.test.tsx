@@ -186,8 +186,10 @@ describe('BasicInfoScreen', () => {
     await waitFor(() => expect(screen.getByText('어디서 무슨 일을 하나요?')).toBeInTheDocument());
     fireEvent.click(screen.getByText('IT/개발'));
     fireEvent.click(screen.getByText('대졸'));
-    fireEvent.click(screen.getByText('서울'));
-    await waitFor(() => expect(screen.getByText('어디서 무슨 일을 하나요?')).toBeInTheDocument());
+    // 거주지역: 시/도 → 시군구 드롭다운
+    const step3Selects = screen.getAllByRole('combobox');
+    fireEvent.change(step3Selects[0], { target: { value: '서울' } });
+    fireEvent.change(screen.getAllByRole('combobox')[1], { target: { value: '강남구' } });
     fireEvent.click(screen.getByRole('button', { name: '다음' }));
 
     expect(onNext).toHaveBeenCalledWith(
