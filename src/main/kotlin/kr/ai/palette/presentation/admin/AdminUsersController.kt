@@ -5,6 +5,7 @@ import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.friendship.FriendshipRepository
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestRepository
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestStatus
+import kr.ai.palette.domain.profile.ProfilePhotoRepository
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.User
 import kr.ai.palette.domain.user.UserRepository
@@ -36,6 +37,7 @@ import java.util.UUID
 class AdminUsersController(
     private val userRepository: UserRepository,
     private val profileRepository: ProfileRepository,
+    private val profilePhotoRepository: ProfilePhotoRepository,
     private val friendshipRepository: FriendshipRepository,
     private val matchmakingRequestRepository: MatchmakingRequestRepository,
     private val dailyRecommendationRepo: DailyRecommendationJpaRepository,
@@ -107,7 +109,27 @@ class AdminUsersController(
 
         val updated = target.changeStatus(newStatus, request.reason, authUser.userId)
         val saved = userRepository.save(updated)
+
+        // 사진별 반려 (ADR 0060) — 운영자가 콕 집은 사진만 rejected 표시.
+        // 반려가 아닌 상태로 바꾸면(예: 승인) 모든 사진 반려 표시 해제.
+        applyPhotoRejections(target, newStatus, request.rejectedPhotoIds)
+
         return ResponseEntity.ok(AdminUserDetail.from(saved))
+    }
+
+    /** 대상 유저 프로필 사진 중 rejectedPhotoIds 에 해당하는 것만 반려 표시. 본인 사진만 허용(교차 방지). */
+    private fun applyPhotoRejections(target: User, newStatus: UserStatus, rejectedPhotoIds: List<UUID>) {
+        val profile = profileRepository.findByUserId(target.id) ?: return
+        val photos = profilePhotoRepository.findByProfileId(profile.id)
+        if (newStatus == UserStatus.REJECTED) {
+            if (rejectedPhotoIds.isEmpty()) return
+            val targetIds = rejectedPhotoIds.toSet()
+            photos.filter { it.id.value in targetIds && !it.rejected }
+                .forEach { profilePhotoRepository.save(it.markRejected()) }
+        } else {
+            // 승인/기타 상태 전환 시 잔여 반려 표시 정리
+            photos.filter { it.rejected }.forEach { profilePhotoRepository.save(it.clearRejection()) }
+        }
     }
 
     // ── 보강 endpoint (PR #10) ────────────────────────────────────────────
@@ -301,6 +323,8 @@ data class AdminUserDetail(
 data class ChangeStatusRequest(
     val status: String,
     val reason: String? = null,
+    /** REJECTED 시 콕 집어 재촬영 요청할 사진 id 목록 (ADR 0060). 비면 사유만 전달 */
+    val rejectedPhotoIds: List<UUID> = emptyList(),
 )
 
 // ── 보강 (PR #10) ────────────────────────────────────────────────────────────

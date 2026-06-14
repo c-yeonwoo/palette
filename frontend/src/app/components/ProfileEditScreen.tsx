@@ -95,6 +95,7 @@ interface ProfileData {
     url: string;
     displayOrder: number;
     isPrimary: boolean;
+    rejected?: boolean;
   }>;
   settings: {
     isAcceptingMatches: boolean;
@@ -518,7 +519,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   // 사진: {id, url} 또는 null — id는 삭제 API 호출에 사용
-  const [photos, setPhotos] = useState<({ id: string; url: string } | null)[]>(Array(6).fill(null));
+  const [photos, setPhotos] = useState<({ id: string; url: string; rejected?: boolean } | null)[]>(Array(6).fill(null));
   const [video, setVideo] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"about" | "ideal">("about");
   const [isUploading, setIsUploading] = useState(false);
@@ -534,11 +535,11 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
         const data = await api.get<ProfileData>('/api/v1/profile');
         setProfile(data);
         if (data.photos && data.photos.length > 0) {
-          const photoSlots: ({ id: string; url: string } | null)[] = Array(6).fill(null);
+          const photoSlots: ({ id: string; url: string; rejected?: boolean } | null)[] = Array(6).fill(null);
           data.photos
             .sort((a, b) => a.displayOrder - b.displayOrder)
             .forEach((photo, index) => {
-              if (index < 6) photoSlots[index] = { id: photo.id, url: photo.url };
+              if (index < 6) photoSlots[index] = { id: photo.id, url: photo.url, rejected: photo.rejected };
             });
           setPhotos(photoSlots);
         }
@@ -783,9 +784,17 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                       {photo ? (
                         <>
                           <img src={photo.url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                          {photo.rejected && (
+                            <div className="absolute inset-0 ring-2 ring-red-500 rounded-xl pointer-events-none" />
+                          )}
                           {index === 0 && (
                             <div className="absolute top-1.5 right-1.5 bg-brand-soft text-gold-strong rounded-full px-2 py-0.5 text-xs font-semibold">
                               대표
+                            </div>
+                          )}
+                          {photo.rejected && (
+                            <div className="absolute bottom-1 left-1 right-1 bg-red-600 text-white rounded-md px-1 py-0.5 text-[10px] text-center font-medium">
+                              재촬영 필요
                             </div>
                           )}
                           <button

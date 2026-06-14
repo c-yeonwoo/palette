@@ -31,7 +31,7 @@ export interface AdminProfileData {
     heightMin?: number | null;
     heightMax?: number | null;
   };
-  photos: { id: string; url: string; displayOrder: number; isPrimary: boolean }[];
+  photos: { id: string; url: string; displayOrder: number; isPrimary: boolean; rejected?: boolean }[];
   primaryPhotoUrl: string | null;
   colorType: {
     name: string | null; hex: string | null; description: string | null;
@@ -58,8 +58,18 @@ function optLabels(setKey: string, codes: string[] | null | undefined): string[]
   return (codes ?? []).map((c) => optLabel(setKey, c) ?? c);
 }
 
-export function AdminProfilePreview({ data }: { data: AdminProfileData }) {
+export function AdminProfilePreview({
+  data,
+  selectedRejectIds,
+  onToggleReject,
+}: {
+  data: AdminProfileData;
+  /** 반려 선택 모드: 선택된 사진 id 목록 (제공 시 사진 클릭으로 토글) */
+  selectedRejectIds?: string[];
+  onToggleReject?: (photoId: string) => void;
+}) {
   const { basicInfo, careerInfo, educationInfo, locationInfo, lifestyleInfo, introduction, idealType, photos, colorType, metrics, settings } = data;
+  const selectable = !!onToggleReject;
 
   const region = [locationInfo.sido, locationInfo.sigungu].filter(Boolean).join(" ") || null;
   const hometown = [locationInfo.hometownSido, locationInfo.hometownSigungu].filter(Boolean).join(" ") || null;
@@ -72,16 +82,42 @@ export function AdminProfilePreview({ data }: { data: AdminProfileData }) {
       {/* 사진 */}
       <Section title="사진">
         {photos.length > 0 ? (
-          <div className="flex gap-2 flex-wrap">
-            {photos.slice().sort((a, b) => a.displayOrder - b.displayOrder).map((p) => (
-              <div key={p.id} className="relative">
-                <img src={p.url} alt="" className="w-24 h-32 object-cover rounded-lg border border-border" />
-                {p.isPrimary && (
-                  <span className="absolute top-1 left-1 text-[10px] px-1.5 py-0.5 rounded bg-foreground/80 text-background">대표</span>
-                )}
-              </div>
-            ))}
-          </div>
+          <>
+            {selectable && (
+              <p className="text-xs text-muted-foreground mb-2">
+                재촬영을 요청할 사진을 눌러 선택하세요. 선택한 사진만 반려 표시됩니다.
+              </p>
+            )}
+            <div className="flex gap-2 flex-wrap">
+              {photos.slice().sort((a, b) => a.displayOrder - b.displayOrder).map((p) => {
+                const picked = selectedRejectIds?.includes(p.id) ?? false;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={selectable ? () => onToggleReject!(p.id) : undefined}
+                    className={`relative block ${selectable ? "cursor-pointer" : "cursor-default"}`}
+                  >
+                    <img
+                      src={p.url}
+                      alt=""
+                      className={`w-24 h-32 object-cover rounded-lg border-2 ${
+                        picked ? "border-red-500" : "border-border"
+                      }`}
+                    />
+                    {p.isPrimary && (
+                      <span className="absolute top-1 left-1 text-[10px] px-1.5 py-0.5 rounded bg-foreground/80 text-background">대표</span>
+                    )}
+                    {(picked || p.rejected) && (
+                      <span className="absolute bottom-1 left-1 right-1 text-[10px] px-1 py-0.5 rounded bg-red-600 text-white text-center">
+                        {picked ? "반려 선택" : "반려됨"}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </>
         ) : (
           <Empty>등록된 사진 없음</Empty>
         )}
