@@ -109,13 +109,16 @@ export function AIInterviewScreen({ onComplete, onBack, initialAnswers }: AIInte
     }
   };
 
-  const handleSubmitAnswer = async () => {
+  const handleSubmitAnswer = async (overrideAnswer?: string) => {
     if (isAnalyzing) return;
     const question = questions[currentStep];
+    // overrideAnswer 가 있으면(예: 건너뛰기 "없어요") state 비동기 갱신을 기다리지 않고 직접 제출
     const answer =
-      question.inputType === "chips"
-        ? selectedChips.join(", ")
-        : currentInput.trim();
+      overrideAnswer !== undefined
+        ? overrideAnswer
+        : question.inputType === "chips"
+          ? selectedChips.join(", ")
+          : currentInput.trim();
 
     if (!answer) {
       toast.error("답변을 입력해주세요");
@@ -297,7 +300,7 @@ export function AIInterviewScreen({ onComplete, onBack, initialAnswers }: AIInte
           )}
 
           <Button
-            onClick={handleSubmitAnswer}
+            onClick={() => handleSubmitAnswer()}
             disabled={
               currentQuestion.inputType === "chips"
                 ? selectedChips.length === 0
@@ -320,10 +323,7 @@ export function AIInterviewScreen({ onComplete, onBack, initialAnswers }: AIInte
             )}
             {currentQuestion.inputType === "text" && (
               <button
-                onClick={() => {
-                  setCurrentInput("없어요");
-                  setTimeout(handleSubmitAnswer, 0);
-                }}
+                onClick={() => handleSubmitAnswer("없어요")}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 이 질문 건너뛰기
