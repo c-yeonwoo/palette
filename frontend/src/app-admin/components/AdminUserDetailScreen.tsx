@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { adminApi } from "../lib/adminApi";
+import { AdminProfilePreview, type AdminProfileData } from "./AdminProfilePreview";
 
 interface FriendSummary {
   userId: string;
@@ -88,9 +89,10 @@ export function AdminUserDetailScreen({ userId, onBack }: Props) {
   const [submitting, setSubmitting] = useState(false);
 
   // 프로필 미리보기 modal
-  const [profilePreview, setProfilePreview] = useState<unknown | null>(null);
+  const [profilePreview, setProfilePreview] = useState<AdminProfileData | null>(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [showRawJson, setShowRawJson] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -118,7 +120,7 @@ export function AdminUserDetailScreen({ userId, onBack }: Props) {
     setProfileLoading(true);
     setProfileError(null);
     try {
-      const p = await adminApi.get<unknown>(`/api/v1/admin/users/${userId}/profile`);
+      const p = await adminApi.get<AdminProfileData>(`/api/v1/admin/users/${userId}/profile`);
       setProfilePreview(p);
     } catch (e) {
       setProfileError(e instanceof Error ? e.message : "프로필 조회 실패");
@@ -454,13 +456,23 @@ export function AdminUserDetailScreen({ userId, onBack }: Props) {
                 {profileLoading && <p className="text-sm text-muted-foreground">불러오는 중...</p>}
                 {profileError && <p className="text-sm text-destructive">{profileError}</p>}
                 {profilePreview && !profileLoading && (
-                  <pre className="text-xs bg-muted/40 rounded-lg p-3 overflow-auto whitespace-pre-wrap font-mono leading-relaxed text-foreground">
-                    {JSON.stringify(profilePreview, null, 2)}
-                  </pre>
+                  <>
+                    <AdminProfilePreview data={profilePreview} />
+                    <div className="mt-4 pt-3 border-t border-border">
+                      <button
+                        onClick={() => setShowRawJson((v) => !v)}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        {showRawJson ? "원본 JSON 숨기기 ▲" : "원본 JSON 보기 ▼"}
+                      </button>
+                      {showRawJson && (
+                        <pre className="mt-2 text-xs bg-muted/40 rounded-lg p-3 overflow-auto whitespace-pre-wrap font-mono leading-relaxed text-foreground">
+                          {JSON.stringify(profilePreview, null, 2)}
+                        </pre>
+                      )}
+                    </div>
+                  </>
                 )}
-                <p className="text-xs text-muted-foreground mt-3">
-                  사용자 노출 화면 그대로의 렌더링은 추후 PR — 현재는 raw JSON.
-                </p>
               </div>
             </div>
           </div>
