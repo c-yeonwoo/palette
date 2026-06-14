@@ -116,7 +116,10 @@ data class GenerateResponse(
     val colorName: String,
     val colorHex: String,
     val colorDescription: String,
+    /** 하위호환·영속화용 — 섹션을 합친 단일 텍스트 */
     val generatedIntroduction: String,
+    /** 소주제별로 나뉜 소개글 — 상대가 자연스러운 흐름으로 읽도록 (ADR 0059) */
+    val introductionSections: List<IntroSectionDto> = emptyList(),
     /** 왜 이 색깔로 분석했는지 — 사용자 답변에서 근거를 인용한 짧은 단락 */
     val colorReasoning: String = "",
     /** 성격·연애 성향 요약 */
@@ -133,12 +136,18 @@ data class GenerateResponse(
     val evidenceFromSaju: String = "",
 )
 
+data class IntroSectionDto(
+    val heading: String,
+    val body: String,
+)
+
 private fun ProfileGenerationResult.toResponse() = GenerateResponse(
     colorType = colorType,
     colorName = colorName,
     colorHex = colorHex,
     colorDescription = colorDescription,
     generatedIntroduction = generatedIntroduction,
+    introductionSections = introductionSections.map { IntroSectionDto(heading = it.heading, body = it.body) },
     colorReasoning = colorReasoning,
     personalitySummary = personalitySummary,
     idealTypeInsight = idealTypeInsight,

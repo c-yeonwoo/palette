@@ -36,12 +36,21 @@ data class IdealTypeContext(
     val dealBreakers: List<String> = emptyList(),
 )
 
+/** AI 소개글 한 단락 — 소주제 제목(heading) + 자연스러운 1인칭 서술(body). ADR 0059 */
+data class IntroductionSection(
+    val heading: String,
+    val body: String,
+)
+
 data class ProfileGenerationResult(
     val colorType: String,
     val colorName: String,
     val colorHex: String,
     val colorDescription: String,
+    /** 하위호환·영속화용 — 섹션들을 합친 단일 텍스트 (introduction.text 로 저장됨) */
     val generatedIntroduction: String,
+    /** 소주제별로 나뉜 소개글 — 상대가 자연스러운 흐름으로 읽도록 (ADR 0059) */
+    val introductionSections: List<IntroductionSection> = emptyList(),
     /** 왜 이 색깔로 분석했는지 — 사용자 답변에서 근거를 인용한 짧은 단락 */
     val colorReasoning: String = "",
     /** 답변에서 드러난 성격·연애 성향 요약 */
@@ -287,12 +296,21 @@ class OpenAIService(
         val keywords = (map["colorKeywords"] as? List<String>)?.filter { it.isNotBlank() } ?: emptyList()
         @Suppress("UNCHECKED_CAST")
         val strengths = (map["strengths"] as? List<String>)?.map { it.trim() }?.filter { it.isNotBlank() }?.take(5) ?: emptyList()
+        val sections = parseIntroductionSections(map)
+        // 섹션이 있으면 그것을 합쳐 영속화 텍스트로, 없으면 평면 introduction 문자열 사용 (하위호환)
+        val flatIntro = (map["introduction"] as? String)?.trim().orEmpty()
+        val introduction = if (sections.isNotEmpty()) {
+            sections.joinToString("\n\n") { "${it.heading}\n${it.body}" }
+        } else {
+            flatIntro
+        }
         return ProfileGenerationResult(
             colorType = colorType,
             colorName = colorInfo.name,
             colorHex = colorInfo.hex,
             colorDescription = colorInfo.description,
-            generatedIntroduction = (map["introduction"] as? String)?.trim() ?: "",
+            generatedIntroduction = introduction,
+            introductionSections = sections,
             colorReasoning = (map["colorReasoning"] as? String)?.trim().orEmpty(),
             personalitySummary = (map["personalitySummary"] as? String)?.trim().orEmpty(),
             idealTypeInsight = (map["idealTypeInsight"] as? String)?.trim().orEmpty(),
@@ -302,6 +320,18 @@ class OpenAIService(
             evidenceFromMbti = evidenceField(map, "evidenceFromMbti"),
             evidenceFromSaju = evidenceField(map, "evidenceFromSaju"),
         )
+    }
+
+    /** introductionSections 파싱 — [{heading, body}, ...] 형태. 모델 출력 변동(키 누락·문자열 섞임)에 관대하게. */
+    private fun parseIntroductionSections(map: Map<String, Any?>): List<IntroductionSection> {
+        val raw = map["introductionSections"] as? List<*> ?: return emptyList()
+        return raw.mapNotNull { item ->
+            @Suppress("UNCHECKED_CAST")
+            val obj = item as? Map<String, Any?> ?: return@mapNotNull null
+            val heading = (obj["heading"] as? String)?.trim().orEmpty()
+            val body = (obj["body"] as? String)?.trim().orEmpty()
+            if (body.isBlank()) null else IntroductionSection(heading = heading, body = body)
+        }.take(5)
     }
 
     /** evidence 는 중첩 객체("evidence":{...}) 또는 평면 키 둘 다 허용 (모델 출력 변동 대비) */
@@ -336,24 +366,48 @@ class OpenAIService(
             "충분한 답변이 모이면 더 정확하게 분석해 드릴게요. 지금은 가장 무난한 따뜻한 오렌지로 임시 분석했어요."
         }
 
-        // 답변을 단락으로 자연스럽게 풀어쓴 stub 소개글 (실서비스에선 OpenAI가 대체)
-        val paragraphs = mutableListOf<String>()
-        paragraphs += "안녕하세요. 좋은 사람을 만나고 싶어서 이렇게 프로필을 정성껏 채워 봅니다. 화려한 표현보다는 평소의 저를 솔직히 보여드리고 싶어요."
-        cited.getOrNull(0)?.let {
-            paragraphs += "평소에는 ${it.value} 같은 시간을 좋아해요. 사소한 순간을 소중히 여기는 편이고, 그런 일상 속에서 진짜 저를 발견하곤 해요."
+        // 답변을 소주제별 단락으로 자연스럽게 풀어쓴 stub 소개글 (실서비스에선 OpenAI가 대체)
+        val sections = mutableListOf<IntroductionSection>()
+        sections += IntroductionSection(
+            heading = "저를 소개할게요",
+            body = "안녕하세요. 좋은 사람을 만나고 싶어서 이렇게 프로필을 정성껏 채워 봅니다. " +
+                "화려한 표현보다는 평소의 저를 솔직하게 보여드리고 싶어요. 천천히 읽어주시면 좋겠어요.",
+        )
+        run {
+            val daily = cited.getOrNull(0)
+            val body = if (daily != null) {
+                "평소에는 ${daily.value} 같은 시간을 좋아해요. 사소한 순간을 소중히 여기는 편이라, " +
+                    "그런 일상 속에서 오히려 진짜 저를 더 잘 발견하곤 해요."
+            } else {
+                "특별한 이벤트보다 매일의 작은 루틴에서 안정을 얻는 편이에요. 익숙한 공간과 좋아하는 것들 사이에서 마음이 가장 편안해져요."
+            }
+            sections += IntroductionSection(heading = "제가 보내는 하루", body = body)
         }
-        cited.getOrNull(1)?.let {
-            paragraphs += "스스로 매력이라고 생각하는 부분은 — ${it.value} 정도가 있을 것 같아요. 거창한 건 아니지만 곁에 있는 사람을 편하게 만들어주는 데 진심을 다하려고 해요."
+        run {
+            val charm = cited.getOrNull(1)
+            val body = if (charm != null) {
+                "스스로 매력이라고 생각하는 부분은 ${charm.value} 정도예요. 거창하진 않지만, " +
+                    "곁에 있는 사람을 편하게 만들어 주는 데에는 늘 진심을 다하려고 해요."
+            } else {
+                "말수가 많은 편은 아니지만, 한번 마음을 열면 꾸준하고 다정하게 곁을 지키는 편이에요. 관계에서는 솔직함과 배려를 가장 중요하게 생각해요."
+            }
+            sections += IntroductionSection(heading = "곁에 두고 싶은 가치", body = body)
         }
-        cited.getOrNull(2)?.let {
-            paragraphs += "요즘에는 ${it.value} 에 마음이 가 있어요. 이런 이야기를 같이 나눌 수 있는 사람과 만나면 시간이 빠르게 흐를 것 같아요."
+        run {
+            val passion = cited.getOrNull(2)
+            val intro = if (passion != null) {
+                "요즘에는 ${passion.value} 에 마음이 가 있어요. "
+            } else {
+                "요즘은 새로운 것을 하나씩 배워가는 재미에 빠져 있어요. "
+            }
+            sections += IntroductionSection(
+                heading = "이런 인연을 만나고 싶어요",
+                body = intro + "이런 이야기를 편하게 나눌 수 있는 분이라면 시간이 어떻게 가는지 모를 것 같아요. " +
+                    "급하게 결론 내기보다 천천히 알아가며 서로의 결을 맞춰가고 싶어요. 평범한 일상을 함께 특별하게 만들 수 있는 분이면 더없이 좋겠습니다.",
+            )
         }
-        paragraphs += "급하게 결론을 내기보다 천천히 알아가며 마음의 결을 맞춰가고 싶어요. 같이 평범한 일상을 특별하게 만들 수 있는 분이라면 더없이 좋겠습니다."
 
-        val intro = paragraphs.joinToString("\n\n").let {
-            // 500자 미달이면 한 번 더 보강
-            if (it.length < 500) "$it\n\n오늘 하루도 마음에 드는 무언가를 발견하셨길 바라요. 짧게라도 인사 나눌 수 있다면 기쁠 것 같습니다." else it
-        }
+        val intro = sections.joinToString("\n\n") { "${it.heading}\n${it.body}" }
 
         val ideal = request.idealType
         val personalitySummary = if (cited.isNotEmpty()) {
@@ -386,6 +440,7 @@ class OpenAIService(
             colorHex = color.hex,
             colorDescription = color.description,
             generatedIntroduction = intro,
+            introductionSections = sections,
             colorReasoning = reasoning,
             personalitySummary = personalitySummary,
             idealTypeInsight = idealTypeInsight,
@@ -414,7 +469,9 @@ class OpenAIService(
   "idealTypeInsight": "<어울리는 이상형 유추. 2-3문장, 150자 내외>",
   "strengths": ["<강점 태그 3-5개 (예: '감수성 깊은 사색가', '따뜻한 동반자')>"],
   "colorKeywords": ["<핵심 키워드 3-5개>"],
-  "introduction": "<자기소개글 (500자 이상)>"
+  "introductionSections": [
+    {"heading": "<소주제 제목 (6~16자, 예: '제가 보내는 하루', '곁에 두고 싶은 가치')>", "body": "<그 소주제의 1인칭 서술 2~4문장>"}
+  ]
 }
 
 [색 판별 원칙 — 매우 중요]
@@ -461,14 +518,16 @@ class OpenAIService(
 - 사용자 답변에서 뽑은 핵심 단어/구절 3-5개 (예: "주말 카페 책 읽기", "공감 능력", "차분한 대화")
 - 추상 명사("긍정", "활발") 보다 구체 표현 선호
 
-[introduction 작성 기준]
-- 1인칭 시점, **공백 포함 500자 이상 700자 이하**
-- 사용자의 답변 내용을 자연스럽게 연결하고 살을 붙여서 풍부하게 (단순 답변 나열 금지)
-- 3-4개 단락으로 구성: 일상/취향 → 매력/가치관 → 만나고 싶은 사람 → 가볍게 한 마디
-- 카페에서 처음 만난 사람에게 천천히 이야기하는 듯한 말투, 자연스러운 연결어 사용
-- 구체적인 장면이나 일상 묘사가 들어가도록
-- 겸손하되 자신감 있게, 진정성이 느껴지도록
-- 이모지·과한 감탄사·"함께라면 즐거울 것 같아요" 같은 클리셰 금지
+[introductionSections 작성 기준 — 가장 중요]
+- **소주제로 나뉜 3~4개 섹션**의 배열. 각 섹션은 heading(소주제 제목) + body(서술).
+- 전체 body 글자 수 합은 **공백 포함 500자 이상 700자 이하**.
+- 섹션 흐름(스토리 순서): ① 가벼운 인사·자기소개 → ② 일상/취향 → ③ 매력/가치관·관계에서 중요시하는 것 → ④ 만나고 싶은 사람. (3개로 압축 가능, 인사를 ②와 합쳐도 됨)
+- heading 은 사용자가 고른 항목 라벨("취미", "직업")을 그대로 베끼지 말 것. 그 섹션 내용을 함축하는 **자연스러운 한국어 소제목**으로 (예: "제가 보내는 하루", "곁에 두고 싶은 가치", "이런 인연을 만나고 싶어요").
+- body 는 1인칭, 사용자의 답변/선택을 **그대로 나열하지 말고 자연스러운 말로 풀어서** 이야기처럼 연결. 답변에 없는 사실을 지어내지 말 것.
+- 상대방이 처음부터 끝까지 하나의 흐름으로 읽었을 때 자연스러운 스토리가 되도록 섹션 간 연결을 의식.
+- 카페에서 처음 만난 사람에게 천천히 이야기하는 듯한 말투, 구체적인 장면·일상 묘사 포함.
+- 겸손하되 자신감 있게, 진정성이 느껴지도록.
+- 이모지·과한 감탄사·"함께라면 즐거울 것 같아요" 같은 클리셰 금지.
 """
 
         internal data class ColorInfo(val name: String, val hex: String, val description: String)

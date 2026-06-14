@@ -1,6 +1,7 @@
 package kr.ai.palette.infrastructure.ai
 
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotBeEmpty
@@ -129,6 +130,44 @@ class OpenAIServiceTest : DescribeSpec({
             val json = """{"colorType": "WARM_ORANGE", "introduction": "소개글"}"""
             val result = makeService().parseResult(json)
             result.colorDescription.shouldNotBeEmpty()
+        }
+
+        it("introductionSections를 파싱하고 합쳐서 generatedIntroduction을 만든다") {
+            val json = """
+                {"colorType": "CALM_BLUE",
+                 "introductionSections": [
+                   {"heading": "제가 보내는 하루", "body": "조용한 카페에서 책 읽는 시간을 좋아해요."},
+                   {"heading": "곁에 두고 싶은 가치", "body": "솔직함과 배려를 가장 중요하게 생각해요."}
+                 ]}
+            """.trimIndent()
+            val result = makeService().parseResult(json)
+
+            result.introductionSections.size shouldBe 2
+            result.introductionSections[0].heading shouldBe "제가 보내는 하루"
+            result.introductionSections[1].body shouldBe "솔직함과 배려를 가장 중요하게 생각해요."
+            // 합쳐진 텍스트는 heading + body 를 모두 포함 (영속화 하위호환)
+            result.generatedIntroduction shouldContain "제가 보내는 하루"
+            result.generatedIntroduction shouldContain "조용한 카페에서 책 읽는 시간을 좋아해요."
+        }
+
+        it("body가 비어있는 섹션은 무시한다") {
+            val json = """
+                {"colorType": "WARM_ORANGE",
+                 "introductionSections": [
+                   {"heading": "제목만", "body": ""},
+                   {"heading": "유효", "body": "내용 있음"}
+                 ]}
+            """.trimIndent()
+            val result = makeService().parseResult(json)
+            result.introductionSections.size shouldBe 1
+            result.introductionSections[0].body shouldBe "내용 있음"
+        }
+
+        it("introductionSections가 없으면 평면 introduction을 fallback으로 쓴다") {
+            val json = """{"colorType": "CALM_BLUE", "introduction": "평면 소개글"}"""
+            val result = makeService().parseResult(json)
+            result.introductionSections.shouldBeEmpty()
+            result.generatedIntroduction shouldBe "평면 소개글"
         }
     }
 })
