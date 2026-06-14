@@ -6,23 +6,42 @@
  */
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
-import { getColorTypeMeta } from "../../lib/colorTypes";
-import { getDailyFortune, getMyColorType } from "../../lib/daily-match";
+import { getColorTypeMeta, type ColorTypeKey } from "../../lib/colorTypes";
+import { getDailyFortune } from "../../lib/daily-match";
 import { cn } from "./ui/utils";
 
 interface DailyMatchBannerProps {
+  /** 내 팔레트 컬러 — 백엔드 enum(WARM_ORANGE 등) 또는 키(orange). 없으면 배너 미노출 */
+  myColorType?: string | null;
   /** 추천 프로필 보기 클릭 콜백 */
   onViewRecommended?: () => void;
   className?: string;
 }
 
-export function DailyMatchBanner({ onViewRecommended, className }: DailyMatchBannerProps) {
+/** 백엔드 컬러 enum → daily-match 키(소문자) 매핑 */
+const BACKEND_TO_KEY: Record<string, ColorTypeKey> = {
+  WARM_ORANGE: "orange", CALM_BLUE: "blue", VIBRANT_RED: "red", SOFT_PINK: "pink",
+  FRESH_GREEN: "green", ELEGANT_PURPLE: "purple", BRIGHT_YELLOW: "yellow", SOPHISTICATED_GRAY: "gray",
+};
+const VALID_KEYS = new Set<string>(["orange", "blue", "red", "pink", "green", "purple", "yellow", "gray"]);
+
+function toColorKey(raw?: string | null): ColorTypeKey | null {
+  if (!raw) return null;
+  if (BACKEND_TO_KEY[raw]) return BACKEND_TO_KEY[raw];
+  if (VALID_KEYS.has(raw)) return raw as ColorTypeKey;
+  return null;
+}
+
+export function DailyMatchBanner({ myColorType, onViewRecommended, className }: DailyMatchBannerProps) {
   const [expanded, setExpanded] = useState(false);
 
-  const myColorType = getMyColorType();
-  const { recommendedType, loveScore, message, subMessage } = getDailyFortune(myColorType);
+  // 내 팔레트 컬러가 아직 없으면 노출하지 않음 (mock fallback 제거 — ADR 0061)
+  const myKey = toColorKey(myColorType);
+  if (!myKey) return null;
 
-  const myMeta  = getColorTypeMeta(myColorType);
+  const { recommendedType, loveScore, message, subMessage } = getDailyFortune(myKey);
+
+  const myMeta  = getColorTypeMeta(myKey);
   const recMeta = getColorTypeMeta(recommendedType);
 
   const myHsl  = `hsl(${myMeta.h} ${myMeta.s}% ${myMeta.l}%)`;

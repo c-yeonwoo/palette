@@ -93,7 +93,7 @@ describe('AIProfileEnhanceScreen', () => {
     fireEvent.click(screen.getByText('AI 소개글 & 색깔 타입 생성하기'));
 
     // First loading step should be visible immediately
-    expect(screen.getByText('당신의 이야기를 읽고 있어요')).toBeInTheDocument();
+    expect(screen.getByText('답변을 하나하나 읽고 있어요')).toBeInTheDocument();
     expect(screen.getByText('잠깐이면 돼요, 거의 다 됐어요')).toBeInTheDocument();
 
     // Cleanup: reject the dangling promise

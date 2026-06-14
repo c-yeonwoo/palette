@@ -103,10 +103,10 @@ const MANUAL_LABELS: Record<string, string> = {
 };
 
 const LOADING_STEPS = [
-  { text: "당신의 이야기를 읽고 있어요" },
-  { text: "성격 패턴을 분석하고 있어요" },
-  { text: "나만의 색깔 타입을 찾고 있어요" },
-  { text: "소개글을 완성하고 있어요" },
+  { text: "답변을 하나하나 읽고 있어요" },
+  { text: "성격·연애 성향과 MBTI를 함께 살펴봐요" },
+  { text: "사주 오행까지 종합해 어울리는 색을 찾고 있어요" },
+  { text: "세 가지를 모아 소개글을 완성하고 있어요" },
 ];
 
 const CONFETTI_COLORS = [
