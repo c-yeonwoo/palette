@@ -82,7 +82,7 @@ export function DeleteAccountScreen({ onBack, onCompleted }: DeleteAccountScreen
             <ul className="text-muted-foreground list-disc pl-4 space-y-0.5">
               <li>프로필, 사진, 인터뷰 답변, AI 분석 결과</li>
               <li>지인 관계, 매칭 이력, 받은 소개</li>
-              <li>주선자 활동 기록 및 미출금 포인트</li>
+              <li>주선자 활동 기록 및 등급</li>
             </ul>
             <p className="text-muted-foreground">
               결제·환불 기록은 전자상거래법에 따라 5년 보관됩니다 (개인 식별자는 즉시 익명화).
