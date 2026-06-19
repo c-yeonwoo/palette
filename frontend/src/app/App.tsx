@@ -572,13 +572,14 @@ export default function App() {
   /** 공통 라이프스타일 스텝(흡연/음주/종교/관심사) — 두 경로(인터뷰/직접) 모두 거침 → idealType */
   const handleLifestyleNext = (data: {
     lifestyleInfo: { smoking: string; drinking: string; religion: string };
-    introduction: { interests: string[] };
+    introduction: { interests: string[]; datingStyle?: Record<string, string> };
   }) => {
     setProfileData(prev => ({
       ...prev,
       introduction: {
         ...prev.introduction,
         interests: data.introduction?.interests ?? prev.introduction.interests ?? [],
+        datingStyle: data.introduction?.datingStyle ?? prev.introduction.datingStyle ?? {},
       },
       lifestyleInfo: data.lifestyleInfo || prev.lifestyleInfo,
     }));
@@ -684,6 +685,7 @@ export default function App() {
           text: result.generatedIntroduction || profileData.introduction.text || null,
           interests: profileData.introduction.interests || [],
           interviewAnswers: profileData.introduction.interviewAnswers || null,
+          datingStyle: profileData.introduction.datingStyle || {},
         },
         idealType: {
           // ADR 0057 — 칩이 코드를 저장하므로 변환 없이 직송
@@ -1063,7 +1065,10 @@ export default function App() {
           onBack={() => setCurrentScreen(introMethod === "INTERVIEW" ? "aiInterview" : "aboutMe")}
           initialData={{
             lifestyleInfo: profileData.lifestyleInfo,
-            introduction: { interests: profileData.introduction.interests },
+            introduction: {
+              interests: profileData.introduction.interests,
+              datingStyle: profileData.introduction.datingStyle,
+            },
           }}
         />
       )}
