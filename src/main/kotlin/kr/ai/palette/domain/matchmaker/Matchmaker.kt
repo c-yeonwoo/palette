@@ -52,14 +52,11 @@ data class Matchmaker(
     fun recordMatchSuccess(): Matchmaker {
         val newStats = stats.incrementSuccess()
         val newLevel = MatchmakerLevel.calculateLevel(newStats)
-        // 현재 등급 기준 보상 (승급은 다음 매칭부터 적용 — Hot-streak 보호)
-        val reward = (PointPrice.INTRO_REQUEST * level.commissionRate).toInt()
-        val newEarnings = earnings.addReward(reward)
-
+        // 무현금 모델 (ADR 0064): 금전 분배 비활성 — 등급·명예(stats/level)만 반영.
+        // earnings 도메인은 휴면 보존, 적립만 중단.
         return copy(
             stats = newStats,
             level = newLevel,
-            earnings = newEarnings,
             metadata = metadata.copy(updatedAt = Instant.now())
         )
     }

@@ -110,8 +110,7 @@ class MatchmakingService(
 
         updateMatchmakerStats(request.matchmakerId) { it.recordMatchSuccess() }
 
-        // 마일스톤 보너스 (B-003) — recordMatchSuccess 후 갱신된 successCount 기준
-        applyMilestoneBonus(request.matchmakerId)
+        // 마일스톤 물감 보상은 무현금 모델(ADR 0064)로 비활성 — 마일스톤은 등급·명예로만.
 
         // 매칭 성사 이벤트: 요청자 + 주선자에게 알림
         val targetName = userRepository.findById(targetUserId)?.publicInfo?.nickname ?: "상대방"
@@ -127,26 +126,8 @@ class MatchmakingService(
         return saved
     }
 
-    /**
-     * 매칭 성사 후 마일스톤 누적치 기반으로 1회성 보너스 포인트 지급. ADR 0041.
-     * [kr.ai.palette.domain.matchmaker.MatchmakerMilestonePolicy] 가 SoT.
-     */
-    private fun applyMilestoneBonus(matchmakerId: UserId) {
-        val matchmaker = matchmakerRepository.findByUserId(matchmakerId) ?: return
-        val bonus = kr.ai.palette.domain.matchmaker.MatchmakerMilestonePolicy
-            .bonusFor(matchmaker.stats.successfulMatches)
-        if (bonus <= 0) return
-        val withBonus = matchmaker.copy(
-            earnings = matchmaker.earnings.addReward(bonus),
-            metadata = matchmaker.metadata.copy(updatedAt = java.time.Instant.now()),
-        )
-        matchmakerRepository.save(withBonus)
-        org.slf4j.LoggerFactory.getLogger(MatchmakingService::class.java).info(
-            "마일스톤 보너스 user={} successCount={} bonus={}P label={}",
-            matchmakerId.value, matchmaker.stats.successfulMatches, bonus,
-            kr.ai.palette.domain.matchmaker.MatchmakerMilestonePolicy.labelFor(matchmaker.stats.successfulMatches),
-        )
-    }
+    // 마일스톤 물감 보상(applyMilestoneBonus)은 무현금 모델(ADR 0064)로 제거.
+    // MatchmakerMilestonePolicy 도메인은 보존(휴면) — 향후 명예 배지 등에 재사용 가능.
 
     /**
      * 피주선자가 주선을 거절합니다.

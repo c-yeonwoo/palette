@@ -12,7 +12,6 @@ import kr.ai.palette.persistence.matchmaker.MatchmakerReviewEntity
 import kr.ai.palette.persistence.matchmaker.MatchmakerReviewJpaRepository
 import kr.ai.palette.persistence.matchmaker.NudgeEntity
 import kr.ai.palette.persistence.matchmaker.NudgeJpaRepository
-import kr.ai.palette.persistence.matchmaker.WithdrawalRequestEntity
 import kr.ai.palette.persistence.matchmaker.WithdrawalRequestJpaRepository
 import kr.ai.palette.presentation.profile.ColorTypeDto
 import org.springframework.beans.factory.annotation.Value
@@ -231,84 +230,13 @@ class MatchmakerController(
         @AuthenticationPrincipal authUser: AuthUser,
         @RequestBody request: WithdrawRequest
     ): ResponseEntity<Map<String, Any>> {
-        val matchmaker = matchmakerRepository.findByUserId(authUser.userId)
-            ?: return ResponseEntity.notFound().build()
-
-        // 어뷰징 방지: 출금은 본인인증(휴대폰) 완료 계정만 (ADR 0022).
-        // 정식: NICE 실인증 + 계좌 실명(CI) 일치 + holding period 로 강화.
-        val user = userRepository.findById(authUser.userId)
-            ?: return ResponseEntity.notFound().build()
-        if (!user.privateInfo.isPhoneVerified) {
-            return ResponseEntity.status(403).body(mapOf("error" to "출금은 본인인증(휴대폰) 완료 후 가능합니다"))
-        }
-
-        // 최소 출금 금액 (ADR 0044 — 50 물감)
-        if (request.amount < withdrawalMinAmount) {
-            return ResponseEntity.badRequest().body(mapOf("error" to "최소 출금 금액은 ${withdrawalMinAmount} 물감 입니다"))
-        }
-
-        // ADR 0045 — 신규 계정 cooling (가입 30일) — 파밍·다중 계정 어뷰징 방어
-        val now = Instant.now()
-        val accountAgeDays = Duration.between(matchmaker.metadata.createdAt, now).toDays()
-        if (accountAgeDays < withdrawalAccountMinAgeDays) {
-            return ResponseEntity.status(403).body(
-                mapOf("error" to "가입 후 ${withdrawalAccountMinAgeDays}일 이후부터 출금할 수 있습니다")
-            )
-        }
-
-        // ADR 0046 — 매칭 성사 최소 N건 필수 (실 활동 검증)
-        if (matchmaker.stats.successfulMatches < withdrawalMinSuccessfulMatches) {
-            return ResponseEntity.status(403).body(
-                mapOf("error" to "출금은 매칭 성사 ${withdrawalMinSuccessfulMatches}건 이상 달성한 주선자만 가능합니다")
-            )
-        }
-
-        // 가용 물감
-        if (matchmaker.earnings.getAvailablePoints() < request.amount) {
-            return ResponseEntity.badRequest().body(
-                mapOf("error" to "출금 가능 물감이 부족합니다 (가용: ${matchmaker.earnings.getAvailablePoints()} 물감)")
-            )
-        }
-
-        // 일/월 출금 한도 (HOLD+PAID 합산, REJECTED 제외)
-        val recent = withdrawalRequestJpaRepository
-            .findByMatchmakerUserIdAndRequestedAtAfter(authUser.userId.value, now.minus(Duration.ofDays(30)))
-            .filter { it.status != "REJECTED" }
-        val dayCutoff = now.minus(Duration.ofDays(1))
-        val daySum = recent.filter { it.requestedAt.isAfter(dayCutoff) }.sumOf { it.amount }
-        val monthSum = recent.sumOf { it.amount }
-        if (daySum + request.amount > withdrawalDailyLimit) {
-            return ResponseEntity.badRequest().body(mapOf("error" to "일 출금 한도(${withdrawalDailyLimit} 물감)를 초과합니다"))
-        }
-        if (monthSum + request.amount > withdrawalMonthlyLimit) {
-            return ResponseEntity.badRequest().body(mapOf("error" to "월 출금 한도(${withdrawalMonthlyLimit} 물감)를 초과합니다"))
-        }
-
-        // 예약(pending) + HOLD 레코드 — holding period 후 자동 확정/관리자 거절 (ADR 0023)
-        val updated = matchmaker.copy(earnings = matchmaker.earnings.reserveForWithdrawal(request.amount))
-        matchmakerRepository.save(updated)
-        val availableAt = now.plus(Duration.ofDays(withdrawalHoldingDays))
-        val saved = withdrawalRequestJpaRepository.save(
-            WithdrawalRequestEntity(
-                id = UUID.randomUUID(),
-                matchmakerUserId = authUser.userId.value,
-                amount = request.amount,
-                status = "HOLD",
-                requestedAt = now,
-                availableAt = availableAt,
-            )
-        )
-
-        return ResponseEntity.ok(
+        // 무현금 주선 모델 (ADR 0064 / CM-003): 출금 비활성.
+        // WithdrawalRequest·earnings·한도 정책은 휴면 보존 — 현금 모델 복귀 시 재활성.
+        return ResponseEntity.status(410).body(
             mapOf(
-                "success" to true,
-                "withdrawalId" to saved.id.toString(),
-                "amount" to request.amount,
-                "status" to "HOLD",
-                "availableAt" to availableAt.toString(),
-                "holdingDays" to withdrawalHoldingDays,
-                "remainingAvailable" to updated.earnings.getAvailablePoints(),
-                "message" to "${request.amount} 물감 출금 신청 완료 — 검토 기간 ${withdrawalHoldingDays}일 후 지급됩니다"
+                "success" to false,
+                "disabled" to true,
+                "message" to "주선은 무현금 호의 모델로 전환되어 출금이 비활성화되었습니다. 주선 활동은 등급·명예로 반영돼요.",
             )
         )
     }

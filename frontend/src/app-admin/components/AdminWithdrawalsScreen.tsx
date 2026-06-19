@@ -62,6 +62,9 @@ export function AdminWithdrawalsScreen({ onBack }: Props) {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8 space-y-4">
+        <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          ⚠️ 무현금 주선 모델 전환으로 <strong>신규 출금은 비활성</strong>입니다 (ADR 0064). 아래는 전환 이전의 잔여 내역이며, 조회·정리 용도로만 유지됩니다.
+        </div>
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">holding 기간 중 의심 거래는 거절(예약 해제). 정상 건은 자동 PAID 전환.</p>
           <button onClick={load} className="px-3 py-2 rounded-xl border border-border text-xs hover:bg-muted/50">새로고침</button>

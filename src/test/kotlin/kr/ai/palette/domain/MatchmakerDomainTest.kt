@@ -33,18 +33,18 @@ class MatchmakerDomainTest : DescribeSpec({
             updated.stats.successfulMatches shouldBe 1
         }
 
-        it("성공 시 현재 등급 분배율 × INTRO_REQUEST(100) 적립 — Lv.1 = 15 물감 (ADR 0044)") {
+        it("무현금 모델 — 성공해도 금전 분배 적립 없음 (ADR 0064)") {
             val matchmaker = makeMatchmaker(0)
             matchmaker.level.level shouldBe 1
             val updated = matchmaker.recordMatchSuccess()
-            updated.earnings.totalPoints shouldBe 15
+            updated.earnings.totalPoints shouldBe 0
         }
 
-        it("Lv.5 다이아 분배율 40% × 100 = 40 물감 적립 (ADR 0044)") {
+        it("무현금 모델 — Lv.5 다이아도 금전 분배 없음, 등급만 반영 (ADR 0064)") {
             val matchmaker = makeMatchmaker(successfulMatches = 150)
             matchmaker.level.level shouldBe 5
             val updated = matchmaker.recordMatchSuccess()
-            updated.earnings.totalPoints shouldBe 40
+            updated.earnings.totalPoints shouldBe 0
         }
 
         it("14건 → 15건 성공 시 레벨이 1에서 2로 올라간다 (ADR 0038 강화 스케줄)") {
