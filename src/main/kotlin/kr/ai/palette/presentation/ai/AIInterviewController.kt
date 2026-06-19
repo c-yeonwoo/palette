@@ -79,8 +79,9 @@ class AIInterviewController(
                 step = 1,
                 category = "라이프스타일",
                 question = "주말엔 주로 뭐 하시나요?",
-                hint = "쉬는 날 즐기는 것들을 자유롭게 말씀해주세요",
-                inputType = "text",
+                hint = "해당하는 걸 골라주세요 (여러 개 선택 가능)",
+                inputType = "chips",
+                chips = listOf("운동", "카페", "맛집", "여행", "넷플릭스", "전시·공연", "게임", "자기계발", "친구 만남", "드라이브"),
             ),
             InterviewQuestion(
                 id = "personality",
@@ -89,7 +90,7 @@ class AIInterviewController(
                 question = "친구들이 당신을 어떻게 표현하나요?",
                 hint = "나를 잘 표현하는 단어들을 골라주세요",
                 inputType = "chips",
-                chips = listOf("다정한", "재밌는", "차분한", "열정적인", "4차원", "엉뚱한", "섬세한", "긍정적인", "유쾌한", "신중한", "활발한", "따뜻한"),
+                chips = listOf("다정한", "유머있는", "차분한", "열정적인", "지적인", "섬세한", "긍정적인", "솔직한", "활발한", "신중한", "배려심많은", "자유로운"),
             ),
             InterviewQuestion(
                 id = "passion",

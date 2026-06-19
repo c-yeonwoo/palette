@@ -337,30 +337,32 @@ const religionOptions = [
   { value: "OTHER", label: "기타" },
 ];
 
+// 통합 성격 어휘 (자기소개 인터뷰 칩 / 온보딩 옵션과 동일 — 매칭 정합성)
 const personalityOptions = [
-  { value: "유머있는", emoji: "😄" },
   { value: "다정한", emoji: "🥰" },
-  { value: "지적인", emoji: "📚" },
-  { value: "활발한", emoji: "⚡" },
+  { value: "유머있는", emoji: "😄" },
   { value: "차분한", emoji: "🌊" },
+  { value: "열정적인", emoji: "🔥" },
+  { value: "지적인", emoji: "📚" },
   { value: "섬세한", emoji: "🌸" },
+  { value: "긍정적인", emoji: "☀️" },
   { value: "솔직한", emoji: "✨" },
-  { value: "적극적인", emoji: "🔥" },
+  { value: "활발한", emoji: "⚡" },
+  { value: "신중한", emoji: "🧭" },
   { value: "배려심많은", emoji: "💝" },
-  { value: "독립적인", emoji: "🦋" },
-  { value: "감성적인", emoji: "🎨" },
-  { value: "유연한", emoji: "🌿" },
+  { value: "자유로운", emoji: "🦋" },
 ];
 
+// 라이프스타일·가치 핏 중심 (스펙 항목 제거 — 브랜드 정합성). value=한글(온보딩 옵션과 동일).
 const importantValueOptions = [
-  { value: "PERSONALITY", label: "성격/성향", emoji: "💫" },
-  { value: "APPEARANCE", label: "외모", emoji: "👀" },
-  { value: "EDUCATION", label: "학력", emoji: "🎓" },
-  { value: "CAREER", label: "커리어", emoji: "💼" },
-  { value: "FAMILY", label: "집안/가족", emoji: "🏠" },
-  { value: "JOB", label: "직업", emoji: "💡" },
-  { value: "WEALTH", label: "경제력", emoji: "💰" },
-  { value: "VALUES", label: "가치관", emoji: "🌟" },
+  { value: "가치관", label: "가치관", emoji: "🌟" },
+  { value: "성격·성향", label: "성격·성향", emoji: "💫" },
+  { value: "라이프스타일 핏", label: "라이프스타일 핏", emoji: "🌿" },
+  { value: "대화 코드", label: "대화 코드", emoji: "💬" },
+  { value: "유머 코드", label: "유머 코드", emoji: "😆" },
+  { value: "정서적 안정", label: "정서적 안정", emoji: "🫶" },
+  { value: "취향·관심사", label: "취향·관심사", emoji: "🎨" },
+  { value: "가족관", label: "가족관", emoji: "🏠" },
 ];
 
 const datePreferenceOptions = [

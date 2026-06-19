@@ -358,3 +358,66 @@ UPDATE interview_questions SET question = '나의 인생 좌우명이나 요즘 
 -- 운영자가 프로필 반려 시 특정 사진을 콕 집어 재촬영 요청. 기존 row 는 false(미반려).
 -- 재제출 시 초기화. NOT NULL DEFAULT 0 — 기존 사진 보호.
 ALTER TABLE profile_photos ADD COLUMN rejected BIT(1) NOT NULL DEFAULT b'0';
+
+-- ── 22. 중요 가치 옵션 리프레이밍 (온보딩 콘텐츠 리프레시) ────────────────────
+-- 스펙(외모·학력·집안·직업·경제력) 중심 → 라이프스타일·가치 핏 중심. 브랜드 정합성.
+-- 기존 코드는 soft-delete(active=0) 로 과거 프로필 라벨 해석 보존. 신규 코드는 한글(code=label).
+-- field_options 에 (set_key,code) UNIQUE 없음 → INSERT ... WHERE NOT EXISTS 로 idempotent.
+UPDATE field_options SET active = b'0'
+WHERE set_key = 'importantValue'
+  AND code IN ('PERSONALITY','APPEARANCE','EDUCATION','CAREER','FAMILY','JOB','WEALTH','VALUES');
+
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'importantValue', '가치관', '가치관', 0, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='importantValue' AND code='가치관');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'importantValue', '성격·성향', '성격·성향', 1, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='importantValue' AND code='성격·성향');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'importantValue', '라이프스타일 핏', '라이프스타일 핏', 2, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='importantValue' AND code='라이프스타일 핏');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'importantValue', '대화 코드', '대화 코드', 3, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='importantValue' AND code='대화 코드');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'importantValue', '유머 코드', '유머 코드', 4, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='importantValue' AND code='유머 코드');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'importantValue', '정서적 안정', '정서적 안정', 5, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='importantValue' AND code='정서적 안정');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'importantValue', '취향·관심사', '취향·관심사', 6, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='importantValue' AND code='취향·관심사');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'importantValue', '가족관', '가족관', 7, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='importantValue' AND code='가족관');
+
+-- ── 23. AI 인터뷰 'weekend' 자유서술 → 칩 (첫 화면 타이핑 피로 완화) ──────────
+-- 인터뷰 1번 문항을 탭형 칩으로. chips 는 '\n' join (시더와 동일). idempotent.
+UPDATE interview_questions
+SET input_type = 'chips',
+    hint = '해당하는 걸 골라주세요 (여러 개 선택 가능)',
+    chips = '운동\n카페\n맛집\n여행\n넷플릭스\n전시·공연\n게임\n자기계발\n친구 만남\n드라이브'
+WHERE question_key = 'weekend';
+
+-- ── 24. 성격 어휘 통일 (자기소개 칩 ↔ 이상형 옵션 동일 세트, 매칭 정합성) ──────
+-- 인터뷰 personality 칩 + field_options personality 를 통합 12종으로.
+UPDATE interview_questions
+SET chips = '다정한\n유머있는\n차분한\n열정적인\n지적인\n섬세한\n긍정적인\n솔직한\n활발한\n신중한\n배려심많은\n자유로운'
+WHERE question_key = 'personality';
+
+UPDATE field_options SET active = b'0'
+WHERE set_key = 'personality' AND code IN ('적극적인','독립적인');
+
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'personality', '열정적인', '열정적인', 10, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='personality' AND code='열정적인');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'personality', '긍정적인', '긍정적인', 11, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='personality' AND code='긍정적인');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'personality', '신중한', '신중한', 12, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='personality' AND code='신중한');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'personality', '자유로운', '자유로운', 13, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='personality' AND code='자유로운');

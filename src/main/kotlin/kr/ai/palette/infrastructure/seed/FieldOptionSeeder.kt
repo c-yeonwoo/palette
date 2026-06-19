@@ -49,10 +49,10 @@ class FieldOptionSeeder(
             Triple("datePreference", null, listOf(
                 "ACTIVE" to "액티브", "INDOOR" to "실내", "CULTURE" to "문화", "NATURE" to "자연",
             )),
+            // 라이프스타일·가치 핏 중심 (스펙 항목 제거 — 브랜드 정합성). code=한글(라벨 동일).
             Triple("importantValue", null, listOf(
-                "PERSONALITY" to "성격/성향", "APPEARANCE" to "외모", "EDUCATION" to "학력", "CAREER" to "능력/커리어",
-                "FAMILY" to "집안/가족", "JOB" to "직업", "WEALTH" to "경제력", "VALUES" to "가치관",
-            )),
+                "가치관", "성격·성향", "라이프스타일 핏", "대화 코드", "유머 코드", "정서적 안정", "취향·관심사", "가족관",
+            ).map { it to it }),
             Triple("dealBreaker", null, listOf(
                 "SMOKING" to "흡연자", "HEAVY_DRINKING" to "과음하는 사람", "DISLIKES_PETS" to "반려동물을 싫어하는 사람",
                 "LONG_DISTANCE" to "장거리 연애", "DIFFERENT_RELIGION" to "종교가 다른 사람", "NO_MARRIAGE_PLAN" to "결혼 의사가 없는 사람",
@@ -60,8 +60,9 @@ class FieldOptionSeeder(
                 "CONTACTS_EX" to "전 연인과 연락하는 사람", "LARGE_AGE_GAP" to "나이 차이가 많이 나는 사람",
             )),
             // 자유 서술형 — code 가 곧 한글(현행 저장 방식)
+            // 통합 성격 어휘 (자기소개 인터뷰 칩과 동일 세트 — 매칭 정합성)
             Triple("personality", null, listOf(
-                "유머있는", "다정한", "지적인", "활발한", "차분한", "섬세한", "솔직한", "적극적인", "배려심많은", "독립적인",
+                "다정한", "유머있는", "차분한", "열정적인", "지적인", "섬세한", "긍정적인", "솔직한", "활발한", "신중한", "배려심많은", "자유로운",
             ).map { it to it }),
             Triple("interest", null, listOf(
                 "운동", "맛집", "영화", "여행", "독서", "음악", "카페", "전시", "공연", "사진",
