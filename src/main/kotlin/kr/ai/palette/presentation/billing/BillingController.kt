@@ -234,17 +234,14 @@ class BillingController(
         @AuthenticationPrincipal authUser: AuthUser,
         @RequestBody req: TipRequest,
     ): ResponseEntity<Map<String, Any>> {
-        return try {
-            val tx = billingService.sendTip(
-                fromUserId = authUser.userId.value.toString(),
-                toUserId = req.toUserId,
-                amountPoints = req.amountPoints,
-                reason = req.reason,
+        // 무현금 주선 모델 (ADR 0064 / CM-003): 팁(성의 표시) 비활성.
+        // BillingService.sendTip·TipTransaction 도메인은 휴면 보존.
+        return ResponseEntity.status(410).body(
+            mapOf(
+                "disabled" to true,
+                "error" to "주선은 무현금 호의 모델로 전환되어 성의 표시(팁)가 비활성화되었습니다.",
             )
-            ResponseEntity.ok(mapOf("id" to tx.id, "amountPoints" to tx.amountPoints))
-        } catch (e: IllegalArgumentException) {
-            ResponseEntity.badRequest().body(mapOf("error" to (e.message ?: "invalid")))
-        }
+        )
     }
 
     @ExceptionHandler(InsufficientBalanceException::class)
