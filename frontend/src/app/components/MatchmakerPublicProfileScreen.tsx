@@ -187,8 +187,8 @@ export function MatchmakerPublicProfileScreen({
           <span className="text-xs text-muted-foreground">성사율</span>
         </div>
         <div className="flex flex-col items-center py-4 gap-0.5">
-          <span className="text-base font-bold text-foreground">{Math.round(matchmaker.commissionRate * 100)}%</span>
-          <span className="text-xs text-muted-foreground">커미션</span>
+          <span className="text-base font-bold text-foreground">{matchmaker.totalMatchRequests}</span>
+          <span className="text-xs text-muted-foreground">총 요청</span>
         </div>
       </div>
 
@@ -206,7 +206,6 @@ export function MatchmakerPublicProfileScreen({
           <p className="text-sm font-semibold text-foreground mb-3">매칭 안내</p>
           <div className="space-y-2.5">
             {[
-              { label: "커미션", value: `매칭 성공 시 ${Math.round(matchmaker.commissionRate * 100)}%` },
               { label: "진행 방식", value: "주선자가 적합한 상대를 선별 후 연결" },
               { label: "개인정보", value: "매칭 성사 전까지 상호 비공개" },
             ].map(({ label, value }) => (

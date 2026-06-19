@@ -194,8 +194,6 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   const [selectedMatchmaker, setSelectedMatchmaker] = useState<MutualFriend | null>(null);
   const [requestMessage, setRequestMessage] = useState("");
   const [alreadyRequested, setAlreadyRequested] = useState(false);
-  // ADR 0044 — 팁 P 단위(1P=100원). 10/30/50 P → 1,000/3,000/5,000원 상당.
-  const [selectedPoints, setSelectedPoints] = useState<10 | 30 | 50>(30);
 
   // Cooltime state
   const [inCoolTime, setInCoolTime] = useState(false);
@@ -412,7 +410,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
         targetUserId: userId,
         matchmakerName: selectedMatchmaker.name,
         message: requestMessage || null,
-        offeredPoints: selectedPoints,
+        offeredPoints: 0,
       });
 
       toast.success(`${selectedMatchmaker.name}님께 소개를 요청했습니다`);
@@ -434,7 +432,6 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     setModalStep(1);
     setSelectedMatchmaker(null);
     setRequestMessage("");
-    setSelectedPoints(30);
   };
 
   const getMutualFriendsText = () => {
@@ -1286,7 +1283,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                 <div className="border-b border-border px-6 py-4 shrink-0">
                   <h3 className="text-lg font-semibold text-center">소개 요청</h3>
                   <p className="text-sm text-muted-foreground text-center mt-1">
-                    성의 표시 금액을 선택하세요 (옵셔널)
+                    주선자에게 소개를 요청할게요
                   </p>
                 </div>
 
@@ -1306,47 +1303,8 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                   <div className="rounded-xl bg-primary/5 border border-primary/15 px-3.5 py-3 flex items-center justify-between gap-2">
                     <p className="text-xs font-semibold text-primary">소개 요청 1회 — 100 물감 (10,000원)</p>
                     <InfoHint title="100 물감은 이렇게 쓰여요" tone="primary">
-                      차감 즉시 진행돼요. 매칭 성사 시 주선자에게 등급별 15~40% 분배, 거절·만료 시 자동 환불됩니다.
+                      차감 즉시 요청이 진행돼요. 주선자가 거절하거나 만료되면 자동 환불됩니다.
                     </InfoHint>
-                  </div>
-
-                  {/* Points selection */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-semibold">성의 표시 (옵셔널 팁)</p>
-                      <InfoHint title="성의 표시 팁" tone="muted">
-                        주선자에게 보내는 자발 팁이에요. 매칭 성사 후 90% 수령하며, 외부 송금은 약관 §6 위반으로 금지됩니다.
-                      </InfoHint>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {([
-                        { points: 10 as const, label: "기본", desc: "~1,000원" },
-                        { points: 30 as const, label: "성의표시", desc: "~3,000원", recommended: true },
-                        { points: 50 as const, label: "적극요청", desc: "~5,000원" },
-                      ]).map(({ points, label, desc, recommended }) => (
-                        <button
-                          key={points}
-                          onClick={() => setSelectedPoints(points)}
-                          className={`relative p-3 rounded-xl border-2 text-center transition-all ${
-                            selectedPoints === points
-                              ? "border-brand/50 bg-brand-soft/50"
-                              : "border-border hover:border-primary/40"
-                          }`}
-                        >
-                          {recommended && (
-                            <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-xs font-bold bg-brand-soft text-gold-strong px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                              추천
-                            </span>
-                          )}
-                          <p className="font-bold text-base mt-1">{points} 물감</p>
-                          <p className="text-xs text-muted-foreground">{label}</p>
-                          <p className="text-xs text-muted-foreground/70">{desc}</p>
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      ※ 팁은 주선자 수락 시점에 송금됩니다. 매칭 거절 시 소개 요청 100 물감은 자동 환불돼요.
-                    </p>
                   </div>
 
                   {/* Optional message */}
@@ -1373,7 +1331,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                     이전
                   </Button>
                   <Button className="flex-1 gap-1.5" onClick={handleConfirmMatchRequest}>
-                    100 + {selectedPoints} 물감 요청하기
+                    100 물감으로 요청하기
                   </Button>
                 </div>
               </div>

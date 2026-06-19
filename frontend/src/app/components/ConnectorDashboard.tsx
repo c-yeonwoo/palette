@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { CheckCircle2, XCircle, Coins, Loader2, ChevronLeft, Award, ChevronRight, Users, Palette as PaletteIcon } from "lucide-react";
+import { CheckCircle2, XCircle, Coins, Loader2, ChevronLeft, Award, ChevronRight, Users } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
 import { MessageModal } from "./MessageModal";
@@ -232,7 +232,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
       fromMember: nudgeSource,
       toMember,
       message: message || null,
-      pointsSpent: 50,
+      pointsSpent: 0,
       status: "PENDING",
       proposedAt: new Date().toISOString(),
     };
@@ -246,11 +246,9 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
       // mock: proceed anyway
     }
     setNudges(prev => [newNudge, ...prev]);
-    // deduct 50P from display
-    setMatchmakerData(prev => prev ? { ...prev, availablePoints: prev.availablePoints - 50, totalPoints: prev.totalPoints - 50 } : prev);
     setShowNudgeFlow(false);
     setNudgeSource(null);
-    toast.success(`${nudgeSource.name} ↔ ${toMember.name} 연결 제안 완료! −50P`);
+    toast.success(`${nudgeSource.name} ↔ ${toMember.name} 연결 제안 완료!`);
   };
 
   const pendingRequests = requests.filter(r =>
@@ -290,7 +288,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
         </div>
       </header>
 
-      {/* ── 등급 요약 strip (상세 지표·포인트·커미션은 리워드 화면) ── */}
+      {/* ── 등급 요약 strip (상세 지표는 등급 화면) ── */}
       {matchmakerData && (() => {
         const lvl = matchmakerData.level;
         const successes = matchmakerData.successfulMatches;
@@ -340,39 +338,6 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
           </button>
         );
       })()}
-
-      {/* ── 수익 요약 카드 (커미션율 · 적립 포인트) — 등급 strip 아래 / 탭 위 ── */}
-      {matchmakerData && (
-        <div className="flex-shrink-0 border-b border-border">
-          <div className="max-w-2xl mx-auto px-5 py-3">
-            <button
-              onClick={() => onNavigateToReward?.()}
-              disabled={!onNavigateToReward}
-              className="w-full rounded-2xl border border-border bg-card shadow-card p-3 grid grid-cols-3 divide-x divide-border text-center enabled:active:scale-[0.99] transition-transform disabled:cursor-default"
-            >
-              <div className="px-2">
-                <p className="text-[11px] text-muted-foreground mb-1">내 몫</p>
-                {/* 커미션 %는 등급에서 파생 (SoT: matchmakerLevels) — 리워드 화면과 동일 */}
-                <p className="text-base font-bold text-foreground">{tierFor(matchmakerData.level).commission}%</p>
-              </div>
-              <div className="px-2">
-                <p className="text-[11px] text-muted-foreground mb-1">출금 가능</p>
-                <p className="text-base font-bold text-gold-strong inline-flex items-center justify-center gap-1">
-                  <PaletteIcon className="w-3.5 h-3.5" aria-hidden />
-                  {(matchmakerData.availablePoints ?? 0).toLocaleString()}
-                </p>
-              </div>
-              <div className="px-2">
-                <p className="text-[11px] text-muted-foreground mb-1">총 받음</p>
-                <p className="text-base font-bold text-foreground inline-flex items-center justify-center gap-1">
-                  <PaletteIcon className="w-3.5 h-3.5 text-muted-foreground" aria-hidden />
-                  {(matchmakerData.totalPoints ?? 0).toLocaleString()}
-                </p>
-              </div>
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* ── 메인 탭 ── */}
       <div className="flex-shrink-0 flex border-b border-border">
@@ -563,7 +528,9 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                             <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground/60">{nudge.toMember.name.charAt(0)}</span>
                             <span className="text-sm font-medium">{nudge.toMember.name}</span>
                           </div>
-                          <span className="ml-auto text-xs text-muted-foreground">−{nudge.pointsSpent} 물감</span>
+                          {nudge.pointsSpent > 0 && (
+                            <span className="ml-auto text-xs text-muted-foreground">−{nudge.pointsSpent} 물감</span>
+                          )}
                         </div>
                         {nudge.message && (
                           <p className="text-xs text-muted-foreground bg-muted rounded-lg px-3 py-2 leading-relaxed">"{nudge.message}"</p>
@@ -616,7 +583,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                 </div>
               )}
 
-              {/* 리워드 안내 진입점 (별도 페이지로 분리 — ADR 0015) */}
+              {/* 주선자 등급 안내 진입점 (별도 페이지로 분리 — ADR 0015) */}
               {onNavigateToReward && (
                 <button
                   onClick={onNavigateToReward}
@@ -625,8 +592,8 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                   <div className="flex items-center gap-3 text-left">
                     <Award className="w-5 h-5 text-primary flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-semibold">주선자 리워드 안내</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">감사 포인트, 커미션, 등급 혜택을 확인하세요</p>
+                      <p className="text-sm font-semibold">주선자 등급 안내</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">등급 기준과 명예 배지를 확인하세요</p>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
@@ -1117,23 +1084,11 @@ function NudgeFlowSheet({
                 {compat && <p className="text-xs text-center text-primary font-medium">{compat.label} {compat.score}%</p>}
               </div>
 
-              {/* 포인트 안내 */}
-              <div className="flex items-center justify-between bg-card border border-border rounded-xl px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <Coins className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-semibold">제안 비용</span>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-primary">−50P</p>
-                  <p className="text-xs text-muted-foreground">성사 시 최대 750P 적립</p>
-                </div>
-              </div>
-
               <button
                 onClick={() => onSubmit(selected, message)}
                 className="w-full py-3.5 rounded-xl bg-brand-soft text-gold-strong text-sm font-bold"
               >
-                제안하기 — 50P 차감
+                제안하기
               </button>
               <p className="text-xs text-center text-muted-foreground">두 분 모두에게 알림이 전송되고, 양측 수락 시 연락처가 공유돼요</p>
             </div>

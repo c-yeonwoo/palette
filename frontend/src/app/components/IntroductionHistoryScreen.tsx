@@ -411,11 +411,11 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
                         </button>
                       )}
 
-                      {/* ADR 0046 — 외부 송금 경고 (압축: 한 줄 + ⓘ) */}
+                      {/* 외부 송금 경고 — 주선은 무료 (ADR 0064 무현금 모델) */}
                       {(rel.stage === "MATCHED" || rel.stage === "EARLY") && (
-                        <InfoHint summary="감사 표시는 앱 내 팁으로만" title="앱 밖 송금은 위험해요" tone="amber">
-                          주선자 팁은 앱 내 기능으로만 보내주세요. 계좌이체·간편송금 요구는 약관 §6 위반이라
-                          사기·분쟁 시 보호받을 수 없어요. 발견 시 신고하면 50 물감을 드려요.
+                        <InfoHint summary="주선자에게 송금하지 마세요" title="주선은 무료예요" tone="amber">
+                          팔레트 주선은 금전 대가 없는 호의 활동이에요. 주선자가 계좌이체·간편송금·현금 등
+                          금전을 요구하면 응하지 말고 신고해주세요. 외부 송금은 사기·분쟁 시 보호받을 수 없어요.
                         </InfoHint>
                       )}
 

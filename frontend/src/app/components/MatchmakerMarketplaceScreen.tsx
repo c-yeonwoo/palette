@@ -5,7 +5,7 @@
  *   - 텍스트 검색 (닉네임 / 전문분야 / 소개)
  *   - 전문분야·지역 필터 칩 (단일 선택)
  *   - 정렬: 성사율 / 후기 / 최신
- *   - 주선자 카드 (레벨 배지, 컬러 원, 성사율, 별점, 커미션, 전문분야 칩)
+ *   - 주선자 카드 (레벨 배지, 컬러 원, 성사율, 성사 건, 별점, 전문분야 칩)
  *   - 현재 모집 마감인 주선자 시각적 구분
  */
 import { useState, useMemo } from "react";
@@ -340,14 +340,6 @@ function MatchmakerCard({
             {m.averageRating.toFixed(1)}
           </span>
           <span className="text-caption text-text-tertiary">({m.totalReviews})</span>
-        </div>
-
-        <div className="w-px h-8 bg-border-subtle" />
-
-        {/* 커미션 */}
-        <div className="flex flex-col items-center">
-          <span className="text-title font-bold text-brand">{m.commissionRate}%</span>
-          <span className="text-caption text-text-tertiary">커미션</span>
         </div>
       </div>
     </button>

@@ -416,25 +416,21 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
               </div>
             </div>
 
-            {/* 주선자 혜택 안내 (ADR 0044) */}
+            {/* 주선자로 활동하면 — 명예/보람 (ADR 0064 무현금 모델) */}
             <div className="bg-card border border-primary/20 p-4 rounded-lg space-y-3 text-sm">
-              <h3 className="font-semibold text-foreground">주선자 혜택</h3>
+              <h3 className="font-semibold text-foreground">주선자로 활동하면</h3>
               <ul className="space-y-2 text-foreground">
                 <li className="flex items-start gap-2">
                   <span className="text-primary font-bold mt-0.5">·</span>
-                  <span>매칭 성사 시 소개 요청(100 물감) 중 <strong>등급별 15~40%</strong> 분배 — Lv.1 15물감 / Lv.5 다이아 40물감</span>
+                  <span>믿을 수 있는 지인으로서 두 사람의 소중한 인연을 이어줘요</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary font-bold mt-0.5">·</span>
-                  <span>사용자가 보낸 성의 표시(10~500 물감)의 <strong>90% 수령</strong></span>
+                  <span>매칭을 성사할수록 <strong>주선자 등급</strong>이 오르고 프로필에 신뢰 배지가 쌓여요</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary font-bold mt-0.5">·</span>
-                  <span>마일스톤 보너스 1·5·10·20·50·100·150건 누계 도달 시 +5~+1,000 물감</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary font-bold mt-0.5">·</span>
-                  <span>출금 조건 충족 시(가입 30일 + 매칭 1건 + 본인인증) 1 물감 = 100원 환산</span>
+                  <span>리그·랭킹에서 다른 주선자들과 명예를 겨뤄요</span>
                 </li>
               </ul>
             </div>
@@ -444,17 +440,17 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
               <h3 className="font-semibold">주선자 가입 안내</h3>
               <ul className="space-y-1 text-muted-foreground">
                 <li>• 핸드폰 본인인증은 필수입니다</li>
-                <li>• 매칭 성공 시 분배 + 마일스톤 보너스 적립</li>
+                <li>• 매칭을 성사할수록 주선자 등급이 올라가요</li>
                 <li>• 신뢰할 수 있는 주선 서비스를 제공해주세요</li>
               </ul>
             </div>
 
-            {/* ADR 0046 — 외부 송금 금지 약관 §6 동의 (의무) */}
+            {/* 금전 대가 없는 호의 + 외부 송금 금지 동의 (의무) */}
             <div className="bg-amber-50 border border-amber-300 p-4 rounded-lg space-y-2.5 text-sm">
-              <h3 className="font-semibold text-amber-900">약관 §6 외부 송금 금지</h3>
+              <h3 className="font-semibold text-amber-900">주선 활동 약속</h3>
               <p className="text-xs text-amber-900/85 leading-relaxed">
-                사용자에게 앱 외부(계좌이체·간편송금·현금)로 감사 표시를 유도하는 행위는 금지됩니다.
-                적발 시 누적 잔액 전액 몰수 + 출금 자격 영구 박탈 + 등급 0 회귀 + 계정 영구 정지됩니다.
+                주선은 금전적 대가 없이 지인을 이어주는 호의 활동이에요. 사용자에게 계좌이체·간편송금·현금 등
+                어떤 형태의 금전도 요구하거나 유도하지 않습니다. 위반 시 계정 이용이 제한될 수 있어요.
               </p>
               <label className="flex items-start gap-2 cursor-pointer pt-1">
                 <input
@@ -464,7 +460,7 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
                   className="mt-0.5 w-4 h-4"
                 />
                 <span className="text-xs text-amber-900 font-medium">
-                  위 약관에 동의하며, 모든 감사 표시는 앱 내 팁 기능으로만 받겠습니다 (필수)
+                  위 내용에 동의하며, 금전 요구·유도 없이 활동하겠습니다 (필수)
                 </span>
               </label>
             </div>
