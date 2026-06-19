@@ -107,6 +107,17 @@
 - **B-116. 팔레트 Pick 일일 갱신 푸시** — 매일 오전 9시. 옵트인 토글 (마이페이지 설정). 미접속 N일 이상 사용자만 발송 (활성 사용자엔 노이즈).
 - **B-117. 주선자 주간 보고** — 일요일 저녁. 이번 주 받은 요청·승인·성사 건수 + 누적 포인트 변동. 주선자 활성 사용자만.
 
+### 채팅 (CH) — 핸드오프 안전 레이어 (ADR 0066)
+
+> 성사 후 외부 채널(카카오톡/문자) 이탈 시 신고·차단·증거 보존이 닿지 않고, 즉시 전화번호 노출 마찰. 인앱 1:1 채팅으로 번호 없이 첫 대화 → 신뢰 후 ADR 0065 연락처 카드로 전환. **폴링 권고(WebSocket 아님)**. 착수 트리거: 베타에서 번호 교환 거부율·외부 분쟁 신고 관측 시 우선순위 상향.
+
+- **CH-001. 데이터 모델·마이그레이션** — `chat_messages`(request_id·sender_id·body·created_at·read_at) + idempotent `CREATE TABLE` + `SchemaDriftTest` 등록.
+- **CH-002. REST 폴링 엔드포인트** — `GET/POST /relationships/{id}/messages`. 당사자 403 가드(ADR 0065 패턴) + `COMPLETED` 체크 + `after={id}` 증분 조회.
+- **CH-003. ChatThread 실배선** — mock(`VIEWER_ID="me-001"`) 제거, 폴링 연동. "인연" `MATCHED+` 카드에 채팅 진입 + 안 읽음 배지. ADR 0065 보존 `MatchDetailScreen`/`chat/*` 재활용/정리.
+- **CH-004. moderation 연동** — 기존 `UserBlock`(양방향 스레드 숨김+전송 차단)·`UserReport`(스레드 신고→운영 큐) 재사용. `ENDED` 관계 읽기 전용 동결.
+- **CH-005. 보존·삭제 잡** — `ENDED`/차단 후 90일 purge, 계정 삭제 시 즉시 purge(상대 스레드 발신분 포함).
+- **CH-006. (후속) PII·외부송금 경고** — 발신 시 계좌번호/송금 유도 패턴 경고 배너 (ADR 0046 §6 연계).
+
 ---
 
 ## P2 — 3~6개월
