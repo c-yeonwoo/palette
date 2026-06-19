@@ -72,7 +72,7 @@ export function AccountTypeSelectionScreen({ onComplete, onBack, mode = "post-au
               bullets={[
                 "지인의 지인과 신뢰 있는 매칭",
                 "직접 매칭 요청 + 지인 주선까지 모두",
-                "주선 성공 시 리워드 적립",
+                "주선 성공 시 등급·명예 상승",
               ]}
               onClick={() => setSelectedType("REGULAR")}
             />
@@ -83,7 +83,7 @@ export function AccountTypeSelectionScreen({ onComplete, onBack, mode = "post-au
               desc="주선 활동에만 참여할게요"
               bullets={[
                 "지인 관리 · 매칭 주선·승인",
-                "리워드 적립",
+                "주선 성공 시 등급·명예 상승",
                 "매칭 대상에서는 제외돼요",
               ]}
               onClick={() => setSelectedType("MATCHMAKER_ONLY")}

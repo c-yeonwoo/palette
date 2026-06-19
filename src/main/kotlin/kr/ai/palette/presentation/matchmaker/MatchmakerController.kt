@@ -430,7 +430,8 @@ class MatchmakerController(
         // 어뷰징 방지: 연결 제안 rate limit (ADR 0023)
         rateLimiter.enforce("nudge:${authUser.userId.value}", 30, Duration.ofDays(1), "연결 제안이 너무 잦습니다. 잠시 후 다시 시도해주세요")
 
-        val matchmaker = matchmakerRepository.findByUserId(authUser.userId)
+        // 주선자 자격 가드 (값은 미사용 — 연결 제안은 무료, ADR 0064)
+        matchmakerRepository.findByUserId(authUser.userId)
             ?: return ResponseEntity.notFound().build()
 
         val fromUserId = runCatching { UUID.fromString(request.fromUserId) }.getOrNull()
@@ -448,13 +449,7 @@ class MatchmakerController(
             return ResponseEntity.status(403).body(mapOf("error" to "내 지인만 연결 제안할 수 있습니다"))
         }
 
-        val cost = 50
-        if (matchmaker.earnings.getAvailablePoints() < cost) {
-            return ResponseEntity.badRequest().body(
-                mapOf("error" to "포인트가 부족합니다 (가용: ${matchmaker.earnings.getAvailablePoints()}P)")
-            )
-        }
-
+        // 무현금 주선 모델 (ADR 0064) — 연결 제안은 무료. 주선자에게 비용/보상 없음.
         val saved = nudgeJpaRepository.save(
             NudgeEntity(
                 id = UUID.randomUUID(),
@@ -462,19 +457,16 @@ class MatchmakerController(
                 fromUserId = fromUserId,
                 toUserId = toUserId,
                 message = request.message,
-                pointsSpent = cost,
+                pointsSpent = 0,
                 status = "PENDING",
             )
         )
-        val updatedEarnings = matchmaker.earnings.spend(cost)
-        matchmakerRepository.save(matchmaker.copy(earnings = updatedEarnings))
 
         return ResponseEntity.ok(
             mapOf(
                 "success" to true,
                 "nudgeId" to saved.id.toString(),
-                "pointsSpent" to cost,
-                "remainingAvailable" to updatedEarnings.getAvailablePoints(),
+                "pointsSpent" to 0,
             )
         )
     }

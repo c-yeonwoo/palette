@@ -95,7 +95,7 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold">주선자로 활동해보세요</p>
-              <p className="text-xs text-muted-foreground mt-0.5">매칭 성공 시 최대 50% 커미션 + 리그 참가</p>
+              <p className="text-xs text-muted-foreground mt-0.5">성사할수록 등급이 오르고 리그에 참가해요</p>
             </div>
             <button
               onClick={onNavigateToMatchmaker}
