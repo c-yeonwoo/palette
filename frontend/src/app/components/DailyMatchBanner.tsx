@@ -2,7 +2,7 @@
  * DailyMatchBanner — F08 데일리 컬러 매칭 배너
  *
  * 오늘 날짜 + 내 컬러 타입 → 추천 컬러 타입 + 사랑운 점수 + 메시지
- * 접기/펼치기 토글, 펼쳐진 상태에서 오늘의 추천 프로필 링크
+ * 접기/펼치기 토글, 펼쳐진 상태에서 팔레트 Pick 프로필 링크
  */
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
@@ -167,7 +167,7 @@ export function DailyMatchBanner({ myColorType, onViewRecommended, className }: 
                 background: `linear-gradient(to right, ${myHsl}, ${recHsl})`,
               }}
             >
-              오늘의 추천 보기
+              팔레트 Pick 보기
             </button>
           )}
         </div>

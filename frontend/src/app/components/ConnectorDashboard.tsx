@@ -137,7 +137,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
       setMatchmakerData(matchmakerRes);
       setRequests(requestsResponse.requests);
 
-      // 지인/연결 제안 — 실패 시 mock 없이 빈 목록 유지
+      // 지인/소개 제안 — 실패 시 mock 없이 빈 목록 유지
       try {
         const membersRes = await api.get<{ members: ClientMember[] }>('/api/v1/matchmakers/me/members');
         setMembers(membersRes.members);
@@ -148,7 +148,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
         const nudgesRes = await api.get<{ nudges: NudgeProposal[] }>('/api/v1/matchmakers/me/nudges');
         setNudges(nudgesRes.nudges);
       } catch {
-        /* 연결 제안 없음 — 빈 상태 유지 */
+        /* 소개 제안 없음 — 빈 상태 유지 */
       }
       // ADR 0050 — 내가 주선한 매칭의 만남 후 후기
       try {
@@ -248,7 +248,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
     setNudges(prev => [newNudge, ...prev]);
     setShowNudgeFlow(false);
     setNudgeSource(null);
-    toast.success(`${nudgeSource.name} ↔ ${toMember.name} 연결 제안 완료!`);
+    toast.success(`${nudgeSource.name} ↔ ${toMember.name} 소개 제안 완료!`);
   };
 
   const pendingRequests = requests.filter(r =>
@@ -496,10 +496,10 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                 ))
               )}
 
-              {/* 내 연결 제안 이력 */}
+              {/* 내 소개 제안 이력 */}
               {nudges.length > 0 && (
                 <div className="space-y-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">내 연결 제안</p>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">내 소개 제안</p>
                   {nudges.map(nudge => {
                     const statusConfig = {
                       PENDING: { label: "양측 응답 대기", dot: "bg-yellow-400" },
@@ -605,7 +605,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
         </div>
       </div>
 
-      {/* ── 연결 제안 플로우 시트 ── */}
+      {/* ── 소개 제안 플로우 시트 ── */}
       {showNudgeFlow && nudgeSource && (
         <NudgeFlowSheet
           sourceMembers={members}
@@ -902,7 +902,7 @@ function RequestDetailModal({
   );
 }
 
-// ─── 연결 제안 플로우 시트 ─────────────────────────────────────────
+// ─── 소개 제안 플로우 시트 ─────────────────────────────────────────
 function NudgeFlowSheet({
   sourceMembers: allMembers,
   source,
@@ -1060,7 +1060,7 @@ function NudgeFlowSheet({
           {step === 3 && selected && (
             <div className="space-y-5">
               <div className="bg-primary/5 border border-brand/25 rounded-2xl p-5 space-y-4">
-                <p className="text-sm font-semibold text-center">이렇게 연결 제안할게요</p>
+                <p className="text-sm font-semibold text-center">이렇게 소개 제안할게요</p>
                 <div className="flex items-center justify-center gap-4">
                   <div className="text-center">
                     <div className="w-12 h-12 rounded-full bg-muted border border-border mx-auto flex items-center justify-center text-base font-bold text-muted-foreground/60">
@@ -1140,14 +1140,14 @@ function MemberCard({
           <p className="text-xs text-muted-foreground">{member.age}세 · {member.region}</p>
         </div>
       </button>
-      {/* 연결 제안 버튼 — 프로필 진입과 별개 액션 */}
+      {/* 소개 제안 버튼 — 프로필 진입과 별개 액션 */}
       {onNudge && (
         <button
           onClick={onNudge}
           disabled={hasActiveNudge}
           className="w-full py-2 text-xs font-semibold border-t border-border text-primary disabled:text-muted-foreground disabled:cursor-not-allowed hover:bg-primary/5 transition-colors"
         >
-          {hasActiveNudge ? "제안 완료" : "연결 제안하기"}
+          {hasActiveNudge ? "제안 완료" : "소개 제안하기"}
         </button>
       )}
     </div>
