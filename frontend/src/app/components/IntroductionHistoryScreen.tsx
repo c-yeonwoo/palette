@@ -37,6 +37,10 @@ interface RelationshipStatus {
   updatedAt: string;
   photoFeedback: string | null;
   myMeetingFeedback: string | null;  // MEET_AGAIN / UNSURE / NOT_FOR_ME (ADR 0051)
+  // 매칭 성사 후 교환되는 상대 연락처 (ADR 0065) — 당사자에게만 백엔드가 채워줌
+  partnerName?: string | null;
+  partnerPhone?: string | null;
+  partnerKakaoId?: string | null;
 }
 
 const PHOTO_FEEDBACK_OPTIONS = [
@@ -70,8 +74,8 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
   const [updatingStage, setUpdatingStage] = useState<string | null>(null);
   const [submittingFeedback, setSubmittingFeedback] = useState<string | null>(null);
   const [submittingMeeting, setSubmittingMeeting] = useState<string | null>(null);
-  // S-002 — 첫 메시지 추천 모달 (relationshipId 만 보관, 모달 자체가 비주얼)
-  const [firstMessageOpen, setFirstMessageOpen] = useState(false);
+  // S-002 — 첫 메시지 추천 모달. 상대 이름을 함께 보관 (null = 닫힘)
+  const [firstMessageName, setFirstMessageName] = useState<string | null>(null);
   // 만남 후 주선자 후기 (ADR 0050)
   const [feedbackSheetFor, setFeedbackSheetFor] = useState<string | null>(null);
   const [feedbackDone, setFeedbackDone] = useState<Set<string>>(new Set());
@@ -181,6 +185,16 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
       toast.error("피드백 제출에 실패했습니다");
     } finally {
       setSubmittingFeedback(null);
+    }
+  };
+
+  // 연락처 복사 (ADR 0065 핸드오프)
+  const copyContact = async (value: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${label}를 복사했어요`);
+    } catch {
+      toast.error("복사에 실패했어요. 길게 눌러 직접 복사해주세요");
     }
   };
 
@@ -393,11 +407,64 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
                         </div>
                       )}
 
+                      {/* 연락처 공유 카드 (ADR 0065) — 성사 후 실제 연락 시작 전 단계에서 노출 */}
+                      {(rel.stage === "MATCHED" || rel.stage === "CONTACTS_EXCHANGED") && (rel.partnerKakaoId || rel.partnerPhone) && (
+                        <div className="rounded-xl border border-primary/30 bg-brand-soft/20 p-3.5 space-y-2.5">
+                          <div className="flex items-center gap-1.5">
+                            <Heart className="w-3.5 h-3.5 text-primary" />
+                            <p className="text-xs font-semibold text-foreground">
+                              {rel.partnerName ? `${rel.partnerName}님의 연락처` : "상대방 연락처"}
+                            </p>
+                          </div>
+                          {rel.partnerKakaoId && (
+                            <div className="flex items-center justify-between gap-2 rounded-lg bg-card px-3 py-2">
+                              <div className="min-w-0">
+                                <p className="text-[11px] text-muted-foreground">카카오톡 ID</p>
+                                <p className="text-sm font-medium text-foreground truncate">{rel.partnerKakaoId}</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => copyContact(rel.partnerKakaoId!, "카카오톡 ID")}
+                                className="text-xs font-semibold text-primary px-2.5 py-1.5 rounded-lg hover:bg-brand-soft/50 transition-colors flex-shrink-0"
+                              >
+                                복사
+                              </button>
+                            </div>
+                          )}
+                          {rel.partnerPhone && (
+                            <div className="flex items-center justify-between gap-2 rounded-lg bg-card px-3 py-2">
+                              <div className="min-w-0">
+                                <p className="text-[11px] text-muted-foreground">전화번호</p>
+                                <p className="text-sm font-medium text-foreground truncate">{rel.partnerPhone}</p>
+                              </div>
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => copyContact(rel.partnerPhone!, "전화번호")}
+                                  className="text-xs font-semibold text-primary px-2.5 py-1.5 rounded-lg hover:bg-brand-soft/50 transition-colors"
+                                >
+                                  복사
+                                </button>
+                                <a
+                                  href={`sms:${rel.partnerPhone.replace(/[^0-9+]/g, "")}`}
+                                  className="text-xs font-semibold text-primary px-2.5 py-1.5 rounded-lg hover:bg-brand-soft/50 transition-colors"
+                                >
+                                  문자
+                                </a>
+                              </div>
+                            </div>
+                          )}
+                          <p className="text-[11px] text-muted-foreground leading-relaxed">
+                            먼저 편하게 연락해보세요. 연락이 닿으면 아래에서 단계를 업데이트할 수 있어요.
+                          </p>
+                        </div>
+                      )}
+
                       {/* S-002 — 첫 메시지 추천 (초기 단계 MATCHED 에서만 노출) */}
                       {rel.stage === "MATCHED" && (
                         <button
                           type="button"
-                          onClick={() => setFirstMessageOpen(true)}
+                          onClick={() => setFirstMessageName(rel.partnerName ?? "상대방")}
                           className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border border-primary/30 bg-brand-soft/30 hover:bg-brand-soft/50 transition-colors text-left"
                         >
                           <div className="flex items-center gap-2 min-w-0">
@@ -537,13 +604,13 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
         )}
       </div>
 
-      {/* S-002 — 첫 메시지 추천 모달 (color/이름은 베이스라인 미연동, BASELINE 5개만) */}
+      {/* S-002 — 첫 메시지 추천 모달 (color는 베이스라인 미연동, 이름은 상대 닉네임 연동) */}
       <FirstMessageSuggestionModal
         myColor={null}
         theirColor={null}
-        theirName="상대방"
-        open={firstMessageOpen}
-        onClose={() => setFirstMessageOpen(false)}
+        theirName={firstMessageName ?? "상대방"}
+        open={firstMessageName !== null}
+        onClose={() => setFirstMessageName(null)}
       />
 
       {/* ADR 0050 — 만남 후 주선자 사적 후기 시트 */}

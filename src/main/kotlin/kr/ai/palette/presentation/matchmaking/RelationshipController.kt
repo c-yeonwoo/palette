@@ -1,9 +1,12 @@
 package kr.ai.palette.presentation.matchmaking
 
 import kr.ai.palette.domain.auth.AuthUser
+import kr.ai.palette.domain.common.UserId
+import kr.ai.palette.domain.matchmaking.MatchmakingRequest
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestId
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestRepository
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestStatus
+import kr.ai.palette.domain.user.UserRepository
 import kr.ai.palette.persistence.relationship.MeetingFeedbackEntity
 import kr.ai.palette.persistence.relationship.MeetingFeedbackJpaRepository
 import kr.ai.palette.persistence.relationship.PhotoFeedbackEntity
@@ -54,6 +57,14 @@ data class RelationshipStatusResponse(
     val myMeetingFeedback: String? = null,
     /** stage 업데이트 시 이미 그 단계(이상)거나 종료돼 변경이 적용되지 않았으면 true */
     val conflict: Boolean = false,
+    /**
+     * 매칭 성사 후 교환되는 상대 연락처 (ADR 0065).
+     * 성사(COMPLETED) 된 관계의 양 당사자에게만 노출 — 정직한 핸드오프의 핵심.
+     * 카카오톡 ID 는 선택, 전화번호는 필수(가입 시 인증).
+     */
+    val partnerName: String? = null,
+    val partnerPhone: String? = null,
+    val partnerKakaoId: String? = null,
 )
 
 enum class PhotoSimilarity(val label: String) {
@@ -73,7 +84,26 @@ class RelationshipController(
     private val relationshipStageRepository: RelationshipStageJpaRepository,
     private val photoFeedbackRepository: PhotoFeedbackJpaRepository,
     private val meetingFeedbackRepository: MeetingFeedbackJpaRepository,
+    private val userRepository: UserRepository,
 ) {
+
+    private data class PartnerContact(val name: String?, val phone: String?, val kakaoId: String?)
+
+    /**
+     * 매칭 상대(요청자↔수신자 중 내가 아닌 쪽)의 연락처를 조회한다 (ADR 0065).
+     * COMPLETED 관계의 당사자 본인이 호출한 경로에서만 사용 — 호출부가 당사자 검증을 끝낸 뒤 호출한다.
+     */
+    private fun resolvePartnerContact(request: MatchmakingRequest, myId: UserId): PartnerContact {
+        val partnerId = if (request.requesterId == myId) request.targetUserId else request.requesterId
+        val partner = userRepository.findById(partnerId)
+            ?: return PartnerContact(null, null, null)
+        val name = partner.publicInfo.nickname.takeIf { it.isNotBlank() } ?: partner.privateInfo.realName
+        return PartnerContact(
+            name = name,
+            phone = partner.privateInfo.getEffectivePhoneNumber(),
+            kakaoId = partner.privateInfo.getKakaoTalkId(),
+        )
+    }
 
     @GetMapping("/{requestId}")
     fun getRelationshipStatus(
@@ -87,6 +117,11 @@ class RelationshipController(
             return ResponseEntity.badRequest().build()
         }
 
+        // 당사자(요청자/수신자)만 조회 가능 — 연락처가 응답에 포함되므로 필수 가드 (ADR 0065).
+        if (authUser.userId != request.requesterId && authUser.userId != request.targetUserId) {
+            return ResponseEntity.status(403).build()
+        }
+
         val record = relationshipStageRepository.findByRequestId(requestId)
         val myFeedback = photoFeedbackRepository
             .findByRequestIdAndUserId(requestId, authUser.userId.value.toString())
@@ -94,6 +129,7 @@ class RelationshipController(
         val myMeeting = meetingFeedbackRepository
             .findByRequestIdAndUserId(requestId, authUser.userId.value.toString())
             ?.intent
+        val partner = resolvePartnerContact(request, authUser.userId)
 
         return ResponseEntity.ok(
             RelationshipStatusResponse(
@@ -104,6 +140,9 @@ class RelationshipController(
                 updatedAt = record?.updatedAt?.toString() ?: request.updatedAt.toString(),
                 photoFeedback = myFeedback,
                 myMeetingFeedback = myMeeting,
+                partnerName = partner.name,
+                partnerPhone = partner.phone,
+                partnerKakaoId = partner.kakaoId,
             )
         )
     }
@@ -276,6 +315,7 @@ class RelationshipController(
             val myMeeting = meetingFeedbackRepository
                 .findByRequestIdAndUserId(req.id.value, myId.value.toString())
                 ?.intent
+            val partner = resolvePartnerContact(req, myId)
             RelationshipStatusResponse(
                 requestId = req.id.value.toString(),
                 stage = record?.stage?.let { RelationshipStage.valueOf(it) } ?: RelationshipStage.MATCHED,
@@ -284,6 +324,9 @@ class RelationshipController(
                 updatedAt = record?.updatedAt?.toString() ?: req.updatedAt.toString(),
                 photoFeedback = myFeedback,
                 myMeetingFeedback = myMeeting,
+                partnerName = partner.name,
+                partnerPhone = partner.phone,
+                partnerKakaoId = partner.kakaoId,
             )
         }
 
