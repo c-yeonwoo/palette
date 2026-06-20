@@ -248,7 +248,96 @@ class OpenAIServiceTest : DescribeSpec({
             }
         }
     }
+
+    describe("팔레트 분석 리포트 (ADR 0070)") {
+
+        describe("parseColorReport") {
+            it("육각형 6축과 본문 필드를 파싱한다") {
+                val json = """
+                    {"tagline": "따뜻한 오렌지, 곁에 머무는 사람",
+                     "essence": "잔잔하다 깊이 빠져드는 결",
+                     "hexagon": {"온기": 88, "활력": 70, "깊이": 55, "감성": 62, "진정성": 80, "균형": 48},
+                     "hexagonComment": "온기가 가장 또렷해요",
+                     "charm": "곁에 있으면 편안한 사람",
+                     "strengths": ["따뜻한 동반자", "진정성 있는 대화가"],
+                     "growthPoints": ["마음 여는 데 시간이 걸려요"],
+                     "idealMatch": "대화가 편한 분과 잘 맞아요",
+                     "loveStyle": "은근하지만 깊은 연애",
+                     "destiny": "재미로 보는 해석으로는 무르익을 때 통하는 흐름",
+                     "advice": "조금 더 솔직하게 표현해보세요"}
+                """.trimIndent()
+                val r = makeService().parseColorReport(json)
+
+                r.hexagon.keys shouldBe ColorReportResult.HEXAGON_AXES.toSet()
+                r.hexagon["온기"] shouldBe 88
+                r.hexagon["균형"] shouldBe 48
+                r.tagline shouldContain "오렌지"
+                r.strengths.size shouldBe 2
+                r.destiny shouldContain "재미로"
+            }
+
+            it("육각형 축이 누락되면 50으로 보정하고, 범위를 벗어나면 clamp한다") {
+                val json = """{"hexagon": {"온기": 140, "활력": -10}}"""
+                val r = makeService().parseColorReport(json)
+
+                r.hexagon["온기"] shouldBe 100   // clamp
+                r.hexagon["활력"] shouldBe 0      // clamp
+                r.hexagon["깊이"] shouldBe 50     // 누락 → 기본값
+                r.hexagon.size shouldBe 6
+            }
+
+            it("strengths는 5개, growthPoints는 3개로 자른다") {
+                val json = """
+                    {"strengths": ["a","b","c","d","e","f","g"],
+                     "growthPoints": ["1","2","3","4","5"]}
+                """.trimIndent()
+                val r = makeService().parseColorReport(json)
+                r.strengths.size shouldBe 5
+                r.growthPoints.size shouldBe 3
+            }
+
+            it("형식이 깨지면 빈 결과(육각형도 비어있음)") {
+                val r = makeService().parseColorReport("not json")
+                r.tagline shouldBe ""
+                r.hexagon.size shouldBe 0
+            }
+        }
+
+        describe("generateColorReport (stub 모드)") {
+            it("키 없음이면 stub 리포트를 합성 — 6축 모두 채워지고 비대칭이며 본문이 비지 않는다") {
+                val ctx = ColorReportContext(
+                    colorName = "따뜻한 오렌지",
+                    personalitySummary = "솔직하고 다정한 결",
+                    answers = mapOf("행복한 순간" to "친구들과 맛집 다닐 때"),
+                    idealType = IdealTypeContext(personalities = listOf("다정한")),
+                    mbti = "ENFP",
+                )
+                val r = makeStubService().generateColorReport(ctx, "u1")
+
+                r.hexagon.keys shouldBe ColorReportResult.HEXAGON_AXES.toSet()
+                r.hexagon.values.all { it in 0..100 } shouldBe true
+                // 비대칭 — 모든 축이 같은 값이면 실패
+                (r.hexagon.values.max() != r.hexagon.values.min()) shouldBe true
+                r.essence.shouldNotBeEmpty()
+                r.charm.shouldNotBeEmpty()
+                r.idealMatch shouldContain "다정한"
+                r.loveStyle.shouldNotBeEmpty()
+                r.advice.shouldNotBeEmpty()
+                // 사주 연애운은 재미 요소임을 명시
+                r.destiny shouldContain "재미로"
+            }
+        }
+    }
 })
+
+private fun makeStubService() = OpenAIService(
+    apiKey = "dummy-key",
+    model = "gpt-4o-mini",
+    restClientBuilder = org.springframework.web.client.RestClient.builder(),
+    objectMapper = jsonMapper { addModule(kotlinModule()) },
+    usageLogRepository = io.mockk.mockk(relaxed = true),
+    cacheRepository = io.mockk.mockk(relaxed = true),
+)
 
 private fun makeService() = OpenAIService(
     apiKey = "test-key",

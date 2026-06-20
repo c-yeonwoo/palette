@@ -425,3 +425,15 @@ FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='personali
 -- ── 25. 내 색 심층 리포트 잠금 해제 플래그 (ADR 0069) ──────────────
 -- 물감/광고로 1회 해제 시 영구 공개. continue-on-error=true 라 재적재 시 중복 컬럼 에러는 무시됨.
 ALTER TABLE user_ticket_balances ADD COLUMN report_unlocked BIT(1) NOT NULL DEFAULT b'0';
+
+-- ── 26. 프리미엄 팔레트 분석 리포트 캐시 (ADR 0070) ──────────────
+-- 유저당 1행. 같은 프로필이면 LLM 재호출 없이 보관본 반환, 프로필 변경 시 input_hash 로 갱신.
+CREATE TABLE IF NOT EXISTS color_report_cache (
+    user_id      VARCHAR(64)  NOT NULL,
+    input_hash   VARCHAR(64)  NOT NULL,
+    report_json  TEXT         NOT NULL,
+    model        VARCHAR(32)  NOT NULL,
+    created_at   DATETIME(6)  NOT NULL,
+    updated_at   DATETIME(6)  NOT NULL,
+    PRIMARY KEY (user_id)
+) ENGINE=InnoDB;
