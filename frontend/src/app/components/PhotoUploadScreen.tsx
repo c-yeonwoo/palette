@@ -28,6 +28,8 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
   const videoInputRef = useRef<HTMLInputElement>(null);
 
   const uploadedCount = photos.length;
+  // 첫 번째 사진이 항상 대표 사진 (별도 선택 없음). onNext 전달용.
+  const mainPhotoIndex = 0;
 
   const openPhotoPicker = () => {
     if (photos.length >= MAX_PHOTOS) return;
@@ -273,15 +275,15 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
           </p>
         </div>
 
-        {/* Request Photo Button */}
-        <Button
+        {/* Request Photo (subtle link — 보조 액션) */}
+        <button
+          type="button"
           onClick={handleShareRequest}
-          variant="outline"
-          className="w-full h-14 border-2 border-border text-foreground hover:bg-muted"
+          className="w-full flex items-center justify-center gap-1.5 py-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          <Share2 className="w-5 h-5 mr-2" />
+          <Share2 className="w-4 h-4" />
           친구에게 인생샷 요청하기
-        </Button>
+        </button>
 
         {/* Next Button */}
         <Button
@@ -298,7 +300,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
           disabled={isUploading}
           className="w-full h-14 bg-brand-soft text-brand-strong"
         >
-          {isUploading ? "업로드 중..." : "다음 — AI 프로필 만들기"}
+          {isUploading ? "업로드 중..." : "소개 프로필 완성하기"}
         </Button>
 
         {uploadedCount === 0 && (

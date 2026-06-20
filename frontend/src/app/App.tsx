@@ -16,12 +16,10 @@ const RequiredInfoScreen = lazy(() => import("./components/RequiredInfoScreen").
 const AccountTypeSelectionScreen = lazy(() => import("./components/AccountTypeSelectionScreen").then(m => ({ default: m.AccountTypeSelectionScreen })));
 const BasicInfoScreen = lazy(() => import("./components/BasicInfoScreen").then(m => ({ default: m.BasicInfoScreen })));
 const PhotoUploadScreen = lazy(() => import("./components/PhotoUploadScreen").then(m => ({ default: m.PhotoUploadScreen })));
-const AboutMeScreen = lazy(() => import("./components/AboutMeScreen").then(m => ({ default: m.AboutMeScreen })));
 const IdealTypeScreen = lazy(() => import("./components/IdealTypeScreen").then(m => ({ default: m.IdealTypeScreen })));
 const AIProfileEnhanceScreen = lazy(() => import("./components/AIProfileEnhanceScreen").then(m => ({ default: m.AIProfileEnhanceScreen })));
 const AIInterviewScreen = lazy(() => import("./components/AIInterviewScreen").then(m => ({ default: m.AIInterviewScreen })));
 const LifestyleScreen = lazy(() => import("./components/LifestyleScreen").then(m => ({ default: m.LifestyleScreen })));
-const IntroMethodSelectionScreen = lazy(() => import("./components/IntroMethodSelectionScreen").then(m => ({ default: m.IntroMethodSelectionScreen })));
 const MyProfileScreen = lazy(() => import("./components/MyProfileScreen").then(m => ({ default: m.MyProfileScreen })));
 const ProfileEditScreen = lazy(() => import("./components/ProfileEditScreen").then(m => ({ default: m.ProfileEditScreen })));
 const ProfileDetailScreen = lazy(() => import("./components/ProfileDetailScreen").then(m => ({ default: m.ProfileDetailScreen })));
@@ -118,7 +116,8 @@ type Screen =
 
 const ONBOARDING_DRAFT_KEY = "palette_onboarding_draft";
 const ONBOARDING_STEP_KEY = "palette_onboarding_step";
-const ONBOARDING_SCREENS: Screen[] = ["basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "lifestyle", "idealType", "aiProfileEnhance"];
+// AI 단일 트랙 (직접 작성 분기 제거) — 실제 진행 순서대로
+const ONBOARDING_SCREENS: Screen[] = ["basicInfo", "aiInterview", "lifestyle", "idealType", "photoUpload", "aiProfileEnhance"];
 const ONBOARDING_SCREENS_SET = new Set<Screen>(ONBOARDING_SCREENS);
 
 function loadOnboardingDraft() {
@@ -481,8 +480,8 @@ export default function App() {
       locationInfo: data.locationInfo,
     }));
     setUserGender(data.basicInfo.gender); // Store gender for profile editing later
-    // UX C — 사진은 색깔 결과 직전(idealType 후)으로 이동. 기본정보 다음은 소개 방식 선택.
-    setCurrentScreen("introMethodSelection");
+    // AI 단일 트랙 — 소개 방식 분기(직접 작성) 제거. 기본정보 다음 바로 AI 인터뷰.
+    setCurrentScreen("aiInterview");
   };
 
   const handleBasicInfoBack = () => {
@@ -519,11 +518,6 @@ export default function App() {
     setCurrentScreen("lifestyle");
   };
 
-  const handleIntroMethodAIInterview = () => {
-    setIntroMethod("INTERVIEW");
-    setCurrentScreen("aiInterview");
-  };
-
   /**
    * 마이페이지 → 팔레트 분석 다시 받기.
    * 서버 프로필에서 기존 인터뷰 답변·이상형을 로드해 profileData 에 prefill 하고
@@ -548,25 +542,8 @@ export default function App() {
     }
   };
 
-  const handleIntroMethodManual = () => {
-    setIntroMethod("MANUAL");
-    setCurrentScreen("aboutMe");
-  };
-
   const handlePhotoBack = () => {
     setCurrentScreen("idealType");
-  };
-
-  const handleAboutMeNext = (data: any) => {
-    // 직접 작성 경로 — 인터뷰 textarea 답변만. 라이프스타일/관심사는 공통 lifestyle 스텝으로 이동(UX B).
-    setProfileData(prev => ({
-      ...prev,
-      introduction: {
-        ...prev.introduction,
-        interviewAnswers: data.introduction?.interviewAnswers ?? {},
-      },
-    }));
-    setCurrentScreen("lifestyle");
   };
 
   /** 공통 라이프스타일 스텝(흡연/음주/종교/관심사) — 두 경로(인터뷰/직접) 모두 거침 → idealType */
@@ -820,7 +797,7 @@ export default function App() {
         }
         const type = preSelectedAccountType;
         setPreSelectedAccountType(null);
-        toast.success("환영합니다!");
+        // 가입 완료 토스트는 EmailSignupScreen 에서 이미 노출 — 중복 "환영합니다!" 제거
         handleAccountTypeSelection(type);
         return;
       }
@@ -1018,14 +995,6 @@ export default function App() {
         />
       )}
       
-      {currentScreen === "introMethodSelection" && (
-        <IntroMethodSelectionScreen
-          onSelectAIInterview={handleIntroMethodAIInterview}
-          onSelectManual={handleIntroMethodManual}
-          onBack={() => setCurrentScreen("basicInfo")}
-        />
-      )}
-
       {currentScreen === "aiInterview" && (
         <AIInterviewScreen
           onComplete={handleAIInterviewComplete}
@@ -1035,7 +1004,7 @@ export default function App() {
               setReanalyzeAnswers(null);
               setCurrentScreen("myPage");
             } else {
-              setCurrentScreen("introMethodSelection");
+              setCurrentScreen("basicInfo");
             }
           }}
           initialAnswers={
@@ -1049,20 +1018,10 @@ export default function App() {
         />
       )}
 
-{currentScreen === "aboutMe" && (
-        <AboutMeScreen
-          onNext={handleAboutMeNext}
-          onBack={() => setCurrentScreen("introMethodSelection")}
-          initialData={{
-            introduction: profileData.introduction,
-          }}
-        />
-      )}
-
       {currentScreen === "lifestyle" && (
         <LifestyleScreen
           onNext={handleLifestyleNext}
-          onBack={() => setCurrentScreen(introMethod === "INTERVIEW" ? "aiInterview" : "aboutMe")}
+          onBack={() => setCurrentScreen("aiInterview")}
           initialData={{
             lifestyleInfo: profileData.lifestyleInfo,
             introduction: {
@@ -1087,7 +1046,7 @@ export default function App() {
       {currentScreen === "aiProfileEnhance" && (
         <AIProfileEnhanceScreen
           onComplete={handleAIProfileComplete}
-          onRedoAnswers={() => setCurrentScreen(introMethod === "INTERVIEW" ? "aiInterview" : "aboutMe")}
+          onRedoAnswers={() => setCurrentScreen("aiInterview")}
           introMethod={introMethod}
           profileData={profileData}
         />

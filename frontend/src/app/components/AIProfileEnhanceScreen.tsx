@@ -335,7 +335,7 @@ export function AIProfileEnhanceScreen({
       )}
 
       <div className="bg-card border-b border-border px-6 py-4">
-        <h2 className="text-center">AI 프로필 완성</h2>
+        <h2 className="text-center">소개 프로필 완성</h2>
         <p className="text-center text-sm text-muted-foreground mt-1">마지막 단계예요</p>
       </div>
 
