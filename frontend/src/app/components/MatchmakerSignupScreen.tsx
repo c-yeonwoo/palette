@@ -56,6 +56,14 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
     handleInputChange("phoneNumber", formatted);
   };
 
+  // 생년월일 — 숫자만 입력하면 YYYY-MM-DD 로 자동 포맷. (date picker 의 수십 년 스크롤 제거)
+  const formatBirthDate = (value: string) => {
+    const n = value.replace(/\D/g, "").slice(0, 8);
+    if (n.length <= 4) return n;
+    if (n.length <= 6) return `${n.slice(0, 4)}-${n.slice(4)}`;
+    return `${n.slice(0, 4)}-${n.slice(4, 6)}-${n.slice(6, 8)}`;
+  };
+
   const handleSendVerification = async () => {
     if (!formData.phoneNumber) {
       toast.error("핸드폰 번호를 입력해주세요");
@@ -378,11 +386,13 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
               <Label htmlFor="birthDate">생년월일 *</Label>
               <Input
                 id="birthDate"
-                type="date"
+                type="text"
+                inputMode="numeric"
+                placeholder="예: 1995-06-15"
                 value={formData.birthDate}
-                onChange={(e) => handleInputChange("birthDate", e.target.value)}
+                onChange={(e) => handleInputChange("birthDate", formatBirthDate(e.target.value))}
                 disabled={isLoading}
-                max={new Date().toISOString().split("T")[0]}
+                maxLength={10}
               />
             </div>
 

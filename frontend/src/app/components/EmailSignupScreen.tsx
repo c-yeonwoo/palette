@@ -55,6 +55,19 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
     setFormData({ ...formData, phoneNumber: formatted });
   };
 
+  // 생년월일 — 숫자만 입력하면 YYYY-MM-DD 로 자동 포맷 (네이티브 date picker 가
+  // 오늘 날짜부터 수십 년 거슬러 올라가야 하는 불편함 제거). 8자리 입력 시 ISO 형식 완성.
+  const formatBirthDate = (value: string) => {
+    const n = value.replace(/\D/g, "").slice(0, 8);
+    if (n.length <= 4) return n;
+    if (n.length <= 6) return `${n.slice(0, 4)}-${n.slice(4)}`;
+    return `${n.slice(0, 4)}-${n.slice(4, 6)}-${n.slice(6, 8)}`;
+  };
+
+  const handleBirthDateChange = (value: string) => {
+    setFormData(prev => ({ ...prev, birthDate: formatBirthDate(value) }));
+  };
+
   const handleSendVerification = async () => {
     if (!formData.phoneNumber) {
       toast.error("핸드폰 번호를 입력해주세요");
@@ -281,9 +294,12 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
               <Input
                 id="birthDate"
                 name="birthDate"
-                type="date"
+                type="text"
+                inputMode="numeric"
+                placeholder="예: 1995-06-15"
                 value={formData.birthDate}
-                onChange={handleChange}
+                onChange={(e) => handleBirthDateChange(e.target.value)}
+                maxLength={10}
                 required
               />
             </div>
