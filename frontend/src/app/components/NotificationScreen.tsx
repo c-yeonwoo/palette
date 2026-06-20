@@ -8,7 +8,7 @@
  *   - 빈 상태 Empty State
  *   - 읽지 않은 배지 (탭별 카운트)
  */
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   ArrowLeft,
   Bell,
@@ -30,7 +30,9 @@ import { cn } from "./ui/utils";
 import type {
   AppNotification,
   NotificationCategory,
+  NotificationAction,
 } from "../../data/mock-notifications";
+import { api } from "../../lib/api/apiClient";
 import {
   CATEGORY_LABELS,
   filterByCategory,
@@ -74,19 +76,70 @@ const CATEGORY_ICON_COLOR: Record<NotificationCategory, string> = {
   system:     "hsl(var(--text-secondary))",
 };
 
+// 백엔드 NotificationType → 프론트 (category 탭 / action 아이콘) 매핑.
+const TYPE_MAP: Record<string, { category: NotificationCategory; action: NotificationAction }> = {
+  MATCH_REQUEST:            { category: "matchmaker", action: "matchmaker_request" },
+  MATCH_APPROVED:           { category: "match",      action: "match_accepted" },
+  MATCH_REJECTED:           { category: "match",      action: "match_rejected" },
+  MATCH_COMPLETED:          { category: "match",      action: "match_completed" },
+  MATCH_REJECTED_BY_TARGET: { category: "match",      action: "match_rejected" },
+  FRIEND_REQUEST:           { category: "system",     action: "service_notice" },
+  FRIEND_ACCEPTED:          { category: "system",     action: "service_notice" },
+  PROFILE_VIEW:             { category: "system",     action: "service_notice" },
+  FRIEND_NEW_SIGNUP:        { category: "system",     action: "service_notice" },
+  FEED_REFRESHED:           { category: "system",     action: "event" },
+  DAILY_PICK:               { category: "system",     action: "event" },
+  POST_MATCH_NUDGE:         { category: "match",      action: "match_completed" },
+  MATCHMAKER_WEEKLY_REPORT: { category: "matchmaker", action: "matchmaker_approved" },
+  PROFILE_APPROVED:         { category: "system",     action: "service_notice" },
+  SYSTEM:                   { category: "system",     action: "service_notice" },
+};
+
+interface BackendNotification {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  isRead: boolean;
+  createdAt: string;
+  metadata?: Record<string, string>;
+}
+
+function toAppNotification(n: BackendNotification): AppNotification {
+  const m = TYPE_MAP[n.type] ?? { category: "system" as NotificationCategory, action: "service_notice" as NotificationAction };
+  return {
+    id: n.id,
+    category: m.category,
+    action: m.action,
+    title: n.title,
+    body: n.body,
+    read: n.isRead,
+    createdAt: n.createdAt,
+    meta: { matchId: n.metadata?.matchId, userId: n.metadata?.userId },
+  };
+}
+
 export function NotificationScreen({ onBack, onOpenMatch }: NotificationScreenProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
-  // 알림 조회 백엔드 API 미구현 — 항상 빈 상태로 시작 (mock 미노출)
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
+
+  // 실제 알림 목록 로드 (백엔드 GET /notifications). 뱃지(unread-count)와 일치.
+  useEffect(() => {
+    api.get<{ notifications: BackendNotification[] }>("/api/v1/notifications")
+      .then((res) => setNotifications((res.notifications ?? []).map(toAppNotification)))
+      .catch(() => { /* 실패 시 빈 목록 유지 */ });
+  }, []);
 
   const markRead = useCallback((id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     );
+    api.post(`/api/v1/notifications/read/${id}`).catch(() => {});
   }, []);
 
   const markAllRead = useCallback(() => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    api.post("/api/v1/notifications/read-all").catch(() => {});
   }, []);
 
   const handleTap = (notif: AppNotification) => {
