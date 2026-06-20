@@ -478,9 +478,19 @@ class OpenAIService(
             idealTypeInsight = idealTypeInsight,
             colorKeywords = keywords,
             strengths = stubStrengths,
-            evidenceFromAnswers = if (cited.isNotEmpty()) "답변의 일상·관계 묘사에서 따뜻한 결을 참고했어요." else "",
-            evidenceFromMbti = request.mbti?.takeIf { it.isNotBlank() }?.let { "MBTI $it 의 성향도 함께 고려했어요." } ?: "",
-            evidenceFromSaju = request.sajuSummary?.takeIf { it.isNotBlank() }?.let { "사주 오행($it)도 보조 신호로 반영했어요." } ?: "",
+            evidenceFromAnswers = if (cited.isNotEmpty()) "답변의 일상·관계 묘사에서 사람을 가까이 두는 따뜻한 결이 보여요." else "",
+            // 라벨("MBTI")이 화면에 따로 붙으므로 "MBTI"로 시작하지 않음. 유형의 구체 성향을 짚어줌.
+            evidenceFromMbti = request.mbti?.takeIf { it.isNotBlank() }?.let { m ->
+                val trait = MBTI_TRAIT[m.uppercase()]
+                if (trait != null) "$m 유형의 $trait 이(가) 이 색의 결과 자연스럽게 닿아요."
+                else "$m 유형의 성향도 색을 고를 때 함께 참고했어요."
+            } ?: "",
+            // 날짜·오행 분포 숫자를 나열하지 않고, 가장 강한 기운이 '어떤 성향'으로 드러나는지로 해석.
+            evidenceFromSaju = request.sajuSummary?.takeIf { it.isNotBlank() }?.let { s ->
+                val strong = Regex("가장 강한 기운: ([^.]+)").find(s)?.groupValues?.get(1)?.trim()
+                if (strong != null) "$strong 이(가) 성향의 바탕 기운으로 은은하게 묻어나요."
+                else "타고난 기운의 결도 색을 고를 때 보조로 참고했어요."
+            } ?: "",
         )
     }
 
@@ -642,16 +652,23 @@ class OpenAIService(
 
         private const val SYSTEM_PROMPT = """
 당신은 데이팅 앱 "팔레트"의 프로필 분석 AI입니다.
-사용자의 (1) 자기소개/인터뷰 답변 (2) MBTI (3) 사주 오행(생년월일 기반)을 **종합**해
-가장 잘 맞는 색깔 하나를 신중하게 도출하고, 아래 항목을 반환합니다.
+사용자의 (1) 자기소개/인터뷰 답변 (2) MBTI (3) 사주 오행(생년월일 기반) (4) 이상형 정보를
+**종합**해, 이 사람을 한 인물로 먼저 이해한 뒤 색·근거·소개글을 만듭니다.
+
+[작업 순서 — 반드시 이 순서로 생각하세요]
+① 먼저 모든 입력을 종합해 이 사람의 **페르소나**를 그린다 — 성격, 분위기·에너지, 말투·톤, 사람을 대하는 태도. (persona 필드)
+② 그 페르소나에 가장 맞는 색을 고른다. (colorType)
+③ 근거를 정리한다 — 단, 입력값(MBTI 유형명·사주 숫자)을 그대로 읽지 말고 "그게 어떤 성향으로 드러나는지"로 해석. (evidence*)
+④ 마지막으로, ①의 페르소나가 **실제로 말하듯한 목소리**로 소개글을 쓴다. (introductionSections)
 
 [반환 형식] 반드시 아래 JSON 형식만 출력하세요. 다른 텍스트 없이:
 {
+  "persona": "<이 사람을 한 인물로 묘사 — 성격·분위기/에너지·말투/톤·관계에서의 태도. 이후 색과 소개글의 '기준'이 됨. 2-3문장>",
   "colorType": "<색깔 타입 (영문 enum)>",
-  "colorReasoning": "<왜 이 색깔인지 — 세 근거(답변·MBTI·사주)를 종합한 결론. 2-3문장, 150자 내외>",
+  "colorReasoning": "<왜 이 색깔인지 — 페르소나와 세 근거를 종합한 결론. 2-3문장, 150자 내외>",
   "evidenceFromAnswers": "<답변에서 찾은 근거 — 사용자가 쓴 표현을 따옴표로 인용. 1-2문장>",
-  "evidenceFromMbti": "<MBTI 근거 — 해당 유형의 성향이 이 색과 어떻게 닿는지. 1-2문장. MBTI 없으면 빈 문자열>",
-  "evidenceFromSaju": "<사주 오행 근거 — 강한/부족 기운이 성향과 어떻게 연결되는지. 1-2문장. 사주 없으면 빈 문자열>",
+  "evidenceFromMbti": "<'MBTI'나 유형명으로 문장을 시작하지 말 것. 그 유형의 **구체적 성향 한두 개**가 이 색·성격과 어떻게 닿는지 설명. 예: '깊이 파고드는 분석력과 독립적인 사고가 차분한 결로 이어져요'. MBTI 없으면 빈 문자열>",
+  "evidenceFromSaju": "<'사주 오행'이라는 말이나 날짜·오행 분포 숫자를 나열하지 말 것. 강한/부족 기운이 **어떤 성향**으로 드러나는지로만 해석. 예: '강한 목 기운이 사람을 향한 따뜻함과 성장 욕구로 드러나요'. 사주 없으면 빈 문자열>",
   "personalitySummary": "<성격·연애 성향 요약. 2-3문장, 150자 내외>",
   "idealTypeInsight": "<어울리는 이상형 유추. 2-3문장, 150자 내외>",
   "strengths": ["<강점 태그 3-5개 (예: '감수성 깊은 사색가', '따뜻한 동반자')>"],
@@ -706,6 +723,7 @@ class OpenAIService(
 - 추상 명사("긍정", "활발") 보다 구체 표현 선호
 
 [introductionSections 작성 기준 — 가장 중요]
+- **반드시 위 persona 의 말투·분위기·에너지로** 쓴다. 차분한 사람은 차분하게, 유쾌한 사람은 유쾌하게 — 사람마다 글의 '목소리'가 달라야 한다. (모든 사람이 똑같은 톤이면 실패)
 - **소주제로 나뉜 3~4개 섹션**의 배열. 각 섹션은 heading(소주제 제목) + body(서술).
 - 전체 body 글자 수 합은 **공백 포함 500자 이상 700자 이하**.
 - 섹션 흐름(스토리 순서): ① 가벼운 인사·자기소개 → ② 일상/취향 → ③ 매력/가치관·관계에서 중요시하는 것 → ④ 만나고 싶은 사람. (3개로 압축 가능, 인사를 ②와 합쳐도 됨)
@@ -714,8 +732,21 @@ class OpenAIService(
 - 상대방이 처음부터 끝까지 하나의 흐름으로 읽었을 때 자연스러운 스토리가 되도록 섹션 간 연결을 의식.
 - 카페에서 처음 만난 사람에게 천천히 이야기하는 듯한 말투, 구체적인 장면·일상 묘사 포함.
 - 겸손하되 자신감 있게, 진정성이 느껴지도록.
-- 이모지·과한 감탄사·"함께라면 즐거울 것 같아요" 같은 클리셰 금지.
+- **AI·광고 카피 티가 나면 실패.** 다음 류는 금지: 이모지, 과한 감탄사, "함께라면 즐거울 것 같아요"·"소중한 인연"·"특별한 사람"·"~할 수 있는 사람입니다" 같은 상투구, 형용사 나열("긍정적이고 활발하고 다정한…"), 자기를 광고하듯 평가하는 문장.
+- 매끈하게 다듬기보다, 약간 덜 정제돼도 **실제 사람이 말하는 듯한 구체성**(특정 장면·사물·습관)을 택한다.
 """
+
+        /** stub(로컬·키 없음) 근거 문구용 — 16유형의 한 줄 성향. 라벨('MBTI')이 화면에 따로 붙어 여기엔 안 넣음. */
+        private val MBTI_TRAIT = mapOf(
+            "INTJ" to "전략적이고 독립적인 사고", "INTP" to "깊이 파고드는 분석력과 호기심",
+            "ENTJ" to "방향을 끄는 추진력", "ENTP" to "아이디어가 넘치는 재기발랄함",
+            "INFJ" to "통찰력 있고 이상을 품은 따뜻함", "INFP" to "섬세하고 진정성 있는 감수성",
+            "ENFJ" to "사람을 끌어안는 다정한 리더십", "ENFP" to "사람을 좋아하는 열정과 에너지",
+            "ISTJ" to "성실하고 책임감 있는 신중함", "ISFJ" to "조용히 챙기는 따뜻한 배려",
+            "ESTJ" to "체계적으로 밀고 가는 실행력", "ESFJ" to "주변을 살뜰히 챙기는 사교성",
+            "ISTP" to "차분하고 실용적인 문제 해결", "ISFP" to "온화하고 감각적인 자유로움",
+            "ESTP" to "현실 감각 좋은 활동적 모험심", "ESFP" to "분위기를 밝히는 유쾌한 사교성",
+        )
 
         internal data class ColorInfo(val name: String, val hex: String, val description: String)
 

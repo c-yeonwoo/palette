@@ -124,8 +124,8 @@ export function AIInterviewScreen({ onComplete, onBack, initialAnswers, profileC
       setQuestions(data.questions);
       // Show intro + first question
       const intro = isReanalyze
-        ? "다시 분석을 시작할게요. 이전 답변을 미리 채워뒀으니, 바꾸고 싶은 부분만 새로 적어주세요. 그대로 두고 싶으면 다음으로 넘어가도 돼요."
-        : `방금 알려주신 라이프스타일과 이상형, 잘 봤어요 🙂\n\n이제 마지막으로 짧은 대화를 나누면서 당신만의 색을 찾아볼게요. 앞서 답해주신 내용을 바탕으로 ${data.questions.length}가지만 더 여쭤볼게요.\n\n편하게 대화하듯 답해주세요!`;
+        ? "소개글과 색을 새로 만들어 드릴게요 🙂\n\n이전 답변을 미리 채워뒀으니, 바꾸고 싶은 부분만 새로 적으면 돼요. 그대로 두고 싶은 건 그냥 넘어가도 좋아요."
+        : `방금 알려주신 라이프스타일과 이상형, 잘 봤어요 🙂\n\n이 짧은 대화로 ① 당신만의 '색(성격 타입)'을 찾고 ② 그걸 바탕으로 자기소개글까지 자동으로 써드릴 거예요. 그래서 ${data.questions.length}가지만 더 여쭤볼게요.\n\n정답은 없으니, 떠오르는 대로 편하게 답해주세요!`;
       setMessages([
         { type: "ai", content: intro },
         {

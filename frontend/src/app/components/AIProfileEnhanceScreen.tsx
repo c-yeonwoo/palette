@@ -543,13 +543,20 @@ export function AIProfileEnhanceScreen({
                       { label: "사주 오행", text: result.evidenceFromSaju },
                     ] as const)
                       .filter((e) => e.text && e.text.trim().length > 0)
-                      .map((e) => (
-                        <div key={e.label} className="rounded-xl bg-muted/40 px-3 py-2">
-                          <p className="text-[13px] leading-relaxed text-foreground/90">
-                            <span className="font-semibold mr-1">{e.label}</span>{e.text}
-                          </p>
-                        </div>
-                      ))}
+                      .map((e) => {
+                        // 텍스트가 라벨 단어로 시작하면 제거 — "MBTI" + "MBTI INTP…" 중복 방지
+                        const body = (e.text ?? "").trim().replace(
+                          new RegExp(`^${e.label.replace(/\s/g, "\\s*")}\\s*[:：\\-]?\\s*`),
+                          "",
+                        );
+                        return (
+                          <div key={e.label} className="rounded-xl bg-muted/40 px-3 py-2">
+                            <p className="text-[13px] leading-relaxed text-foreground/90">
+                              <span className="font-semibold mr-1">{e.label}</span>{body}
+                            </p>
+                          </div>
+                        );
+                      })}
                   </div>
                 )}
                 {result.colorKeywords && result.colorKeywords.length > 0 && (
