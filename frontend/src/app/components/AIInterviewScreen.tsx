@@ -14,11 +14,28 @@ interface InterviewQuestion {
   chips?: string[];
 }
 
+/** 적응형 인터뷰 컨텍스트 (ADR 0068) — 앞 단계에서 모은 구조화 정보를 코드 그대로 백엔드에 전달.
+ *  코드→한글 라벨 해석은 백엔드(field_options)가 처리하므로 여기선 가공하지 않는다. */
+export interface AdaptiveInterviewContext {
+  mbti?: string;
+  jobCategory?: string;
+  interests?: string[];
+  smoking?: string;
+  drinking?: string;
+  datingStyle?: Record<string, string>;
+  idealPersonalities?: string[];
+  idealDatePreferences?: string[];
+  idealImportantValues?: string[];
+}
+
 interface AIInterviewScreenProps {
   onComplete: (answers: Record<string, string>) => void;
   onBack: () => void;
   /** 재진행 모드: 이전 답변을 미리 채워두고 인사 메시지 변경 (ADR 0037 후속) */
   initialAnswers?: Record<string, string> | null;
+  /** 신규 온보딩에서 앞 단계(라이프스타일·이상형·MBTI)를 바탕으로 맞춤 질문 생성 (ADR 0068).
+   *  없거나 재진행 모드면 정적 질문 사용. */
+  profileContext?: AdaptiveInterviewContext | null;
 }
 
 type MessageType = "ai" | "user";
@@ -28,7 +45,7 @@ interface ChatMessage {
   questionId?: string;
 }
 
-export function AIInterviewScreen({ onComplete, onBack, initialAnswers }: AIInterviewScreenProps) {
+export function AIInterviewScreen({ onComplete, onBack, initialAnswers, profileContext }: AIInterviewScreenProps) {
   const isReanalyze = !!initialAnswers && Object.values(initialAnswers).some(v => !!v);
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
@@ -88,12 +105,27 @@ export function AIInterviewScreen({ onComplete, onBack, initialAnswers }: AIInte
 
   const fetchQuestions = async () => {
     try {
-      const data = await api.get<{ questions: InterviewQuestion[] }>("/api/v1/ai-interview/questions");
+      // 신규 온보딩(재진행 아님) + 앞 단계 정보가 있으면 적응형 맞춤 질문 우선, 실패 시 정적 폴백.
+      // 재진행 모드는 이전 답변 prefill 이 정적 질문 id 에 매핑돼야 하므로 항상 정적.
+      let data: { questions: InterviewQuestion[] };
+      if (profileContext && !isReanalyze) {
+        try {
+          data = await api.post<{ questions: InterviewQuestion[] }>(
+            "/api/v1/ai-interview/adaptive",
+            profileContext,
+          );
+          if (!data?.questions?.length) throw new Error("empty adaptive questions");
+        } catch {
+          data = await api.get<{ questions: InterviewQuestion[] }>("/api/v1/ai-interview/questions");
+        }
+      } else {
+        data = await api.get<{ questions: InterviewQuestion[] }>("/api/v1/ai-interview/questions");
+      }
       setQuestions(data.questions);
       // Show intro + first question
       const intro = isReanalyze
         ? "다시 분석을 시작할게요. 이전 답변을 미리 채워뒀으니, 바꾸고 싶은 부분만 새로 적어주세요. 그대로 두고 싶으면 다음으로 넘어가도 돼요."
-        : `안녕하세요! 저는 당신의 색깔을 찾아드릴 AI예요.\n\n편하게 대화하듯이 답변해주시면, 당신만의 멋진 프로필을 만들어드릴게요!\n\n${data.questions.length}개의 질문이 있어요. 준비되셨나요?`;
+        : `방금 알려주신 라이프스타일과 이상형, 잘 봤어요 🙂\n\n이제 마지막으로 짧은 대화를 나누면서 당신만의 색을 찾아볼게요. 앞서 답해주신 내용을 바탕으로 ${data.questions.length}가지만 더 여쭤볼게요.\n\n편하게 대화하듯 답해주세요!`;
       setMessages([
         { type: "ai", content: intro },
         {

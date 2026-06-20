@@ -170,6 +170,84 @@ class OpenAIServiceTest : DescribeSpec({
             result.generatedIntroduction shouldBe "평면 소개글"
         }
     }
+
+    describe("적응형 인터뷰 (ADR 0068)") {
+
+        describe("buildAdaptivePrompt") {
+            it("앞 단계 구조화 정보가 프롬프트에 라벨로 들어간다") {
+                val ctx = AdaptiveInterviewContext(
+                    mbti = "ENFP",
+                    jobCategory = "IT/개발",
+                    interests = listOf("여행", "카페"),
+                    idealPersonalities = listOf("다정한"),
+                    idealImportantValues = listOf("가치관"),
+                )
+                val prompt = makeService().buildAdaptivePrompt(ctx, 3)
+
+                prompt shouldContain "ENFP"
+                prompt shouldContain "IT/개발"
+                prompt shouldContain "여행, 카페"
+                prompt shouldContain "다정한"
+                prompt shouldContain "가치관"
+                // 요청 개수가 명시된다
+                prompt shouldContain "3개"
+                // "다시 묻지 마세요" 가드 문구
+                prompt shouldContain "다시 묻지 마세요"
+            }
+
+            it("datingStyle 코드는 DATING_STYLE_LABELS 한글로 해석된다") {
+                val ctx = AdaptiveInterviewContext(
+                    datingStyle = mapOf("CONTACT_STYLE" to "FREQUENT", "AFFECTION_STYLE" to "PHYSICAL"),
+                )
+                val prompt = makeService().buildAdaptivePrompt(ctx, 3)
+
+                prompt shouldContain "연락 스타일"
+                prompt shouldContain "자주 연락해요"
+                prompt shouldContain "애정 표현"
+                prompt shouldContain "스킨십으로"
+                // 원시 코드는 노출되지 않는다
+                (prompt.contains("FREQUENT")) shouldBe false
+            }
+        }
+
+        describe("parseAdaptiveQuestions") {
+            it("유효한 JSON에서 질문을 파싱하고 count만큼 자른다") {
+                val json = """
+                    {"questions": [
+                      {"id": "q1", "question": "가장 기억에 남는 여행의 한 장면이 있다면?", "hint": "그때 느낌도 함께"},
+                      {"id": "q2", "question": "요즘 가장 마음이 편안해지는 순간은?", "hint": ""},
+                      {"id": "q3", "question": "대화에서 가장 중요하게 생각하는 건?", "hint": ""},
+                      {"id": "q4", "question": "넘치는 질문", "hint": ""}
+                    ]}
+                """.trimIndent()
+                val questions = makeService().parseAdaptiveQuestions(json, 3)
+
+                questions.size shouldBe 3
+                questions[0].id shouldBe "q1"
+                questions[0].question shouldContain "여행"
+                questions[0].hint shouldBe "그때 느낌도 함께"
+            }
+
+            it("question이 비면 그 항목은 버리고, id 누락 시 자동 부여한다") {
+                val json = """
+                    {"questions": [
+                      {"question": "", "hint": "빈 질문"},
+                      {"question": "id 없는 질문"}
+                    ]}
+                """.trimIndent()
+                val questions = makeService().parseAdaptiveQuestions(json, 3)
+
+                questions.size shouldBe 1
+                questions[0].question shouldBe "id 없는 질문"
+                questions[0].id.shouldNotBeEmpty()
+            }
+
+            it("형식이 깨지거나 questions가 없으면 빈 리스트") {
+                makeService().parseAdaptiveQuestions("not json at all", 3).shouldBeEmpty()
+                makeService().parseAdaptiveQuestions("""{"foo": 1}""", 3).shouldBeEmpty()
+            }
+        }
+    }
 })
 
 private fun makeService() = OpenAIService(

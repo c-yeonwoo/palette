@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
-import { User, ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { useOnboardingOptions } from "../../lib/onboarding/useOnboardingOptions";
 import { useOnboardingFields } from "../../lib/onboarding/useOnboardingFields";
@@ -28,18 +27,16 @@ const jobCategories = [
 
 const educationLevels = ["고졸", "전문대", "대졸", "석사", "박사"];
 
-/** 4 mini-steps — step 1, 3 만 필수, 2/4 는 건너뛰기 가능
- *  1 → 신원 (필수: 이름, 생년월일, 성별)
- *  2 → 외형/성격 (선택: 키, 체형, MBTI)
- *  3 → 커리어/위치 (필수: 직업, 지역)
- *  4 → 추가 정보 (선택: 전화, 회사, 학교)
+/** 2 mini-steps — 신원(이름·생일·성별)은 가입 시 이미 수집 → 화면에서 생략
+ *  1 → 외형/성격 (선택: 키, 체형, MBTI)
+ *  2 → 커리어/위치 (필수: 직업, 지역)
+ *  이름·생일·성별은 계정에서 받아와(useEffect) onNext payload 로만 전달.
  */
-type MiniStep = 1 | 2 | 3;
+type MiniStep = 1 | 2;
 
 const MINI_STEP_META: Record<MiniStep, { title: string; subtitle: string }> = {
-  1: { title: "나를 소개할게요", subtitle: "이름, 생년월일, 성별" },
-  2: { title: "조금 더 알려주세요", subtitle: "선택사항이에요. 부담없이!" },
-  3: { title: "어디서 무슨 일을 하나요?", subtitle: "직업과 지역" },
+  1: { title: "조금 더 알려주세요", subtitle: "선택사항이에요. 부담없이!" },
+  2: { title: "어디서 무슨 일을 하나요?", subtitle: "직업과 지역" },
 };
 
 interface UserProfile {
@@ -80,12 +77,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  const currentYear = new Date().getFullYear();
-  const birthYears = Array.from({ length: currentYear - 1959 }, (_, i) => String(currentYear - i));
-  const birthMonths = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"));
-  const birthDays = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, "0"));
-
-  // Pre-fill from server
+  // Pre-fill from server — 이름·생일·성별은 가입 계정값을 그대로 onNext payload 로 전달
   useEffect(() => {
     const loadUserData = async () => {
       try {
@@ -111,24 +103,13 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
     loadUserData();
   }, []);
 
-  const calculateAge = () => {
-    if (formData.birthYear) {
-      const age = currentYear - parseInt(formData.birthYear);
-      return age > 0 ? ` (만 ${age}세)` : "";
-    }
-    return "";
-  };
-
-  // Per-step validation — step 2/4 는 선택, 항상 통과 가능
-  const isStep1Valid = !!(formData.name && formData.birthYear && formData.birthMonth && formData.birthDay && formData.gender);
   // 거주지역: 시/도 필수 + 시군구가 있는 시/도면 시군구까지(세종 등 하위 없으면 시/도만)
   const regionValid = !!formData.region && ((SIGUNGU[formData.region]?.length ?? 0) === 0 || !!formData.district);
-  const isStep3Valid = !!(formData.jobCategory && regionValid);  // 학력 필수에서 제외
+  const isCareerStepValid = !!(formData.jobCategory && regionValid);  // 학력 필수에서 제외
 
   const isCurrentStepValid = () => {
-    if (miniStep === 1) return isStep1Valid;
-    if (miniStep === 3) return isStep3Valid;
-    return true; // step 2, 4 는 모두 선택
+    if (miniStep === 2) return isCareerStepValid;
+    return true; // step 1(외형/성격) 은 모두 선택
   };
 
   const handleBack = () => {
@@ -137,7 +118,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
   };
 
   const handleNext = () => {
-    if (miniStep < 3) {
+    if (miniStep < 2) {
       setMiniStep((miniStep + 1) as MiniStep);
       // 데스크탑에선 .app-frame(#appScroll) 이 스크롤 컨테이너 → 그쪽도 같이 리셋
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -192,7 +173,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
           </button>
           <div className="text-center">
             <h2 className="text-base font-semibold">기본 정보</h2>
-            <p className="text-xs text-muted-foreground">{miniStep}/3 단계</p>
+            <p className="text-xs text-muted-foreground">{miniStep}/2 단계</p>
           </div>
         </div>
 
@@ -201,7 +182,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
 
         {/* Mini-step dots */}
         <div className="flex justify-center gap-2">
-          {([1, 2, 3] as MiniStep[]).map((s) => (
+          {([1, 2] as MiniStep[]).map((s) => (
             <div
               key={s}
               className={`h-2 rounded-full transition-all duration-300 ${
@@ -219,83 +200,8 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
           <p className="text-sm text-muted-foreground mt-1">{meta.subtitle}</p>
         </div>
 
-        {/* ──────────── STEP 1: 신원 ──────────── */}
+        {/* ──────────── STEP 1: 외형/성격 (모두 선택) ──────────── */}
         {miniStep === 1 && (
-          <div className="space-y-5">
-            {/* Name */}
-            <div>
-              <Label className="mb-2 block">이름 <span className="text-primary">*</span></Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  placeholder="본명을 입력해주세요"
-                  value={formData.name}
-                  onChange={(e) => update('name', e.target.value)}
-                  className="pl-11 h-12 bg-card border-border"
-                  maxLength={20}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">상대방에게는 이름이 공개되지 않아요</p>
-            </div>
-
-            {/* Birth Date */}
-            <div>
-              <Label className="mb-2 block">
-                생년월일 <span className="text-primary">*</span>
-                <span className="text-muted-foreground font-normal">{calculateAge()}</span>
-              </Label>
-              <div className="grid grid-cols-3 gap-3">
-                <select
-                  value={formData.birthYear}
-                  onChange={(e) => update('birthYear', e.target.value)}
-                  className="h-12 px-3 rounded-lg border-2 border-border bg-card focus:border-primary text-sm"
-                >
-                  <option value="">년도</option>
-                  {birthYears.map(y => <option key={y} value={y}>{y}년</option>)}
-                </select>
-                <select
-                  value={formData.birthMonth}
-                  onChange={(e) => update('birthMonth', e.target.value)}
-                  className="h-12 px-3 rounded-lg border-2 border-border bg-card focus:border-primary text-sm"
-                >
-                  <option value="">월</option>
-                  {birthMonths.map(m => <option key={m} value={m}>{parseInt(m)}월</option>)}
-                </select>
-                <select
-                  value={formData.birthDay}
-                  onChange={(e) => update('birthDay', e.target.value)}
-                  className="h-12 px-3 rounded-lg border-2 border-border bg-card focus:border-primary text-sm"
-                >
-                  <option value="">일</option>
-                  {birthDays.map(d => <option key={d} value={d}>{parseInt(d)}일</option>)}
-                </select>
-              </div>
-            </div>
-
-            {/* Gender */}
-            <div>
-              <Label className="mb-2 block">성별 <span className="text-primary">*</span></Label>
-              <div className="grid grid-cols-2 gap-3">
-                {["남성", "여성"].map((g) => (
-                  <button
-                    key={g}
-                    onClick={() => update('gender', g)}
-                    className={`py-3.5 rounded-xl border-2 font-medium transition-all ${
-                      formData.gender === g
-                        ? "bg-brand-soft text-brand-strong border-brand/40"
-                        : "bg-card border-border text-muted-foreground hover:border-primary/40"
-                    }`}
-                  >
-                    {g}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ──────────── STEP 2: 외형/성격 (모두 선택) ──────────── */}
-        {miniStep === 2 && (
           <div className="space-y-5">
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700">
               이 단계는 <strong>모두 선택사항</strong>이에요. 채울수록 매칭이 더 정확해지지만,
@@ -385,8 +291,8 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
           </div>
         )}
 
-        {/* ──────────── STEP 3: 커리어/위치 ──────────── */}
-        {miniStep === 3 && (
+        {/* ──────────── STEP 2: 커리어/위치 ──────────── */}
+        {miniStep === 2 && (
           <div className="space-y-5">
             {/* Job Category (구조 필드 — 항상 노출, 라벨만 메타) */}
             <div>
@@ -466,7 +372,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
           disabled={!isCurrentStepValid()}
           className="w-full h-14 bg-brand-soft text-brand-strong disabled:opacity-50"
         >
-          {miniStep < 3 ? (
+          {miniStep < 2 ? (
             <>
               다음
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -476,8 +382,8 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
           )}
         </Button>
 
-        {/* Skip 버튼 — 선택 단계 (2) 에서 노출 */}
-        {miniStep === 2 && (
+        {/* Skip 버튼 — 선택 단계 (외형/성격) 에서 노출 */}
+        {miniStep === 1 && (
           <Button
             variant="ghost"
             onClick={handleNext}

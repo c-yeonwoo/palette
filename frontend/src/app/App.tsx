@@ -117,7 +117,7 @@ type Screen =
 const ONBOARDING_DRAFT_KEY = "palette_onboarding_draft";
 const ONBOARDING_STEP_KEY = "palette_onboarding_step";
 // AI 단일 트랙 (직접 작성 분기 제거) — 실제 진행 순서대로
-const ONBOARDING_SCREENS: Screen[] = ["basicInfo", "aiInterview", "lifestyle", "idealType", "photoUpload", "aiProfileEnhance"];
+const ONBOARDING_SCREENS: Screen[] = ["basicInfo", "lifestyle", "idealType", "aiInterview", "photoUpload", "aiProfileEnhance"];
 const ONBOARDING_SCREENS_SET = new Set<Screen>(ONBOARDING_SCREENS);
 
 function loadOnboardingDraft() {
@@ -480,8 +480,8 @@ export default function App() {
       locationInfo: data.locationInfo,
     }));
     setUserGender(data.basicInfo.gender); // Store gender for profile editing later
-    // AI 단일 트랙 — 소개 방식 분기(직접 작성) 제거. 기본정보 다음 바로 AI 인터뷰.
-    setCurrentScreen("aiInterview");
+    // 재배치: 구조화 선호(라이프스타일·이상형)를 먼저 → 그걸 바탕으로 인터뷰
+    setCurrentScreen("lifestyle");
   };
 
   const handleBasicInfoBack = () => {
@@ -515,7 +515,8 @@ export default function App() {
         interviewAnswers: answers,
       },
     }));
-    setCurrentScreen("lifestyle");
+    // 재배치: 인터뷰는 라이프스타일·이상형 뒤 단계 → 완료 후 사진
+    setCurrentScreen("photoUpload");
   };
 
   /**
@@ -543,7 +544,7 @@ export default function App() {
   };
 
   const handlePhotoBack = () => {
-    setCurrentScreen("idealType");
+    setCurrentScreen("aiInterview");
   };
 
   /** 공통 라이프스타일 스텝(흡연/음주/종교/관심사) — 두 경로(인터뷰/직접) 모두 거침 → idealType */
@@ -569,8 +570,8 @@ export default function App() {
       ...prev,
       idealType: data.idealType,
     }));
-    // UX C — 이상형 다음은 사진 등록 → AI 분석
-    setCurrentScreen("photoUpload");
+    // 재배치: 이상형 다음은 AI 인터뷰(앞 단계 데이터 기반) → 이후 사진
+    setCurrentScreen("aiInterview");
   };
 
   const handleAIProfileComplete = async (result: { colorType: string; colorName: string; colorHex: string; colorDescription: string; generatedIntroduction: string; colorReasoning?: string; personalitySummary?: string; idealTypeInsight?: string; strengths?: string[] }) => {
@@ -1004,7 +1005,7 @@ export default function App() {
               setReanalyzeAnswers(null);
               setCurrentScreen("myPage");
             } else {
-              setCurrentScreen("basicInfo");
+              setCurrentScreen("idealType");
             }
           }}
           initialAnswers={
@@ -1015,13 +1016,25 @@ export default function App() {
                   ? profileData.introduction.interviewAnswers
                   : null)
           }
+          // ADR 0068 — 앞 단계(라이프스타일·이상형·MBTI)를 바탕으로 맞춤 질문 생성. 코드 그대로 전달.
+          profileContext={{
+            mbti: profileData.basicInfo?.mbti,
+            jobCategory: profileData.careerInfo?.category,
+            interests: profileData.introduction?.interests ?? [],
+            smoking: profileData.lifestyleInfo?.smoking || undefined,
+            drinking: profileData.lifestyleInfo?.drinking || undefined,
+            datingStyle: profileData.introduction?.datingStyle ?? {},
+            idealPersonalities: profileData.idealType?.personalities ?? [],
+            idealDatePreferences: profileData.idealType?.datePreferences ?? [],
+            idealImportantValues: profileData.idealType?.importantValues ?? [],
+          }}
         />
       )}
 
       {currentScreen === "lifestyle" && (
         <LifestyleScreen
           onNext={handleLifestyleNext}
-          onBack={() => setCurrentScreen("aiInterview")}
+          onBack={() => setCurrentScreen("basicInfo")}
           initialData={{
             lifestyleInfo: profileData.lifestyleInfo,
             introduction: {
@@ -1039,7 +1052,7 @@ export default function App() {
           initialData={{
             idealType: profileData.idealType,
           }}
-          userGender={profileData.basicInfo.gender}
+          userGender={userGender || profileData.basicInfo.gender}
         />
       )}
       

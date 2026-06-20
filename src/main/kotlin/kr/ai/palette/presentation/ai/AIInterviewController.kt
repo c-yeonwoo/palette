@@ -4,25 +4,100 @@ import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.profile.ColorType
 import kr.ai.palette.domain.profile.ColorTypeEnum
 import kr.ai.palette.domain.profile.ProfileRepository
+import kr.ai.palette.infrastructure.ai.AdaptiveInterviewContext
 import kr.ai.palette.infrastructure.ai.OpenAIService
+import kr.ai.palette.infrastructure.ratelimit.RateLimiter
 import kr.ai.palette.persistence.interview.InterviewQuestionJpaRepository
+import kr.ai.palette.persistence.option.FieldOptionJpaRepository
+import org.slf4j.LoggerFactory
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
+import java.time.Duration
 
 @RestController
 @RequestMapping("/api/v1/ai-interview")
 class AIInterviewController(
     private val profileRepository: ProfileRepository,
     private val interviewQuestionRepository: InterviewQuestionJpaRepository,
+    private val openAIService: OpenAIService,
+    private val rateLimiter: RateLimiter,
+    private val fieldOptionRepository: FieldOptionJpaRepository,
 ) {
+    private val log = LoggerFactory.getLogger(AIInterviewController::class.java)
 
     @GetMapping("/questions")
-    fun getQuestions(): ResponseEntity<InterviewQuestionsResponse> {
-        // ADR 0055 — 어드민이 관리하는 DB 질문(활성, 순서대로). 비어있으면 하드코딩 기본값으로 폴백.
+    fun getQuestions(): ResponseEntity<InterviewQuestionsResponse> =
+        ResponseEntity.ok(InterviewQuestionsResponse(questions = staticQuestions()))
+
+    /**
+     * 적응형 인터뷰 질문 (ADR 0068) — 앞 단계에서 받은 라이프스타일·이상형·MBTI 를 바탕으로
+     * LLM 이 그 사람 맞춤 개방형 질문을 생성한다. 응답은 정적 /questions 와 **동일한 형태**라
+     * 프론트는 단일 렌더 경로를 쓴다.
+     *
+     * graceful: 키 없음(stub)·LLM 실패·rate-limit 초과 시 정적 질문으로 폴백 (가입 골든패스 보호).
+     * 입력은 전부 칩/enum 코드(자유서술 없음) → 인젝션 표면 없음. 코드→한글 라벨은 여기서 해석.
+     */
+    @PostMapping("/adaptive")
+    fun getAdaptiveQuestions(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @RequestBody request: AdaptiveInterviewRequest,
+    ): ResponseEntity<InterviewQuestionsResponse> {
+        val userId = authUser.userId.value.toString()
+        val count = request.count.coerceIn(2, 4)
+
+        // rate-limit — 인터뷰는 막지 않는다. 초과 시 LLM 호출만 생략하고 정적 폴백.
+        val rateLimited = try {
+            rateLimiter.enforce(
+                key = "llm:interview-adaptive:$userId",
+                limit = 10,
+                window = Duration.ofDays(1),
+                message = "적응형 인터뷰 요청이 너무 잦습니다",
+            )
+            false
+        } catch (e: RuntimeException) {
+            openAIService.logRateLimited(userId)
+            log.info("적응형 인터뷰 rate-limit 초과 — 정적 질문 폴백 user={}", userId)
+            true
+        }
+
+        if (!rateLimited) {
+            val labelMap = optionLabelMap()
+            val context = AdaptiveInterviewContext(
+                mbti = request.mbti?.trim()?.uppercase()?.takeIf { it.length == 4 && it.all(Char::isLetter) },
+                jobCategory = request.jobCategory?.trim()?.takeIf { it.isNotBlank() },
+                interests = resolveLabels(labelMap, "interest", request.interests),
+                smoking = request.smoking?.let { labelMap[("smoking" to it)] },
+                drinking = request.drinking?.let { labelMap[("drinking" to it)] },
+                datingStyle = request.datingStyle,
+                idealPersonalities = resolveLabels(labelMap, "personality", request.idealPersonalities),
+                idealDatePreferences = resolveLabels(labelMap, "datePreference", request.idealDatePreferences),
+                idealImportantValues = resolveLabels(labelMap, "importantValue", request.idealImportantValues),
+            )
+            val generated = openAIService.generateAdaptiveQuestions(context, userId, count)
+            if (!generated.isNullOrEmpty()) {
+                val questions = generated.mapIndexed { idx, q ->
+                    InterviewQuestion(
+                        id = q.id,
+                        step = idx + 1,
+                        category = "맞춤",
+                        question = q.question,
+                        hint = q.hint,
+                        inputType = "text",
+                    )
+                }
+                return ResponseEntity.ok(InterviewQuestionsResponse(questions = questions))
+            }
+        }
+
+        return ResponseEntity.ok(InterviewQuestionsResponse(questions = staticQuestions()))
+    }
+
+    /** ADR 0055 — 어드민이 관리하는 DB 질문(활성, 순서대로). 비어있으면 하드코딩 기본값으로 폴백. */
+    private fun staticQuestions(): List<InterviewQuestion> {
         val rows = interviewQuestionRepository.findByActiveTrueOrderByDisplayOrderAsc()
-        val questions = if (rows.isEmpty()) {
+        return if (rows.isEmpty()) {
             INTERVIEW_QUESTIONS
         } else {
             rows.map { row ->
@@ -37,8 +112,16 @@ class AIInterviewController(
                 )
             }
         }
-        return ResponseEntity.ok(InterviewQuestionsResponse(questions = questions))
     }
+
+    /** (setKey, code) → 한글 라벨 맵 (활성 옵션). ADR 0057 field_options. */
+    private fun optionLabelMap(): Map<Pair<String, String>, String> =
+        fieldOptionRepository.findByActiveTrueOrderBySetKeyAscDisplayOrderAsc()
+            .associate { (it.setKey to it.code) to it.label }
+
+    /** 코드 리스트를 한글 라벨로 — 못 찾은 코드는 비우지 않고 원본 유지(드물게 미시드 대비). */
+    private fun resolveLabels(map: Map<Pair<String, String>, String>, setKey: String, codes: List<String>): List<String> =
+        codes.mapNotNull { code -> map[setKey to code] ?: code.takeIf { it.isNotBlank() } }
 
     @PostMapping("/complete")
     @Transactional
@@ -132,6 +215,23 @@ data class InterviewQuestion(
 
 data class InterviewQuestionsResponse(
     val questions: List<InterviewQuestion>,
+)
+
+/**
+ * 적응형 인터뷰 요청 — 앞 단계에서 모은 구조화 정보를 **코드 그대로** 전달.
+ * 코드→한글 라벨 해석은 컨트롤러가 field_options 로 처리하므로 프론트는 가공 불필요.
+ */
+data class AdaptiveInterviewRequest(
+    val mbti: String? = null,
+    val jobCategory: String? = null,
+    val interests: List<String> = emptyList(),
+    val smoking: String? = null,
+    val drinking: String? = null,
+    val datingStyle: Map<String, String> = emptyMap(),
+    val idealPersonalities: List<String> = emptyList(),
+    val idealDatePreferences: List<String> = emptyList(),
+    val idealImportantValues: List<String> = emptyList(),
+    val count: Int = 3,
 )
 
 data class CompleteInterviewRequest(

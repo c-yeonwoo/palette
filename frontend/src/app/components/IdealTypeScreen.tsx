@@ -133,8 +133,8 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
           <h2 className={onBack ? "" : "text-center w-full"}>이상형 설정</h2>
         </div>
         <div className="space-y-2">
-          <Progress value={80} className="h-2" />
-          <p className="text-sm text-muted-foreground text-center">4/5 단계 - 약 3분 소요</p>
+          <Progress value={60} className="h-2" />
+          <p className="text-sm text-muted-foreground text-center">3/5 단계 - 약 3분 소요</p>
         </div>
       </div>
 
