@@ -70,7 +70,7 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
     setIsVerificationLoading(true);
 
     try {
-      const response = await sendVerificationCode(formData.phoneNumber);
+      const response = await sendVerificationCode(formData.phoneNumber, true);
       if (response.success) {
         setVerificationSent(true);
         setVerificationVerified(false);
@@ -81,7 +81,8 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
       }
     } catch (error) {
       console.error("Failed to send verification:", error);
-      toast.error("인증번호 발송에 실패했습니다");
+      // 중복 번호 등 백엔드 사유를 그대로 노출 (예: "이미 가입된 휴대폰 번호입니다")
+      toast.error((error as Error)?.message || "인증번호 발송에 실패했습니다");
     } finally {
       setIsVerificationLoading(false);
     }

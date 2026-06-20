@@ -72,7 +72,7 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
     setIsVerificationLoading(true);
 
     try {
-      const response = await sendVerificationCode(formData.phoneNumber);
+      const response = await sendVerificationCode(formData.phoneNumber, true);
       if (response.success) {
         setVerificationSent(true);
         toast.success("[베타] 인증번호: 000000 을 입력해주세요", { duration: 5000 });
@@ -81,7 +81,8 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
       }
     } catch (error) {
       console.error("Failed to send verification:", error);
-      toast.error("인증번호 발송에 실패했습니다");
+      // 중복 번호 등 백엔드 사유 그대로 노출
+      toast.error((error as Error)?.message || "인증번호 발송에 실패했습니다");
     } finally {
       setIsVerificationLoading(false);
     }

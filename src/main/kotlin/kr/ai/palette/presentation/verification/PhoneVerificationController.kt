@@ -24,7 +24,7 @@ class PhoneVerificationController(
     fun sendVerificationCode(
         @RequestBody request: SendVerificationCodeRequest
     ): ResponseEntity<SendVerificationCodeResponse> {
-        return when (val result = phoneVerificationService.sendVerificationCode(request.phoneNumber)) {
+        return when (val result = phoneVerificationService.sendVerificationCode(request.phoneNumber, request.blockIfRegistered)) {
             is SendVerificationCodeResult.Success -> ResponseEntity.ok(
                 SendVerificationCodeResponse(
                     success = true,
@@ -78,7 +78,9 @@ class PhoneVerificationController(
  * 인증번호 발송 요청
  */
 data class SendVerificationCodeRequest(
-    val phoneNumber: String
+    val phoneNumber: String,
+    /** 가입 흐름에서 true — 이미 가입된 번호면 발송 차단(중복 안내). 기본 false(번호 변경 등). */
+    val blockIfRegistered: Boolean = false,
 )
 
 /**

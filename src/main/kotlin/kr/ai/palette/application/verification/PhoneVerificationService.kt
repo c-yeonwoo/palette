@@ -39,10 +39,19 @@ class PhoneVerificationService(
      * 인증번호를 발송합니다.
      * dev/qa 환경에서는 SMS를 발송하지 않고 고정 코드 000000을 사용합니다.
      */
-    fun sendVerificationCode(phoneNumber: String): SendVerificationCodeResult {
+    fun sendVerificationCode(
+        phoneNumber: String,
+        // 가입 흐름에서만 true — 이미 가입된 번호면 발송 전 차단. (마이페이지 번호 변경 등은 false)
+        blockIfRegistered: Boolean = false,
+    ): SendVerificationCodeResult {
         // 핸드폰 번호 형식 검증
         val cleanedPhoneNumber = cleanPhoneNumber(phoneNumber)
         require(isValidPhoneNumber(cleanedPhoneNumber)) { "유효하지 않은 핸드폰 번호입니다" }
+
+        // 가입 중복 차단 — 이미 가입된 번호면 발송하지 않고 명확히 안내
+        if (blockIfRegistered && userRepository.existsByPhoneNumber(cleanedPhoneNumber)) {
+            return SendVerificationCodeResult.Failure("이미 가입된 휴대폰 번호입니다")
+        }
 
         // 기존 인증 정보 삭제
         phoneVerificationRepository.deleteByPhoneNumber(cleanedPhoneNumber)

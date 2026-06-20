@@ -20,10 +20,14 @@ interface VerifyCodeResponse {
 /**
  * Send verification code to phone number
  */
-export async function sendVerificationCode(phoneNumber: string): Promise<SendVerificationCodeResponse> {
+export async function sendVerificationCode(
+  phoneNumber: string,
+  // 가입 흐름에서 true — 이미 가입된 번호면 백엔드가 발송 차단 + 중복 메시지 반환
+  blockIfRegistered = false,
+): Promise<SendVerificationCodeResponse> {
   return api.post<SendVerificationCodeResponse>(
     '/api/v1/verification/phone/send',
-    { phoneNumber },
+    { phoneNumber, blockIfRegistered },
     { requiresAuth: false }
   );
 }
