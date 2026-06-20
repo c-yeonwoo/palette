@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Progress } from "./ui/progress";
-import { Share2, Camera, Plus, Video, ArrowLeft, X, Play } from "lucide-react";
+import { Share2, Plus, Video, ArrowLeft, X, Play } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
 
@@ -139,28 +139,11 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
 
       {/* Content */}
       <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
-        {/* 좋은 사진 가이드 (등급·점수 없음 — 색깔만 유효) */}
-        <div className="bg-secondary border border-border rounded-xl p-5">
-          <h3 className="text-foreground mb-3 font-medium">좋은 사진 고르는 법</h3>
-          <div className="space-y-2 text-sm text-foreground/80">
-            <p>· 남이 찍어준 자연스러운 사진</p>
-            <p>· 얼굴이 선명하게 보이는 사진</p>
-            <p>· 전신과 다양한 상황이 담긴 사진</p>
-            <p className="text-muted-foreground">사진이 많을수록 매칭 확률이 올라가요</p>
-          </div>
-        </div>
-
-        {/* Guide Text */}
-        <div className="bg-secondary border border-border rounded-xl p-5">
-          <div className="flex items-start gap-3">
-            <Camera className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-            <div>
-              <h3 className="text-foreground mb-1">셀카는 승인 거절될 수 있어요</h3>
-              <p className="text-sm text-muted-foreground">
-                남이 찍어준 자연스러운 사진만 올려주세요. 최대 6장까지 등록할 수 있습니다.
-              </p>
-            </div>
-          </div>
+        {/* 좋은 사진 가이드 — 한 줄로 압축, 셀카도 OK */}
+        <div className="bg-secondary border border-border rounded-xl px-4 py-3">
+          <p className="text-sm text-foreground/80">
+            얼굴이 잘 보이는 사진이면 <span className="font-medium text-foreground">셀카도 좋아요</span> · 다양한 모습일수록, 많을수록 매칭 확률이 올라가요
+          </p>
         </div>
 
         {/* Photo Upload Areas */}
