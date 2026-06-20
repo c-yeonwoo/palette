@@ -10,10 +10,11 @@ vi.mock('sonner', () => ({
   }),
 }));
 
-// Mock api client
+// Mock api client — post: 생성, get: useOnboardingOptions(폴백 기본값)
 vi.mock('../../../lib/api/apiClient', () => ({
   api: {
     post: vi.fn(),
+    get: vi.fn().mockResolvedValue({}),
   },
 }));
 
@@ -23,16 +24,22 @@ const { toast } = await import('sonner');
 const mockProfileData = {
   introduction: {
     interviewAnswers: {
-      job: '개발자',
       passion: '음악 감상',
+      happiness: '주말 산책',
     },
+    interests: ['MOVIE', 'TRAVEL'],
   },
   idealType: {
-    personalities: ['유머있는', '배려심 있는'],
-    datePreferences: ['카페 투어'],
+    personalities: ['유머있는', '배려심많은'],
+    datePreferences: ['CULTURE'],
     importantValues: ['신뢰'],
     dealBreakers: ['거짓말'],
   },
+  basicInfo: { mbti: 'ENFP', birthYear: '1995', height: 175, bodyType: 'AVERAGE' },
+  careerInfo: { category: 'IT/개발' },
+  locationInfo: { region: '서울', district: '강남구' },
+  lifestyleInfo: { smoking: 'NEVER', drinking: 'SOMETIMES' },
+  photos: [],
 };
 
 const mockResult = {
@@ -43,135 +50,98 @@ const mockResult = {
   generatedIntroduction: '안녕하세요! 음악을 사랑하는 개발자입니다.',
 };
 
-describe('AIProfileEnhanceScreen', () => {
-  const onComplete = vi.fn();
+function renderScreen(extraProps = {}) {
+  return render(
+    <AIProfileEnhanceScreen
+      onComplete={vi.fn()}
+      introMethod="INTERVIEW"
+      profileData={mockProfileData}
+      {...extraProps}
+    />
+  );
+}
 
+describe('AIProfileEnhanceScreen', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Mock navigator.clipboard
+    (api.get as ReturnType<typeof vi.fn>).mockResolvedValue({});
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText: vi.fn().mockResolvedValue(undefined) },
       writable: true,
     });
-    // Remove navigator.share to test clipboard fallback
-    Object.defineProperty(navigator, 'share', {
-      value: undefined,
-      writable: true,
-    });
+    Object.defineProperty(navigator, 'share', { value: undefined, writable: true });
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it('renders AI generation button initially', () => {
-    render(
-      <AIProfileEnhanceScreen
-        onComplete={onComplete}
-        introMethod="INTERVIEW"
-        profileData={mockProfileData}
-      />
-    );
-    expect(screen.getByText('AI 소개글 & 색깔 타입 생성하기')).toBeInTheDocument();
-    expect(screen.getByText('건너뛰기 (나중에 직접 작성)')).toBeInTheDocument();
-  });
-
-  it('shows first loading step immediately after generation starts', async () => {
-    // This promise never resolves so we can inspect the loading UI
+  it('인터뷰 직후 자동 생성 — 진입하면 바로 로딩이 보인다 (수동 버튼 없음)', async () => {
     let rejectFn: (e: Error) => void;
     const neverResolves = new Promise<never>((_, reject) => { rejectFn = reject; });
     (api.post as ReturnType<typeof vi.fn>).mockReturnValue(neverResolves);
 
-    render(
-      <AIProfileEnhanceScreen
-        onComplete={onComplete}
-        introMethod="INTERVIEW"
-        profileData={mockProfileData}
-      />
-    );
+    renderScreen();
 
-    fireEvent.click(screen.getByText('AI 소개글 & 색깔 타입 생성하기'));
+    // 자동 생성이 시작돼 첫 로딩 스텝이 보임
+    expect(await screen.findByText('답변을 하나하나 읽고 있어요')).toBeInTheDocument();
+    // 옛 수동 "생성하기" 버튼은 없다
+    expect(screen.queryByText('AI 소개글 & 색깔 타입 생성하기')).not.toBeInTheDocument();
 
-    // First loading step should be visible immediately
-    expect(screen.getByText('답변을 하나하나 읽고 있어요')).toBeInTheDocument();
-    expect(screen.getByText('잠깐이면 돼요, 거의 다 됐어요')).toBeInTheDocument();
-
-    // Cleanup: reject the dangling promise
     act(() => { rejectFn!(new Error('cleanup')); });
-    await waitFor(() => {}); // flush
+    await waitFor(() => {});
   });
 
-  it('shows color type result card after successful generation', async () => {
+  it('생성 성공 시 색깔 타입 결과 카드를 보여준다', async () => {
     (api.post as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
-
-    render(
-      <AIProfileEnhanceScreen
-        onComplete={onComplete}
-        introMethod="INTERVIEW"
-        profileData={mockProfileData}
-      />
-    );
-
-    fireEvent.click(screen.getByText('AI 소개글 & 색깔 타입 생성하기'));
+    renderScreen();
 
     await waitFor(() => {
       expect(screen.getByText('따뜻한 오렌지')).toBeInTheDocument();
-      expect(screen.getByText('열정적이고 따뜻한 에너지의 소유자예요.')).toBeInTheDocument();
+      expect(screen.getByText('나의 색깔 타입')).toBeInTheDocument();
       expect(screen.getByText('안녕하세요! 음악을 사랑하는 개발자입니다.')).toBeInTheDocument();
     });
   });
 
-  it('shows "나의 색깔 타입" label in result', async () => {
+  it('전체 프로필 미리보기를 보여준다 (확인용)', async () => {
     (api.post as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
+    renderScreen();
 
-    render(
-      <AIProfileEnhanceScreen
-        onComplete={onComplete}
-        introMethod="INTERVIEW"
-        profileData={mockProfileData}
-      />
-    );
-
-    fireEvent.click(screen.getByText('AI 소개글 & 색깔 타입 생성하기'));
-
-    await waitFor(() => {
-      expect(screen.getByText('나의 색깔 타입')).toBeInTheDocument();
-    });
+    await waitFor(() => expect(screen.getByText('내 프로필 미리보기')).toBeInTheDocument());
+    expect(screen.getByText('ENFP')).toBeInTheDocument();
+    expect(screen.getByText('IT/개발')).toBeInTheDocument();
+    expect(screen.getByText('175cm')).toBeInTheDocument();
   });
 
-  it('shows share button in result', async () => {
+  it('"이대로 확인 — 심사 요청하기" 클릭 시 onComplete 호출 (중간 화면 없음)', async () => {
     (api.post as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
+    const onComplete = vi.fn();
+    renderScreen({ onComplete });
 
-    render(
-      <AIProfileEnhanceScreen
-        onComplete={onComplete}
-        introMethod="INTERVIEW"
-        profileData={mockProfileData}
-      />
-    );
+    await waitFor(() => expect(screen.getByText('이대로 확인 — 심사 요청하기')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('이대로 확인 — 심사 요청하기'));
 
-    fireEvent.click(screen.getByText('AI 소개글 & 색깔 타입 생성하기'));
-
-    await waitFor(() => {
-      expect(screen.getByText('공유')).toBeInTheDocument();
-    });
+    expect(onComplete).toHaveBeenCalledWith(mockResult);
   });
 
-  it('copies share text to clipboard when share button clicked (no navigator.share)', async () => {
+  it('"다시 작성 (인터뷰로)" 클릭 시 onRedoAnswers 호출 — 이전 화면 복귀', async () => {
     (api.post as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
+    const onRedoAnswers = vi.fn();
+    renderScreen({ onRedoAnswers });
 
-    render(
-      <AIProfileEnhanceScreen
-        onComplete={onComplete}
-        introMethod="INTERVIEW"
-        profileData={mockProfileData}
-      />
-    );
+    await waitFor(() => expect(screen.getByText('다시 작성 (인터뷰로)')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('다시 작성 (인터뷰로)'));
 
-    fireEvent.click(screen.getByText('AI 소개글 & 색깔 타입 생성하기'));
+    expect(onRedoAnswers).toHaveBeenCalled();
+  });
+
+  it('공유 버튼 — 클립보드로 복사 (navigator.share 없을 때)', async () => {
+    (api.post as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
+    renderScreen();
+
     await waitFor(() => expect(screen.getByText('공유')).toBeInTheDocument());
-
     fireEvent.click(screen.getByText('공유'));
+
     await waitFor(() => {
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
         expect.stringContaining('따뜻한 오렌지')
@@ -179,128 +149,29 @@ describe('AIProfileEnhanceScreen', () => {
     });
   });
 
-  it('shows "what next" guide when 완료하기 is clicked', async () => {
-    (api.post as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
-
-    render(
-      <AIProfileEnhanceScreen
-        onComplete={onComplete}
-        introMethod="INTERVIEW"
-        profileData={mockProfileData}
-      />
-    );
-
-    fireEvent.click(screen.getByText('AI 소개글 & 색깔 타입 생성하기'));
-    await waitFor(() => expect(screen.getByText('이 소개글로 완료하기')).toBeInTheDocument());
-
-    fireEvent.click(screen.getByText('이 소개글로 완료하기'));
-
-    await waitFor(() => {
-      expect(screen.getByText('프로필 완성!')).toBeInTheDocument();
-      expect(screen.getByText('이제 이런 것들을 할 수 있어요')).toBeInTheDocument();
-      expect(screen.getByText('매칭 요청을 받아볼 수 있어요')).toBeInTheDocument();
-      expect(screen.getByText('팔레트 시작하기')).toBeInTheDocument();
-    });
-  });
-
-  it('calls onComplete when "팔레트 시작하기" is clicked', async () => {
-    (api.post as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
-
-    render(
-      <AIProfileEnhanceScreen
-        onComplete={onComplete}
-        introMethod="INTERVIEW"
-        profileData={mockProfileData}
-      />
-    );
-
-    fireEvent.click(screen.getByText('AI 소개글 & 색깔 타입 생성하기'));
-    await waitFor(() => expect(screen.getByText('이 소개글로 완료하기')).toBeInTheDocument());
-    fireEvent.click(screen.getByText('이 소개글로 완료하기'));
-    await waitFor(() => expect(screen.getByText('팔레트 시작하기')).toBeInTheDocument());
-    fireEvent.click(screen.getByText('팔레트 시작하기'));
-
-    expect(onComplete).toHaveBeenCalledWith(mockResult);
-  });
-
-  it('skip assigns SOFT_PINK and shows toast', async () => {
-    render(
-      <AIProfileEnhanceScreen
-        onComplete={onComplete}
-        introMethod="INTERVIEW"
-        profileData={mockProfileData}
-      />
-    );
-
-    fireEvent.click(screen.getByText('건너뛰기 (나중에 직접 작성)'));
-
-    expect(toast).toHaveBeenCalledWith(
-      expect.stringContaining('소프트 핑크'),
-      expect.any(Object)
-    );
-    expect(onComplete).toHaveBeenCalledWith(
-      expect.objectContaining({ colorType: 'SOFT_PINK' })
-    );
-  });
-
-  it('shows error toast on generation failure', async () => {
+  it('생성 실패 시 에러 토스트 + 재시도 버튼', async () => {
     (api.post as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Network error'));
-
-    render(
-      <AIProfileEnhanceScreen
-        onComplete={onComplete}
-        introMethod="INTERVIEW"
-        profileData={mockProfileData}
-      />
-    );
-
-    fireEvent.click(screen.getByText('AI 소개글 & 색깔 타입 생성하기'));
+    renderScreen();
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('생성에 실패했어요. 다시 시도해주세요.');
     });
+    expect(await screen.findByText('다시 시도하기')).toBeInTheDocument();
   });
 
-  it('allows re-generation after success', async () => {
+  it('"소개글만 다시"로 재생성할 수 있다', async () => {
     (api.post as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
+    renderScreen();
 
-    render(
-      <AIProfileEnhanceScreen
-        onComplete={onComplete}
-        introMethod="INTERVIEW"
-        profileData={mockProfileData}
-      />
-    );
-
-    fireEvent.click(screen.getByText('AI 소개글 & 색깔 타입 생성하기'));
-    await waitFor(() => expect(screen.getByText('다시 생성하기')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('소개글만 다시')).toBeInTheDocument());
 
     (api.post as ReturnType<typeof vi.fn>).mockResolvedValue({
       ...mockResult,
       colorName: '차분한 블루',
       colorType: 'CALM_BLUE',
     });
+    fireEvent.click(screen.getByText('소개글만 다시'));
 
-    fireEvent.click(screen.getByText('다시 생성하기'));
-    await waitFor(() => {
-      expect(screen.getByText('차분한 블루')).toBeInTheDocument();
-    });
-  });
-
-  it('toggles input detail panel', () => {
-    render(
-      <AIProfileEnhanceScreen
-        onComplete={onComplete}
-        introMethod="INTERVIEW"
-        profileData={mockProfileData}
-      />
-    );
-
-    const toggle = screen.getByText('입력한 내용 확인');
-    fireEvent.click(toggle);
-    expect(screen.getByText('개발자')).toBeInTheDocument();
-
-    fireEvent.click(toggle);
-    expect(screen.queryByText('개발자')).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('차분한 블루')).toBeInTheDocument());
   });
 });

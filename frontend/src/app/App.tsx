@@ -117,7 +117,7 @@ type Screen =
 const ONBOARDING_DRAFT_KEY = "palette_onboarding_draft";
 const ONBOARDING_STEP_KEY = "palette_onboarding_step";
 // AI 단일 트랙 (직접 작성 분기 제거) — 실제 진행 순서대로
-const ONBOARDING_SCREENS: Screen[] = ["basicInfo", "lifestyle", "idealType", "aiInterview", "photoUpload", "aiProfileEnhance"];
+const ONBOARDING_SCREENS: Screen[] = ["basicInfo", "lifestyle", "idealType", "photoUpload", "aiInterview", "aiProfileEnhance"];
 const ONBOARDING_SCREENS_SET = new Set<Screen>(ONBOARDING_SCREENS);
 
 function loadOnboardingDraft() {
@@ -503,8 +503,8 @@ export default function App() {
       mainPhotoIndex: data.mainPhotoIndex,
       video: data.video,
     }));
-    // UX C — 사진 다음은 AI 분석(색깔 생성)
-    setCurrentScreen("aiProfileEnhance");
+    // 사진은 인터뷰 앞 단계 → 다음은 AI 인터뷰(마지막 입력)
+    setCurrentScreen("aiInterview");
   };
 
   const handleAIInterviewComplete = (answers: Record<string, string>) => {
@@ -515,8 +515,8 @@ export default function App() {
         interviewAnswers: answers,
       },
     }));
-    // 재배치: 인터뷰는 라이프스타일·이상형 뒤 단계 → 완료 후 사진
-    setCurrentScreen("photoUpload");
+    // 인터뷰가 마지막 입력 → 끝나면 바로 소개글 자동 생성 + 전체 프로필 확인 화면
+    setCurrentScreen("aiProfileEnhance");
   };
 
   /**
@@ -544,7 +544,7 @@ export default function App() {
   };
 
   const handlePhotoBack = () => {
-    setCurrentScreen("aiInterview");
+    setCurrentScreen("idealType");
   };
 
   /** 공통 라이프스타일 스텝(흡연/음주/종교/관심사) — 두 경로(인터뷰/직접) 모두 거침 → idealType */
@@ -570,8 +570,8 @@ export default function App() {
       ...prev,
       idealType: data.idealType,
     }));
-    // 재배치: 이상형 다음은 AI 인터뷰(앞 단계 데이터 기반) → 이후 사진
-    setCurrentScreen("aiInterview");
+    // 이상형 다음은 사진 → 그 다음 AI 인터뷰(마지막 입력, 앞 단계 데이터 기반)
+    setCurrentScreen("photoUpload");
   };
 
   const handleAIProfileComplete = async (result: { colorType: string; colorName: string; colorHex: string; colorDescription: string; generatedIntroduction: string; colorReasoning?: string; personalitySummary?: string; idealTypeInsight?: string; strengths?: string[] }) => {
@@ -1005,7 +1005,7 @@ export default function App() {
               setReanalyzeAnswers(null);
               setCurrentScreen("myPage");
             } else {
-              setCurrentScreen("idealType");
+              setCurrentScreen("photoUpload");
             }
           }}
           initialAnswers={

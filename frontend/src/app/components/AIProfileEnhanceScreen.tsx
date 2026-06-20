@@ -3,6 +3,7 @@ import { Button } from "./ui/button";
 import { Sparkles, RefreshCw, ArrowRight, ChevronDown, ChevronUp, Share2, Check } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
+import { useOnboardingOptions } from "../../lib/onboarding/useOnboardingOptions";
 
 interface IntroductionSection {
   heading: string;
@@ -36,19 +37,29 @@ interface AIProfileEnhanceScreenProps {
   profileData: {
     introduction: {
       interviewAnswers?: Record<string, string>;
+      interests?: string[];
     };
     idealType: {
       personalities?: string[];
       datePreferences?: string[];
       importantValues?: string[];
       dealBreakers?: string[];
+      ageMin?: number | null;
+      ageMax?: number | null;
     };
     basicInfo?: {
       mbti?: string;
       birthYear?: string;
       birthMonth?: string;
       birthDay?: string;
+      height?: number | null;
+      bodyType?: string;
     };
+    // 전체 프로필 미리보기용 (App 이 전체 profileData 를 그대로 넘김)
+    careerInfo?: { category?: string };
+    locationInfo?: { region?: string; district?: string };
+    lifestyleInfo?: { smoking?: string; drinking?: string; religion?: string };
+    photos?: string[];
   };
 }
 
@@ -140,13 +151,6 @@ function generateConfetti(count: number): ConfettiPiece[] {
   }));
 }
 
-const WHAT_NEXT_ITEMS = [
-  { text: "매칭 요청을 받아볼 수 있어요" },
-  { text: "지인을 통해 소개받을 수 있어요" },
-  { text: "프로필 완성도를 높여 노출을 늘려보세요" },
-  { text: "친구를 초대하면 매칭 크레딧을 드려요" },
-];
-
 export function AIProfileEnhanceScreen({
   onComplete,
   onRedoAnswers,
@@ -159,13 +163,19 @@ export function AIProfileEnhanceScreen({
   const [loadingStepIdx, setLoadingStepIdx] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [confetti, setConfetti] = useState<ConfettiPiece[]>([]);
-  const [showWhatNext, setShowWhatNext] = useState(false);
   const [copied, setCopied] = useState(false);
   const loadingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const { options } = useOnboardingOptions();
   const answers = profileData.introduction.interviewAnswers ?? {};
   const idealType = profileData.idealType;
   const labels = introMethod === "INTERVIEW" ? INTERVIEW_LABELS : MANUAL_LABELS;
+
+  // 칩 코드 → 한글 라벨 (전체 프로필 미리보기용). 못 찾으면 코드 그대로.
+  const lbl = (setKey: string, code?: string | null) =>
+    code ? ((options[setKey] ?? []).find((o) => o.code === code)?.label ?? code) : "";
+  const lblList = (setKey: string, codes?: string[]) =>
+    (codes ?? []).map((c) => lbl(setKey, c)).filter(Boolean);
 
   // Cleanup interval on unmount
   useEffect(() => {
@@ -211,7 +221,6 @@ export function AIProfileEnhanceScreen({
     setIsGenerating(true);
     setRevealed(false);
     setResult(null);
-    setShowWhatNext(false);
     startLoadingAnimation();
 
     try {
@@ -249,29 +258,19 @@ export function AIProfileEnhanceScreen({
     }
   };
 
+  // 인터뷰가 끝나면 이 화면에서 바로 자동 생성 (수동 "생성하기" 클릭 제거).
+  const autoGenRef = useRef(false);
+  useEffect(() => {
+    if (autoGenRef.current) return;
+    autoGenRef.current = true;
+    handleGenerate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 확인 → 바로 저장 → 심사 대기 (중간 "이제 이런 것 가능해요" 화면 제거: 심사 후에야 가능하므로 오해 소지).
   const handleComplete = () => {
     if (!result) return;
-    setShowWhatNext(true);
-  };
-
-  const handleFinalComplete = () => {
-    if (!result) return;
     onComplete(result);
-  };
-
-  const handleSkip = () => {
-    const skipped: ProfileGenerationResult = {
-      colorType: "SOFT_PINK",
-      colorName: "소프트 핑크",
-      colorHex: "#F9A8D4",
-      colorDescription: "부드럽고 감성적인 당신만의 색깔이에요.",
-      generatedIntroduction: "",
-    };
-    toast("소프트 핑크 타입으로 시작해요!", {
-      description: "나중에 AI 분석으로 내 진짜 색깔을 찾아보세요",
-      duration: 4000,
-    });
-    onComplete(skipped);
   };
 
   const handleShare = async () => {
@@ -400,75 +399,31 @@ export function AIProfileEnhanceScreen({
                 </div>
               </div>
             ) : (
-              /* 초기 생성 버튼 */
+              /* 자동 생성 실패 시에만 노출 — 재시도 */
               <>
-                <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center mx-auto">
-                  <Sparkles className="w-8 h-8 text-primary-foreground" />
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto">
+                  <RefreshCw className="w-7 h-7 text-muted-foreground" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground">AI 소개글 생성</h3>
+                  <h3 className="font-semibold text-foreground">분석을 다시 시도할게요</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    입력한 내용을 바탕으로 소개글과<br />나만의 색깔 타입을 찾아드려요
+                    잠시 연결이 원활하지 않았어요. 다시 시도해주세요.
                   </p>
                 </div>
                 <Button
                   onClick={handleGenerate}
                   className="w-full h-12 bg-brand-soft text-brand-strong"
                 >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  AI 소개글 &amp; 색깔 타입 생성하기
-                </Button>
-                <Button
-                  onClick={handleSkip}
-                  variant="ghost"
-                  className="w-full text-muted-foreground text-sm"
-                >
-                  건너뛰기 (나중에 직접 작성)
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  다시 시도하기
                 </Button>
               </>
             )}
           </div>
         )}
 
-        {/* "다음은 이런 것들이 가능해요" 완료 가이드 */}
-        {showWhatNext && result && (
-          <div
-            style={{
-              animation: "slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both",
-            }}
-          >
-            <style>{`
-              @keyframes slideUp {
-                from { opacity: 0; transform: translateY(24px); }
-                to { opacity: 1; transform: translateY(0); }
-              }
-            `}</style>
-            <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-              <div className="text-center">
-                <h3 className="font-bold text-lg">프로필 완성!</h3>
-                <p className="text-sm text-muted-foreground mt-1">이제 이런 것들을 할 수 있어요</p>
-              </div>
-              <div className="space-y-2.5">
-                {WHAT_NEXT_ITEMS.map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
-                    <span className="text-foreground">{item.text}</span>
-                  </div>
-                ))}
-              </div>
-              <Button
-                onClick={handleFinalComplete}
-                className="w-full h-12 bg-brand-soft text-brand-strong"
-              >
-                팔레트 시작하기
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-        )}
-
         {/* 결과 카드 */}
-        {result && !showWhatNext && (
+        {result && (
           <div className="space-y-4">
             {/* 색깔 타입 카드 — reveal animation */}
             <div
@@ -622,23 +577,93 @@ export function AIProfileEnhanceScreen({
               </div>
             )}
 
-            {/* 재생성 + 완료 */}
+            {/* 전체 프로필 미리보기 — 제출 전 확인용 */}
+            {(() => {
+              const bi = profileData.basicInfo;
+              const age = bi?.birthYear ? `만 ${new Date().getFullYear() - parseInt(bi.birthYear)}세` : "";
+              const region = [profileData.locationInfo?.region, profileData.locationInfo?.district].filter(Boolean).join(" ");
+              const facts: [string, string][] = ([
+                ["나이", age],
+                ["키", bi?.height ? `${bi.height}cm` : ""],
+                ["체형", lbl("bodyType", bi?.bodyType)],
+                ["MBTI", bi?.mbti ?? ""],
+                ["직업", profileData.careerInfo?.category ?? ""],
+                ["지역", region],
+                ["흡연", lbl("smoking", profileData.lifestyleInfo?.smoking)],
+                ["음주", lbl("drinking", profileData.lifestyleInfo?.drinking)],
+              ] as [string, string][]).filter(([, v]) => !!v);
+              const interests = lblList("interest", profileData.introduction.interests);
+              const idealChips: [string, string[]][] = ([
+                ["선호 성격", lblList("personality", idealType.personalities)],
+                ["데이트", lblList("datePreference", idealType.datePreferences)],
+                ["중요 가치", lblList("importantValue", idealType.importantValues)],
+              ] as [string, string[]][]).filter(([, v]) => v.length > 0);
+              const chip = "text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground border border-border";
+              return (
+                <div
+                  className="bg-card border border-border rounded-2xl p-5 space-y-4"
+                  style={{ animation: revealed ? "fadeInUp 0.5s ease 0.4s both" : "none" }}
+                >
+                  <p className="text-sm font-medium">내 프로필 미리보기</p>
+                  {(profileData.photos?.length ?? 0) > 0 && (
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                      {profileData.photos!.slice(0, 6).map((src, i) => (
+                        <img key={i} src={src} alt="" className="w-16 h-20 rounded-lg object-cover shrink-0 border border-border" />
+                      ))}
+                    </div>
+                  )}
+                  {facts.length > 0 && (
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                      {facts.map(([k, v]) => (
+                        <div key={k} className="flex items-baseline gap-2 text-sm">
+                          <span className="text-xs text-muted-foreground w-9 shrink-0">{k}</span>
+                          <span className="text-foreground">{v}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {interests.length > 0 && (
+                    <div className="space-y-1.5">
+                      <p className="text-xs text-muted-foreground">관심사</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {interests.map((t) => <span key={t} className={chip}>{t}</span>)}
+                      </div>
+                    </div>
+                  )}
+                  {idealChips.length > 0 && (
+                    <div className="pt-3 border-t border-border space-y-2">
+                      <p className="text-xs text-muted-foreground">이상형</p>
+                      {idealChips.map(([k, items]) => (
+                        <div key={k} className="space-y-1">
+                          <p className="text-[11px] text-muted-foreground/80">{k}</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {items.map((t) => <span key={t} className={chip}>{t}</span>)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* 확인 / 다시 작성 */}
             <div
               className="space-y-3"
               style={{
                 animation: revealed ? "fadeInUp 0.5s ease 0.5s both" : "none",
               }}
             >
+              <Button
+                onClick={handleComplete}
+                disabled={isGenerating}
+                className="w-full h-12 bg-brand-soft text-brand-strong"
+              >
+                이대로 확인 — 심사 요청하기
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+
               <div className="flex gap-2">
-                <Button
-                  onClick={handleGenerate}
-                  disabled={isGenerating}
-                  variant="outline"
-                  className="flex-1 h-11 border-border text-primary hover:bg-muted"
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isGenerating ? "animate-spin" : ""}`} />
-                  {isGenerating ? "재생성 중..." : "다시 생성하기"}
-                </Button>
                 {onRedoAnswers && (
                   <Button
                     onClick={onRedoAnswers}
@@ -646,18 +671,19 @@ export function AIProfileEnhanceScreen({
                     variant="outline"
                     className="flex-1 h-11 border-border text-foreground hover:bg-muted"
                   >
-                    답변 다시하기
+                    다시 작성 (인터뷰로)
                   </Button>
                 )}
+                <Button
+                  onClick={handleGenerate}
+                  disabled={isGenerating}
+                  variant="outline"
+                  className="flex-1 h-11 border-border text-primary hover:bg-muted"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isGenerating ? "animate-spin" : ""}`} />
+                  {isGenerating ? "재생성 중..." : "소개글만 다시"}
+                </Button>
               </div>
-
-              <Button
-                onClick={handleComplete}
-                className="w-full h-12 bg-brand-soft text-brand-strong"
-              >
-                이 소개글로 완료하기
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
             </div>
 
             <p
@@ -666,7 +692,7 @@ export function AIProfileEnhanceScreen({
                 animation: revealed ? "fadeInUp 0.5s ease 0.6s both" : "none",
               }}
             >
-              나중에 프로필 편집에서 직접 수정할 수 있어요
+              확인하면 심사 후 프로필이 공개돼요. 내용은 나중에 프로필 편집에서 수정할 수 있어요.
             </p>
           </div>
         )}

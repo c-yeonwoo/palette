@@ -132,8 +132,8 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
           <h2 className="text-center">프로필 사진 등록</h2>
         </div>
         <div className="space-y-2">
-          <Progress value={100} className="h-2" />
-          <p className="text-sm text-muted-foreground text-center">5/5 단계 · 마지막이에요</p>
+          <Progress value={80} className="h-2" />
+          <p className="text-sm text-muted-foreground text-center">4/5 단계 · 거의 다 왔어요</p>
         </div>
       </div>
 
