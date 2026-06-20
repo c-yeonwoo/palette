@@ -257,7 +257,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
                   onClick={() => toggleImportantValue(value.code)}
                   className={`relative overflow-visible cursor-pointer px-4 py-2 transition-all ${
                     isSelected
-                      ? "bg-brand-soft text-gold-strong border-brand/40"
+                      ? "bg-brand-soft text-brand-strong border-brand/40"
                       : "bg-card border-border text-muted-foreground hover:border-primary/40"
                   }`}
                   variant={isSelected ? "default" : "outline"}
@@ -303,7 +303,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
                   onClick={() => togglePersonality(personality.code)}
                   className={`cursor-pointer px-4 py-2 transition-all ${
                     isSelected
-                      ? "bg-brand-soft text-gold-strong border-brand/40"
+                      ? "bg-brand-soft text-brand-strong border-brand/40"
                       : "bg-card border-border text-muted-foreground hover:border-primary/40"
                   }`}
                   variant={isSelected ? "default" : "outline"}
@@ -333,7 +333,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
                 onClick={() => toggleAppearanceStyle(style.code)}
                 className={`cursor-pointer px-4 py-2 transition-all ${
                   selectedAppearanceStyles.includes(style.code)
-                    ? "bg-brand-soft text-gold-strong border-brand/40"
+                    ? "bg-brand-soft text-brand-strong border-brand/40"
                     : "bg-card border-border text-muted-foreground hover:border-primary/40"
                 }`}
                 variant={selectedAppearanceStyles.includes(style.code) ? "default" : "outline"}
@@ -363,7 +363,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
                 onClick={() => toggleDealBreaker(option.code)}
                 className={`cursor-pointer px-4 py-2 transition-all ${
                   selectedDealBreakers.includes(option.code)
-                    ? "bg-brand-soft text-gold-strong border-brand/40"
+                    ? "bg-brand-soft text-brand-strong border-brand/40"
                     : "bg-card border-border text-muted-foreground hover:border-primary/40"
                 }`}
                 variant={selectedDealBreakers.includes(option.code) ? "default" : "outline"}
@@ -391,7 +391,7 @@ export function IdealTypeScreen({ onNext, onBack, initialData, userGender }: Ide
             },
           })}
           disabled={!isValid}
-          className="w-full h-14 bg-brand-soft text-gold-strong disabled:opacity-50"
+          className="w-full h-14 bg-brand-soft text-brand-strong disabled:opacity-50"
         >
           다음 — 사진 등록
         </Button>

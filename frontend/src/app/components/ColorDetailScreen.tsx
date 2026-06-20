@@ -83,7 +83,7 @@ export function ColorDetailScreen({ onBack, onNavigateToProfile }: ColorDetailSc
           <p className="font-semibold text-foreground">아직 나의 색이 없어요</p>
           <p className="text-sm text-muted-foreground">AI 프로필을 완성하면 당신만의 색이 발급돼요</p>
           {onNavigateToProfile && (
-            <button onClick={onNavigateToProfile} className="inline-flex items-center gap-1.5 bg-brand-soft text-gold-strong font-semibold px-5 py-2.5 rounded-full">
+            <button onClick={onNavigateToProfile} className="inline-flex items-center gap-1.5 bg-brand-soft text-brand-strong font-semibold px-5 py-2.5 rounded-full">
               <Sparkles className="w-4 h-4" /> AI 프로필로 색 찾기
             </button>
           )}

@@ -233,7 +233,7 @@ export function AIInterviewScreen({ onComplete, onBack, initialAnswers }: AIInte
               className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-line ${
                 msg.type === "ai"
                   ? "bg-card shadow-sm text-foreground rounded-tl-none"
-                  : "bg-brand-soft text-gold-strong rounded-tr-none"
+                  : "bg-brand-soft text-brand-strong rounded-tr-none"
               }`}
             >
               {msg.content}
@@ -268,7 +268,7 @@ export function AIInterviewScreen({ onComplete, onBack, initialAnswers }: AIInte
                   onClick={() => toggleChip(chip)}
                   className={`px-3 py-1.5 rounded-full text-sm transition-all ${
                     selectedChips.includes(chip)
-                      ? "bg-brand-soft text-gold-strong shadow"
+                      ? "bg-brand-soft text-brand-strong shadow"
                       : "bg-muted text-foreground hover:bg-accent"
                   }`}
                 >
@@ -306,7 +306,7 @@ export function AIInterviewScreen({ onComplete, onBack, initialAnswers }: AIInte
                 ? selectedChips.length === 0
                 : currentInput.trim().length === 0
             }
-            className="w-full h-12 bg-brand-soft text-gold-strong"
+            className="w-full h-12 bg-brand-soft text-brand-strong"
           >
             다음
             <ChevronRight className="w-4 h-4 ml-1" />

@@ -430,7 +430,7 @@ function Chip({
       onClick={onClick}
       className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-medium transition-all ${
         selected
-          ? "bg-brand-soft text-gold-strong border-brand/40 shadow-sm scale-[1.02]"
+          ? "bg-brand-soft text-brand-strong border-brand/40 shadow-sm scale-[1.02]"
           : "bg-card border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
       }`}
     >
@@ -727,7 +727,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                 onClick={() => setActiveTab(tab)}
                 className={`py-4 px-2 border-b-2 font-medium transition-colors ${
                   activeTab === tab
-                    ? "border-brand/50 text-gold-strong"
+                    ? "border-brand/50 text-brand-strong"
                     : "border-transparent text-muted-foreground hover:text-foreground"
                 }`}
               >
@@ -790,7 +790,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                             <div className="absolute inset-0 ring-2 ring-red-500 rounded-xl pointer-events-none" />
                           )}
                           {index === 0 && (
-                            <div className="absolute top-1.5 right-1.5 bg-brand-soft text-gold-strong rounded-full px-2 py-0.5 text-xs font-semibold">
+                            <div className="absolute top-1.5 right-1.5 bg-brand-soft text-brand-strong rounded-full px-2 py-0.5 text-xs font-semibold">
                               대표
                             </div>
                           )}
@@ -953,7 +953,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                             }}
                             className={`py-1.5 rounded-lg text-sm font-medium transition-all border ${
                               profile.basicInfo.mbti[idx] === type
-                                ? "bg-brand-soft text-gold-strong border-brand/40"
+                                ? "bg-brand-soft text-brand-strong border-brand/40"
                                 : "bg-card border-border text-muted-foreground hover:border-primary/50"
                             }`}
                           >

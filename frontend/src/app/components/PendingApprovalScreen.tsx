@@ -38,7 +38,7 @@ export function PendingApprovalScreen({
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-10 text-center">
       <div className="max-w-sm w-full space-y-6">
         <div className={`mx-auto w-16 h-16 rounded-2xl flex items-center justify-center ${isRejected ? "bg-amber-100" : "bg-brand-soft"}`}>
-          {isRejected ? <AlertCircle className="w-8 h-8 text-amber-600" /> : <Clock className="w-8 h-8 text-gold-strong" />}
+          {isRejected ? <AlertCircle className="w-8 h-8 text-amber-600" /> : <Clock className="w-8 h-8 text-brand-strong" />}
         </div>
 
         {isRejected ? (
@@ -74,11 +74,11 @@ export function PendingApprovalScreen({
 
         <div className="space-y-2 pt-2">
           {isRejected ? (
-            <Button onClick={onResubmit} className="w-full h-12 bg-brand-soft text-gold-strong">
+            <Button onClick={onResubmit} className="w-full h-12 bg-brand-soft text-brand-strong">
               프로필 보완하러 가기
             </Button>
           ) : (
-            <Button onClick={handleRefresh} disabled={checking} className="w-full h-12 bg-brand-soft text-gold-strong">
+            <Button onClick={handleRefresh} disabled={checking} className="w-full h-12 bg-brand-soft text-brand-strong">
               <RefreshCw className={`w-4 h-4 mr-2 ${checking ? "animate-spin" : ""}`} />
               승인 상태 새로고침
             </Button>

@@ -92,7 +92,7 @@ export function LifestyleScreen({ onNext, onBack, initialData }: LifestyleScreen
                   onClick={() => setSmoking(option.code)}
                   className={`py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
                     smoking === option.code
-                      ? "bg-brand-soft text-gold-strong border-brand/40"
+                      ? "bg-brand-soft text-brand-strong border-brand/40"
                       : "bg-card border-border text-muted-foreground hover:border-primary/40"
                   }`}
                 >
@@ -114,7 +114,7 @@ export function LifestyleScreen({ onNext, onBack, initialData }: LifestyleScreen
                   onClick={() => setDrinking(option.code)}
                   className={`py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
                     drinking === option.code
-                      ? "bg-brand-soft text-gold-strong border-brand/40"
+                      ? "bg-brand-soft text-brand-strong border-brand/40"
                       : "bg-card border-border text-muted-foreground hover:border-primary/40"
                   }`}
                 >
@@ -136,7 +136,7 @@ export function LifestyleScreen({ onNext, onBack, initialData }: LifestyleScreen
                   onClick={() => setReligion(option.code)}
                   className={`py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all ${
                     religion === option.code
-                      ? "bg-brand-soft text-gold-strong border-brand/40"
+                      ? "bg-brand-soft text-brand-strong border-brand/40"
                       : "bg-card border-border text-muted-foreground hover:border-primary/40"
                   }`}
                 >
@@ -176,7 +176,7 @@ export function LifestyleScreen({ onNext, onBack, initialData }: LifestyleScreen
                   className={
                     "px-3 py-1.5 rounded-full text-xs font-medium border transition-all " +
                     (selected
-                      ? "bg-brand-soft text-gold-strong border-brand/40"
+                      ? "bg-brand-soft text-brand-strong border-brand/40"
                       : disabled
                       ? "bg-card text-muted-foreground/40 border-border/40 cursor-not-allowed"
                       : "bg-card text-muted-foreground border-border hover:border-primary/40")
@@ -220,7 +220,7 @@ export function LifestyleScreen({ onNext, onBack, initialData }: LifestyleScreen
                     }
                     className={`py-2 px-2 rounded-lg border-2 text-xs font-medium transition-all ${
                       datingStyle[q.key] === optCode
-                        ? "bg-brand-soft text-gold-strong border-brand/40"
+                        ? "bg-brand-soft text-brand-strong border-brand/40"
                         : "bg-card border-border text-muted-foreground hover:border-primary/40"
                     }`}
                   >
@@ -241,7 +241,7 @@ export function LifestyleScreen({ onNext, onBack, initialData }: LifestyleScreen
             })
           }
           disabled={!isValid}
-          className="w-full h-14 bg-brand-soft text-gold-strong disabled:opacity-50"
+          className="w-full h-14 bg-brand-soft text-brand-strong disabled:opacity-50"
         >
           다음 - 이상형 설정
         </Button>
