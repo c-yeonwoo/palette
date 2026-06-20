@@ -290,7 +290,7 @@ export function FriendConnectScreen({ onBack }: FriendConnectScreenProps) {
           <>
             <div className="flex gap-2">
               <Input
-                placeholder="닉네임으로 검색"
+                placeholder="닉네임 또는 휴대폰 번호로 검색"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && handleSearch()}
@@ -357,14 +357,14 @@ export function FriendConnectScreen({ onBack }: FriendConnectScreenProps) {
               <div className="text-center py-12 text-muted-foreground">
                 <Search className="w-12 h-12 mx-auto mb-3 opacity-30" />
                 <p>검색 결과가 없습니다</p>
-                <p className="text-sm mt-1">다른 닉네임으로 검색해보세요</p>
+                <p className="text-sm mt-1">닉네임 또는 휴대폰 번호(정확히)로 검색해보세요</p>
               </div>
             )}
 
             {searchResults.length === 0 && !searchQuery && (
               <div className="text-center py-12 text-muted-foreground">
                 <Search className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p>닉네임으로 친구를 찾아보세요</p>
+                <p>닉네임이나 휴대폰 번호로 지인을 찾아보세요</p>
               </div>
             )}
           </>

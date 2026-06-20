@@ -134,22 +134,30 @@ class FriendshipController(
     }
 
     /**
-     * 사용자 검색 (닉네임)
+     * 사용자 검색 — 닉네임(부분일치) 또는 휴대폰 번호.
+     * 동명이인·오검색 리스크 때문에 이름이 아닌 닉네임/번호로 찾는다.
+     * 휴대폰은 **정확히 일치할 때만** 매칭 (부분일치 X) — 번호 전체를 알아야 찾히므로 무작위 열람 차단.
      */
     @GetMapping("/search")
     fun searchUsers(
         @AuthenticationPrincipal authUser: AuthUser,
         @RequestParam query: String
     ): ResponseEntity<List<SearchUserResponse>> {
-        if (query.length < 2) {
+        if (query.trim().length < 2) {
             return ResponseEntity.ok(emptyList())
         }
+
+        val queryDigits = query.filter { it.isDigit() }
+        val isPhoneQuery = queryDigits.length >= 8   // 010xxxxxxx 류 — 번호 검색으로 간주
 
         val myUserId = authUser.userId
         val users = userRepository.findAll()
             .filter { user ->
-                user.id != myUserId &&
-                user.publicInfo.nickname.contains(query, ignoreCase = true)
+                if (user.id == myUserId) return@filter false
+                val byNickname = user.publicInfo.nickname.contains(query.trim(), ignoreCase = true)
+                val byPhone = isPhoneQuery &&
+                    user.privateInfo.getEffectivePhoneNumber()?.filter { it.isDigit() } == queryDigits
+                byNickname || byPhone
             }
             .take(20)
 
