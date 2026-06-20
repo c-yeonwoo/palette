@@ -413,7 +413,7 @@ export function AIProfileEnhanceScreen({
                 </div>
                 <Button
                   onClick={handleGenerate}
-                  className="w-full h-12 bg-brand-soft text-gold-strong"
+                  className="w-full h-12 bg-brand-soft text-brand-strong"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
                   AI 소개글 &amp; 색깔 타입 생성하기
@@ -458,7 +458,7 @@ export function AIProfileEnhanceScreen({
               </div>
               <Button
                 onClick={handleFinalComplete}
-                className="w-full h-12 bg-brand-soft text-gold-strong"
+                className="w-full h-12 bg-brand-soft text-brand-strong"
               >
                 팔레트 시작하기
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -646,7 +646,7 @@ export function AIProfileEnhanceScreen({
 
               <Button
                 onClick={handleComplete}
-                className="w-full h-12 bg-brand-soft text-gold-strong"
+                className="w-full h-12 bg-brand-soft text-brand-strong"
               >
                 이 소개글로 완료하기
                 <ArrowRight className="w-4 h-4 ml-2" />

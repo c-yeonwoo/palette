@@ -274,7 +274,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
               <button
                 onClick={() => { setPendingFilters({ ...filters }); setShowFilter(true); }}
                 className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-colors ${
-                  showFilter || hasActiveFilters ? "bg-brand-soft text-gold-strong" : "hover:bg-muted/50 text-foreground"
+                  showFilter || hasActiveFilters ? "bg-brand-soft text-brand-strong" : "hover:bg-muted/50 text-foreground"
                 }`}
                 aria-label="필터"
               >
@@ -827,7 +827,7 @@ function AiSignalSection({
           {isSubscriber ? "오늘 당신과 가장 잘 맞는 색을 골랐어요" : "프로필 궁합도를 기반으로 추천해드려요"}
         </p>
         {isSubscriber && (
-          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-brand-soft text-gold-strong">PASS</span>
+          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand-strong">PASS</span>
         )}
       </div>
 
@@ -863,16 +863,16 @@ function AiSignalSection({
                         <span className="text-xs text-muted-foreground">{teaserCompat.label} 궁합</span>
                       </>
                     ) : (
-                      <Sparkles className="w-5 h-5 text-gold-strong" />
+                      <Sparkles className="w-5 h-5 text-brand-strong" />
                     )}
                     {teaserSub && <span className="text-xs text-muted-foreground mt-0.5">{teaserSub}</span>}
                   </div>
-                  <span className="mt-1 inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-brand-soft text-gold-strong shadow-sm">
+                  <span className="mt-1 inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-brand-soft text-brand-strong shadow-sm">
                     <Sparkles className="w-3 h-3" /> 구독하고 보기
                   </span>
                 </div>
                 <div className="absolute top-2 left-2">
-                  <span className="text-xs font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 bg-white/85 text-gold-strong shadow-sm">
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 bg-white/85 text-brand-strong shadow-sm">
                     <Sparkles className="w-2.5 h-2.5" /> AI
                   </span>
                 </div>
@@ -892,7 +892,7 @@ function AiSignalSection({
             <Sparkles className="w-3.5 h-3.5 text-primary" />
             매일 무제한 추천 + 궁합 리포트
           </span>
-          <span className="text-xs font-bold text-gold-strong whitespace-nowrap">월 {passPrice.toLocaleString()}원 →</span>
+          <span className="text-xs font-bold text-brand-strong whitespace-nowrap">월 {passPrice.toLocaleString()}원 →</span>
         </button>
       )}
 
@@ -932,7 +932,7 @@ function AiPassPaywall({
       >
         <div className="flex flex-col items-center text-center mb-5">
           <div className="w-12 h-12 rounded-2xl bg-brand-soft flex items-center justify-center mb-3">
-            <Sparkles className="w-6 h-6 text-gold-strong" />
+            <Sparkles className="w-6 h-6 text-brand-strong" />
           </div>
           <h3 className="text-lg font-bold text-foreground">팔레트 Pick 패스</h3>
           <p className="text-sm text-muted-foreground mt-1">색 궁합으로 매일 인연을 추천받아요</p>
@@ -958,7 +958,7 @@ function AiPassPaywall({
         <button
           onClick={onSubscribe}
           disabled={subscribing}
-          className="w-full py-3.5 rounded-2xl bg-brand-soft text-gold-strong font-bold shadow-card active:scale-95 transition-transform disabled:opacity-60"
+          className="w-full py-3.5 rounded-2xl bg-brand-soft text-brand-strong font-bold shadow-card active:scale-95 transition-transform disabled:opacity-60"
         >
           {subscribing ? "처리 중..." : "구독하고 시작하기"}
         </button>
@@ -1036,7 +1036,7 @@ function AiSignalCard({
               </p>
             )}
             <div className="absolute top-2 left-2">
-              <span className="text-xs font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 bg-white/85 text-gold-strong shadow-sm">
+              <span className="text-xs font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 bg-white/85 text-brand-strong shadow-sm">
                 <Sparkles className="w-2.5 h-2.5" /> AI
               </span>
             </div>
@@ -1182,7 +1182,7 @@ function FirstTimeGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => v
       {onNavigateToFriends && (
         <button
           onClick={onNavigateToFriends}
-          className="w-full bg-brand-soft text-gold-strong font-semibold py-3.5 rounded-2xl shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
+          className="w-full bg-brand-soft text-brand-strong font-semibold py-3.5 rounded-2xl shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
         >
           <span>👥</span>
           지금 친구 연결하기
@@ -1259,7 +1259,7 @@ function NoFriendsNudge({ onNavigateToFriends }: { onNavigateToFriends?: () => v
       {onNavigateToFriends && (
         <button
           onClick={onNavigateToFriends}
-          className="flex items-center gap-2 bg-brand-soft text-gold-strong font-semibold px-6 py-3 rounded-2xl shadow-md active:scale-95 transition-transform"
+          className="flex items-center gap-2 bg-brand-soft text-brand-strong font-semibold px-6 py-3 rounded-2xl shadow-md active:scale-95 transition-transform"
         >
           <span className="text-base">👥</span>
           친구 추가하기

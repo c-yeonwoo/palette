@@ -446,7 +446,7 @@ function AiSignalSection({
                   <button
                     onClick={() => handleUnlock(rec)}
                     disabled={unlocking}
-                    className="mt-1 w-full py-1.5 rounded-xl bg-brand-soft text-gold-strong text-xs font-bold shadow-lg active:scale-95 transition-transform disabled:opacity-60"
+                    className="mt-1 w-full py-1.5 rounded-xl bg-brand-soft text-brand-strong text-xs font-bold shadow-lg active:scale-95 transition-transform disabled:opacity-60"
                   >
                     {unlocking ? "처리 중..." : `열기 ${rec.unlockPrice.toLocaleString()}원`}
                   </button>
@@ -824,7 +824,7 @@ function CompatibilityCalculatorCard() {
         <button
           onClick={handleCalculate}
           disabled={loading || !date1 || !date2}
-          className="w-full py-3 rounded-xl bg-brand-soft text-gold-strong text-sm font-bold disabled:opacity-50 active:scale-[0.98] transition-transform"
+          className="w-full py-3 rounded-xl bg-brand-soft text-brand-strong text-sm font-bold disabled:opacity-50 active:scale-[0.98] transition-transform"
         >
           {loading ? "계산 중..." : "인연 점수 계산하기 ✨"}
         </button>

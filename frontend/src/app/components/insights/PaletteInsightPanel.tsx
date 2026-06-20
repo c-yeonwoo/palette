@@ -114,7 +114,7 @@ export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToCol
             className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full"
             style={{
               backgroundColor: accentHex ? `${accentHex}1F` : "hsl(var(--brand-soft))",
-              color: "hsl(var(--gold-strong))",
+              color: "hsl(var(--brand-strong))",
             }}
           >
             {tag}
@@ -142,7 +142,7 @@ export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToCol
             {stages.map((s, i) => (
               <span
                 key={i}
-                className={`w-1.5 h-1.5 rounded-full transition-colors ${s.unlocked ? "bg-gold-strong" : "bg-muted"}`}
+                className={`w-1.5 h-1.5 rounded-full transition-colors ${s.unlocked ? "bg-brand-strong" : "bg-muted"}`}
               />
             ))}
           </div>
@@ -170,7 +170,7 @@ export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToCol
               } catch {/* localStorage 차단 환경 — 게이트 통과 */}
               setShowReanalyzeConfirm(true);
             }}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-gold-strong hover:underline"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-brand-strong hover:underline"
           >
             <RefreshCw className="w-3 h-3" />
             다시 분석
@@ -198,7 +198,7 @@ export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToCol
           <div className="w-full sm:max-w-sm bg-card rounded-t-3xl sm:rounded-3xl p-6 shadow-overlay animate-slide-up" onClick={e => e.stopPropagation()}>
             <div className="flex flex-col items-center text-center">
               <div className="w-12 h-12 rounded-2xl bg-brand-soft flex items-center justify-center mb-3">
-                <RefreshCw className="w-6 h-6 text-gold-strong" />
+                <RefreshCw className="w-6 h-6 text-brand-strong" />
               </div>
               <h3 className="text-lg font-extrabold text-foreground">팔레트 분석을 다시 받을까요?</h3>
               <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
@@ -219,7 +219,7 @@ export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToCol
                   try { localStorage.setItem(REANALYZE_LAST_KEY, String(Date.now())); } catch {/* ignore */}
                   onReanalyze?.();
                 }}
-                className="flex-1 py-3 rounded-2xl bg-brand-soft text-gold-strong font-bold shadow-card active:scale-95 transition-transform"
+                className="flex-1 py-3 rounded-2xl bg-brand-soft text-brand-strong font-bold shadow-card active:scale-95 transition-transform"
               >
                 다시 분석
               </button>
@@ -268,7 +268,7 @@ function StageRow({
         stage.unlocked ? "bg-brand-soft" : "bg-muted/60"
       }`}>
         {stage.unlocked
-          ? <stage.Icon className="w-4 h-4 text-gold-strong" />
+          ? <stage.Icon className="w-4 h-4 text-brand-strong" />
           : <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
       </div>
       <div className="flex-1 min-w-0">
@@ -291,7 +291,7 @@ function StageRow({
 function DateCodeViz({ colorType, accentHex }: { colorType: ColorType | null; accentHex: string | null }) {
   const code = dateCodeFor(colorType);
   if (!code) return null;
-  const color = accentHex ?? "hsl(var(--gold-strong))";
+  const color = accentHex ?? "hsl(var(--brand-strong))";
   return (
     <div>
       <div className="flex items-baseline justify-between gap-2 mb-2">
@@ -354,7 +354,7 @@ function InsightUnlockModal({
           >
             <stage.Icon className="w-7 h-7" style={{ color: accentHex ?? undefined }} />
           </div>
-          <p className="text-xs font-bold text-gold-strong uppercase tracking-wide">팔레트가 새로운 걸 알아냈어요</p>
+          <p className="text-xs font-bold text-brand-strong uppercase tracking-wide">팔레트가 새로운 걸 알아냈어요</p>
           <h3 className="text-xl font-extrabold text-foreground mt-1">{stage.label}</h3>
           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
             프로필을 채워주실수록 팔레트가 당신을 더 깊이 이해해요. 다음 발견까지 한 걸음 더.
@@ -363,7 +363,7 @@ function InsightUnlockModal({
 
         <button
           onClick={onClose}
-          className="w-full mt-5 py-3 rounded-2xl bg-brand-soft text-gold-strong font-bold shadow-card active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"
+          className="w-full mt-5 py-3 rounded-2xl bg-brand-soft text-brand-strong font-bold shadow-card active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"
         >
           <Check className="w-4 h-4" /> 확인했어요
         </button>
@@ -455,7 +455,7 @@ function UsageHelpButton({
               {usages.map((u, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-brand-soft flex items-center justify-center flex-shrink-0">
-                    <u.Icon className="w-4 h-4 text-gold-strong" />
+                    <u.Icon className="w-4 h-4 text-brand-strong" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-foreground">{u.title}</p>

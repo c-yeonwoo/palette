@@ -167,7 +167,7 @@ export function AboutMeScreen({ onNext, onBack, initialData }: AboutMeScreenProp
             })
           }
           disabled={!isValid}
-          className="w-full h-14 bg-brand-soft text-gold-strong disabled:opacity-50"
+          className="w-full h-14 bg-brand-soft text-brand-strong disabled:opacity-50"
         >
           다음 - 라이프스타일
         </Button>

@@ -747,7 +747,7 @@ function RequestCard({
             </Button>
             <Button
               size="sm"
-              className="flex-1 min-w-0 bg-brand-soft text-gold-strong"
+              className="flex-1 min-w-0 bg-brand-soft text-brand-strong"
               onClick={(e) => { e.stopPropagation(); onApprove(); }}
             >
               <CheckCircle2 className="w-3.5 h-3.5 mr-1 shrink-0" />
@@ -1049,7 +1049,7 @@ function NudgeFlowSheet({
 
               <button
                 onClick={() => setStep(3)}
-                className="w-full py-3 rounded-xl bg-brand-soft text-gold-strong text-sm font-semibold"
+                className="w-full py-3 rounded-xl bg-brand-soft text-brand-strong text-sm font-semibold"
               >
                 다음 — 최종 확인
               </button>
@@ -1086,7 +1086,7 @@ function NudgeFlowSheet({
 
               <button
                 onClick={() => onSubmit(selected, message)}
-                className="w-full py-3.5 rounded-xl bg-brand-soft text-gold-strong text-sm font-bold"
+                className="w-full py-3.5 rounded-xl bg-brand-soft text-brand-strong text-sm font-bold"
               >
                 제안하기
               </button>
@@ -1130,7 +1130,7 @@ function MemberCard({
             </div>
           )}
           {hasActiveNudge && (
-            <span className="absolute top-2 left-2 bg-brand-soft text-gold-strong text-xs font-bold px-1.5 py-0.5 rounded-full">
+            <span className="absolute top-2 left-2 bg-brand-soft text-brand-strong text-xs font-bold px-1.5 py-0.5 rounded-full">
               제안중
             </span>
           )}

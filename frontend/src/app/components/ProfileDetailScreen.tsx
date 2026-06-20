@@ -1151,7 +1151,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
             <>
               <Button
                 size="lg"
-                className="w-full h-14 bg-brand-soft text-gold-strong hover:bg-brand-soft/90 font-bold"
+                className="w-full h-14 bg-brand-soft text-brand-strong hover:bg-brand-soft/90 font-bold"
                 onClick={isPalettePick ? handleDirectRequest : handleMatchRequest}
                 disabled={alreadyRequested || inCoolTime}
                 variant={alreadyRequested || inCoolTime ? "secondary" : "default"}

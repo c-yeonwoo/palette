@@ -512,7 +512,7 @@ export function MyPageScreen({
                     <Camera className="w-8 h-8 text-muted-foreground" />
                   )}
                 </div>
-                <div className="absolute -bottom-1 -right-1 bg-brand-soft text-gold-strong rounded-full p-2">
+                <div className="absolute -bottom-1 -right-1 bg-brand-soft text-brand-strong rounded-full p-2">
                   <Camera className="w-4 h-4" />
                 </div>
               </div>

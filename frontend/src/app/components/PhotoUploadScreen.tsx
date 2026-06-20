@@ -188,7 +188,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
               >
                 <img src={photo} alt={`사진 ${index + 1}`} className="w-full h-full object-cover" />
                 {index === 0 && (
-                  <div className="absolute top-1.5 left-1.5 bg-brand-soft text-gold-strong rounded-full px-2 py-0.5 text-xs font-semibold">
+                  <div className="absolute top-1.5 left-1.5 bg-brand-soft text-brand-strong rounded-full px-2 py-0.5 text-xs font-semibold">
                     대표
                   </div>
                 )}
@@ -296,7 +296,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
             onNext({ photos, mainPhotoIndex, video });
           }}
           disabled={isUploading}
-          className="w-full h-14 bg-brand-soft text-gold-strong"
+          className="w-full h-14 bg-brand-soft text-brand-strong"
         >
           {isUploading ? "업로드 중..." : "다음 — AI 프로필 만들기"}
         </Button>
