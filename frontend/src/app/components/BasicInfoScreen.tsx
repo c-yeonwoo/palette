@@ -61,7 +61,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
     birthMonth: initialData?.basicInfo?.birthMonth || "",
     birthDay: initialData?.basicInfo?.birthDay || "",
     gender: initialData?.basicInfo?.gender || "",
-    height: initialData?.basicInfo?.height || 170,
+    height: initialData?.basicInfo?.height ?? null as number | null,
     bodyType: initialData?.basicInfo?.bodyType || "",
     mbtiE: initialData?.basicInfo?.mbti?.[0] || "",
     mbtiS: initialData?.basicInfo?.mbti?.[1] || "",
@@ -212,15 +212,17 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
             <div>
               <Label className="mb-2 block">
                 {fields.label("height", "키")}
-                <span className="text-muted-foreground font-normal"> — {formData.height}cm</span>
+                <span className="text-muted-foreground font-normal">
+                  {formData.height != null ? ` — ${formData.height}cm` : " (선택 — 슬라이더를 움직여 입력)"}
+                </span>
               </Label>
               <input
                 type="range"
                 min="140"
                 max="220"
-                value={formData.height}
+                value={formData.height ?? 170}
                 onChange={(e) => update('height', parseInt(e.target.value))}
-                className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                className={`w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary ${formData.height == null ? "opacity-50" : ""}`}
               />
               <div className="flex justify-between text-xs text-muted-foreground mt-1">
                 <span>140cm</span>

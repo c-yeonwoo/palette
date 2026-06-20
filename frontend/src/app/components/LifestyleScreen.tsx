@@ -5,24 +5,20 @@ import { Progress } from "./ui/progress";
 import { ArrowLeft } from "lucide-react";
 import { useOnboardingOptions } from "../../lib/onboarding/useOnboardingOptions";
 import { useOnboardingFields } from "../../lib/onboarding/useOnboardingFields";
-import { datingStyleOptionLabel } from "../../lib/datingStyleLabels";
 
-// 연애 스타일 10문항 중 가입 시 받기 좋은 2종만 승격(공감도 높고 매칭 신호 큼).
-// 라벨은 datingStyleLabels(SoT), 그룹핑(어떤 코드가 어느 질문)만 로컬.
-const ONBOARDING_DATING_STYLE: { key: string; label: string; options: string[] }[] = [
-  { key: "CONTACT_STYLE", label: "연락은 어느 정도가 좋아요?", options: ["FREQUENT", "DAILY_FEW", "WHENEVER"] },
-  { key: "AFFECTION_STYLE", label: "애정 표현은 주로 어떻게?", options: ["PHYSICAL", "WORDS", "ACTIONS"] },
-];
+// 연애 스타일(연락 빈도·애정 표현)은 가입 단계에서 제거 — 3지선다 단일 선택이 극단적이고,
+// 애정 표현은 '축'이 없어 균형식이 안 맞음. 이 결은 뒤의 AI 적응형 인터뷰가 자연스럽게 끌어내고,
+// 가입 후 프로필 수정에서 별도로 받을 수 있음 (ADR 0068 후속).
 
 interface LifestyleScreenProps {
   onNext: (data: {
     lifestyleInfo: { smoking: string; drinking: string; religion: string };
-    introduction: { interests: string[]; datingStyle: Record<string, string> };
+    introduction: { interests: string[] };
   }) => void;
   onBack?: () => void;
   initialData?: {
     lifestyleInfo?: { smoking?: string; drinking?: string; religion?: string };
-    introduction?: { interests?: string[]; datingStyle?: Record<string, string> };
+    introduction?: { interests?: string[] };
   };
 }
 
@@ -40,7 +36,6 @@ export function LifestyleScreen({ onNext, onBack, initialData }: LifestyleScreen
   const [drinking, setDrinking] = useState(initialData?.lifestyleInfo?.drinking || "");
   const [religion, setReligion] = useState(initialData?.lifestyleInfo?.religion || "");
   const [interests, setInterests] = useState<string[]>(initialData?.introduction?.interests || []);
-  const [datingStyle, setDatingStyle] = useState<Record<string, string>>(initialData?.introduction?.datingStyle || {});
 
   const smokingVisible = fields.visible("smoking");
   const drinkingVisible = fields.visible("drinking");
@@ -195,49 +190,12 @@ export function LifestyleScreen({ onNext, onBack, initialData }: LifestyleScreen
         </div>
         )}
 
-        {/* 연애 스타일 (선택) — 매칭 신호 보강 */}
-        <div className="bg-card rounded-2xl border border-border/60 shadow-sm p-5 space-y-4">
-          <div>
-            <h3 className="text-foreground font-semibold">연애 스타일</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              선택이에요 · 더 잘 맞는 인연을 찾는 데 쓰여요
-            </p>
-          </div>
-          {ONBOARDING_DATING_STYLE.map((q) => (
-            <div key={q.key}>
-              <Label className="mb-2 block text-sm">{q.label}</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {q.options.map((optCode) => (
-                  <button
-                    key={optCode}
-                    type="button"
-                    onClick={() =>
-                      setDatingStyle((prev) =>
-                        prev[q.key] === optCode
-                          ? (() => { const { [q.key]: _, ...rest } = prev; return rest; })()
-                          : { ...prev, [q.key]: optCode },
-                      )
-                    }
-                    className={`py-2 px-2 rounded-lg border-2 text-xs font-medium transition-all ${
-                      datingStyle[q.key] === optCode
-                        ? "bg-brand-soft text-brand-strong border-brand/40"
-                        : "bg-card border-border text-muted-foreground hover:border-primary/40"
-                    }`}
-                  >
-                    {datingStyleOptionLabel(optCode)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-
         {/* Next Button */}
         <Button
           onClick={() =>
             onNext({
               lifestyleInfo: { smoking, drinking, religion },
-              introduction: { interests, datingStyle },
+              introduction: { interests },
             })
           }
           disabled={!isValid}

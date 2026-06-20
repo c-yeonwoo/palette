@@ -1039,7 +1039,6 @@ export default function App() {
             lifestyleInfo: profileData.lifestyleInfo,
             introduction: {
               interests: profileData.introduction.interests,
-              datingStyle: profileData.introduction.datingStyle,
             },
           }}
         />
