@@ -897,13 +897,6 @@ export default function App() {
             }
           }}
           onResubmit={() => setCurrentScreen("profileEdit")}
-          onLogout={() => {
-            localStorage.removeItem(ONBOARDING_DRAFT_KEY);
-            localStorage.removeItem(ONBOARDING_STEP_KEY);
-            tokenStorage.clearTokens();
-            setIsLoggedIn(false);
-            setCurrentScreen("login");
-          }}
         />
       )}
 

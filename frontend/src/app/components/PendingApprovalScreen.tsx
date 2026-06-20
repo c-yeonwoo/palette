@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "./ui/button";
-import { Clock, ShieldCheck, RefreshCw, LogOut, AlertCircle } from "lucide-react";
+import { Clock, ShieldCheck, RefreshCw, AlertCircle } from "lucide-react";
 import { authService } from "../../lib/auth/authService";
 import { toast } from "sonner";
 
@@ -20,7 +20,6 @@ export function PendingApprovalScreen({
   reason?: string | null;
   onRefresh: () => Promise<void> | void;
   onResubmit: () => void;
-  onLogout: () => void;
 }) {
   const [checking, setChecking] = useState(false);
   const isRejected = status === "REJECTED";
@@ -83,10 +82,6 @@ export function PendingApprovalScreen({
               승인 상태 새로고침
             </Button>
           )}
-          <Button variant="ghost" onClick={onLogout} className="w-full text-muted-foreground text-sm">
-            <LogOut className="w-4 h-4 mr-2" />
-            로그아웃
-          </Button>
         </div>
       </div>
     </div>
