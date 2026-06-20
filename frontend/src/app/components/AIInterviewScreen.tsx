@@ -230,14 +230,15 @@ export function AIInterviewScreen({ onComplete, onBack, initialAnswers, profileC
           <div className="absolute left-1/2 -translate-x-1/2 -bottom-2 w-4 h-4 bg-card border-r border-b border-border rotate-45" />
         </div>
 
-        {/* 마스코트 */}
-        <div className="flex flex-col items-center gap-2">
-          <div
-            className="w-20 h-20 rounded-full bg-gradient-to-br from-brand-soft to-secondary border border-border flex items-center justify-center shadow-sm"
+        {/* 마스코트 — 코랄 여우 '팔리' (전신 일러스트, 원형 크롭 없이) */}
+        <div className="flex flex-col items-center gap-1">
+          <img
+            src="/pali.png"
+            alt={MASCOT_NAME}
+            className="w-32 h-32 object-contain drop-shadow-sm select-none"
+            draggable={false}
             style={{ animation: isAnalyzing ? "mascotFloat 1s ease-in-out infinite" : "mascotFloat 3s ease-in-out infinite" }}
-          >
-            <Palette className="w-9 h-9 text-primary" />
-          </div>
+          />
           <span className="text-xs text-muted-foreground">{MASCOT_NAME}</span>
           {isAnalyzing && (
             <div className="flex gap-1 mt-1">
