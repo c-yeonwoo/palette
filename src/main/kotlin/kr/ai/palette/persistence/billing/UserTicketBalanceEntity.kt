@@ -83,6 +83,10 @@ class UserTicketBalanceEntity(
     @Column(name = "palette_pick_first_used", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     var palettePickFirstUsed: Boolean = false,
 
+    /** 내 색 심층 리포트 잠금 해제 여부 (물감/광고로 1회 해제, 영구). ADR 0069. */
+    @Column(name = "report_unlocked", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    var reportUnlocked: Boolean = false,
+
     @Column(name = "updated_at", nullable = false)
     var updatedAt: Instant = Instant.now(),
 )

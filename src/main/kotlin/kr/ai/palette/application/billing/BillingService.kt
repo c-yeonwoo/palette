@@ -216,6 +216,24 @@ class BillingService(
         val newBonusBalance: Int,
     )
 
+    // ─── 내 색 리포트 잠금 해제 (ADR 0069) ──────────────────
+
+    /** 내 심층 리포트 잠금 해제 여부. */
+    fun isReportUnlocked(userId: String): Boolean = getOrCreateBalance(userId).reportUnlocked
+
+    /**
+     * 내 색 심층 리포트 잠금 해제. 물감 [cost] 차감 후 영구 해제 마킹.
+     * 이미 해제 상태면 **재차감 없이** 통과(멱등). 잔액 부족 시 [InsufficientBalanceException].
+     */
+    fun unlockColorReport(userId: String, cost: Int): UserTicketBalanceEntity {
+        val balance = getOrCreateBalance(userId)
+        if (balance.reportUnlocked) return balance
+        consume(userId, cost, reason = "color_report_unlock")   // 잔액 부족 시 throw
+        balance.reportUnlocked = true
+        balance.updatedAt = Instant.now()
+        return balanceRepository.save(balance)
+    }
+
     // ─── 팁 (옵셔널 송금) ────────────────────────────────────
 
     /**

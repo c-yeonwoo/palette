@@ -421,3 +421,7 @@ FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='personali
 INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
 SELECT UNHEX(REPLACE(UUID(),'-','')), 'personality', '자유로운', '자유로운', 13, NULL, b'1', NOW(6), NOW(6)
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='personality' AND code='자유로운');
+
+-- ── 25. 내 색 심층 리포트 잠금 해제 플래그 (ADR 0069) ──────────────
+-- 물감/광고로 1회 해제 시 영구 공개. continue-on-error=true 라 재적재 시 중복 컬럼 에러는 무시됨.
+ALTER TABLE user_ticket_balances ADD COLUMN report_unlocked BIT(1) NOT NULL DEFAULT b'0';
