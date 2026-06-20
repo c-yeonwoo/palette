@@ -231,7 +231,7 @@ data class AdaptiveInterviewRequest(
     val idealPersonalities: List<String> = emptyList(),
     val idealDatePreferences: List<String> = emptyList(),
     val idealImportantValues: List<String> = emptyList(),
-    val count: Int = 3,
+    val count: Int = 4,   // 자기 성향 ~2 + 이상형 심층 ~2 (ADR 0068 후속)
 )
 
 data class CompleteInterviewRequest(

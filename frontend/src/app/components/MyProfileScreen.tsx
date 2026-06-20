@@ -705,11 +705,11 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
         </div>
       )}
 
-      {/* ── 수정 버튼 (sticky) ── */}
-      <div className="fixed bottom-16 left-0 right-0 px-6 pb-2 z-40 pointer-events-none">
+      {/* ── 수정 버튼 — sticky (fixed 는 .app-frame transform 때문에 딸려 올라감, ADR 0063). 하단 네비(60px) 위로. ── */}
+      <div className="sticky bottom-[68px] z-40 px-6 pb-1">
         <Button
           onClick={onEdit}
-          className="w-full h-12 rounded-2xl font-semibold shadow-sm pointer-events-auto"
+          className="w-full h-12 rounded-2xl font-semibold shadow-card-hover"
         >
           <Edit3 className="w-4 h-4 mr-2" />
           프로필 수정하기

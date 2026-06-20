@@ -7,6 +7,7 @@ import { api } from "../../lib/api/apiClient";
 import { useOnboardingOptions } from "../../lib/onboarding/useOnboardingOptions";
 import { useOnboardingFields } from "../../lib/onboarding/useOnboardingFields";
 import { SIDO_LIST, SIGUNGU } from "../../lib/regions";
+import { PersonalityTestManager } from "./PersonalityTestManager";
 import { toast } from "sonner";
 
 interface BasicInfoScreenProps {
@@ -74,6 +75,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
     major: initialData?.educationInfo?.major || "",
     region: initialData?.locationInfo?.region || "",
     district: initialData?.locationInfo?.district || "",
+    personalityTests: (initialData?.personalityTests || []) as Array<{ title: string; link: string }>,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -138,6 +140,7 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
         careerInfo: { category: formData.jobCategory, company: formData.company, incomeRange: "" },
         educationInfo: { level: formData.education, school: formData.school, major: formData.major },
         locationInfo: { region: formData.region, district: formData.district },
+        personalityTests: formData.personalityTests,
       });
     }
   };
@@ -290,6 +293,12 @@ export function BasicInfoScreen({ onNext, onBack, initialData }: BasicInfoScreen
               )}
             </div>
             )}
+
+            {/* 심리 프로필 (선택) — MBTI·에니어그램·버즈피드 등 외부 검사 링크. 수정 메뉴에서도 추가 가능. */}
+            <PersonalityTestManager
+              tests={formData.personalityTests}
+              onChange={(tests) => setFormData(prev => ({ ...prev, personalityTests: tests }))}
+            />
           </div>
         )}
 

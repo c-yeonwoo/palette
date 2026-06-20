@@ -311,6 +311,7 @@ export default function App() {
         appearanceStyles: [] as string[],
         dealBreakers: [] as string[],
       },
+      personalityTests: draft?.personalityTests ?? [] as Array<{ title: string; link: string }>,
     };
   });
 
@@ -478,6 +479,7 @@ export default function App() {
       careerInfo: data.careerInfo,
       educationInfo: data.educationInfo,
       locationInfo: data.locationInfo,
+      personalityTests: data.personalityTests ?? prev.personalityTests,
     }));
     setUserGender(data.basicInfo.gender); // Store gender for profile editing later
     // 재배치: 구조화 선호(라이프스타일·이상형)를 먼저 → 그걸 바탕으로 인터뷰
@@ -678,6 +680,7 @@ export default function App() {
           heightMin: profileData.idealType.heightMin ?? null,
           heightMax: profileData.idealType.heightMax ?? null,
         },
+        personalityTests: profileData.personalityTests || [],
         settings: {
           isAcceptingMatches: true,
           hiddenAt: null,
