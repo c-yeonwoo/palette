@@ -482,13 +482,13 @@ class OpenAIService(
             // 라벨("MBTI")이 화면에 따로 붙으므로 "MBTI"로 시작하지 않음. 유형의 구체 성향을 짚어줌.
             evidenceFromMbti = request.mbti?.takeIf { it.isNotBlank() }?.let { m ->
                 val trait = MBTI_TRAIT[m.uppercase()]
-                if (trait != null) "$m 유형의 $trait 이(가) 이 색의 결과 자연스럽게 닿아요."
-                else "$m 유형의 성향도 색을 고를 때 함께 참고했어요."
+                if (trait != null) "$m 다운 $trait — 그 결이 이 색과 자연스럽게 맞닿아요."
+                else "$m 유형에서 읽히는 성향의 결을 색 선택에 함께 참고했어요."
             } ?: "",
             // 날짜·오행 분포 숫자를 나열하지 않고, 가장 강한 기운이 '어떤 성향'으로 드러나는지로 해석.
             evidenceFromSaju = request.sajuSummary?.takeIf { it.isNotBlank() }?.let { s ->
                 val strong = Regex("가장 강한 기운: ([^.]+)").find(s)?.groupValues?.get(1)?.trim()
-                if (strong != null) "$strong 이(가) 성향의 바탕 기운으로 은은하게 묻어나요."
+                if (strong != null) "$strong — 그 기운이 성향의 바탕으로 은은하게 배어 있어요."
                 else "타고난 기운의 결도 색을 고를 때 보조로 참고했어요."
             } ?: "",
         )
