@@ -106,6 +106,7 @@
 - Apple/Google/Naver OAuth
 - Capacitor iOS/Android 패키징
 - App Store / Play Store 출시
+- **내친소 게시판** — 지인 추천형 디스커버리 (주선자가 지인 추천 → 신청 → 선택 → 2단계 매칭). 신뢰 기반 "셀소" 변주. 유동성 확보 후 (ADR 0071)
 
 ### Phase 3 (6-12개월) — 장기
 - **벡터 유사도 기반 AI 추천** (현재는 랜덤)
@@ -113,6 +114,7 @@
   - pgvector / Pinecone
   - 코사인 유사도 top N
 - 그룹 매칭
+- **WANTED 역경매** — 이상형 게시 → 지원 → 선택 (내친소 머신 재사용, a/b 실험, ADR 0071)
 - CloudWatch / CDN / Loki
 - React Native 리라이트 검토 (Capacitor 한계 시)
 
