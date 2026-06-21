@@ -711,16 +711,12 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
         : { backgroundColor: "var(--background)" }
       }
     >
-      {/* Header — 본문 그라디언트 시작색과 동일 톤으로 페이드, border 제거해 끊김 없이 연결 */}
+      {/* Header — 별도 색 띠 없이 투명 프로스티드 글래스. 본문 히어로 그라디언트가 그대로 비쳐 끊김(촌스러운 색 경계) 제거. */}
       <div
         className="sticky top-0 z-20 backdrop-blur-md"
         style={accentColor
-          ? {
-              // 헤더 자체에도 그라디언트: 위(28)→아래(26) — 본문 시작 26 과 매끄럽게 이어짐
-              backgroundImage: `linear-gradient(180deg, ${accentColor}30 0%, ${accentColor}26 100%)`,
-              borderBottom: "1px solid transparent",
-            }
-          : { backgroundColor: "hsl(var(--card) / 0.95)", borderBottom: "1px solid hsl(var(--border))" }
+          ? { backgroundColor: "transparent", borderBottom: "none" }
+          : { backgroundColor: "hsl(var(--card) / 0.85)", borderBottom: "1px solid hsl(var(--border) / 0.5)" }
         }
       >
         <div className="px-4 py-3 flex items-center justify-between">
@@ -1105,8 +1101,8 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
         </div>
       </div>
 
-      {/* Sticky Bottom Action */}
-      <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border p-4 z-20">
+      {/* Sticky Bottom Action — ADR 0063: .app-frame 가 transform 컨테이너라 fixed 는 스크롤에 딸려 올라감 → sticky */}
+      <div className="sticky bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border p-4 z-20">
         <div className="max-w-2xl mx-auto space-y-2">
           {inCoolTime && (
             <p className="text-xs text-center text-amber-600 flex items-center justify-center gap-1">

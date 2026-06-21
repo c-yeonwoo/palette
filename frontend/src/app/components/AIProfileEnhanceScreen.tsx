@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "./ui/button";
-import { Sparkles, RefreshCw, ArrowRight, ChevronDown, ChevronUp, Share2, Check } from "lucide-react";
+import { Sparkles, RefreshCw, ArrowRight, ChevronDown, ChevronUp, Share2, Check, Pencil } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { useOnboardingOptions } from "../../lib/onboarding/useOnboardingOptions";
@@ -164,7 +164,25 @@ export function AIProfileEnhanceScreen({
   const [revealed, setRevealed] = useState(false);
   const [confetti, setConfetti] = useState<ConfettiPiece[]>([]);
   const [copied, setCopied] = useState(false);
+  // 소개글 직접 수정 (override) — AI 결과를 사람이 다듬어 그대로 저장
+  const [editingIntro, setEditingIntro] = useState(false);
+  const [editedIntro, setEditedIntro] = useState("");
   const loadingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // 섹션/평문 소개글을 편집용 단일 텍스트로 (heading 줄 + body, 섹션 사이 빈 줄)
+  const introToText = (r: ProfileGenerationResult | null) => {
+    if (!r) return "";
+    if (r.introductionSections && r.introductionSections.length > 0) {
+      return r.introductionSections.map((s) => (s.heading ? `${s.heading}\n${s.body}` : s.body)).join("\n\n");
+    }
+    return r.generatedIntroduction;
+  };
+  const startEditIntro = () => { setEditedIntro(introToText(result)); setEditingIntro(true); };
+  const saveEditIntro = () => {
+    const text = editedIntro.trim();
+    if (result) setResult({ ...result, generatedIntroduction: text, introductionSections: [] });
+    setEditingIntro(false);
+  };
 
   const { options } = useOnboardingOptions();
   const answers = profileData.introduction.interviewAnswers ?? {};
@@ -549,31 +567,72 @@ export function AIProfileEnhanceScreen({
                 <div className="flex items-center gap-2 mb-4">
                   <Sparkles className="w-4 h-4 text-primary" />
                   <p className="text-sm font-medium">AI가 완성한 소개글</p>
+                  {!editingIntro && (
+                    <button
+                      onClick={startEditIntro}
+                      className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> 직접 수정
+                    </button>
+                  )}
                 </div>
-                {result.introductionSections && result.introductionSections.length > 0 ? (
-                  <div className="space-y-4">
-                    {result.introductionSections.map((section, i) => (
-                      <div key={i} className="space-y-1.5">
-                        {section.heading && (
-                          <div className="flex items-center gap-2">
-                            <span className="w-1 h-3.5 rounded-full bg-primary/70" />
-                            <h4 className="text-sm font-semibold text-foreground">{section.heading}</h4>
-                          </div>
-                        )}
-                        <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap pl-3">
-                          {section.body}
-                        </p>
+                {editingIntro ? (
+                  <div className="space-y-2">
+                    <textarea
+                      value={editedIntro}
+                      onChange={(e) => setEditedIntro(e.target.value)}
+                      rows={12}
+                      autoFocus
+                      className="w-full rounded-xl border border-border bg-background p-3 text-sm leading-relaxed text-foreground resize-y focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      placeholder="나를 가장 잘 보여줄 소개글로 자유롭게 다듬어 보세요."
+                    />
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">{editedIntro.trim().length}자</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setEditingIntro(false)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:bg-muted"
+                        >
+                          취소
+                        </button>
+                        <button
+                          onClick={saveEditIntro}
+                          disabled={editedIntro.trim().length === 0}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-soft text-brand-strong disabled:opacity-50"
+                        >
+                          저장
+                        </button>
                       </div>
-                    ))}
+                    </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{result.generatedIntroduction}</p>
+                  <>
+                    {result.introductionSections && result.introductionSections.length > 0 ? (
+                      <div className="space-y-4">
+                        {result.introductionSections.map((section, i) => (
+                          <div key={i} className="space-y-1.5">
+                            {section.heading && (
+                              <div className="flex items-center gap-2">
+                                <span className="w-1 h-3.5 rounded-full bg-primary/70" />
+                                <h4 className="text-sm font-semibold text-foreground">{section.heading}</h4>
+                              </div>
+                            )}
+                            <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap pl-3">
+                              {section.body}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{result.generatedIntroduction}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-4 text-right">
+                      {(result.introductionSections && result.introductionSections.length > 0
+                        ? result.introductionSections.reduce((sum, s) => sum + s.body.length, 0)
+                        : result.generatedIntroduction.length)}자
+                    </p>
+                  </>
                 )}
-                <p className="text-xs text-muted-foreground mt-4 text-right">
-                  {(result.introductionSections && result.introductionSections.length > 0
-                    ? result.introductionSections.reduce((sum, s) => sum + s.body.length, 0)
-                    : result.generatedIntroduction.length)}자
-                </p>
               </div>
             )}
 
@@ -663,27 +722,16 @@ export function AIProfileEnhanceScreen({
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
 
-              <div className="flex gap-2">
-                {onRedoAnswers && (
-                  <Button
-                    onClick={onRedoAnswers}
-                    disabled={isGenerating}
-                    variant="outline"
-                    className="flex-1 h-11 border-border text-foreground hover:bg-muted"
-                  >
-                    다시 작성 (인터뷰로)
-                  </Button>
-                )}
+              {onRedoAnswers && (
                 <Button
-                  onClick={handleGenerate}
-                  disabled={isGenerating}
+                  onClick={onRedoAnswers}
+                  disabled={isGenerating || editingIntro}
                   variant="outline"
-                  className="flex-1 h-11 border-border text-primary hover:bg-muted"
+                  className="w-full h-11 border-border text-foreground hover:bg-muted"
                 >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isGenerating ? "animate-spin" : ""}`} />
-                  {isGenerating ? "재생성 중..." : "소개글만 다시"}
+                  인터뷰부터 다시 작성
                 </Button>
-              </div>
+              )}
             </div>
 
             <p

@@ -292,8 +292,8 @@ export function MatchmakerPublicProfileScreen({
         </section>
       </div>
 
-      {/* 하단 요청 버튼 */}
-      <div className="fixed bottom-0 left-0 right-0 px-6 pb-8 pt-3 bg-card/95 backdrop-blur border-t border-border">
+      {/* 하단 요청 버튼 — ADR 0063: transform 컨테이너 내 fixed 는 스크롤에 딸려 올라가 sticky 로 고정 */}
+      <div className="sticky bottom-0 left-0 right-0 px-6 pb-8 pt-3 bg-card/95 backdrop-blur border-t border-border">
         <Button
           onClick={() => onRequestMatch(matchmakerId)}
           className="w-full h-12 font-semibold"

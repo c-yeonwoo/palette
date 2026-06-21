@@ -10,7 +10,6 @@ import { Switch } from "./ui/switch";
 import { api } from "../../lib/api/apiClient";
 import { tokenStorage } from "../../lib/auth/tokenStorage";
 import { toast } from "sonner";
-import { PaletteInsightPanel } from "./insights/PaletteInsightPanel";
 import { WeeklyColorInsightCard } from "./insights/WeeklyColorInsightCard";
 
 interface MyPageScreenProps {
@@ -303,15 +302,31 @@ export function MyPageScreen({
         </div>
       </div>
 
-      {/* 팔레트의 분석 — 마이페이지 최상위 (ADR 0037) */}
+      {/* 팔리의 연애 리포트 — teaser 만 노출, 전체 분석은 리포트 화면에서 (ADR 0037/0070) */}
       {!isMatchmakerOnly && profile && (
         <div className="max-w-2xl mx-auto px-5 mt-5">
-          <PaletteInsightPanel
-            profile={profile as any}
-            onNavigateToEdit={onNavigateToProfile}
-            onNavigateToColor={onNavigateToColor}
-            onReanalyze={onReanalyze}
-          />
+          {(() => {
+            const hasColor = !!profile.colorType?.type;
+            const hex = profile.colorType?.hex || "#E27450";
+            return (
+              <button
+                onClick={onNavigateToColor}
+                className="w-full text-left rounded-2xl border border-border/60 shadow-card p-4 flex items-center gap-3 transition active:scale-[0.99]"
+                style={{ backgroundImage: `linear-gradient(135deg, ${hex}1F 0%, ${hex}0A 100%)` }}
+              >
+                <img src="/pali.png" alt="팔리" className="w-11 h-11 rounded-full object-cover shrink-0 bg-white/60" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-foreground">
+                    {hasColor ? "팔리가 분석한 연애 리포트가 도착했어요" : "팔리의 연애 리포트 받기"}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {hasColor ? "내 색 · 결 · 매력 · 연애운까지 — 탭해서 확인" : "AI 프로필을 완성하면 분석이 도착해요"}
+                  </p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground shrink-0" />
+              </button>
+            );
+          })()}
         </div>
       )}
 

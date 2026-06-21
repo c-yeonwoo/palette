@@ -124,13 +124,13 @@ describe('AIProfileEnhanceScreen', () => {
     expect(onComplete).toHaveBeenCalledWith(mockResult);
   });
 
-  it('"다시 작성 (인터뷰로)" 클릭 시 onRedoAnswers 호출 — 이전 화면 복귀', async () => {
+  it('"인터뷰부터 다시 작성" 클릭 시 onRedoAnswers 호출 — 이전 화면 복귀', async () => {
     (api.post as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
     const onRedoAnswers = vi.fn();
     renderScreen({ onRedoAnswers });
 
-    await waitFor(() => expect(screen.getByText('다시 작성 (인터뷰로)')).toBeInTheDocument());
-    fireEvent.click(screen.getByText('다시 작성 (인터뷰로)'));
+    await waitFor(() => expect(screen.getByText('인터뷰부터 다시 작성')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('인터뷰부터 다시 작성'));
 
     expect(onRedoAnswers).toHaveBeenCalled();
   });
@@ -159,19 +159,23 @@ describe('AIProfileEnhanceScreen', () => {
     expect(await screen.findByText('다시 시도하기')).toBeInTheDocument();
   });
 
-  it('"소개글만 다시"로 재생성할 수 있다', async () => {
+  it('"직접 수정"으로 소개글을 직접 고쳐 저장하면 그 내용으로 onComplete 된다 (override)', async () => {
     (api.post as ReturnType<typeof vi.fn>).mockResolvedValue(mockResult);
-    renderScreen();
+    const onComplete = vi.fn();
+    renderScreen({ onComplete });
 
-    await waitFor(() => expect(screen.getByText('소개글만 다시')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('직접 수정')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('직접 수정'));
 
-    (api.post as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ...mockResult,
-      colorName: '차분한 블루',
-      colorType: 'CALM_BLUE',
-    });
-    fireEvent.click(screen.getByText('소개글만 다시'));
+    const textarea = await screen.findByPlaceholderText(/자유롭게 다듬어/);
+    fireEvent.change(textarea, { target: { value: '제가 직접 다듬은 소개글입니다.' } });
+    fireEvent.click(screen.getByText('저장'));
 
-    await waitFor(() => expect(screen.getByText('차분한 블루')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('제가 직접 다듬은 소개글입니다.')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText('이대로 확인 — 심사 요청하기'));
+    expect(onComplete).toHaveBeenCalledWith(
+      expect.objectContaining({ generatedIntroduction: '제가 직접 다듬은 소개글입니다.', introductionSections: [] }),
+    );
   });
 });
