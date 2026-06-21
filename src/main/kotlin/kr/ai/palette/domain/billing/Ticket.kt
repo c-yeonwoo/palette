@@ -74,6 +74,7 @@ data class PointBundle(
 
 object PointBundleCatalog {
     val BUNDLES: List<PointBundle> = listOf(
+        PointBundle(pointsCredited = 5,   priceWon = 500),      // 최소 충전 — 리포트(1물감) 등 소액 결제용 (정가)
         PointBundle(pointsCredited = 50,  priceWon = 5_000),    // 정가
         PointBundle(pointsCredited = 110, priceWon = 10_000),   // +10 물감 (10%) — 트라이얼 반값 대상 (ADR 0045)
         PointBundle(pointsCredited = 340, priceWon = 30_000),   // +40 물감 (13%)

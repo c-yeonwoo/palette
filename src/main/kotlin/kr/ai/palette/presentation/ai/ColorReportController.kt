@@ -177,8 +177,8 @@ class ColorReportController(
             .joinToString("") { "%02x".format(it) }
 
     companion object {
-        /** 내 리포트 해제 비용 (물감). 남의 프로필 열람(10)보다 저렴 — 자기 분석이므로. */
-        const val REPORT_UNLOCK_COST = 5
+        /** 내 리포트 해제 비용 (물감). 1물감 = "광고 보고 무료" 경로(리워드 광고 단가)와 등가가 되도록 floor 로. */
+        const val REPORT_UNLOCK_COST = 1
         private const val REPORT_MODEL_TAG = "color_report"
     }
 }

@@ -3,7 +3,7 @@
  *
  * 무료: 색 타입 + 키워드 + AI가 이 색을 고른 이유 (티저/훅).
  * 유료(물감 1회 or 광고): 당신의 결·매력 육각형·강점·아쉬운 점·어울리는 인연·연애 스타일·연애운(사주)·조언
- *   까지 한 편의 연애 운명 리포트. 해제하면 영구 공개.
+ *   까지 한 편의 팔리의 연애 리포트. 해제하면 영구 공개.
  */
 import { useState, useEffect } from "react";
 import { ChevronLeft, Loader2, Sparkles, Lock, Palette, Heart, Compass, Moon, MessageCircle, TrendingUp } from "lucide-react";
@@ -47,7 +47,7 @@ export function ColorDetailScreen({ onBack, onNavigateToProfile }: ColorDetailSc
   const [colorType, setColorType] = useState<ColorTypeData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [unlocked, setUnlocked] = useState(false);
-  const [unlockCost, setUnlockCost] = useState(5);
+  const [unlockCost, setUnlockCost] = useState(1);
   const [unlocking, setUnlocking] = useState(false);
   const [report, setReport] = useState<FullReport | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
@@ -259,7 +259,7 @@ export function ColorDetailScreen({ onBack, onNavigateToProfile }: ColorDetailSc
                     <Lock className="w-5 h-5 text-brand-strong" />
                   </div>
                   <div>
-                    <p className="font-bold text-foreground">연애 운명 리포트</p>
+                    <p className="font-bold text-foreground">팔리의 연애 리포트</p>
                     <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
                       당신의 결 · 매력 육각형 · 강점 · 어울리는 인연 · 연애 스타일 · 사주로 보는 연애운까지,
                       당신만을 위한 깊이 있는 분석을 한 번에 풀어드려요.
