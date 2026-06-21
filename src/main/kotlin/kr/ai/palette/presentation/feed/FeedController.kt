@@ -147,14 +147,17 @@ class FeedController(
                         friendshipRepository.findFriendIdsByUserId(firstDegreeFriendId).contains(userId)
                     }
 
-                    // 공통 친구들의 실명 가져오기
-                    val mutualFriendNames = mutualFriends.mapNotNull { friendId ->
-                        userRepository.findById(friendId)?.privateInfo?.realName
+                    // 공통 친구(주선 가능한 1촌) — 이름 + userId (프론트 MutualFriend 객체 형태).
+                    // 과거 List<String> 으로 내려가 프론트에서 .name 이 undefined 로 찍히던 버그 수정.
+                    val mutualFriendDtos = mutualFriends.mapNotNull { friendId ->
+                        userRepository.findById(friendId)?.let { f ->
+                            MutualFriendDto(name = f.privateInfo.realName, userId = friendId.value.toString())
+                        }
                     }
 
                     FeedProfileItem(
                         profile = ProfileResponse.from(profile, fileStorageService),
-                        mutualFriends = mutualFriendNames,
+                        mutualFriends = mutualFriendDtos,
                         degree = 2,
                         // 친친 열람 = 20 물감 (PointPrice). 베타 기간(BetaPolicy)엔 0 — 결제 유도 숨김.
                         viewCost = if (betaPolicy.freeUnlock) 0 else PointPrice.FRIEND_OF_FRIEND_VIEW,
@@ -226,12 +229,18 @@ data class FeedResponse(
 
 data class FeedProfileItem(
     val profile: ProfileResponse,
-    val mutualFriends: List<String>,  // 공통 친구들의 닉네임 리스트
+    val mutualFriends: List<MutualFriendDto>,  // 공통 친구(주선 가능한 1촌) — 이름 + userId
     val degree: Int = 2,              // 1=1촌(무료), 2=친친(20 물감), 3=한 다리 더(30 물감)
     val viewCost: Int = PointPrice.FRIEND_OF_FRIEND_VIEW,  // 물감(P). 베타엔 0
     val isOpened: Boolean = false,    // 이미 카드를 열어본 여부
     val nickname: String? = null,     // 카드 소개 섹션용
     val age: Int? = null              // 카드 소개 섹션용
+)
+
+/** 공통 친구(주선자 후보) — 프론트 MutualFriend 와 동일 형태. name=실명, userId=주선자 선택용. */
+data class MutualFriendDto(
+    val name: String,
+    val userId: String,
 )
 
 data class FriendsResponse(
