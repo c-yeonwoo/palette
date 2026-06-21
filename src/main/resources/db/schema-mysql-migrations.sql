@@ -437,3 +437,101 @@ CREATE TABLE IF NOT EXISTS color_report_cache (
     updated_at   DATETIME(6)  NOT NULL,
     PRIMARY KEY (user_id)
 ) ENGINE=InnoDB;
+
+-- ── 27. 데이트 선호 세분화 + 이상형 외모상 확장 (온보딩 콘텐츠 리프레시) ────────────
+-- datePreference: 추상 4분류(액티브/실내/문화/자연)는 변별력 없음 → 구체 종류 다중선택으로.
+--   기존 코드는 soft-delete(active=0)로 과거 프로필 라벨 해석 보존. (set_key,code) UNIQUE 없음 → INSERT ... WHERE NOT EXISTS 멱등.
+UPDATE field_options SET active = b'0'
+WHERE set_key = 'datePreference' AND code IN ('ACTIVE','INDOOR','CULTURE','NATURE');
+
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'datePreference', 'FOOD', '맛집 투어', 0, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='datePreference' AND code='FOOD');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'datePreference', 'CAFE', '카페·디저트', 1, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='datePreference' AND code='CAFE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'datePreference', 'ACTIVITY', '액티비티·운동', 2, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='datePreference' AND code='ACTIVITY');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'datePreference', 'TRAVEL', '여행·드라이브', 3, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='datePreference' AND code='TRAVEL');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'datePreference', 'EXHIBITION', '전시·공연', 4, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='datePreference' AND code='EXHIBITION');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'datePreference', 'MOVIE', '영화·넷플릭스', 5, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='datePreference' AND code='MOVIE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'datePreference', 'HOME', '집 데이트', 6, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='datePreference' AND code='HOME');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'datePreference', 'WALK', '산책·피크닉', 7, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='datePreference' AND code='WALK');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'datePreference', 'DRINK', '술 한잔', 8, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='datePreference' AND code='DRINK');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'datePreference', 'FESTIVAL', '페스티벌·팝업', 9, NULL, b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='datePreference' AND code='FESTIVAL');
+
+-- appearanceStyle: 동물상 + 분위기상 확장. (set_key,code,gender) 로 멱등 — 같은 code 가 성별별로 별도 행.
+-- 혼동되던 '상견례입구컷상'(부정적) → '상견례 프리패스상'(긍정) 으로 라벨 정정.
+UPDATE field_options SET label = '상견례 프리패스상'
+WHERE set_key = 'appearanceStyle' AND code = 'MOTHER_IN_LAW_APPROVED';
+
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'BEAR', '곰상', 10, 'FEMALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='BEAR' AND gender='FEMALE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'HAMSTER', '햄스터상', 11, 'FEMALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='HAMSTER' AND gender='FEMALE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'DINOSAUR', '공룡상', 12, 'FEMALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='DINOSAUR' AND gender='FEMALE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'INNOCENT', '청순상', 13, 'FEMALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='INNOCENT' AND gender='FEMALE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'CHIC', '시크상', 14, 'FEMALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='CHIC' AND gender='FEMALE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'BAGEL', '베이글상', 15, 'FEMALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='BAGEL' AND gender='FEMALE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'DOLL', '인형상', 16, 'FEMALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='DOLL' AND gender='FEMALE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'HARMLESS', '무해상', 17, 'FEMALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='HARMLESS' AND gender='FEMALE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'FRESH', '청량상', 18, 'FEMALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='FRESH' AND gender='FEMALE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'ANNOUNCER', '아나운서상', 19, 'FEMALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='ANNOUNCER' AND gender='FEMALE');
+
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'WOLF', '늑대상', 10, 'MALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='WOLF' AND gender='MALE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'BEAR', '곰상', 11, 'MALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='BEAR' AND gender='MALE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'HAMSTER', '햄스터상', 12, 'MALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='HAMSTER' AND gender='MALE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'WARM', '훈남상', 13, 'MALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='WARM' AND gender='MALE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'DANDY', '댄디상', 14, 'MALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='DANDY' AND gender='MALE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'BEAST', '짐승상', 15, 'MALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='BEAST' AND gender='MALE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'ANNOUNCER', '아나운서상', 16, 'MALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='ANNOUNCER' AND gender='MALE');
+INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
+SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'MOTHER_IN_LAW_APPROVED', '상견례 프리패스상', 17, 'MALE', b'1', NOW(6), NOW(6)
+FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='MOTHER_IN_LAW_APPROVED' AND gender='MALE');

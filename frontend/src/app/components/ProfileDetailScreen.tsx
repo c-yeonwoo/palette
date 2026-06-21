@@ -637,12 +637,12 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   const getDatePreferenceDisplay = (prefs: string[]) => {
     // SoT: IdealTypeScreen.tsx 의 DATE_STYLE_OPTIONS — 6개 옵션 전체 매핑
     const map: Record<string, string> = {
-      ACTIVE: "액티브",
-      INDOOR: "인도어",
-      CULTURE: "문화생활",
-      NATURE: "자연 속으로",
-      NIGHT: "야경/술자리",
-      RELAXED: "여유롭게",
+      FOOD: "맛집 투어", CAFE: "카페·디저트", ACTIVITY: "액티비티·운동", TRAVEL: "여행·드라이브",
+      EXHIBITION: "전시·공연", MOVIE: "영화·넷플릭스", HOME: "집 데이트", WALK: "산책·피크닉",
+      DRINK: "술 한잔", FESTIVAL: "페스티벌·팝업",
+      // 구버전 호환
+      ACTIVE: "액티브", INDOOR: "인도어", CULTURE: "문화생활", NATURE: "자연 속으로",
+      NIGHT: "야경/술자리", RELAXED: "여유롭게",
     };
     return prefs.map(p => map[p] || p);
   };
@@ -658,11 +658,13 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
 
   const getAppearanceStyleDisplay = (styles: string[]) => {
     const map: Record<string, string> = {
-      PUPPY: "강아지상", CAT: "고양이상", RABBIT: "토끼상", FOX: "여우상",
-      DEER: "사슴상", TOFU: "두부상", SOFT_TOFU: "순두부상", ARAB: "아랍상",
-      BOSS: "일진상", MOTHER_IN_LAW_APPROVED: "상견례입구컷상",
+      PUPPY: "강아지상", CAT: "고양이상", RABBIT: "토끼상", FOX: "여우상", DEER: "사슴상",
+      BEAR: "곰상", HAMSTER: "햄스터상", DINOSAUR: "공룡상", WOLF: "늑대상",
+      TOFU: "두부상", SOFT_TOFU: "순두부상", INNOCENT: "청순상", CHIC: "시크상", BAGEL: "베이글상",
+      DOLL: "인형상", HARMLESS: "무해상", FRESH: "청량상", ANNOUNCER: "아나운서상",
+      ARAB: "아랍상", BOSS: "일진상", MOTHER_IN_LAW_APPROVED: "상견례 프리패스상",
       STUDENT_COUNCIL: "전교회장상", ATHLETIC: "체대상", NERD: "너드상",
-      DINOSAUR: "공룡상"
+      WARM: "훈남상", DANDY: "댄디상", BEAST: "짐승상",
     };
     return styles.map(s => map[s] || s);
   };

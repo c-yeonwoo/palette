@@ -509,13 +509,13 @@ function getImportantValueLabel(value: string): string {
 
 function getAppearanceStyleLabel(style: string): string {
   const labels: Record<string, string> = {
-    CAT: "고양이상",
-    DOG: "강아지상",
-    RABBIT: "토끼상",
-    DEER: "사슴상",
-    FOX: "여우상",
-    BEAR: "곰상",
-    DINOSAUR: "공룡상"
+    PUPPY: "강아지상", DOG: "강아지상", CAT: "고양이상", RABBIT: "토끼상", FOX: "여우상", DEER: "사슴상",
+    BEAR: "곰상", HAMSTER: "햄스터상", DINOSAUR: "공룡상", WOLF: "늑대상",
+    TOFU: "두부상", SOFT_TOFU: "순두부상", INNOCENT: "청순상", CHIC: "시크상", BAGEL: "베이글상",
+    DOLL: "인형상", HARMLESS: "무해상", FRESH: "청량상", ANNOUNCER: "아나운서상",
+    ARAB: "아랍상", BOSS: "일진상", MOTHER_IN_LAW_APPROVED: "상견례 프리패스상",
+    STUDENT_COUNCIL: "전교회장상", ATHLETIC: "체대상", NERD: "너드상",
+    WARM: "훈남상", DANDY: "댄디상", BEAST: "짐승상",
   };
   return labels[style] || style;
 }

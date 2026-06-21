@@ -46,8 +46,11 @@ class FieldOptionSeeder(
             )),
             Triple("smoking", null, listOf("NEVER" to "비흡연", "SOMETIMES" to "가끔", "OFTEN" to "자주")),
             Triple("drinking", null, listOf("NEVER" to "안 마심", "SOMETIMES" to "가끔", "OFTEN" to "자주")),
+            // 구체적인 데이트 종류(다중 선택) — 추상 4분류(액티브/실내/문화/자연)는 변별력이 없어 세분화.
             Triple("datePreference", null, listOf(
-                "ACTIVE" to "액티브", "INDOOR" to "실내", "CULTURE" to "문화", "NATURE" to "자연",
+                "FOOD" to "맛집 투어", "CAFE" to "카페·디저트", "ACTIVITY" to "액티비티·운동", "TRAVEL" to "여행·드라이브",
+                "EXHIBITION" to "전시·공연", "MOVIE" to "영화·넷플릭스", "HOME" to "집 데이트", "WALK" to "산책·피크닉",
+                "DRINK" to "술 한잔", "FESTIVAL" to "페스티벌·팝업",
             )),
             // 라이프스타일·가치 핏 중심 (스펙 항목 제거 — 브랜드 정합성). code=한글(라벨 동일).
             Triple("importantValue", null, listOf(
@@ -68,14 +71,19 @@ class FieldOptionSeeder(
                 "운동", "맛집", "영화", "여행", "독서", "음악", "카페", "전시", "공연", "사진",
                 "요리", "와인", "캠핑", "드라이브", "게임", "반려동물", "패션", "글쓰기", "그림", "재테크",
             ).map { it to it }),
-            // 외모상 — 성별 한정
+            // 외모상 — 성별 한정. 동물상 + 분위기상 풍부하게 (재미 + 변별력).
             Triple("appearanceStyle", "FEMALE", listOf(
                 "PUPPY" to "강아지상", "CAT" to "고양이상", "RABBIT" to "토끼상", "FOX" to "여우상", "DEER" to "사슴상",
-                "TOFU" to "두부상", "SOFT_TOFU" to "순두부상", "ARAB" to "아랍상", "BOSS" to "일진상", "MOTHER_IN_LAW_APPROVED" to "상견례입구컷상",
+                "BEAR" to "곰상", "HAMSTER" to "햄스터상", "DINOSAUR" to "공룡상",
+                "TOFU" to "두부상", "SOFT_TOFU" to "순두부상", "INNOCENT" to "청순상", "CHIC" to "시크상",
+                "BAGEL" to "베이글상", "DOLL" to "인형상", "HARMLESS" to "무해상", "FRESH" to "청량상",
+                "ANNOUNCER" to "아나운서상", "ARAB" to "아랍상", "BOSS" to "일진상", "MOTHER_IN_LAW_APPROVED" to "상견례 프리패스상",
             )),
             Triple("appearanceStyle", "MALE", listOf(
-                "PUPPY" to "강아지상", "CAT" to "고양이상", "STUDENT_COUNCIL" to "전교회장상", "ATHLETIC" to "체대상",
-                "NERD" to "너드상", "TOFU" to "두부상", "ARAB" to "아랍상", "DINOSAUR" to "공룡상",
+                "PUPPY" to "강아지상", "CAT" to "고양이상", "WOLF" to "늑대상", "BEAR" to "곰상", "HAMSTER" to "햄스터상",
+                "DINOSAUR" to "공룡상", "STUDENT_COUNCIL" to "전교회장상", "ATHLETIC" to "체대상", "NERD" to "너드상",
+                "TOFU" to "두부상", "WARM" to "훈남상", "DANDY" to "댄디상", "BEAST" to "짐승상",
+                "ANNOUNCER" to "아나운서상", "ARAB" to "아랍상", "MOTHER_IN_LAW_APPROVED" to "상견례 프리패스상",
             )),
         )
     }

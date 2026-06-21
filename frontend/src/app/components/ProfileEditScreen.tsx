@@ -366,12 +366,16 @@ const importantValueOptions = [
 ];
 
 const datePreferenceOptions = [
-  { value: "ACTIVE", label: "액티브", desc: "여행, 운동, 액티비티" },
-  { value: "INDOOR", label: "인도어", desc: "집, 카페, 넷플릭스" },
-  { value: "CULTURE", label: "문화생활", desc: "전시, 공연, 맛집" },
-  { value: "NATURE", label: "자연속으로", desc: "산책, 드라이브, 피크닉" },
-  { value: "NIGHT", label: "야경/술자리", desc: "바, 루프탑, 한강" },
-  { value: "RELAXED", label: "여유롭게", desc: "브런치, 독서, 산책" },
+  { value: "FOOD", label: "맛집 투어", desc: "맛집 찾아다니기" },
+  { value: "CAFE", label: "카페·디저트", desc: "감성 카페·디저트" },
+  { value: "ACTIVITY", label: "액티비티·운동", desc: "운동·클라이밍·볼링" },
+  { value: "TRAVEL", label: "여행·드라이브", desc: "당일치기·드라이브" },
+  { value: "EXHIBITION", label: "전시·공연", desc: "전시·공연·뮤지컬" },
+  { value: "MOVIE", label: "영화·넷플릭스", desc: "영화관·집에서" },
+  { value: "HOME", label: "집 데이트", desc: "집에서 편하게" },
+  { value: "WALK", label: "산책·피크닉", desc: "한강·산책·피크닉" },
+  { value: "DRINK", label: "술 한잔", desc: "분위기 좋은 술자리" },
+  { value: "FESTIVAL", label: "페스티벌·팝업", desc: "페스티벌·팝업스토어" },
 ];
 
 // 남자가 선택 (여자 외모 스타일)
@@ -381,23 +385,41 @@ const femaleAppearanceStyles = [
   { value: "RABBIT", label: "토끼상", emoji: "🐰" },
   { value: "FOX", label: "여우상", emoji: "🦊" },
   { value: "DEER", label: "사슴상", emoji: "🦌" },
-  { value: "TOFU", label: "두부상", emoji: "🍞" },
+  { value: "BEAR", label: "곰상", emoji: "🐻" },
+  { value: "HAMSTER", label: "햄스터상", emoji: "🐹" },
+  { value: "DINOSAUR", label: "공룡상", emoji: "🦕" },
+  { value: "TOFU", label: "두부상", emoji: "🍰" },
   { value: "SOFT_TOFU", label: "순두부상", emoji: "☁️" },
+  { value: "INNOCENT", label: "청순상", emoji: "🌷" },
+  { value: "CHIC", label: "시크상", emoji: "🖤" },
+  { value: "BAGEL", label: "베이글상", emoji: "🥯" },
+  { value: "DOLL", label: "인형상", emoji: "🎎" },
+  { value: "HARMLESS", label: "무해상", emoji: "🐑" },
+  { value: "FRESH", label: "청량상", emoji: "🌿" },
+  { value: "ANNOUNCER", label: "아나운서상", emoji: "🎙️" },
   { value: "ARAB", label: "아랍상", emoji: "🌙" },
   { value: "BOSS", label: "일진상", emoji: "😎" },
-  { value: "MOTHER_IN_LAW_APPROVED", label: "상견례", emoji: "👰" },
+  { value: "MOTHER_IN_LAW_APPROVED", label: "상견례 프리패스상", emoji: "👰" },
 ];
 
 // 여자가 선택 (남자 외모 스타일)
 const maleAppearanceStyles = [
   { value: "PUPPY", label: "강아지상", emoji: "🐶" },
   { value: "CAT", label: "고양이상", emoji: "🐱" },
+  { value: "WOLF", label: "늑대상", emoji: "🐺" },
+  { value: "BEAR", label: "곰상", emoji: "🐻" },
+  { value: "HAMSTER", label: "햄스터상", emoji: "🐹" },
+  { value: "DINOSAUR", label: "공룡상", emoji: "🦕" },
   { value: "STUDENT_COUNCIL", label: "전교회장상", emoji: "🏆" },
   { value: "ATHLETIC", label: "체대상", emoji: "🏋️" },
   { value: "NERD", label: "너드상", emoji: "🤓" },
-  { value: "TOFU", label: "두부상", emoji: "🍞" },
+  { value: "TOFU", label: "두부상", emoji: "🍰" },
+  { value: "WARM", label: "훈남상", emoji: "🌤️" },
+  { value: "DANDY", label: "댄디상", emoji: "🎩" },
+  { value: "BEAST", label: "짐승상", emoji: "🐯" },
+  { value: "ANNOUNCER", label: "아나운서상", emoji: "🎙️" },
   { value: "ARAB", label: "아랍상", emoji: "🌙" },
-  { value: "DINOSAUR", label: "공룡상", emoji: "🦕" },
+  { value: "MOTHER_IN_LAW_APPROVED", label: "상견례 프리패스상", emoji: "👰" },
 ];
 
 const dealBreakerOptions = [
