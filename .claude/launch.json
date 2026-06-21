@@ -4,8 +4,9 @@
     {
       "name": "palette-web",
       "runtimeExecutable": "sh",
-      "runtimeArgs": ["-c", "cd frontend && npx vite preview --port 4178 --strictPort"],
-      "port": 4178
+      "runtimeArgs": ["-c", "cd frontend && npm run dev"],
+      "port": 3000,
+      "autoPort": false
     }
   ]
 }
