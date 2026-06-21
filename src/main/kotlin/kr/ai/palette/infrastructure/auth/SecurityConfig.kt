@@ -21,7 +21,9 @@ class SecurityConfig(
     private val oAuth2AuthenticationSuccessHandler: OAuth2AuthenticationSuccessHandler,
     private val oAuth2AuthenticationFailureHandler: OAuth2AuthenticationFailureHandler,
     private val jwtAuthenticationFilter: JwtAuthenticationFilter,
-    @Value("\${cors.allowed-origins:http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080}")
+    // 기본값(로컬 dev)은 localhost/127.0.0.1 **모든 포트** 허용 — vite 가 3000/5173/5178 등 어디로 떠도 CORS 통과.
+    // prod 는 CORS_ALLOWED_ORIGINS 로 정확한 origin(https://www.palette.ai.kr) 을 주입해 override.
+    @Value("\${cors.allowed-origins:http://localhost:[*],http://127.0.0.1:[*]}")
     private val corsAllowedOrigins: String,
 ) {
 
@@ -100,7 +102,9 @@ class SecurityConfig(
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
-        configuration.allowedOrigins = corsAllowedOrigins.split(",").map { it.trim() }
+        // allowedOriginPatterns: 포트 와일드카드(http://localhost:[*]) 지원 + allowCredentials=true 와 호환
+        // (allowedOrigins 와 달리 패턴/와일드카드를 credentials 와 같이 쓸 수 있음). 정확한 origin 문자열도 그대로 매칭.
+        configuration.allowedOriginPatterns = corsAllowedOrigins.split(",").map { it.trim() }
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
         configuration.allowedHeaders = listOf("*")
         configuration.allowCredentials = true
