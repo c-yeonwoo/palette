@@ -8,12 +8,13 @@
  * - 보상 사다리 (L1~L4)
  * - 초대 히스토리
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Share2, Users, CheckCircle2, Trophy } from "lucide-react";
 import { Button } from "../ui/button";
 import { InviteShareSheet } from "./InviteShareSheet";
 import { RewardLadder } from "./RewardLadder";
-import { getMyInviteCode, buildInviteLink } from "../../../lib/invite-code";
+import { buildInviteLink } from "../../../lib/invite-code";
+import { api } from "../../../lib/api/apiClient";
 import { type Invite } from "../../../lib/invite-rewards";
 import { cn } from "../ui/utils";
 
@@ -28,7 +29,14 @@ export function InviteHubScreen({ onBack }: InviteHubScreenProps) {
   //   (GET /api/v1/friends/invites 등) 연동 시 setInvites 추가 + useEffect fetch 로 채울 것.
   const [invites] = useState<Invite[]>([]);
 
-  const code = getMyInviteCode();
+  // 내 초대 코드 — 백엔드에서 발급(유저당 1개, 24시간). client-side seed 가짜코드 제거.
+  const [code, setCode] = useState<string>("");
+  useEffect(() => {
+    api
+      .post<{ code: string; expiresAt: string }>("/api/v1/friends/invite-code")
+      .then((res) => setCode(res.code))
+      .catch(() => {/* 발급 실패 — 빈 코드, 공유 비활성 */});
+  }, []);
 
   const stats = {
     sent:       invites.length,
@@ -80,13 +88,14 @@ export function InviteHubScreen({ onBack }: InviteHubScreenProps) {
         >
           <div className="text-center">
             <p className="text-caption text-text-secondary mb-1">나의 초대 코드</p>
-            <p className="text-display font-bold text-text-primary tracking-[0.2em]">{code}</p>
-            <p className="text-caption text-text-tertiary mt-1">{buildInviteLink(code)}</p>
+            <p className="text-display font-bold text-text-primary tracking-[0.2em]">{code || "발급 중…"}</p>
+            {code && <p className="text-caption text-text-tertiary mt-1">{buildInviteLink(code)}</p>}
           </div>
           <Button
             variant="brand"
             size="lg"
             className="w-full gap-2"
+            disabled={!code}
             onClick={() => setShowShare(true)}
           >
             <Share2 className="w-4 h-4" />

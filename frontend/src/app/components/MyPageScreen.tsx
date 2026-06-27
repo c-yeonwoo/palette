@@ -186,14 +186,10 @@ export function MyPageScreen({
       if (photoFile) {
         const formData = new FormData();
         formData.append("file", photoFile);
-        const token = tokenStorage.getAccessToken();
-        const response = await fetch("http://localhost:8080/api/v1/matchmakers/me/photo", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData,
-        });
-        if (!response.ok) {
-          if (response.status === 413) { alert("파일 크기가 너무 큽니다."); throw new Error("파일 크기 초과"); }
+        try {
+          await api.postForm("/api/v1/matchmakers/me/photo", formData);
+        } catch (e: any) {
+          if (e?.status === 413) { alert("파일 크기가 너무 큽니다."); throw new Error("파일 크기 초과"); }
           throw new Error("사진 업로드 실패");
         }
       }

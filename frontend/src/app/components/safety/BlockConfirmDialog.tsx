@@ -11,22 +11,34 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../ui/alert-dialog";
+import { useState } from "react";
 import { toast } from "sonner";
 
 interface BlockConfirmDialogProps {
   open: boolean;
   onClose: () => void;
   targetName: string;
-  onConfirm: () => void;
+  /** 차단 확정 — 백엔드 호출 포함. 실패 시 throw 하면 에러 토스트만 띄움. */
+  onConfirm: () => void | Promise<void>;
 }
 
 export function BlockConfirmDialog({ open, onClose, targetName, onConfirm }: BlockConfirmDialogProps) {
-  const handleConfirm = () => {
-    onConfirm();
-    toast.success(`${targetName}님을 차단했어요`, {
-      description: "피드와 매칭 목록에서 제거됐어요.",
-    });
-    onClose();
+  const [loading, setLoading] = useState(false);
+
+  const handleConfirm = async () => {
+    setLoading(true);
+    try {
+      await onConfirm();
+      toast.success(`${targetName}님을 차단했어요`, {
+        description: "피드와 매칭 목록에서 제거됐어요.",
+      });
+      onClose();
+    } catch (e) {
+      console.error("차단 실패:", e);
+      toast.error("차단에 실패했어요. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -46,12 +58,13 @@ export function BlockConfirmDialog({ open, onClose, targetName, onConfirm }: Blo
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>취소</AlertDialogCancel>
+          <AlertDialogCancel onClick={onClose} disabled={loading}>취소</AlertDialogCancel>
           <AlertDialogAction
-            onClick={handleConfirm}
+            onClick={(e) => { e.preventDefault(); handleConfirm(); }}
+            disabled={loading}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            차단
+            {loading ? "차단 중..." : "차단"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

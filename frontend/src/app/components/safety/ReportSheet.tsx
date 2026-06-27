@@ -9,6 +9,7 @@ import { Textarea } from "../ui/textarea";
 import { Checkbox } from "../ui/checkbox";
 import { Label } from "../ui/label";
 import { toast } from "sonner";
+import { api } from "../../../lib/api/apiClient";
 
 export type ReportReason =
   | "fake_profile"
@@ -29,10 +30,23 @@ const REASON_LABELS: Record<ReportReason, string> = {
   etc:                         "기타",
 };
 
+/** 프론트 사유 → 백엔드 ReportUserRequest.reason 코드 (BlockReportController.validReasons). */
+const REASON_TO_CODE: Record<ReportReason, string> = {
+  fake_profile:                "FAKE_PROFILE",
+  inappropriate_photo:         "OTHER",
+  abusive_language:            "HARASSMENT",
+  commercial:                  "SPAM",
+  minor_suspected:             "MINOR",
+  external_payment_inducement: "EXTERNAL_PAYMENT_INDUCEMENT",
+  etc:                         "OTHER",
+};
+
 interface ReportSheetProps {
   open: boolean;
   onClose: () => void;
   targetName: string;
+  /** 신고 대상 사용자 ID (UUID). 백엔드 POST /api/v1/users/{id}/report. */
+  targetUserId: string;
   targetType?: "user" | "matchmaker" | "message";
   /** 신고 후 차단도 함께 처리 */
   onBlockToo?: () => void;
@@ -42,6 +56,7 @@ export function ReportSheet({
   open,
   onClose,
   targetName,
+  targetUserId,
   targetType = "user",
   onBlockToo,
 }: ReportSheetProps) {
@@ -53,16 +68,25 @@ export function ReportSheet({
   const handleSubmit = async () => {
     if (!reason) return;
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800)); // mock
-    setLoading(false);
-    if (blockAlso && onBlockToo) onBlockToo();
-    toast.success("신고가 접수됐어요", {
-      description: "24시간 내 검토 후 조치 결과를 알려드릴게요.",
-    });
-    setReason("");
-    setDetail("");
-    setBlockAlso(false);
-    onClose();
+    try {
+      await api.post(`/api/v1/users/${targetUserId}/report`, {
+        reason: REASON_TO_CODE[reason],
+        detail: detail.trim() || null,
+      });
+      if (blockAlso && onBlockToo) onBlockToo();
+      toast.success("신고가 접수됐어요", {
+        description: "24시간 내 검토 후 조치 결과를 알려드릴게요.",
+      });
+      setReason("");
+      setDetail("");
+      setBlockAlso(false);
+      onClose();
+    } catch (e) {
+      console.error("신고 접수 실패:", e);
+      toast.error("신고 접수에 실패했어요. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -119,19 +119,7 @@ export function MatchmakerProfileScreen({ onBack, onConvertToRegular }: Matchmak
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://localhost:8080/api/v1/matchmakers/me/photo', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-
-      const data = await response.json();
+      await api.postForm('/api/v1/matchmakers/me/photo', formData);
 
       // 프로필 데이터 다시 불러오기
       const updatedMatchmaker = await api.get<MatchmakerData>('/api/v1/matchmakers/me');

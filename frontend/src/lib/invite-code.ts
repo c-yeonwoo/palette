@@ -41,7 +41,7 @@ export function getMyInviteCode(userId = "me-001"): string {
 
 /** 초대 링크 생성 */
 export function buildInviteLink(code: string): string {
-  return `https://palette.app/invite/${code}`;
+  return `https://www.palette.ai.kr/invite/${code}`;
 }
 
 /** 일일 노출 한도 체크 (어뷰징 방지 — 하루 10회) */

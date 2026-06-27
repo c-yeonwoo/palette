@@ -144,8 +144,9 @@ export function MatchDetailScreen({ matchId, onBack, onNavigateToChat }: MatchDe
           <TicketCounter balance={balance} onClick={() => setPaywallOpen(true)} />
           <SafetyMenu
             targetName={match.partner.name}
+            targetUserId={match.partner.userId}
             targetType="user"
-            onBlock={() => toast.info(`${match.partner.name}님을 차단했어요`)}
+            onBlock={onBack}
           />
         </div>
       </div>

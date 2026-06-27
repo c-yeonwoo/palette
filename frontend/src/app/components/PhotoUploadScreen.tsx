@@ -100,7 +100,7 @@ export function PhotoUploadScreen({ onNext, onBack, initialData }: PhotoUploadSc
   };
 
   const handleShareRequest = async () => {
-    const requestText = "내 Palette 프로필에 올릴 인생샷을 찍어줘! 사진은 여기로 보내줘: https://palette.app/photo-request";
+    const requestText = "내 Palette 프로필에 올릴 인생샷을 찍어줘! 사진은 여기로 보내줘: https://www.palette.ai.kr/photo-request";
     if (navigator.share) {
       try {
         await navigator.share({ text: requestText, title: "인생샷 부탁해!" });

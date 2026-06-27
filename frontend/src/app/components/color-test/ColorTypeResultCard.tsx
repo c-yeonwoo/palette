@@ -151,7 +151,7 @@ export function ColorTypeResultCard({
             aria-hidden
           />
           <span className="text-caption text-text-tertiary font-medium">
-            palette.app
+            palette.ai.kr
           </span>
         </div>
       </div>

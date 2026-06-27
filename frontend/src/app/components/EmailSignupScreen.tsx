@@ -3,6 +3,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { Checkbox } from "./ui/checkbox";
 import { api } from "../../lib/api/apiClient";
 import { tokenStorage } from "../../lib/auth/tokenStorage";
 import { toast } from "sonner";
@@ -28,6 +29,9 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
     inviteCode: "",  // 옵션 — 유효 시 양쪽 100 물감 보너스 + 자동 1촌 (ADR 0048)
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // 가입 동의 (PIPA / App Store 5.1.1 — 명시적 동의)
+  const [agreedTerms, setAgreedTerms] = useState(false);
+  const [agreedPrivacy, setAgreedPrivacy] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
   const [isVerificationLoading, setIsVerificationLoading] = useState(false);
   const [verificationVerified, setVerificationVerified] = useState(false);
@@ -406,12 +410,38 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
               </p>
             </div>
 
+            {/* 약관·개인정보 동의 (필수) */}
+            <div className="space-y-2 pt-2">
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="agree-terms"
+                  checked={agreedTerms}
+                  onCheckedChange={(c) => setAgreedTerms(!!c)}
+                  className="mt-0.5"
+                />
+                <Label htmlFor="agree-terms" className="text-sm font-normal text-muted-foreground cursor-pointer">
+                  <span className="text-foreground font-medium">(필수)</span> 서비스 이용약관에 동의합니다
+                </Label>
+              </div>
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="agree-privacy"
+                  checked={agreedPrivacy}
+                  onCheckedChange={(c) => setAgreedPrivacy(!!c)}
+                  className="mt-0.5"
+                />
+                <Label htmlFor="agree-privacy" className="text-sm font-normal text-muted-foreground cursor-pointer">
+                  <span className="text-foreground font-medium">(필수)</span> 개인정보 수집·이용에 동의합니다
+                </Label>
+              </div>
+            </div>
+
             {/* 버튼 */}
             <div className="space-y-2 pt-4">
               <Button
                 type="submit"
                 className="w-full h-12"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !agreedTerms || !agreedPrivacy}
               >
                 {isSubmitting ? "가입 중..." : "회원가입"}
               </Button>

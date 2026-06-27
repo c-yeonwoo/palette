@@ -34,7 +34,9 @@ const SECTIONS: Array<{ title: string; body: string }> = [
       "• 미성년자 대상 매칭 시도\n" +
       "• 약물·성매매·불법 거래 등 위법 행위\n" +
       "• 서비스 외부 채널(연락처·SNS)을 매칭 전 강요\n" +
-      "위반 시 사전 통지 없이 이용 정지 또는 영구 차단될 수 있습니다.",
+      "위반 시 사전 통지 없이 이용 정지 또는 영구 차단될 수 있습니다.\n" +
+      "팔레트는 불쾌감을 주는 콘텐츠(objectionable content)와 학대·괴롭힘 행위를 하는 이용자에 대해 " +
+      "무관용(zero-tolerance) 원칙을 적용합니다. 신고된 위반 콘텐츠·이용자는 24시간 이내 검토 후 즉시 제거·차단됩니다.",
   },
   {
     title: "제4조 (콘텐츠 신고·차단)",
@@ -121,7 +123,8 @@ export function TermsOfServiceScreen({ onBack }: TermsOfServiceScreenProps) {
         ))}
         <div className="rounded-xl bg-muted/40 border border-border p-4">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            본 약관은 베타 운영을 위한 초안이며, 정식 출시 전 법무 검토를 거쳐 갱신됩니다.
+            문의·신고·이의제기: <a href="mailto:support@palette.ai.kr" className="underline">support@palette.ai.kr</a>
+            {" "}— 부적절한 콘텐츠·이용자 신고는 24시간 이내 검토 후 조치합니다.
           </p>
         </div>
       </main>
