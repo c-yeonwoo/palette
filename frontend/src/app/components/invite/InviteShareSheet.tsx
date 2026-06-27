@@ -68,26 +68,6 @@ export function InviteShareSheet({
     }
   };
 
-  const handleKakao = () => {
-    if (!allowed) {
-      toast.error("오늘 공유 한도에 도달했어요 (하루 10회)");
-      return;
-    }
-    recordShare();
-    toast.info("카카오 공유는 곧 오픈돼요!");
-    onClose();
-  };
-
-  const handleInsta = () => {
-    if (!allowed) {
-      toast.error("오늘 공유 한도에 도달했어요 (하루 10회)");
-      return;
-    }
-    recordShare();
-    toast.info("인스타 스토리 공유는 곧 오픈돼요!");
-    onClose();
-  };
-
   return (
     <>
       <div
@@ -131,12 +111,10 @@ export function InviteShareSheet({
         </div>
 
         {/* 공유 옵션 */}
-        <div className="px-6 pb-8 grid grid-cols-4 gap-3">
+        <div className="px-6 pb-8 grid grid-cols-2 gap-3">
           {[
             { label: "링크 복사", emoji: "🔗", onClick: handleCopy },
             { label: "공유하기", emoji: "📤", onClick: handleWebShare },
-            { label: "카카오",   emoji: "💬", onClick: handleKakao },
-            { label: "인스타",   emoji: "📸", onClick: handleInsta },
           ].map(({ label, emoji, onClick }) => (
             <button
               key={label}

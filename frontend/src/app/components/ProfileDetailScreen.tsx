@@ -15,6 +15,7 @@ import {
 } from "../../lib/datingStyleLabels";
 import { jobCategoryLabel } from "../../lib/jobCategory";
 import { InfoHint } from "./InfoHint";
+import { SafetyMenu } from "./safety/SafetyMenu";
 
 interface MutualFriend {
   name: string;
@@ -726,13 +727,21 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
             </Button>
             <h2 className="text-base font-semibold">{userInfo.nickname}님의 프로필</h2>
           </div>
-          <button
-            onClick={() => setShowHideConfirm(true)}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground px-3 py-1.5 rounded-full hover:bg-muted transition-colors"
-          >
-            <EyeOff className="w-3.5 h-3.5" />
-            추천받지 않기
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setShowHideConfirm(true)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground px-3 py-1.5 rounded-full hover:bg-muted transition-colors"
+            >
+              <EyeOff className="w-3.5 h-3.5" />
+              추천받지 않기
+            </button>
+            {/* 신고 / 차단 (App Store 1.2.0 — UGC 안전장치) */}
+            <SafetyMenu
+              targetName={userInfo.nickname}
+              targetUserId={userId}
+              onBlock={onBack}
+            />
+          </div>
         </div>
       </div>
 

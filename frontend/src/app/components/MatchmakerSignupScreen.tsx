@@ -4,7 +4,8 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { ArrowLeft, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { authService } from "../../lib/auth/authService";
+import { api } from "../../lib/api/apiClient";
+import { tokenStorage } from "../../lib/auth/tokenStorage";
 import { sendVerificationCode, verifyCode } from "../../lib/api/phoneVerification";
 
 interface MatchmakerSignupScreenProps {
@@ -179,13 +180,15 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
         return;
       }
 
-      // 회원가입 진행
-      const response = await fetch("http://localhost:8080/api/v1/auth/email/matchmaker/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      // 회원가입 진행 (api 래퍼 — 환경별 base URL + 에러 메시지 정규화)
+      const data = await api.post<{
+        accessToken: string;
+        refreshToken: string;
+        tokenType: string;
+        expiresIn: number;
+      }>(
+        "/api/v1/auth/email/matchmaker/signup",
+        {
           email: formData.email,
           password: formData.password,
           realName: formData.realName,
@@ -193,18 +196,19 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
           phoneNumber: formData.phoneNumber,
           birthDate: formData.birthDate,
           gender: formData.gender,
-        }),
+        },
+        { requiresAuth: false }
+      );
+
+      // 토큰 저장 (이메일 로그인과 동일 형태)
+      const now = new Date();
+      tokenStorage.setTokens({
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        tokenType: data.tokenType,
+        expiresAt: new Date(now.getTime() + data.expiresIn * 1000).toISOString(),
+        refreshExpiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "회원가입에 실패했습니다");
-      }
-
-      const data = await response.json();
-
-      // 토큰 저장
-      authService.setTokens(data.accessToken, data.refreshToken);
 
       toast.success("주선자 가입이 완료되었습니다!");
       onSuccess();

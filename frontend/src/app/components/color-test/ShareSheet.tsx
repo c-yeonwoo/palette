@@ -49,8 +49,8 @@ export function ShareSheet({
   const desc = COLOR_TYPE_DESCRIPTIONS[colorType];
 
   const shareUrl = userId
-    ? `https://palette.app/color/${colorType}?ref=${userId}`
-    : `https://palette.app/color/${colorType}`;
+    ? `https://www.palette.ai.kr/color/${colorType}?ref=${userId}`
+    : `https://www.palette.ai.kr/color/${colorType}`;
 
   const shareTitle = `나는 ${desc.title}! — 팔레트 컬러 타입 진단`;
   const shareText = `${desc.subtitle}. 나의 컬러를 확인해보세요!`;

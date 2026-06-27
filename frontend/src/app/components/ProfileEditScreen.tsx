@@ -1028,21 +1028,6 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                   placeholder="직장명을 입력하세요 (선택)"
                 />
               </div>
-
-              <div>
-                <Label className="block mb-2 text-sm font-semibold">소득 인증 <span className="text-muted-foreground font-normal">(선택)</span></Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full border-dashed hover:border-primary/50 hover:bg-muted"
-                  onClick={() => toast.info('홈택스 연동 기능은 준비 중입니다')}
-                >
-                  {profile.careerInfo.incomeRange ? '소득인증 완료' : '소득인증하기'}
-                </Button>
-                <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                  홈택스 연동 인증 시 고소득 뱃지가 표시돼요. (연소득 7,500만원 이상)
-                </p>
-              </div>
             </Section>
 
             {/* ── 학력 ── */}

@@ -273,13 +273,6 @@ export function ColorDetailScreen({ onBack, onNavigateToProfile }: ColorDetailSc
                     {unlocking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Palette className="w-4 h-4" />}
                     {unlocking ? "여는 중..." : `${unlockCost} 물감으로 전체 보기`}
                   </button>
-                  <button
-                    disabled
-                    className="w-full text-xs text-muted-foreground/60 py-1 cursor-not-allowed"
-                    title="광고 보상 해제는 곧 추가됩니다"
-                  >
-                    광고 보고 무료로 열기 (준비 중)
-                  </button>
                   <p className="text-[11px] text-muted-foreground/70">한 번 열면 계속 볼 수 있어요</p>
                 </div>
               </div>

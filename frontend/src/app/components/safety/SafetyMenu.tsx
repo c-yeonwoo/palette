@@ -3,7 +3,7 @@
  * 프로필 페이지·매칭 페이지 우상단 MoreVertical 버튼에 붙임
  */
 import { useState } from "react";
-import { MoreVertical, Flag, Ban, EyeOff, Share2 } from "lucide-react";
+import { MoreVertical, Flag, Ban, EyeOff } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,17 +13,26 @@ import {
 } from "../ui/dropdown-menu";
 import { ReportSheet } from "./ReportSheet";
 import { BlockConfirmDialog } from "./BlockConfirmDialog";
+import { api } from "../../../lib/api/apiClient";
 
 interface SafetyMenuProps {
   targetName: string;
+  /** 신고·차단 대상 사용자 ID (UUID). */
+  targetUserId: string;
   targetType?: "user" | "matchmaker";
+  /** 차단 백엔드 호출 성공 후 호출 (예: 화면 닫기/뒤로). */
   onBlock?: () => void;
   onHide?: () => void;
 }
 
-export function SafetyMenu({ targetName, targetType = "user", onBlock, onHide }: SafetyMenuProps) {
+export function SafetyMenu({ targetName, targetUserId, targetType = "user", onBlock, onHide }: SafetyMenuProps) {
   const [reportOpen, setReportOpen] = useState(false);
   const [blockOpen, setBlockOpen] = useState(false);
+
+  const handleBlockConfirm = async () => {
+    await api.post(`/api/v1/users/${targetUserId}/block`, {});
+    onBlock?.();
+  };
 
   return (
     <>
@@ -65,6 +74,7 @@ export function SafetyMenu({ targetName, targetType = "user", onBlock, onHide }:
         open={reportOpen}
         onClose={() => setReportOpen(false)}
         targetName={targetName}
+        targetUserId={targetUserId}
         targetType={targetType}
         onBlockToo={() => setBlockOpen(true)}
       />
@@ -73,7 +83,7 @@ export function SafetyMenu({ targetName, targetType = "user", onBlock, onHide }:
         open={blockOpen}
         onClose={() => setBlockOpen(false)}
         targetName={targetName}
-        onConfirm={() => onBlock?.()}
+        onConfirm={handleBlockConfirm}
       />
     </>
   );
