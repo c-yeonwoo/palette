@@ -86,7 +86,18 @@ class DevDataSeeder(
     // ── 운영자 시드 계정 ─────────────────────────────────────────────────────
     private fun seedAdminAccount(now: Instant) {
         val adminId = UUID.fromString("00000000-0000-0000-0000-0000000000ad")
-        if (userRepo.existsById(adminId)) return
+        // 이미 있으면 비밀번호만 ADMIN_SEED_PASSWORD 와 동기화 (이미 일치하면 재해싱 skip).
+        // → prod 에서 시크릿 갱신 + 재배포만으로 기존 어드민 비번 로테이션 가능.
+        userRepo.findById(adminId).orElse(null)?.let { existing ->
+            val matches = existing.password != null && passwordEncoder.matches(adminSeedPassword, existing.password)
+            if (!matches) {
+                existing.password = passwordEncoder.encode(adminSeedPassword)
+                existing.updatedAt = now
+                userRepo.save(existing)
+                log.info("[Seeder] 기존 어드민 비밀번호를 ADMIN_SEED_PASSWORD 값으로 동기화함")
+            }
+            return
+        }
         val admin = UserEntity(
             id = adminId,
             oauthProvider = null,
