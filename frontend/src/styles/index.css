@@ -2,3 +2,10 @@
 @import './tailwind.css';
 @import './theme.css';
 @import './mobile-frame.css';
+
+/* 네이티브 WebView(iOS/Android) 오버스크롤 바운스 시 뒤의 검은 배경이 비치는 것 방지 —
+   html/body 를 앱 배경색으로. (≥768px 데스크탑은 mobile-frame.css 의 .app-frame-root 가 별도 처리) */
+html,
+body {
+  background-color: var(--background);
+}
