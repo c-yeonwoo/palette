@@ -23,7 +23,7 @@ class SecurityConfig(
     private val jwtAuthenticationFilter: JwtAuthenticationFilter,
     // 기본값(로컬 dev)은 localhost/127.0.0.1 **모든 포트** 허용 — vite 가 3000/5173/5178 등 어디로 떠도 CORS 통과.
     // prod 는 CORS_ALLOWED_ORIGINS 로 정확한 origin(https://www.palette.ai.kr) 을 주입해 override.
-    @Value("\${cors.allowed-origins:http://localhost:[*],http://127.0.0.1:[*]}")
+    @Value("\${cors.allowed-origins:http://localhost:[*],http://127.0.0.1:[*],capacitor://localhost,https://localhost,palette://localhost}")
     private val corsAllowedOrigins: String,
 ) {
 
