@@ -12,6 +12,7 @@
     "ios": "npm run sync:ios && cap open ios"
   },
   "dependencies": {
+    "@capacitor-community/apple-sign-in": "^7.1.0",
     "@capacitor/android": "^7.6.6",
     "@capacitor/app": "^7.1.2",
     "@capacitor/browser": "^7.0.5",

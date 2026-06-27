@@ -48,10 +48,62 @@ export const authService = {
   },
 
   /**
-   * Redirect to Apple OAuth2 login
+   * Redirect to Apple OAuth2 login (web 전용 — 미사용, 호환 보존)
    */
   loginWithApple(): void {
     window.location.href = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OAUTH2.APPLE}`;
+  },
+
+  /**
+   * Sign in with Apple — 네이티브 플로우 (iOS).
+   * @capacitor-community/apple-sign-in 이 받은 identityToken 을 백엔드로 보내
+   * JWKS 검증 → Palette JWT 발급 → localStorage 저장. (App Store Review 4.8)
+   * 베타 게이트 쿠키 전달을 위해 credentials: 'include'.
+   */
+  async loginWithAppleNative(
+    identityToken: string,
+    authorizationCode?: string | null,
+    displayName?: string | null,
+  ): Promise<boolean> {
+    const response = await fetch(
+      `${API_CONFIG.BASE_URL}/api/v1/auth/oauth/apple`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ identityToken, authorizationCode, displayName }),
+      }
+    );
+
+    if (!response.ok) {
+      let message = 'Apple 로그인에 실패했어요. 다시 시도해주세요.';
+      try {
+        const body = await response.json();
+        if (body?.message) message = body.message;
+      } catch {
+        /* JSON 파싱 실패는 무시 — 기본 메시지 사용 */
+      }
+      const err = new Error(message) as Error & { status?: number };
+      err.status = response.status;
+      throw err;
+    }
+
+    const data: {
+      accessToken: string;
+      refreshToken: string;
+      tokenType: string;
+      expiresIn: number;
+    } = await response.json();
+
+    const now = new Date();
+    tokenStorage.setTokens({
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      tokenType: data.tokenType,
+      expiresAt: new Date(now.getTime() + data.expiresIn * 1000).toISOString(),
+      refreshExpiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    });
+    return true;
   },
 
   /**
