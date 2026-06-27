@@ -39,6 +39,9 @@
 		<string>UIInterfaceOrientationPortrait</string>
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
+	<!-- 세로 고정 데이팅앱 — 전체화면 선언으로 iPad Split View(전체 오리엔테이션) 요구 면제 (Xcode 경고 해소) -->
+	<key>UIRequiresFullScreen</key>
+	<true/>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
 
