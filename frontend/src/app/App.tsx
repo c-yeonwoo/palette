@@ -906,6 +906,7 @@ export default function App() {
       {currentScreen === "login" && (
         <LoginScreen
           onEmailLogin={handleEmailLogin}
+          onLoginSuccess={handleEmailAuthSuccess}
         />
       )}
 

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "./ui/button";
 import { Mail } from "lucide-react";
 import { toast } from "sonner";
@@ -5,12 +6,15 @@ import { authService } from "../../lib/auth/authService";
 
 interface LoginScreenProps {
   onEmailLogin?: () => void;
+  /** Apple 로그인 성공 시 호출 — 이메일 로그인 성공과 동일한 후처리(현재 유저 로드 + 라우팅). */
+  onLoginSuccess?: () => void;
 }
 
 /**
  * iOS WebView/native 에서만 Apple Sign In 버튼 노출.
  * Apple App Store Review 4.8 — 다른 third-party SSO 가 있는 앱은 Apple Sign In 의무.
- * 베타: 백엔드 미구현 → 버튼 누르면 "준비 중" 토스트 (Apple 심사 직전 활성화).
+ * 네이티브 플로우: @capacitor-community/apple-sign-in 으로 identityToken 받아
+ * POST /api/v1/auth/oauth/apple 검증 → JWT 발급.
  */
 function isIOSNative(): boolean {
   // Capacitor 환경 — iOS 네이티브 셸. 웹/Android 에선 false.
@@ -20,17 +24,60 @@ function isIOSNative(): boolean {
   );
 }
 
-export function LoginScreen({ onEmailLogin }: LoginScreenProps) {
+export function LoginScreen({ onEmailLogin, onLoginSuccess }: LoginScreenProps) {
   const showAppleSignIn = isIOSNative();
+  const [appleLoading, setAppleLoading] = useState(false);
 
   const handleKakaoLogin = () => {
     authService.loginWithKakao();
   };
 
   const handleAppleLogin = async () => {
-    // Apple Sign In flow (베타): @capacitor-community/apple-sign-in 도입 시 교체.
-    // identityToken 받아 POST /api/v1/auth/oauth/apple 로 검증 → JWT 발급.
-    toast.info("Apple 로그인은 곧 지원될 예정이에요");
+    if (appleLoading) return;
+    setAppleLoading(true);
+    try {
+      // 동적 import — 웹 번들에 네이티브 전용 플러그인이 끌려오지 않도록.
+      const { SignInWithApple } = await import("@capacitor-community/apple-sign-in");
+      const result = await SignInWithApple.authorize({
+        clientId: "kr.ai.palette",
+        // 네이티브 플로우에선 redirectURI 가 실제로 사용되지 않지만 플러그인 타입상 필요.
+        redirectURI: "https://www.palette.ai.kr/auth/apple/callback",
+        scopes: "email name",
+      });
+
+      const identityToken = result.response?.identityToken;
+      if (!identityToken) {
+        toast.error("Apple 로그인 토큰을 받지 못했어요. 다시 시도해주세요.");
+        return;
+      }
+
+      const displayName =
+        [result.response?.givenName, result.response?.familyName]
+          .filter(Boolean)
+          .join(" ")
+          .trim() || undefined;
+
+      await authService.loginWithAppleNative(
+        identityToken,
+        result.response?.authorizationCode,
+        displayName,
+      );
+
+      toast.success("Apple 계정으로 로그인되었습니다!");
+      onLoginSuccess?.();
+    } catch (error: any) {
+      // 사용자가 시트를 닫은 경우(취소)는 조용히 무시.
+      const msg = String(error?.message ?? "");
+      const canceled =
+        error?.code === "1001" ||
+        /cancel/i.test(msg) ||
+        /1001/.test(msg);
+      if (canceled) return;
+      console.error("Apple Sign In failed:", error);
+      toast.error(msg || "Apple 로그인에 실패했어요. 다시 시도해주세요.");
+    } finally {
+      setAppleLoading(false);
+    }
   };
 
   const handleEmailLogin = () => {
