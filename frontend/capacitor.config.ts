@@ -32,7 +32,7 @@ const config: CapacitorConfig = {
       launchShowDuration: 1500,
       launchAutoHide: true,
       launchFadeOutDuration: 250,
-      backgroundColor: '#9A7360',   // brand taupe (골드 P 스플래시 톤)
+      backgroundColor: '#FFFFFF',   // 흰 배경 + 금색 P 로고 (깔끔한 스플래시)
       androidScaleType: 'CENTER_CROP',
       showSpinner: false,
       iosSpinnerStyle: 'small',
