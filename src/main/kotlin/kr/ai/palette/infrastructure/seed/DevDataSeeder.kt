@@ -49,6 +49,10 @@ class DevDataSeeder(
     private val matchmakerRepo: MatchmakerJpaRepository,
     private val matchmakingRepo: MatchmakingRequestJpaRepository,
     private val passwordEncoder: PasswordEncoder,
+    // 운영자 시드 비밀번호 — prod 에선 반드시 ADMIN_SEED_PASSWORD 환경변수로 강한 값 주입.
+    // (하드코딩 'adminpass123' 이 prod 에 남으면 어드민 패널 전체 탈취 가능)
+    @org.springframework.beans.factory.annotation.Value("\${app.admin-seed-password:adminpass123}")
+    private val adminSeedPassword: String,
 ) : ApplicationRunner {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -75,8 +79,8 @@ class DevDataSeeder(
         seedMatchmakingRequests(me, regularUsers, matchmakers, now)
 
         log.info("[Seeder] Done — ${userRepo.count()} users in DB")
-        log.info("[Seeder] User login : dev@palette.kr / devpass123")
-        log.info("[Seeder] Admin login: admin@palette.kr / adminpass123 (role=ADMIN)")
+        log.info("[Seeder] User login : dev@palette.kr (REGULAR, 데모 계정)")
+        log.info("[Seeder] Admin login: admin@palette.kr (role=ADMIN, 비번=ADMIN_SEED_PASSWORD env)")
     }
 
     // ── 운영자 시드 계정 ─────────────────────────────────────────────────────
@@ -87,7 +91,7 @@ class DevDataSeeder(
             id = adminId,
             oauthProvider = null,
             oauthId = null,
-            password = passwordEncoder.encode("adminpass123"),
+            password = passwordEncoder.encode(adminSeedPassword),
             realName = "관리자",
             email = "admin@palette.kr",
             phoneNumber = "01000000000",

@@ -39,8 +39,8 @@ function loadFlags(): FeatureFlags {
 
 export const FLAGS: FeatureFlags = loadFlags();
 
-/** 개발 콘솔에서 플래그 오버라이드 가능 */
-if (typeof window !== "undefined") {
+/** 개발 콘솔에서 플래그 오버라이드 가능 — DEV 빌드 전용 (prod 번들에서 제외, 페이월/플래그 조작 방지) */
+if (import.meta.env.DEV && typeof window !== "undefined") {
   (window as any).__setFlag = (key: keyof FeatureFlags, value: unknown) => {
     try {
       const current = loadFlags();
