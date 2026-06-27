@@ -21,7 +21,10 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/v1/identity/nice")
 class NiceIdentityController(
-    private val identityVerificationService: IdentityVerificationService
+    private val identityVerificationService: IdentityVerificationService,
+    // dev-bypass 는 명시적으로 켤 때만 동작 (prod 기본 차단). 로그인 유저의 본인인증 우회 방지.
+    @org.springframework.beans.factory.annotation.Value("\${app.nice-dev-bypass-enabled:false}")
+    private val niceDevBypassEnabled: Boolean,
 ) {
 
     /**
@@ -97,6 +100,7 @@ class NiceIdentityController(
         @AuthenticationPrincipal authUser: AuthUser,
         @RequestBody body: DevBypassRequest
     ): ResponseEntity<NiceVerificationResult> {
+        if (!niceDevBypassEnabled) return ResponseEntity.status(404).build()
         val result = identityVerificationService.devBypass(
             userId = authUser.userId.value.toString(),
             phoneNumber = body.phoneNumber,

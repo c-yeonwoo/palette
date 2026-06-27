@@ -70,7 +70,10 @@ class ProfileController(
         }
 
         request.settings?.let { settingsDto ->
-            profile = profile.updateSettings(settingsDto.toDomain())
+            // hiddenAt(노출 on/off)은 전용 visibility 엔드포인트로만 변경 —
+            // PUT 본문의 클라이언트 hiddenAt 은 무시하고 기존 값 보존 (mass-assignment 방지)
+            val merged = settingsDto.toDomain().copy(hiddenAt = profile.settings.hiddenAt)
+            profile = profile.updateSettings(merged)
         }
 
         request.personalityTests?.let { testsDto ->
@@ -151,6 +154,9 @@ class ProfileController(
         request.photos.forEachIndexed { newDisplayOrder, photoUpdate ->
             val photoId = ProfilePhotoId(java.util.UUID.fromString(photoUpdate.id))
             val photo = profilePhotoRepository.findById(photoId) ?: return@forEachIndexed
+
+            // 본인 사진만 — 타인 사진 ID 를 넣어 대표/순서를 조작하는 IDOR 차단
+            if (photo.profileId != profile.id) return@forEachIndexed
 
             // Update display order
             val updatedPhoto = photo.copy(

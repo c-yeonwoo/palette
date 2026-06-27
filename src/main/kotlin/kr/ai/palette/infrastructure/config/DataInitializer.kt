@@ -14,6 +14,7 @@ import java.time.LocalDate
 import java.util.*
 
 @Component
+@org.springframework.context.annotation.Profile("!prod")  // 테스트 계정(test1234)은 prod 에 생성 금지
 class DataInitializer(
     private val userRepository: UserRepository,
     private val profileRepository: ProfileRepository,
