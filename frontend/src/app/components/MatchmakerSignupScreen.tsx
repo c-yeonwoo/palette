@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
 import { tokenStorage } from "../../lib/auth/tokenStorage";
 import { sendVerificationCode, verifyCode } from "../../lib/api/phoneVerification";
+import { getBetaCode } from "./BetaGateScreen";
 
 interface MatchmakerSignupScreenProps {
   onBack: () => void;
@@ -196,6 +197,8 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
           phoneNumber: formData.phoneNumber,
           birthDate: formData.birthDate,
           gender: formData.gender,
+          // 베타 코드 body 직접 전달 — 네이티브는 cross-origin 쿠키 미전송
+          betaCode: getBetaCode() || undefined,
         },
         { requiresAuth: false }
       );

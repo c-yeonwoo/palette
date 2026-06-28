@@ -8,6 +8,7 @@ import { api } from "../../lib/api/apiClient";
 import { tokenStorage } from "../../lib/auth/tokenStorage";
 import { toast } from "sonner";
 import { sendVerificationCode, verifyCode } from "../../lib/api/phoneVerification";
+import { getBetaCode } from "./BetaGateScreen";
 import { Loader2 } from "lucide-react";
 
 interface EmailSignupScreenProps {
@@ -171,6 +172,8 @@ export function EmailSignupScreen({ onSuccess, onBackToLogin }: EmailSignupScree
         birthDate: formData.birthDate,
         gender: formData.gender,
         inviteCode: formData.inviteCode.trim() || undefined,  // 빈 값은 보내지 않음
+        // 베타 코드를 body 로 직접 전달 — 네이티브(cross-origin)는 베타 쿠키가 안 실리므로 쿠키 의존 불가
+        betaCode: getBetaCode() || undefined,
       }, { requiresAuth: false });
 
       // 토큰 저장

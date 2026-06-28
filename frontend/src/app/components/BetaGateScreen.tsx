@@ -16,6 +16,9 @@ import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
 
 const BETA_PASSED_KEY = "palette_beta_passed";
+// 입력한 베타 코드 원문 저장 — 가입 요청 body 로 직접 전달(네이티브는 cross-origin
+// 쿠키가 안 실리므로 쿠키 의존 불가). validateFromCookie 대신 validate(betaCode) 경유.
+const BETA_CODE_KEY = "palette_beta_code";
 
 interface BetaGateScreenProps {
   onPassed: () => void;
@@ -71,6 +74,7 @@ export function BetaGateScreen({ onPassed }: BetaGateScreenProps) {
         { requiresAuth: false }
       );
       localStorage.setItem(BETA_PASSED_KEY, "1");
+      localStorage.setItem(BETA_CODE_KEY, code.trim());
       toast.success("환영합니다");
       onPassed();
     } catch (err: unknown) {
@@ -198,7 +202,13 @@ export function hasBetaPassed(): boolean {
   return localStorage.getItem(BETA_PASSED_KEY) === "1";
 }
 
+/** 입력했던 베타 코드 원문 (가입 요청 body 에 동봉 — 쿠키 미의존). 없으면 null. */
+export function getBetaCode(): string | null {
+  return localStorage.getItem(BETA_CODE_KEY);
+}
+
 /** 베타 마커 클리어 (개발용/로그아웃용) */
 export function clearBetaPassed() {
   localStorage.removeItem(BETA_PASSED_KEY);
+  localStorage.removeItem(BETA_CODE_KEY);
 }
