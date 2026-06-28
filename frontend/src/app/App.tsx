@@ -858,35 +858,31 @@ export default function App() {
 
   // Show loading spinner while checking authentication
   if (isLoading) {
-    // 흰 배경 + 앱아이콘 배지(코랄·피치 라운드 스퀘어 + 흰 둥근 P + 그림자)를 중앙에.
-    // 네이티브 스플래시(Splash.imageset)·앱아이콘과 동일한 톤·입체감으로 매칭.
+    // 흰 배경 중앙에 컬러 하트(데이팅+색=팔레트). 네이티브 스플래시·앱아이콘과 동일.
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#FFFFFF" }}>
-        <div
+        <svg
+          width="116"
+          height="116"
+          viewBox="0 0 100 100"
+          xmlns="http://www.w3.org/2000/svg"
+          aria-label="Palette"
           className="animate-pulse"
-          style={{
-            width: 120,
-            height: 120,
-            borderRadius: 28,
-            background: "linear-gradient(135deg, #FFB088 0%, #FF7E5F 100%)",
-            boxShadow: "0 18px 50px rgba(224, 101, 74, 0.32)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          style={{ filter: "drop-shadow(0 14px 34px rgba(224, 101, 74, 0.28))" }}
         >
-          <svg width="92" height="92" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="Palette">
-            <path
-              transform="translate(-3 0)"
-              d="M34 22 L34 78 M34 22 L60 22 C80 22 80 53 60 53 L34 53"
-              fill="none"
-              stroke="#FFFFFF"
-              strokeWidth="13"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </div>
+          <defs>
+            <linearGradient id="palette-heart-loading" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stopColor="#FF7E5F" />
+              <stop offset="0.4" stopColor="#FFB088" />
+              <stop offset="0.72" stopColor="#FFD166" />
+              <stop offset="1" stopColor="#5EEAD4" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M50 80 C16 56 20 28 40 28 C49 28 50 37 50 39 C50 37 51 28 60 28 C80 28 84 56 50 80 Z"
+            fill="url(#palette-heart-loading)"
+          />
+        </svg>
       </div>
     );
   }

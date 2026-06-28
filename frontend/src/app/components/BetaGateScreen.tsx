@@ -117,21 +117,17 @@ export function BetaGateScreen({ onPassed }: BetaGateScreenProps) {
         <div className="text-center flex flex-col items-center gap-6">
           <svg width="84" height="84" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Palette">
             <defs>
-              <linearGradient id="palette-coral-beta" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor="#FFB088" />
-                <stop offset="1" stopColor="#FF7E5F" />
+              <linearGradient id="palette-heart-beta" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#FF7E5F" />
+                <stop offset="0.4" stopColor="#FFB088" />
+                <stop offset="0.72" stopColor="#FFD166" />
+                <stop offset="1" stopColor="#5EEAD4" />
               </linearGradient>
             </defs>
-            <rect width="100" height="100" rx="24" fill="url(#palette-coral-beta)" />
-            <path
-              transform="translate(-3 0)"
-              d="M34 22 L34 78 M34 22 L60 22 C80 22 80 53 60 53 L34 53"
-              fill="none"
-              stroke="#FFFFFF"
-              strokeWidth="13"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+            <rect width="100" height="100" rx="24" fill="#FFFFFF" />
+            <g transform="translate(50 50) scale(0.62) translate(-50 -54)">
+              <path d="M50 80 C16 56 20 28 40 28 C49 28 50 37 50 39 C50 37 51 28 60 28 C80 28 84 56 50 80 Z" fill="url(#palette-heart-beta)" />
+            </g>
           </svg>
           <div className="space-y-3">
             <h1
