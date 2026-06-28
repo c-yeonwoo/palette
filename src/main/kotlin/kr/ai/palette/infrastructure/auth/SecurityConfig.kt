@@ -104,7 +104,12 @@ class SecurityConfig(
         val configuration = CorsConfiguration()
         // allowedOriginPatterns: 포트 와일드카드(http://localhost:[*]) 지원 + allowCredentials=true 와 호환
         // (allowedOrigins 와 달리 패턴/와일드카드를 credentials 와 같이 쓸 수 있음). 정확한 origin 문자열도 그대로 매칭.
-        configuration.allowedOriginPatterns = corsAllowedOrigins.split(",").map { it.trim() }
+        //
+        // ⚠️ 네이티브(Capacitor) origin 은 배포 환경과 무관한 고정 상수다.
+        //    prod 의 CORS_ALLOWED_ORIGINS 환경변수(=cors.allowed-origins override)가
+        //    웹 도메인만 담고 있어도 iOS/Android 앱의 가입·인증이 막히지 않도록
+        //    항상 강제 병합한다. (시크릿 갱신에 의존하지 않음 — resolveAllowedOriginPatterns)
+        configuration.allowedOriginPatterns = resolveAllowedOriginPatterns(corsAllowedOrigins)
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
         configuration.allowedHeaders = listOf("*")
         configuration.allowCredentials = true
@@ -113,6 +118,24 @@ class SecurityConfig(
         val source = UrlBasedCorsConfigurationSource()
         source.registerCorsConfiguration("/**", configuration)
         return source
+    }
+
+    companion object {
+        /**
+         * Capacitor 네이티브 WebView origin — 배포 환경과 무관한 고정 상수.
+         * prod CORS_ALLOWED_ORIGINS 가 웹 도메인만 담고 있어도 앱 인증/가입이 막히지 않도록 항상 허용.
+         */
+        val MANDATORY_NATIVE_ORIGINS = listOf(
+            "capacitor://localhost",  // iOS WKWebView
+            "https://localhost",      // Android WebView (allowMixedContent=false)
+            "palette://localhost",    // ios.scheme=palette 커스텀 스킴
+        )
+
+        /** 설정값(콤마구분) + 필수 네이티브 origin 을 병합/중복제거. */
+        fun resolveAllowedOriginPatterns(configured: String): List<String> {
+            val parsed = configured.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            return (parsed + MANDATORY_NATIVE_ORIGINS).distinct()
+        }
     }
 
     @Bean
