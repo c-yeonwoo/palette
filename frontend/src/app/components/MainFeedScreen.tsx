@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { MapPin, SlidersHorizontal, X, Bell, Sparkles, Users } from "lucide-react";
+import { MapPin, SlidersHorizontal, X, Bell, Sparkles, Users, Palette as PaletteIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
@@ -153,9 +153,11 @@ const PALETTE_COVER_STYLE = {
 
 interface MainFeedScreenPropsExtended extends MainFeedScreenProps {
   onNavigateToMyPage?: () => void;
+  /** 물감 잔액 chip 탭 → 충전 화면 (잔액 가시성 — 비용 게이트 전에 잔액 인지) */
+  onNavigateToBilling?: () => void;
 }
 
-export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigateToFriends, onNavigateToMyPage, unreadNotifications = 0 }: MainFeedScreenPropsExtended) {
+export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigateToFriends, onNavigateToMyPage, onNavigateToBilling, unreadNotifications = 0 }: MainFeedScreenPropsExtended) {
   const [feedItems, setFeedItems] = useState<FeedProfileItem[]>([]);
   const [aiSignal, setAiSignal] = useState<AiSignalResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -167,9 +169,14 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
     colorTypes: [], activeOnly: false, minTrustScore: "",
   });
   const [pendingFilters, setPendingFilters] = useState<FilterState>({ ...filters });
+  const [balancePoints, setBalancePoints] = useState<number | null>(null);
 
   useEffect(() => {
     fetchUserAndFeed();
+    // 헤더 물감 잔액 (ADR 0044) — 비용 게이트(열람/소개요청) 전에 잔액을 인지시킴
+    api.get<{ points: number }>("/api/v1/billing/balance")
+      .then((b) => setBalancePoints(b.points))
+      .catch(() => { /* 잔액 조회 실패 시 chip 숨김 */ });
   }, []);
 
   const buildQueryString = (f: FilterState): string => {
@@ -260,6 +267,17 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
         <div className="max-w-2xl mx-auto px-5 h-16 flex items-center justify-between">
           <h1 className="text-lg font-bold text-foreground">소개</h1>
           <div className="flex items-center gap-2">
+            {/* 물감 잔액 chip — 탭하면 충전. 비용 게이트 전에 잔액 인지 (MyPage 헤더와 동일 패턴) */}
+            {balancePoints !== null && (
+              <button
+                onClick={onNavigateToBilling}
+                className="flex items-center gap-1 h-9 pl-2.5 pr-3 rounded-full bg-brand-soft text-brand-strong hover:brightness-95 transition-all"
+                aria-label="물감 잔액 · 충전"
+              >
+                <PaletteIcon className="w-[15px] h-[15px]" />
+                <span className="text-sm font-semibold">{balancePoints.toLocaleString()}</span>
+              </button>
+            )}
             <button
               onClick={onNotificationClick}
               className="relative w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors text-foreground"
