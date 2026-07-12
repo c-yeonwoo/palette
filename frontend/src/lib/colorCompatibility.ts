@@ -111,6 +111,32 @@ function isComplementary(a: ColorType, b: ColorType): boolean {
   );
 }
 
+/**
+ * 주어진 색의 보완색을 반환 (단일 소스 — COMPLEMENTARY_PAIRS 기반).
+ * 각 화면이 자체적으로 "어떤 색끼리 보완색인지" 매핑을 재구현하지 않도록 여기서만 관리한다.
+ */
+export function getComplementaryType(a: ColorType | null | undefined): ColorType | null {
+  if (!a) return null;
+  const pair = COMPLEMENTARY_PAIRS.find(([x, y]) => x === a || y === a);
+  if (!pair) return null;
+  return pair[0] === a ? pair[1] : pair[0];
+}
+
+/**
+ * 한국어 표시명(예: "따뜻한 오렌지")으로 COLOR_META 엔트리를 역조회.
+ * 일부 백엔드 엔드포인트(AdminUsersController 의 stats/friends)는 enum 키가 아니라
+ * ColorType.name(한국어 라벨)을 그대로 내려주므로, 그 값을 다시 COLOR_META 에 매핑할 때 사용.
+ */
+export function getColorMetaByLabel(
+  label: string | null | undefined
+): (ColorMeta & { type: ColorType }) | null {
+  if (!label) return null;
+  const entry = (Object.entries(COLOR_META) as [ColorType, ColorMeta][]).find(
+    ([, meta]) => meta.name === label
+  );
+  return entry ? { type: entry[0], ...entry[1] } : null;
+}
+
 function isAnalogous(a: ColorType, b: ColorType): boolean {
   return ANALOGOUS_GROUPS.some(
     (group) => group.includes(a) && group.includes(b)

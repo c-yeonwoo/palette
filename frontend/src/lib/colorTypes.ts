@@ -8,6 +8,8 @@
  *   import { COLOR_TYPES, getColorTypeMeta } from "@/lib/colorTypes";
  */
 
+import type { ColorType } from "./colorCompatibility";
+
 export type ColorTypeKey =
   | "orange"
   | "blue"
@@ -17,6 +19,38 @@ export type ColorTypeKey =
   | "purple"
   | "yellow"
   | "gray";
+
+/**
+ * 백엔드 enum(UPPERCASE, colorCompatibility.ts 의 ColorType) → CSS 토큰 키(lowercase) 매핑.
+ * 단일 정의처 — 각 화면이 자체적으로 매핑 테이블을 재구현하지 않도록 여기서만 관리한다.
+ */
+export const UPPER_TO_KEY: Record<ColorType, ColorTypeKey> = {
+  WARM_ORANGE: "orange",
+  CALM_BLUE: "blue",
+  VIBRANT_RED: "red",
+  SOFT_PINK: "pink",
+  FRESH_GREEN: "green",
+  ELEGANT_PURPLE: "purple",
+  BRIGHT_YELLOW: "yellow",
+  SOPHISTICATED_GRAY: "gray",
+};
+
+/** UPPER_TO_KEY 의 역방향 (lowercase → 백엔드 enum). 궁합 계산 등 UPPERCASE 알고리즘에 넘길 때 사용. */
+export const KEY_TO_UPPER: Record<ColorTypeKey, ColorType> = Object.fromEntries(
+  Object.entries(UPPER_TO_KEY).map(([upper, key]) => [key, upper as ColorType])
+) as Record<ColorTypeKey, ColorType>;
+
+/** 백엔드 enum 값 또는 이미 lowercase 키인 값을 모두 받아 CSS 토큰 키로 정규화. 없으면 "orange" fallback. */
+export function keyFromColorType(type: ColorType | ColorTypeKey | string | null | undefined): ColorTypeKey {
+  if (!type) return "orange";
+  if (type in UPPER_TO_KEY) return UPPER_TO_KEY[type as ColorType];
+  if ((type as string).toLowerCase() in COLOR_TYPE_KEYS) return type as ColorTypeKey;
+  return "orange";
+}
+
+const COLOR_TYPE_KEYS = new Set<string>([
+  "orange", "blue", "red", "pink", "green", "purple", "yellow", "gray",
+]);
 
 export interface ColorTypeMeta {
   key: ColorTypeKey;
@@ -130,39 +164,3 @@ export function getColorTypeMeta(key: ColorTypeKey | string | null | undefined):
   return COLOR_TYPES.orange; // fallback
 }
 
-/**
- * 두 컬러타입의 조화 점수 (0-100)
- * 실제 알고리즘은 colorCompatibility.ts에서 확장 예정.
- * 여기서는 간단한 휴리스틱.
- */
-export function getCompatibilityScore(a: ColorTypeKey, b: ColorTypeKey): number {
-  // 같은 색: 70 (유사도는 높지만 자극 낮음)
-  if (a === b) return 70;
-
-  // 보색 조합: 높은 점수
-  const highPairs: [ColorTypeKey, ColorTypeKey][] = [
-    ["orange", "blue"],
-    ["red", "green"],
-    ["pink", "gray"],
-    ["purple", "yellow"],
-  ];
-  for (const [x, y] of highPairs) {
-    if ((a === x && b === y) || (a === y && b === x)) return 92;
-  }
-
-  // 인접 유사색: 중간 점수
-  const mediumPairs: [ColorTypeKey, ColorTypeKey][] = [
-    ["orange", "red"],
-    ["orange", "yellow"],
-    ["pink", "purple"],
-    ["pink", "red"],
-    ["blue", "purple"],
-    ["blue", "green"],
-    ["green", "yellow"],
-  ];
-  for (const [x, y] of mediumPairs) {
-    if ((a === x && b === y) || (a === y && b === x)) return 80;
-  }
-
-  return 65;
-}

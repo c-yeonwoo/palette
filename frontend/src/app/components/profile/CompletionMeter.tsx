@@ -14,12 +14,13 @@ import {
   getNextActions,
   type ProfileCompletionInput,
 } from "../../../lib/profile-completion";
-import { getColorTypeMeta } from "../../../lib/colorTypes";
-import { getMyColorType } from "../../../lib/daily-match";
+import { getColorTypeMeta, keyFromColorType } from "../../../lib/colorTypes";
 
 interface CompletionMeterProps {
   input?: ProfileCompletionInput;
   onAction?: (key: string) => void;
+  /** 도넛 강조색 — 백엔드 colorType(UPPERCASE) 또는 이미 lowercase 키. 없으면 기본색. */
+  colorType?: string | null;
 }
 
 const DONUT_R = 36;
@@ -31,6 +32,7 @@ const CIRCUMFERENCE = 2 * Math.PI * DONUT_R;
 export function CompletionMeter({
   input,
   onAction,
+  colorType,
 }: CompletionMeterProps) {
   const prevRef = useRef(0);
   const total = input ? calculateCompletion(input).total : 0;
@@ -55,8 +57,7 @@ export function CompletionMeter({
 
   const nextActions = getNextActions(input);
 
-  const colorType = getMyColorType();
-  const meta = getColorTypeMeta(colorType);
+  const meta = getColorTypeMeta(keyFromColorType(colorType));
   const accentHsl = `hsl(${meta.h} ${meta.s}% ${meta.l}%)`;
 
   const dashOffset = CIRCUMFERENCE * (1 - total / 100);

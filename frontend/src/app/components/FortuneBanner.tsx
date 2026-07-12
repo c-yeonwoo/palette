@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
-import { COLOR_META, type ColorType } from "../../lib/colorCompatibility";
+import { COLOR_META, getComplementaryType, type ColorType } from "../../lib/colorCompatibility";
 
 interface Fortune {
   date: string;
@@ -18,22 +18,6 @@ interface MyColorInfo {
   type: ColorType | null;
   name: string | null;
   hex: string | null;
-}
-
-/** 오늘 날짜 기반으로 "잘 맞는 색깔 타입" 결정 (결정론적) */
-function getTodayCompatibleType(myType: ColorType | null): ColorType | null {
-  if (!myType) return null;
-  const pairMap: Record<ColorType, ColorType> = {
-    WARM_ORANGE:       "CALM_BLUE",
-    CALM_BLUE:         "WARM_ORANGE",
-    VIBRANT_RED:       "FRESH_GREEN",
-    FRESH_GREEN:       "VIBRANT_RED",
-    SOFT_PINK:         "SOPHISTICATED_GRAY",
-    SOPHISTICATED_GRAY:"SOFT_PINK",
-    ELEGANT_PURPLE:    "BRIGHT_YELLOW",
-    BRIGHT_YELLOW:     "ELEGANT_PURPLE",
-  };
-  return pairMap[myType] ?? null;
 }
 
 export function FortuneBanner() {
@@ -57,7 +41,7 @@ export function FortuneBanner() {
   }
 
   const myType = myColor?.type as ColorType | null;
-  const compatibleType = getTodayCompatibleType(myType);
+  const compatibleType = getComplementaryType(myType);
   const compatibleMeta = compatibleType ? COLOR_META[compatibleType] : null;
   const myMeta = myType ? COLOR_META[myType] : null;
 
