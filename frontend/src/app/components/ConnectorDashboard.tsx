@@ -14,6 +14,7 @@ import { api } from "../../lib/api/apiClient";
 import { MessageModal } from "./MessageModal";
 import { getCompatibilityDeterministic, COLOR_META, type ColorType } from "../../lib/colorCompatibility";
 import { tierFor, nextTier } from "../../lib/matchmakerLevels";
+import { MATCHMAKER_CASH_ENABLED } from "../../lib/matchmakerRewardMode";
 
 interface MatchmakerData {
   matchmakerId: string;
@@ -528,7 +529,8 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
                             <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground/60">{nudge.toMember.name.charAt(0)}</span>
                             <span className="text-sm font-medium">{nudge.toMember.name}</span>
                           </div>
-                          {nudge.pointsSpent > 0 && (
+                          {/* Phase 1 명예 노선: 소개 제안에 물감 소모 표기 숨김 (MATCHMAKER_CASH_ENABLED 보존) */}
+                          {MATCHMAKER_CASH_ENABLED && nudge.pointsSpent > 0 && (
                             <span className="ml-auto text-xs text-muted-foreground">−{nudge.pointsSpent} 물감</span>
                           )}
                         </div>
@@ -678,14 +680,22 @@ function RequestCard({
     // ── 블라인드 수락 카드 ──────────────────────────────
     return (
       <Card className="overflow-hidden border-brand/25 shadow-sm">
-        {/* Points banner */}
-        <div className="bg-primary/5 border-b border-primary/10 px-4 py-3 flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold text-primary uppercase tracking-wider">수락하면 즉시 받아요</p>
-            <p className="text-xl font-bold text-primary">{points} 물감</p>
+        {/* 상단 배너 — Phase 1: 명예(등급) 프레임. Phase 2 정산 구축 시 물감 보상 배너 부활.
+            금전 배너 코드는 지우지 않고 MATCHMAKER_CASH_ENABLED 로 보존한다. */}
+        {MATCHMAKER_CASH_ENABLED ? (
+          <div className="bg-primary/5 border-b border-primary/10 px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-primary uppercase tracking-wider">수락하면 즉시 받아요</p>
+              <p className="text-xl font-bold text-primary">{points} 물감</p>
+            </div>
+            <Coins className="w-6 h-6 text-primary/60" />
           </div>
-          <Coins className="w-6 h-6 text-primary/60" />
-        </div>
+        ) : (
+          <div className="bg-primary/5 border-b border-primary/10 px-4 py-3 flex items-center gap-2">
+            <Award className="w-5 h-5 text-primary/60 shrink-0" />
+            <p className="text-xs text-muted-foreground">성사되면 <span className="font-semibold text-primary">주선자 등급</span>이 올라가고 신뢰가 쌓여요</p>
+          </div>
+        )}
 
         <div className="px-4 py-3 space-y-3">
           {/* Palette 추천 프레임 */}

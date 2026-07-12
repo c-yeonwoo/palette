@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ChevronLeft, Loader2, Send, Users, ExternalLink, Lock, EyeOff, Palette as PaletteIcon } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
-import { getCompatibilityDeterministic, COLOR_META, COMPAT_STYLE, type ColorType } from "../../lib/colorCompatibility";
+import { getCompatibilityDeterministic, COLOR_META, COMPAT_STYLE, type ColorType, type CompatibilityType } from "../../lib/colorCompatibility";
 import { CategoryCard } from "./profile/CategoryCard";
 import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
 import { onboardingProgress } from "../../lib/onboarding/progress";
@@ -422,9 +422,17 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
       setModalStep(1);
       setSelectedMatchmaker(null);
       setRequestMessage("");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create matchmaking request:", error);
-      toast.error("소개 요청에 실패했습니다");
+      // 최고가 액션(100 물감) — 잔액 부족 시 충전 화면으로 유도 (프로필 열람 게이트와 동일 처리)
+      if (error?.status === 402 || /INSUFFICIENT_BALANCE/.test(error?.message ?? "")) {
+        toast.error("물감이 부족해요 · 소개 요청에는 100 물감이 필요합니다");
+        setShowMatchmakerModal(false);
+        setModalStep(1);
+        if (onNavigateToBilling) onNavigateToBilling();
+      } else {
+        toast.error("소개 요청에 실패했습니다");
+      }
     }
   };
 
@@ -759,7 +767,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
           )}
         </div>
 
-        {/* 색깔 궁합 + AI 분석 배너 */}
+        {/* 색깔 궁합 배너 (색 이론 기반) */}
         <ColorCompatBanner
           theirColorType={(profile.colorType?.type ?? null) as ColorType | null}
           theirColorName={profile.colorType?.name ?? null}
@@ -1361,12 +1369,13 @@ function generateMatchInsights(
 
   // 1. 색깔 궁합 기반 인사이트
   if (compat) {
-    const colorInsight: Record<string, string> = {
-      complement: "서로 다른 에너지가 빈자리를 채워줘요. 함께할수록 균형이 생기는 관계예요.",
-      synergy:    "같은 방향을 바라보며 함께 성장할 수 있어요. 추진력이 배가되는 조합이에요.",
-      harmony:    "자연스럽게 어우러지는 궁합이에요. 편안하게 대화가 이어질 것 같아요.",
-      contrast:   "강한 대비가 서로에게 새로운 시각을 열어줘요. 만남 자체가 자극이 될 수 있어요.",
-      neutral:    "안정적인 기반 위에서 천천히 쌓아가기 좋은 관계예요.",
+    // 키는 colorCompatibility.ts 의 CompatibilityType 과 정확히 일치해야 함
+    // (complementary/analogous/contrast). 과거 complement/synergy/harmony 로 오타 →
+    // 보완색·유사색(가장 좋은 궁합)의 설명 문장이 통째로 누락되던 버그 수정.
+    const colorInsight: Record<CompatibilityType, string> = {
+      complementary: "서로 다른 에너지가 빈자리를 채워줘요. 함께할수록 균형이 생기는 관계예요.",
+      analogous:     "결이 비슷해서 자연스럽게 어우러져요. 편안하게 대화가 이어질 것 같아요.",
+      contrast:      "강한 대비가 서로에게 새로운 시각을 열어줘요. 만남 자체가 자극이 될 수 있어요.",
     };
     const insight = colorInsight[compat.type];
     if (insight) points.push(insight);
@@ -1417,7 +1426,7 @@ function generateMatchInsights(
   return points.slice(0, 3);
 }
 
-// ─── 색깔 궁합 + AI 분석 통합 배너 ───────────────────────────────────
+// ─── 색깔 궁합 통합 배너 (색 이론 기반, LLM 아님) ───────────────────────────────────
 function ColorCompatBanner({
   theirColorType,
   theirColorName,
@@ -1469,7 +1478,9 @@ function ColorCompatBanner({
               </div>
               <p className="text-xs text-neutral-500 mt-0.5 leading-snug">{compat.tagline}</p>
             </div>
-            <span className="shrink-0 text-xs font-medium text-neutral-400 bg-black/5 px-2 py-0.5 rounded-full">✦ AI 분석</span>
+            {/* 이 궁합은 색 이론(보완/유사/대비) 기반 계산 → "AI"로 표기하지 않음.
+                실 LLM 분석은 팔레트 Pick·프로필 소개글에만 사용 (정직 라벨링). */}
+            <span className="shrink-0 text-xs font-medium text-neutral-400 bg-black/5 px-2 py-0.5 rounded-full">✦ 색 궁합</span>
           </div>
 
           {/* 구분선 */}
