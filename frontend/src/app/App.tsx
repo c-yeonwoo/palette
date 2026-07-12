@@ -44,7 +44,6 @@ const MatchmakerRewardScreen = lazy(() => import("./components/MatchmakerRewardS
 const NotificationScreen = lazy(() => import("./components/NotificationScreen").then(m => ({ default: m.NotificationScreen })));
 const LeagueScreen = lazy(() => import("./components/LeagueScreen").then(m => ({ default: m.LeagueScreen })));
 const AiHubScreen = lazy(() => import("./components/AiHubScreen").then(m => ({ default: m.AiHubScreen })));
-const MatchDetailScreen = lazy(() => import("./components/MatchDetailScreen").then(m => ({ default: m.MatchDetailScreen })));
 const PhotoVerifyScreen = lazy(() => import("./components/PhotoVerifyScreen").then(m => ({ default: m.PhotoVerifyScreen })));
 const ColorTestScreen = lazy(() => import("./components/ColorTestScreen").then(m => ({ default: m.ColorTestScreen })));
 const InviteHubScreen = lazy(() => import("./components/invite/InviteHubScreen").then(m => ({ default: m.InviteHubScreen })));
@@ -78,8 +77,6 @@ type Screen =
   | "accountTypeSelection"
   | "basicInfo"
   | "photoUpload"
-  | "introMethodSelection"
-  | "aboutMe"
   | "lifestyle"
   | "idealType"
   | "aiProfileEnhance"
@@ -100,7 +97,6 @@ type Screen =
   | "matchmakerMarketplace"
   | "matchmakerPublicProfile"
   | "designSystem"
-  | "matchDetail"
   | "photoVerify"
   | "colorTest"
   | "colorDetail"
@@ -242,7 +238,6 @@ export default function App() {
   const [reanalyzeAnswers, setReanalyzeAnswers] = useState<Record<string, string> | null>(null);
   const [prevScreen, setPrevScreen] = useState<Screen>("mainFeed");
   const [selectedMatchmakerId, setSelectedMatchmakerId] = useState<string | undefined>(undefined);
-  const [selectedMatchId, setSelectedMatchId] = useState<string>("match-001");
   /** 이메일 회원가입 전 선택한 계정 유형 (pre-auth 경로 전용) */
   const [preSelectedAccountType, setPreSelectedAccountType] = useState<"REGULAR" | "MATCHMAKER_ONLY" | null>(null);
   /** accountTypeSelection 화면의 동작 모드 */
@@ -1207,10 +1202,8 @@ export default function App() {
       {currentScreen === "notifications" && (
         <NotificationScreen
           onBack={() => setCurrentScreen(prevScreen)}
-          onOpenMatch={(matchId) => {
-            // matchDetail 은 아직 스텁("준비 중") — 실제 관계 진행은 인연 탭에서 관리하므로
-            // 알림 딥링크는 인연 탭으로 보낸다. (스텁으로 보내면 벽에 부딪힘)
-            setSelectedMatchId(matchId);
+          onOpenMatch={() => {
+            // 실제 관계 진행은 인연 탭에서 관리 (matchDetail 스텁은 제거됨)
             setCurrentScreen("introductionHistory");
           }}
         />
@@ -1233,14 +1226,6 @@ export default function App() {
 
       {currentScreen === "designSystem" && (
         <DesignSystemScreen onBack={() => setCurrentScreen("myProfile")} />
-      )}
-
-      {/* F01~F04: 매칭 상세 / 사진 인증 */}
-      {currentScreen === "matchDetail" && (
-        <MatchDetailScreen
-          matchId={selectedMatchId}
-          onBack={() => setCurrentScreen("mainFeed")}
-        />
       )}
 
       {currentScreen === "photoVerify" && (
@@ -1329,7 +1314,7 @@ export default function App() {
       </Suspense>
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding/detail screens */}
-      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "pendingApproval", "basicInfo", "photoUpload", "introMethodSelection", "aboutMe", "aiInterview", "lifestyle", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "matchDetail", "photoVerify", "colorTest", "colorDetail", "inviteHub", "privacyPolicy", "termsOfService", "deleteAccount", "billing", "inviteWizard", "paymentSuccess", "paymentFail"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "pendingApproval", "basicInfo", "photoUpload", "aiInterview", "lifestyle", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "photoVerify", "colorTest", "colorDetail", "inviteHub", "privacyPolicy", "termsOfService", "deleteAccount", "billing", "inviteWizard", "paymentSuccess", "paymentFail"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}
