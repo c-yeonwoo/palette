@@ -184,6 +184,9 @@ class ProfileEntity(
     @Column(name = "details_visible_to_friends")
     var detailsVisibleToFriends: Boolean? = false,
 
+    @Column(name = "public_discoverable")
+    var publicDiscoverable: Boolean? = true,
+
     // LocationInfo - hometown
     @Column(name = "hometown_sido", length = 50)
     var hometownSido: String? = null,

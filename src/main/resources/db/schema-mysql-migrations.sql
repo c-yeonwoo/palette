@@ -256,6 +256,8 @@ ALTER TABLE profiles ADD COLUMN ideal_age_max INT;
 ALTER TABLE profiles ADD COLUMN ideal_height_min INT;
 ALTER TABLE profiles ADD COLUMN ideal_height_max INT;
 ALTER TABLE profiles ADD COLUMN position VARCHAR(80);
+-- 콜드스타트 공개 발견 풀 노출 opt-in (ADR 0072) — 기본 TRUE(초기 풀 유동성).
+ALTER TABLE profiles ADD COLUMN public_discoverable BIT DEFAULT b'1';
 
 -- profile_photos / profile_videos — s3_key (S3 스토리지 키). 엔티티는 NOT NULL 이나
 -- 기존 row 보호 위해 DB 레벨은 nullable 로 추가 (신규 insert 는 항상 값 제공).
