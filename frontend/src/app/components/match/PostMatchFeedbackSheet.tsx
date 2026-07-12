@@ -65,7 +65,7 @@ export function PostMatchFeedbackSheet({ requestId, matchmakerName, onClose, onS
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center animate-fade-in" onClick={onClose}>
       <div
-        className="bg-background w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto animate-slide-up"
+        className="bg-background w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[90vh] overflow-y-auto animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 bg-background/95 backdrop-blur px-6 py-4 border-b border-border flex items-center justify-between">

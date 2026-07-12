@@ -47,7 +47,7 @@ export function FirstMessageSuggestionModal({
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-md bg-background rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-hidden flex flex-col animate-slide-up"
+        className="w-full sm:max-w-md bg-background rounded-t-2xl sm:rounded-2xl max-h-[90vh] overflow-hidden flex flex-col animate-slide-up"
         onClick={e => e.stopPropagation()}
       >
         {/* 헤더 */}

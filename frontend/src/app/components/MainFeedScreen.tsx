@@ -945,7 +945,7 @@ function AiPassPaywall({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose}>
       <div
-        className="w-full sm:max-w-sm bg-card rounded-t-3xl sm:rounded-3xl p-6 shadow-overlay animate-slide-up"
+        className="w-full sm:max-w-sm bg-card rounded-t-2xl sm:rounded-2xl p-6 shadow-overlay animate-slide-up"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex flex-col items-center text-center mb-5">
@@ -1130,7 +1130,7 @@ function LoadingState() {
 function EmptyState({ title, description }: { title: string; description: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center col-span-2">
-      <div className="w-16 h-16 rounded-3xl bg-muted flex items-center justify-center mb-5">
+      <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-5">
         <MapPin className="w-7 h-7 text-muted-foreground/60" />
       </div>
       <h3 className="text-base font-semibold mb-1.5">{title}</h3>
