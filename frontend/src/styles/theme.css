@@ -23,10 +23,11 @@
   /* ── 8 Color Types — HSL components only (no hsl() wrapper) ──
      사용: hsl(var(--ct-orange-500))
      Tailwind: bg-ct-orange-500 */
+  /* ADR 0073: 가장 시끄러운 -500 채도 한 단계 진정 (무지개 표면 완화). hue 유지. */
   --ct-orange-50:  22 92% 97%;
   --ct-orange-100: 22 88% 93%;
-  --ct-orange-300: 22 85% 76%;
-  --ct-orange-500: 22 92% 56%;
+  --ct-orange-300: 22 82% 76%;
+  --ct-orange-500: 22 80% 54%;
   --ct-orange-700: 22 78% 40%;
 
   --ct-blue-50:  212 78% 97%;
@@ -37,14 +38,14 @@
 
   --ct-red-50:  4 78% 97%;
   --ct-red-100: 4 74% 93%;
-  --ct-red-300: 4 72% 74%;
-  --ct-red-500: 4 78% 58%;
+  --ct-red-300: 4 70% 74%;
+  --ct-red-500: 4 70% 56%;
   --ct-red-700: 4 68% 40%;
 
   --ct-pink-50:  340 80% 97%;
   --ct-pink-100: 340 76% 93%;
-  --ct-pink-300: 340 74% 78%;
-  --ct-pink-500: 340 80% 66%;
+  --ct-pink-300: 340 68% 78%;
+  --ct-pink-500: 340 68% 66%;
   --ct-pink-700: 340 64% 46%;
 
   --ct-green-50:  152 52% 97%;
@@ -61,8 +62,8 @@
 
   --ct-yellow-50:  42 92% 97%;
   --ct-yellow-100: 42 88% 92%;
-  --ct-yellow-300: 42 86% 74%;
-  --ct-yellow-500: 42 92% 56%;
+  --ct-yellow-300: 42 82% 74%;
+  --ct-yellow-500: 42 80% 52%;
   --ct-yellow-700: 42 72% 38%;
 
   --ct-gray-50:  220 8% 97%;
@@ -111,18 +112,20 @@
   --text-secondary:   var(--warm-700);
   --text-tertiary:    var(--warm-500);
 
-  /* ── Gold (보조 시그니처 — 골드 큐피드 등급·소수 프리미엄 포인트. brand 아님) ── */
+  /* ── Gold (ADR 0073: '프리미엄 시그니처' 지위 강등 → '골드 큐피드 등급' 이름값 전용.
+        신규 골드 사용 금지 — 브랜드 액센트는 코랄 하나) ── */
   --gold:             39 48% 48%;     /* #BD9244 — 흰 배경 대비 OK (포인트/active) */
   --gold-foreground:  30 12% 12%;     /* gold solid 위 charcoal */
   --gold-soft:        39 46% 92%;     /* 연한 채움 배경 */
   --gold-strong:      37 60% 30%;     /* #7A5A1E — gold-soft 위 텍스트 */
 
-  /* ── Brand (시스템 메인 액센트 — 따뜻한 코랄/테라코타.
-        정체성: 감성·지인 신뢰·'너의 색'. 골드(럭셔리) → 코랄(따뜻함) 전환. 런타임 불변) ── */
-  --brand:            15 72% 60%;     /* #E27A57 — 흰 배경 대비 OK (포인트/active) */
+  /* ── Brand (시스템 메인 액센트 — 무르익은 코랄/테라코타. ADR 0073 브랜드 v2.
+        정체성: '차분한 신뢰 + 따뜻한 온기'. 살몬빛(young) → 테라코타빛(어른).
+        같은 hue(15) 유지, 채도 72→54·명도 60→49 로 한 톤 깊게. 라이트값(다크는 .dark override) ── */
+  --brand:            15 54% 49%;     /* #C25D3A — 흰 배경 대비 AA (포인트/active) */
   --brand-foreground: 20 14% 12%;     /* coral solid 위 charcoal (대비 5+) */
-  --brand-soft:       15 72% 94%;     /* 연한 코랄 채움 (버튼/칩) */
-  --brand-strong:     15 56% 37%;     /* coral-soft 위 텍스트 (대비 5+, 폰트 안 진하게) */
+  --brand-soft:       15 50% 93%;     /* 연한 코랄 채움 (버튼/칩) */
+  --brand-strong:     15 58% 34%;     /* coral-soft 위 텍스트 (대비 5+) */
 
   /* ── User Accent (장식 전용, P3 AccentScope가 런타임 교체) ──
      기본값: 브랜드 오렌지와 동일
@@ -244,6 +247,10 @@
   --sidebar-ring:      #F0EDE8;
 
   /* semantic overrides for dark */
+  /* Brand (ADR 0073) — 어두운 배경 가독성 위해 라이트보다 밝은 코랄 */
+  --brand:             15 66% 64%;    /* #E08A63 — 다크 배경 대비 OK */
+  --brand-soft:        14 26% 18%;    /* 어두운 코랄 틴트 채움 */
+  --brand-strong:      15 62% 74%;    /* dark brand-soft 위 텍스트 (밝게) */
   --surface:           16 5% 12%;
   --surface-elevated:  20 5% 14%;
   --surface-sunken:    20 6% 10%;
@@ -314,7 +321,7 @@
   --color-brand-soft:           hsl(var(--brand-soft));
   --color-brand-strong:         hsl(var(--brand-strong));
 
-  /* ── P9 신규: Gold (프리미엄 시그니처 — bg-gold / text-gold / border-gold) ── */
+  /* ── Gold (ADR 0073: 강등 — '골드 큐피드 등급' 전용, 신규 사용 금지) ── */
   --color-gold:                 hsl(var(--gold));
   --color-gold-foreground:      hsl(var(--gold-foreground));
   --color-gold-soft:            hsl(var(--gold-soft));
