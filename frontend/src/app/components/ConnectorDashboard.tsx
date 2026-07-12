@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { CheckCircle2, XCircle, Coins, Loader2, ChevronLeft, Award, ChevronRight, Users } from "lucide-react";
+import { CheckCircle2, XCircle, Coins, Loader2, ChevronLeft, Award, ChevronRight, Users, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
 import { MessageModal } from "./MessageModal";
@@ -59,6 +59,8 @@ interface ConnectorDashboardProps {
   onNavigateToReward?: () => void;
   onNavigateToFriends?: () => void;
   onNavigateToMarketplace?: () => void;
+  /** 리그·랭킹 화면 (명예 가시화 — 성사 순위 시즌 리더보드) */
+  onNavigateToLeague?: () => void;
   /** 1촌 지인 카드 탭 → ProfileDetailScreen (degree=1, viewCost=0). 비공개 항목은 ADR 0035 룰로 자동 hide. */
   onMemberProfileClick?: (userId: string) => void;
 }
@@ -99,7 +101,7 @@ interface MatchmakerFeedbackItem {
   createdAt: string;
 }
 
-export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFriends, onMemberProfileClick }: ConnectorDashboardProps) {
+export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFriends, onNavigateToLeague, onMemberProfileClick }: ConnectorDashboardProps) {
   const [matchmakerData, setMatchmakerData] = useState<MatchmakerData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [requests, setRequests] = useState<MatchRequest[]>([]);
@@ -339,6 +341,22 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
           </button>
         );
       })()}
+
+      {/* ── 리그·랭킹 진입 (명예 가시화) ── */}
+      {onNavigateToLeague && (
+        <button
+          onClick={onNavigateToLeague}
+          className="flex-shrink-0 w-full border-b border-border text-left hover:brightness-[0.98] transition-colors"
+          aria-label="리그 · 랭킹"
+        >
+          <div className="max-w-2xl mx-auto px-5 py-3 flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-brand-strong flex-shrink-0" />
+            <span className="text-sm font-semibold text-foreground flex-1 leading-none">이번 시즌 리그 · 랭킹</span>
+            <span className="text-xs text-muted-foreground leading-none">주선자 순위 보기</span>
+            <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          </div>
+        </button>
+      )}
 
       {/* ── 메인 탭 ── */}
       <div className="flex-shrink-0 flex border-b border-border">

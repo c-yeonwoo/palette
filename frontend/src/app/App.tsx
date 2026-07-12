@@ -1135,6 +1135,7 @@ export default function App() {
           // 주선은 하단 탭(최상단) — 뒤로가기 없음. 하위 화면(리워드/마켓)은 각자 헤더에 back 보유
           onBack={undefined}
           onNavigateToReward={() => setCurrentScreen("matchmakerReward")}
+          onNavigateToLeague={() => setCurrentScreen("league")}
           onNavigateToFriends={() => { setFriendConnectFrom(currentScreen); setCurrentScreen("friendConnect"); }}
           onNavigateToMarketplace={() => setCurrentScreen("matchmakerMarketplace")}
           onMemberProfileClick={(userId) => {
@@ -1314,7 +1315,7 @@ export default function App() {
       </Suspense>
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding/detail screens */}
-      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "pendingApproval", "basicInfo", "photoUpload", "aiInterview", "lifestyle", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "photoVerify", "colorTest", "colorDetail", "inviteHub", "privacyPolicy", "termsOfService", "deleteAccount", "billing", "inviteWizard", "paymentSuccess", "paymentFail"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "pendingApproval", "basicInfo", "photoUpload", "aiInterview", "lifestyle", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "league", "photoVerify", "colorTest", "colorDetail", "inviteHub", "privacyPolicy", "termsOfService", "deleteAccount", "billing", "inviteWizard", "paymentSuccess", "paymentFail"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}
