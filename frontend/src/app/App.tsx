@@ -1207,8 +1207,10 @@ export default function App() {
         <NotificationScreen
           onBack={() => setCurrentScreen(prevScreen)}
           onOpenMatch={(matchId) => {
+            // matchDetail 은 아직 스텁("준비 중") — 실제 관계 진행은 인연 탭에서 관리하므로
+            // 알림 딥링크는 인연 탭으로 보낸다. (스텁으로 보내면 벽에 부딪힘)
             setSelectedMatchId(matchId);
-            setCurrentScreen("matchDetail");
+            setCurrentScreen("introductionHistory");
           }}
         />
       )}

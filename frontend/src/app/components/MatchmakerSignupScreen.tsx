@@ -249,7 +249,8 @@ export function MatchmakerSignupScreen({ onBack, onSuccess }: MatchmakerSignupSc
           <div className="space-y-2 text-center">
             <h2 className="text-2xl font-bold">주선자로 시작하기</h2>
             <p className="text-sm text-muted-foreground">
-              주선 서비스를 제공하고 포인트를 받으세요
+              {/* Phase 1: 무현금 명예 노선. (구 카피: "주선 서비스를 제공하고 포인트를 받으세요" — Phase 2 정산 시 복원) */}
+              소중한 지인을 이어주고 신뢰받는 주선자가 되어보세요
             </p>
           </div>
 

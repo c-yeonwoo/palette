@@ -5,6 +5,7 @@ import { ArrowLeft, Camera, UserPlus, Loader2, Settings, LogOut } from "lucide-r
 import { api } from "../../lib/api/apiClient";
 import { authService } from "../../lib/auth/authService";
 import { toast } from "sonner";
+import { MATCHMAKER_CASH_ENABLED } from "../../lib/matchmakerRewardMode";
 
 interface MatchmakerProfileScreenProps {
   onBack: () => void;
@@ -249,7 +250,9 @@ export function MatchmakerProfileScreen({ onBack, onConvertToRegular }: Matchmak
             {matchmakerData && (
               <>
                 <p className="text-sm text-muted-foreground">
-                  레벨 {matchmakerData.level} · 누적 포인트 {matchmakerData.totalPoints.toLocaleString()}P
+                  {/* Phase 1 명예 노선: 누적 포인트 표기 숨김 (MATCHMAKER_CASH_ENABLED 로 보존) */}
+                  레벨 {matchmakerData.level}
+                  {MATCHMAKER_CASH_ENABLED && ` · 누적 포인트 ${matchmakerData.totalPoints.toLocaleString()}P`}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   성공 매칭 {matchmakerData.successfulMatches}회 · 성공률 {Math.round(matchmakerData.successRate * 100)}%
