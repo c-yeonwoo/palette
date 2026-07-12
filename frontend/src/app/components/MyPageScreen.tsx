@@ -65,6 +65,8 @@ export function MyPageScreen({
   onNavigateTerms,
   onNavigateDeleteAccount,
   onNavigateBilling,
+  onNavigateSupport,
+  onNavigateBlocks,
 }: MyPageScreenProps) {
   const [user, setUser] = useState<any>(null);
   const [matchmaker, setMatchmaker] = useState<MatchmakerData | null>(null);
