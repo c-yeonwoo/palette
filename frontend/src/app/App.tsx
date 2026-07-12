@@ -1104,6 +1104,7 @@ export default function App() {
           onNotificationClick={navigateToNotifications}
           onNavigateToFriends={() => { setFriendConnectFrom(currentScreen); setCurrentScreen("friendConnect"); }}
           onNavigateToMyPage={() => setCurrentScreen("myPage")}
+          onNavigateToBilling={() => setCurrentScreen("billing")}
           unreadNotifications={unreadNotificationCount}
         />
       )}
