@@ -76,6 +76,7 @@ interface AiSignalRecommendation {
   isOpened: boolean;
   teaserAge: number | null;
   teaserLocation: string | null;
+  distanceKm: number | null;  // 시군구 중심좌표 근사 거리 (ADR 0072)
 }
 
 interface AiSignalResponse {
@@ -379,6 +380,9 @@ function PaintCard({
             {(job || location) && (
               <p className="text-white/70 text-xs">{[job, location].filter(Boolean).join(" · ")}</p>
             )}
+            {rec.distanceKm != null && (
+              <p className="text-white/60 text-[11px]">{rec.distanceKm <= 1 ? "가까운 거리" : `약 ${rec.distanceKm}km`}</p>
+            )}
           </div>
         )}
       </div>
@@ -442,6 +446,9 @@ function AiSignalSection({
                   <div className="text-center">
                     {rec.teaserAge && <p className="text-white/90 text-xs font-semibold">{rec.teaserAge}세</p>}
                     {rec.teaserLocation && <p className="text-white/70 text-xs">{rec.teaserLocation}</p>}
+                    {rec.distanceKm != null && (
+                      <p className="text-white/60 text-[11px]">{rec.distanceKm <= 1 ? "가까운 거리" : `약 ${rec.distanceKm}km`}</p>
+                    )}
                   </div>
                   <button
                     onClick={() => handleUnlock(rec)}

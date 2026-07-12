@@ -69,6 +69,13 @@ class PalettePickRecommendationService(
             color to momentum
         }
 
+        // 콜드스타트 견고성 (ADR 0072) — viewer 임베딩이 아직 없어 스코어가 비면
+        // 풀 순서(지인 우선 → 공개 거리순)를 그대로 사용해 카드가 비지 않게 한다.
+        if (scores.isEmpty()) {
+            log.debug("팔레트픽 스코어 0 (viewer 임베딩 미생성) — 거리순 풀 폴백 viewer={}", viewerUuid)
+            return pool.take(topK)
+        }
+
         // Stage 4 — Top-K (이상형 합치도 우선, 동률 시 자기소개 유사도)
         return scores.entries
             .sortedWith(

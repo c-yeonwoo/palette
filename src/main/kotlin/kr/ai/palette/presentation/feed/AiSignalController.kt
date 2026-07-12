@@ -1,10 +1,9 @@
 package kr.ai.palette.presentation.feed
 
 import kr.ai.palette.domain.auth.AuthUser
-import kr.ai.palette.domain.friendship.FriendshipRepository
+import kr.ai.palette.domain.geo.SigunguGeo
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.UserRepository
-import kr.ai.palette.infrastructure.seed.SeedUserPolicy
 import kr.ai.palette.infrastructure.storage.FileStorageService
 import kr.ai.palette.persistence.feed.CardOpenJpaRepository
 import kr.ai.palette.persistence.feed.FeedHideJpaRepository
@@ -43,11 +42,9 @@ import java.util.concurrent.ConcurrentHashMap
 class AiSignalController(
     private val profileRepository: ProfileRepository,
     private val userRepository: UserRepository,
-    private val friendshipRepository: FriendshipRepository,
     private val cardOpenJpaRepository: CardOpenJpaRepository,
     private val feedHideRepository: FeedHideJpaRepository,
     private val fileStorageService: FileStorageService,
-    private val seedUserPolicy: SeedUserPolicy,
     private val dailyRecommendationRepo: DailyRecommendationJpaRepository,
     private val adminBlockedTargetRepo: AdminBlockedTargetJpaRepository,
     private val blockService: kr.ai.palette.application.safety.BlockService,
@@ -122,19 +119,18 @@ class AiSignalController(
     }
 
     /**
-     * 후보 계산 — PalettePickRecommendationService 위임 (ADR 0047 §B).
+     * 후보 계산 — PalettePickRecommendationService 위임 (ADR 0047 §B + 0072 콜드스타트).
      *
-     * 시드 사용자 정책만 컨트롤러 단에서 우선 처리하고, 나머지(친구망/차단/숨김/60일/이상형/색/모멘텀)
-     * 는 오케스트레이터가 수행. 베타 단계 — 신규 가입자(친구 0 + 비시드)는 깨끗한 시작.
+     * 친구망/차단/숨김/60일/이상형/색/모멘텀 + **콜드스타트 공개 발견 풀**(친구 0명이면
+     * 수도권 공개 풀로 폴백)은 모두 오케스트레이터·후보 풀이 수행. 시드 격리(비시드 viewer
+     * 에게 시드 후보 제외)도 CandidatePoolService 로 이동 (ADR 0072). 컨트롤러의 과거
+     * "친구 0 + 비시드 → 빈 결과" 게이트는 콜드스타트 공개 풀로 대체됨.
      */
     private fun computeNewRecommendations(
         currentUserId: kr.ai.palette.domain.common.UserId,
         currentUser: kr.ai.palette.domain.user.User,
         today: LocalDate,
     ): List<UUID> {
-        val firstDegree = friendshipRepository.findFriendIdsByUserId(currentUserId)
-        val exposeSeed = seedUserPolicy.shouldExposeSeedTo(currentUser)
-        if (!exposeSeed && firstDegree.isEmpty()) return emptyList()
         return palettePickRecommendationService.recommend(currentUser, today, topK = 2)
     }
 
@@ -155,6 +151,11 @@ class AiSignalController(
                 .findByViewerUserIdAndCandidateUserIdIn(viewerId.value, targetIds)
                 .associateBy { it.candidateUserId }
         } else emptyMap()
+
+        // 거리 표시용 — viewer 시군구 중심좌표 기준 근사 (ADR 0072). 좌표 없으면 null.
+        val viewerProfileForGeo = profileRepository.findByUserId(viewerId)
+        val viewerSido = viewerProfileForGeo?.locationInfo?.sido
+        val viewerSigungu = viewerProfileForGeo?.locationInfo?.sigungu
 
         val recommendations = targetIds.mapIndexedNotNull { index, targetUserId ->
             val profile = profileRepository.findByUserId(kr.ai.palette.domain.common.UserId(targetUserId))
@@ -182,6 +183,10 @@ class AiSignalController(
                 // 잠긴 카드도 색 타입은 노출 → 프론트가 궁합 % 티저 계산 (matrix는 프론트 단일 소스)
                 teaserColorType = profile.colorType?.type?.name,
                 insight = insight,
+                distanceKm = SigunguGeo.distanceKm(
+                    viewerSido, viewerSigungu,
+                    profile.locationInfo?.sido, profile.locationInfo?.sigungu,
+                )?.let { Math.round(it).toInt() },
             )
         }
 
@@ -318,6 +323,8 @@ data class AiSignalRecommendation(
     val teaserColorType: String? = null, // 잠금 상태일 때도 색 타입은 노출 → 궁합 % 티저
     /** 팔레트픽 LLM 매칭 인사이트 (ADR 0047 §B.3 Stage 3) — unlock 된 카드만. 캐시 없으면 null. */
     val insight: PalettePickInsight? = null,
+    /** 시군구 중심좌표 기준 근사 거리(km, 반올림). 좌표 없으면 null. (ADR 0072) */
+    val distanceKm: Int? = null,
 )
 
 /** 팔레트픽 LLM 매칭 인사이트 — 캐시된 분석 결과의 클라이언트 노출용 sub-DTO. */

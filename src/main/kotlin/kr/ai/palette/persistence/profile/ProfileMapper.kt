@@ -122,7 +122,8 @@ class ProfileMapper(
             settings = ProfileSettings(
                 isAcceptingMatches = entity.isAcceptingMatches,
                 hiddenAt = entity.hiddenAt,
-                detailsVisibleToFriends = entity.detailsVisibleToFriends ?: false
+                detailsVisibleToFriends = entity.detailsVisibleToFriends ?: false,
+                publicDiscoverable = entity.publicDiscoverable ?: true
             )
         )
     }
@@ -185,6 +186,7 @@ class ProfileMapper(
             isAcceptingMatches = profile.settings.isAcceptingMatches,
             hiddenAt = profile.settings.hiddenAt,
             detailsVisibleToFriends = profile.settings.detailsVisibleToFriends,
+            publicDiscoverable = profile.settings.publicDiscoverable,
             attachmentContactAnxiety = profile.attachmentProfile?.contactAnxiety,
             attachmentIntimacyAvoidance = profile.attachmentProfile?.intimacyAvoidance,
             attachmentConflictStyle = profile.attachmentProfile?.conflictStyle,
