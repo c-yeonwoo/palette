@@ -20,7 +20,6 @@ import {
 } from "../../lib/datingStyleLabels";
 import { ColorTypeAura } from "./color/ColorTypeAura";
 import { ColorTypeBadge } from "./color/ColorTypeBadge";
-import { getMyColorType } from "../../lib/daily-match";
 import { jobCategoryLabel } from "../../lib/jobCategory";
 
 interface MyProfileScreenProps {

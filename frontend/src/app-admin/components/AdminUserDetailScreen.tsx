@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { adminApi } from "../lib/adminApi";
 import { AdminProfilePreview, type AdminProfileData } from "./AdminProfilePreview";
+import { getColorMetaByLabel } from "../../lib/colorCompatibility";
 
 interface FriendSummary {
   userId: string;
@@ -35,17 +36,11 @@ interface UserStats {
   };
 }
 
-// 8가지 컬러 타입 매핑 (theme.css 의 --ct-* 토큰)
-const COLOR_TYPE_META: Record<string, { label: string; hex: string }> = {
-  WARM_ORANGE: { label: "따뜻한 오렌지", hex: "#F97316" },
-  CALM_BLUE: { label: "차분한 블루", hex: "#3B82F6" },
-  VIBRANT_RED: { label: "강렬한 레드", hex: "#EF4444" },
-  SOFT_PINK: { label: "부드러운 핑크", hex: "#EC4899" },
-  FRESH_GREEN: { label: "산뜻한 그린", hex: "#10B981" },
-  ELEGANT_PURPLE: { label: "우아한 퍼플", hex: "#8B5CF6" },
-  BRIGHT_YELLOW: { label: "환한 옐로우", hex: "#F59E0B" },
-  SOPHISTICATED_GRAY: { label: "세련된 그레이", hex: "#6B7280" },
-};
+// 8가지 컬러 타입 표시 — colorCompatibility.ts 의 COLOR_META 를 단일 소스로 사용.
+// (과거 이 파일에 자체 하드코딩된 hex 맵이 있었는데 4개 색상이 실제 앱과 달라
+//  어드민에서 잘못된 색으로 보이는 버그가 있었음 — 반드시 COLOR_META 를 통해서만 참조.)
+// 주의: 이 화면의 stats/friends 엔드포인트는 enum 키가 아니라 이미 한국어 라벨
+// (ColorType.name, 예: "따뜻한 오렌지")을 내려주므로 getColorMetaByLabel 로 역조회해야 한다.
 
 interface UserDetail {
   userId: string;
@@ -214,17 +209,20 @@ export function AdminUserDetailScreen({ userId, onBack }: Props) {
                 {/* 색깔 + 프로필 */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <StatCard label="색깔 타입">
-                    {stats.colorType && COLOR_TYPE_META[stats.colorType] ? (
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="w-4 h-4 rounded-full border border-border"
-                          style={{ backgroundColor: COLOR_TYPE_META[stats.colorType].hex }}
-                        />
-                        <span className="text-sm font-medium">{COLOR_TYPE_META[stats.colorType].label}</span>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-muted-foreground">미분석</span>
-                    )}
+                    {(() => {
+                      const meta = getColorMetaByLabel(stats.colorType);
+                      return meta ? (
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="w-4 h-4 rounded-full border border-border"
+                            style={{ backgroundColor: meta.hex }}
+                          />
+                          <span className="text-sm font-medium">{meta.name}</span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">미분석</span>
+                      );
+                    })()}
                   </StatCard>
                   <StatCard label="프로필 완성도" value={`${stats.profileCompletionRate}%`} />
                   <StatCard label="신뢰 점수" value={String(stats.trustScore)} />
@@ -297,17 +295,20 @@ export function AdminUserDetailScreen({ userId, onBack }: Props) {
                             {f.gender === "MALE" ? "남" : f.gender === "FEMALE" ? "여" : "?"} · {f.age}세
                           </td>
                           <td className="py-2">
-                            {f.colorType && COLOR_TYPE_META[f.colorType] ? (
-                              <div className="flex items-center gap-1.5">
-                                <span
-                                  className="w-3 h-3 rounded-full border border-border"
-                                  style={{ backgroundColor: COLOR_TYPE_META[f.colorType].hex }}
-                                />
-                                <span className="text-xs">{COLOR_TYPE_META[f.colorType].label}</span>
-                              </div>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">—</span>
-                            )}
+                            {(() => {
+                              const meta = getColorMetaByLabel(f.colorType);
+                              return meta ? (
+                                <div className="flex items-center gap-1.5">
+                                  <span
+                                    className="w-3 h-3 rounded-full border border-border"
+                                    style={{ backgroundColor: meta.hex }}
+                                  />
+                                  <span className="text-xs">{meta.name}</span>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              );
+                            })()}
                           </td>
                           <td className="py-2 tabular-nums">{f.completionRate}%</td>
                           <td className="py-2">

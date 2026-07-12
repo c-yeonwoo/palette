@@ -9,7 +9,8 @@
  * />
  */
 import { cn } from "../ui/utils";
-import { getColorTypeMeta, getCompatibilityScore, type ColorTypeKey } from "../../../lib/colorTypes";
+import { getColorTypeMeta, KEY_TO_UPPER, type ColorTypeKey } from "../../../lib/colorTypes";
+import { getCompatibilityDeterministic } from "../../../lib/colorCompatibility";
 
 interface MatchPairMarkProps {
   myColor: ColorTypeKey | string | null | undefined;
@@ -20,6 +21,13 @@ interface MatchPairMarkProps {
   label?: string;
   showScore?: boolean;
   className?: string;
+}
+
+/** 궁합 점수 — 색 이론 기반 단일 알고리즘(colorCompatibility.ts)에 위임. 같은 색은 70점 고정. */
+function computeScore(myKey: ColorTypeKey, theirKey: ColorTypeKey): number {
+  if (myKey === theirKey) return 70;
+  const result = getCompatibilityDeterministic(KEY_TO_UPPER[myKey], KEY_TO_UPPER[theirKey]);
+  return result?.score ?? 65;
 }
 
 function scoreToLabel(score: number): string {
@@ -47,7 +55,7 @@ export function MatchPairMark({
   const my    = getColorTypeMeta(myColor);
   const their = getColorTypeMeta(theirColor);
 
-  const score = scoreProp ?? getCompatibilityScore(my.key, their.key);
+  const score = scoreProp ?? computeScore(my.key, their.key);
   const label = labelProp ?? scoreToLabel(score);
 
   const myHsl    = `hsl(${my.h} ${my.s}% ${my.l}%)`;

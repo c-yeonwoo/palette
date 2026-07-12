@@ -6,7 +6,7 @@
  */
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Sparkles } from "lucide-react";
-import { getColorTypeMeta, type ColorTypeKey } from "../../lib/colorTypes";
+import { getColorTypeMeta, UPPER_TO_KEY, type ColorTypeKey } from "../../lib/colorTypes";
 import { getDailyFortune } from "../../lib/daily-match";
 import { cn } from "./ui/utils";
 
@@ -18,16 +18,17 @@ interface DailyMatchBannerProps {
   className?: string;
 }
 
-/** 백엔드 컬러 enum → daily-match 키(소문자) 매핑 */
-const BACKEND_TO_KEY: Record<string, ColorTypeKey> = {
-  WARM_ORANGE: "orange", CALM_BLUE: "blue", VIBRANT_RED: "red", SOFT_PINK: "pink",
-  FRESH_GREEN: "green", ELEGANT_PURPLE: "purple", BRIGHT_YELLOW: "yellow", SOPHISTICATED_GRAY: "gray",
-};
-const VALID_KEYS = new Set<string>(["orange", "blue", "red", "pink", "green", "purple", "yellow", "gray"]);
+const VALID_KEYS = new Set<string>(Object.values(UPPER_TO_KEY));
 
+/**
+ * 백엔드 enum(WARM_ORANGE 등) 또는 이미 lowercase 키인 값 → daily-match 키.
+ * colorTypes.ts 의 캐노니컬 UPPER_TO_KEY 매핑을 재사용 (로컬 재구현 금지).
+ * 인식 불가 시 null — 이 배너는 색이 없으면 아예 숨겨야 하므로(ADR 0061),
+ * keyFromColorType 처럼 "orange"로 fallback 하지 않는다.
+ */
 function toColorKey(raw?: string | null): ColorTypeKey | null {
   if (!raw) return null;
-  if (BACKEND_TO_KEY[raw]) return BACKEND_TO_KEY[raw];
+  if (raw in UPPER_TO_KEY) return UPPER_TO_KEY[raw as keyof typeof UPPER_TO_KEY];
   if (VALID_KEYS.has(raw)) return raw as ColorTypeKey;
   return null;
 }

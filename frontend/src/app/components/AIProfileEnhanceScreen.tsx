@@ -4,6 +4,7 @@ import { Sparkles, RefreshCw, ArrowRight, ChevronDown, ChevronUp, Share2, Check,
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { useOnboardingOptions } from "../../lib/onboarding/useOnboardingOptions";
+import { COLOR_META, type ColorType } from "../../lib/colorCompatibility";
 
 interface IntroductionSection {
   heading: string;
@@ -72,17 +73,6 @@ const COLOR_GRADIENT: Record<string, string> = {
   ELEGANT_PURPLE: "from-purple-400 to-violet-500",
   BRIGHT_YELLOW: "from-yellow-300 to-amber-300",
   SOPHISTICATED_GRAY: "from-slate-400 to-gray-500",
-};
-
-const COLOR_EMOJI: Record<string, string> = {
-  WARM_ORANGE: "🍊",
-  CALM_BLUE: "🌊",
-  VIBRANT_RED: "🔥",
-  SOFT_PINK: "🌸",
-  FRESH_GREEN: "🌿",
-  ELEGANT_PURPLE: "💜",
-  BRIGHT_YELLOW: "☀️",
-  SOPHISTICATED_GRAY: "🩶",
 };
 
 const COLOR_SHARE_DESC: Record<string, string> = {
@@ -312,7 +302,7 @@ export function AIProfileEnhanceScreen({
   const gradient = result
     ? (COLOR_GRADIENT[result.colorType] ?? "from-slate-400 to-gray-500")
     : "";
-  const emoji = result ? (COLOR_EMOJI[result.colorType] ?? "") : "";
+  const emoji = result ? (COLOR_META[result.colorType as ColorType]?.emoji ?? "") : "";
 
   return (
     // overflow-hidden 제거 — confetti 는 position:fixed 라 영향 없고, 이게 있으면

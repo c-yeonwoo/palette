@@ -90,17 +90,3 @@ export function getDailyFortune(myColorType: ColorTypeKey = "orange"): DailyFort
 
   return { recommendedType, loveScore, message, subMessage };
 }
-
-/** localStorage에서 저장된 컬러 타입 읽기 (ColorTestScreen이 저장한 키) */
-export function getMyColorType(): ColorTypeKey {
-  try {
-    const raw = localStorage.getItem("palette_color_test");
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed.colorType && COLOR_TYPE_ORDER.includes(parsed.colorType)) {
-        return parsed.colorType as ColorTypeKey;
-      }
-    }
-  } catch {}
-  return "orange"; // fallback
-}
