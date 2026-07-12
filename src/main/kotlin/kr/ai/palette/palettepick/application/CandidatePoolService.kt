@@ -7,6 +7,7 @@ import kr.ai.palette.domain.geo.SigunguGeo
 import kr.ai.palette.domain.profile.ProfileRepository
 import kr.ai.palette.domain.user.User
 import kr.ai.palette.domain.user.UserRepository
+import kr.ai.palette.infrastructure.seed.SeedUserPolicy
 import kr.ai.palette.persistence.feed.FeedHideJpaRepository
 import kr.ai.palette.persistence.profile.ProfileJpaRepository
 import kr.ai.palette.persistence.recommendation.AdminBlockedTargetJpaRepository
@@ -47,6 +48,7 @@ class CandidatePoolService(
     private val adminBlockedTargetRepo: AdminBlockedTargetJpaRepository,
     private val blockService: BlockService,
     private val profileJpaRepository: ProfileJpaRepository,
+    private val seedUserPolicy: SeedUserPolicy,
 ) {
 
     /**
@@ -85,10 +87,14 @@ class CandidatePoolService(
             add(viewerUuid)
         }
 
+        // 시드 격리 (ADR 0003) — 비시드 viewer 에겐 데모/시드 계정을 후보에서 제외.
+        // (컨트롤러의 친구 0명 early-return 을 걷어냈으므로 여기서 강제 — ADR 0072.)
+        val viewerIsSeed = seedUserPolicy.isSeed(viewer)
+
         // ── 지인 티어 (2촌) ──
         val acquaintance: List<PoolCandidate> = secondDegree
             .filter { it !in excluded }
-            .mapNotNull { uid -> if (isValidMatch(uid, viewer)) PoolCandidate(uid, CandidateSource.ACQUAINTANCE) else null }
+            .mapNotNull { uid -> if (isValidMatch(uid, viewer, viewerIsSeed)) PoolCandidate(uid, CandidateSource.ACQUAINTANCE) else null }
             .take(maxSize)
 
         // 지인 풀이 충분하면 공개 폴백 없이 반환 (신뢰 우선)
@@ -115,6 +121,7 @@ class CandidatePoolService(
             if (public.size >= need) break
             val candidate = userRepository.findById(UserId(row.userId)) ?: continue
             if (!candidate.isActive()) continue
+            if (!viewerIsSeed && seedUserPolicy.isSeed(candidate)) continue  // 시드 격리 (ADR 0003)
             if (candidate.publicInfo.gender == viewer.publicInfo.gender) continue
             public += PoolCandidate(row.userId, CandidateSource.PUBLIC, dist)
         }
@@ -122,11 +129,12 @@ class CandidatePoolService(
         return acquaintance + public
     }
 
-    /** 지인 후보 유효성 — 유저·프로필 존재 + 매칭받기 on + 이성. (기존 필터 유지) */
-    private fun isValidMatch(uid: UUID, viewer: User): Boolean {
+    /** 지인 후보 유효성 — 유저·프로필 존재 + 매칭받기 on + 이성 + 시드 격리. */
+    private fun isValidMatch(uid: UUID, viewer: User, viewerIsSeed: Boolean): Boolean {
         val candidate = userRepository.findById(UserId(uid)) ?: return false
         val profile = profileRepository.findByUserId(UserId(uid)) ?: return false
         if (!profile.settings.canReceiveMatches()) return false
+        if (!viewerIsSeed && seedUserPolicy.isSeed(candidate)) return false  // 시드 격리 (ADR 0003)
         if (candidate.publicInfo.gender == viewer.publicInfo.gender) return false
         return true
     }
