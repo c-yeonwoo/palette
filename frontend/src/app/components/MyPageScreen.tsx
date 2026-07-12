@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { ChevronRight, UserCircle, HeartHandshake, LogOut, Users, Camera, Edit2, Loader2, UserPlus, Shield, Trash2, FileText, Ticket, Palette as PaletteIcon } from "lucide-react";
+import { ChevronRight, UserCircle, HeartHandshake, LogOut, Users, Camera, Edit2, Loader2, UserPlus, Shield, Trash2, FileText, Ticket, Palette as PaletteIcon, HelpCircle, UserX } from "lucide-react";
 import { SectionHeader } from "./ui/section-header";
 import { ListRow } from "./ui/list-row";
 import { Switch } from "./ui/switch";
@@ -23,6 +23,8 @@ interface MyPageScreenProps {
   onNavigateTerms?: () => void;
   onNavigateDeleteAccount?: () => void;
   onNavigateBilling?: () => void;
+  onNavigateSupport?: () => void;
+  onNavigateBlocks?: () => void;
 }
 
 interface MatchmakerData {
@@ -449,6 +451,30 @@ export function MyPageScreen({
                   <Shield className="w-4 h-4 text-muted-foreground" />
                 </div>
                 <span className="text-sm font-medium">개인정보 처리방침</span>
+              </button>
+            )}
+            {onNavigateBlocks && (
+              <button
+                onClick={onNavigateBlocks}
+                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted transition-colors"
+              >
+                <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                  <UserX className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <span className="text-sm font-medium">차단 목록</span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
+              </button>
+            )}
+            {onNavigateSupport && (
+              <button
+                onClick={onNavigateSupport}
+                className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-muted transition-colors"
+              >
+                <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                  <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <span className="text-sm font-medium">문의 · 고객지원</span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground ml-auto" />
               </button>
             )}
             <button

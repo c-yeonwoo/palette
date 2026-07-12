@@ -34,6 +34,8 @@ const ColorDetailScreen = lazy(() => import("./components/ColorDetailScreen").th
 const PrivacyPolicyScreen = lazy(() => import("./components/legal/PrivacyPolicyScreen").then(m => ({ default: m.PrivacyPolicyScreen })));
 const TermsOfServiceScreen = lazy(() => import("./components/legal/TermsOfServiceScreen").then(m => ({ default: m.TermsOfServiceScreen })));
 const DeleteAccountScreen = lazy(() => import("./components/legal/DeleteAccountScreen").then(m => ({ default: m.DeleteAccountScreen })));
+const SupportScreen = lazy(() => import("./components/support/SupportScreen").then(m => ({ default: m.SupportScreen })));
+const BlockListScreen = lazy(() => import("./components/safety/BlockListScreen").then(m => ({ default: m.BlockListScreen })));
 const BillingScreen = lazy(() => import("./components/billing/BillingScreen").then(m => ({ default: m.BillingScreen })));
 const InviteWizardScreen = lazy(() => import("./components/onboarding/InviteWizardScreen").then(m => ({ default: m.InviteWizardScreen })));
 const PaymentSuccessScreen = lazy(() => import("./components/billing/PaymentSuccessScreen").then(m => ({ default: m.PaymentSuccessScreen })));
@@ -101,6 +103,8 @@ type Screen =
   | "colorTest"
   | "colorDetail"
   | "inviteHub"
+  | "support"
+  | "blockList"
   | "privacyPolicy"
   | "termsOfService"
   | "deleteAccount"
@@ -1179,6 +1183,8 @@ export default function App() {
           onReanalyze={handleReanalyzeStart}
           onNavigatePrivacy={() => setCurrentScreen("privacyPolicy")}
           onNavigateTerms={() => setCurrentScreen("termsOfService")}
+          onNavigateSupport={() => setCurrentScreen("support")}
+          onNavigateBlocks={() => setCurrentScreen("blockList")}
           onNavigateDeleteAccount={() => setCurrentScreen("deleteAccount")}
           onNavigateBilling={() => setCurrentScreen("billing")}
           onLogout={() => {
@@ -1263,6 +1269,18 @@ export default function App() {
         />
       )}
 
+      {currentScreen === "support" && (
+        <SupportScreen
+          onBack={() => setCurrentScreen("myPage")}
+          onNavigateTerms={() => setCurrentScreen("termsOfService")}
+          onNavigatePrivacy={() => setCurrentScreen("privacyPolicy")}
+        />
+      )}
+
+      {currentScreen === "blockList" && (
+        <BlockListScreen onBack={() => setCurrentScreen("myPage")} />
+      )}
+
       {currentScreen === "privacyPolicy" && (
         <PrivacyPolicyScreen onBack={() => setCurrentScreen("myPage")} />
       )}
@@ -1315,7 +1333,7 @@ export default function App() {
       </Suspense>
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding/detail screens */}
-      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "pendingApproval", "basicInfo", "photoUpload", "aiInterview", "lifestyle", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "league", "photoVerify", "colorTest", "colorDetail", "inviteHub", "privacyPolicy", "termsOfService", "deleteAccount", "billing", "inviteWizard", "paymentSuccess", "paymentFail"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "pendingApproval", "basicInfo", "photoUpload", "aiInterview", "lifestyle", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "league", "photoVerify", "colorTest", "colorDetail", "inviteHub", "support", "blockList", "privacyPolicy", "termsOfService", "deleteAccount", "billing", "inviteWizard", "paymentSuccess", "paymentFail"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}
