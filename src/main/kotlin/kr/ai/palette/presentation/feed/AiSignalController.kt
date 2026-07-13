@@ -8,9 +8,12 @@ import kr.ai.palette.infrastructure.storage.FileStorageService
 import kr.ai.palette.persistence.feed.CardOpenJpaRepository
 import kr.ai.palette.persistence.feed.FeedHideJpaRepository
 import kr.ai.palette.persistence.recommendation.AdminBlockedTargetJpaRepository
+import kr.ai.palette.persistence.recommendation.CandidateSourceEntity
 import kr.ai.palette.persistence.recommendation.DailyRecommendationEntity
 import kr.ai.palette.persistence.recommendation.DailyRecommendationJpaRepository
 import kr.ai.palette.persistence.recommendation.RecommendationSourceEntity
+import kr.ai.palette.palettepick.application.CandidateSource
+import kr.ai.palette.palettepick.application.PoolCandidate
 import kr.ai.palette.persistence.subscription.AiPassSubscriptionEntity
 import kr.ai.palette.persistence.subscription.AiPassSubscriptionJpaRepository
 import kr.ai.palette.presentation.profile.ProfileResponse
@@ -100,22 +103,26 @@ class AiSignalController(
             return ResponseEntity.ok(AiSignalResponse(emptyList(), today.toString()))
         }
 
-        // 영속화 — position 1, 2 ... + variant 태그 (ADR 0047 §B.4)
-        picked.forEachIndexed { idx, targetUserId ->
+        // 영속화 — position 1, 2 ... + variant 태그 (ADR 0047 §B.4) + 후보 출처 (CS-010)
+        picked.forEachIndexed { idx, cand ->
             dailyRecommendationRepo.save(
                 DailyRecommendationEntity(
                     viewerUserId = currentUserId.value,
-                    targetUserId = targetUserId,
+                    targetUserId = cand.userId,
                     recommendedDate = today,
                     position = idx + 1,
                     source = RecommendationSourceEntity.AUTO,
+                    candidateSource = when (cand.source) {
+                        CandidateSource.ACQUAINTANCE -> CandidateSourceEntity.ACQUAINTANCE
+                        CandidateSource.PUBLIC -> CandidateSourceEntity.PUBLIC
+                    },
                     createdAt = Instant.now(),
                     variant = ORCHESTRATOR_VARIANT,
                 )
             )
         }
 
-        return ResponseEntity.ok(buildResponse(currentUserId, today, picked))
+        return ResponseEntity.ok(buildResponse(currentUserId, today, picked.map { it.userId }))
     }
 
     /**
@@ -130,7 +137,7 @@ class AiSignalController(
         currentUserId: kr.ai.palette.domain.common.UserId,
         currentUser: kr.ai.palette.domain.user.User,
         today: LocalDate,
-    ): List<UUID> {
+    ): List<PoolCandidate> {
         return palettePickRecommendationService.recommend(currentUser, today, topK = 2)
     }
 

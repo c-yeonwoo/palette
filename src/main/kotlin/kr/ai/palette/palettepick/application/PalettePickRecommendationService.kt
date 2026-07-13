@@ -36,13 +36,15 @@ class PalettePickRecommendationService(
      * @param viewer 추천 받는 사용자
      * @param today 기준 일자 (KST)
      * @param topK 반환 후보 수 (기본 2 — 오늘의 추천 카드 수)
-     * @return 점수 내림차순 정렬된 candidate UserId 목록 (mutualIdealFit 우선)
+     * @return 점수 내림차순 정렬된 후보 목록 (mutualIdealFit 우선). 각 후보는 출처(ACQUAINTANCE/PUBLIC) 보존 — CS-010.
      */
-    fun recommend(viewer: User, today: LocalDate = LocalDate.now(), topK: Int = 2): List<UUID> {
+    fun recommend(viewer: User, today: LocalDate = LocalDate.now(), topK: Int = 2): List<PoolCandidate> {
         val viewerUuid = viewer.id.value
 
-        // Stage 1 — 후보 풀
-        val pool = candidatePoolService.build(viewer, today)
+        // Stage 1 — 후보 풀 (출처 태깅 포함 — CS-010)
+        val poolWithMeta = candidatePoolService.buildWithMeta(viewer, today)
+        val pool = poolWithMeta.map { it.userId }
+        val byId = poolWithMeta.associateBy { it.userId }
         if (pool.isEmpty()) {
             log.debug("팔레트픽 후보 0 명 — viewer={}", viewerUuid)
             return emptyList()
@@ -73,7 +75,7 @@ class PalettePickRecommendationService(
         // 풀 순서(지인 우선 → 공개 거리순)를 그대로 사용해 카드가 비지 않게 한다.
         if (scores.isEmpty()) {
             log.debug("팔레트픽 스코어 0 (viewer 임베딩 미생성) — 거리순 풀 폴백 viewer={}", viewerUuid)
-            return pool.take(topK)
+            return poolWithMeta.take(topK)
         }
 
         // Stage 4 — Top-K (이상형 합치도 우선, 동률 시 자기소개 유사도)
@@ -84,7 +86,7 @@ class PalettePickRecommendationService(
                     .thenByDescending { it.value.introSimilarity }
             )
             .take(topK)
-            .map { it.key }
+            .map { byId.getValue(it.key) }
             .also {
                 if (log.isDebugEnabled) {
                     log.debug(

@@ -104,6 +104,7 @@ export function AdminRecommendationsScreen({ onBack, embedded = false }: Props) 
 
   const Content = (
     <main className="max-w-6xl mx-auto px-6 py-6 space-y-4">
+      <PalettePickMetricsPanel />
       <div className="flex flex-col md:flex-row gap-3">
         <div className="flex gap-2 items-center">
           <label className="text-sm text-muted-foreground">날짜</label>
@@ -241,6 +242,77 @@ export function AdminRecommendationsScreen({ onBack, embedded = false }: Props) 
       </header>
       {Content}
     </div>
+  );
+}
+
+// ── 팔레트픽 메트릭 패널 (CS-010) — 콜드스타트 공개 풀 관측 + 네트워크 밀도 ──────
+
+interface SourceStat { source: string; count: number; share: number; opens: number; openRate: number }
+interface PalettePickMetrics {
+  windowDays: number;
+  totalRecommendations: number;
+  uniqueViewers?: number;
+  bySource: SourceStat[];
+  networkDensity: { acceptedEdges: number; totalUsers: number; avgFriendsPerUser: number };
+}
+
+const SOURCE_LABEL: Record<string, string> = {
+  ACQUAINTANCE: "지인 네트워크",
+  PUBLIC: "공개 발견 풀",
+  UNTAGGED: "태그 이전",
+};
+
+function PalettePickMetricsPanel() {
+  const [metrics, setMetrics] = useState<PalettePickMetrics | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    adminApi
+      .get<PalettePickMetrics>("/api/v1/admin/palette-pick/metrics?days=7")
+      .then(setMetrics)
+      .catch(() => setError(true));
+  }, []);
+
+  if (error) return null;
+  if (!metrics) return <div className="h-24 rounded-xl bg-muted animate-pulse" />;
+
+  const density = metrics.networkDensity;
+
+  return (
+    <section className="rounded-xl border border-border bg-card p-4 space-y-3">
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-sm font-bold text-foreground">팔레트픽 관측 · 최근 {metrics.windowDays}일</h2>
+        <span className="text-xs text-muted-foreground">추천 {metrics.totalRecommendations}건 · 뷰어 {metrics.uniqueViewers ?? 0}명</span>
+      </div>
+
+      {/* 후보 출처 분해 — 콜드스타트 공개 풀이 실제로 추천을 태우고 있나 */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {metrics.bySource.length === 0 ? (
+          <p className="text-xs text-muted-foreground col-span-full">아직 태그된 추천이 없어요</p>
+        ) : (
+          metrics.bySource.map((s) => (
+            <div key={s.source} className="rounded-lg bg-muted/50 px-3 py-2">
+              <p className="text-xs text-muted-foreground">{SOURCE_LABEL[s.source] ?? s.source}</p>
+              <p className="text-lg font-bold text-foreground">
+                {s.count}
+                <span className="text-xs font-normal text-muted-foreground ml-1">
+                  ({Math.round(s.share * 100)}%)
+                </span>
+              </p>
+              <p className="text-[11px] text-muted-foreground">오픈율 {Math.round(s.openRate * 100)}%</p>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* 네트워크 밀도 — 지인 그래프가 densify 되고 있나 */}
+      <div className="flex items-center gap-4 pt-1 border-t border-border/60 text-xs text-muted-foreground">
+        <span>네트워크 밀도</span>
+        <span className="font-semibold text-foreground">평균 친구 {density.avgFriendsPerUser}명/인</span>
+        <span>· 연결 {density.acceptedEdges}쌍</span>
+        <span>· 유저 {density.totalUsers}명</span>
+      </div>
+    </section>
   );
 }
 
