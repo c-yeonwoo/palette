@@ -1146,17 +1146,17 @@ function EmptyState({ title, description }: { title: string; description: string
 function FirstTimeGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => void }) {
   const steps = [
     {
-      emoji: "🎨",
+      Icon: PaletteIcon,
       title: "프로필 다듬기",
       desc: "마이프로필에서 사진을 추가하면 매칭 확률이 올라가요",
     },
     {
-      emoji: "👥",
+      Icon: Users,
       title: "지인 연결하기",
       desc: "친구를 초대하면 친구의 친구까지 소개받을 수 있어요",
     },
     {
-      emoji: "✨",
+      Icon: Sparkles,
       title: "AI 시그널 받기",
       desc: "매일 한 명, AI가 골라준 추천을 무료로 받아보세요",
     },
@@ -1165,8 +1165,10 @@ function FirstTimeGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => v
   return (
     <div className="space-y-4">
       {/* 환영 메시지 */}
-      <div className="bg-gradient-to-br from-orange-50 to-pink-50 rounded-2xl p-5 border border-orange-100">
-        <div className="text-3xl mb-2">🌟</div>
+      <div className="bg-brand-soft rounded-2xl p-5 border border-border-subtle">
+        <div className="w-10 h-10 rounded-xl bg-surface flex items-center justify-center mb-3">
+          <Sparkles className="w-5 h-5 text-brand-strong" />
+        </div>
         <h3 className="text-lg font-bold text-foreground mb-1">팔레트에 오신 걸 환영해요</h3>
         <p className="text-sm text-muted-foreground leading-relaxed">
           지인 네트워크로 신뢰할 수 있는 만남을 만들어가요.
@@ -1182,8 +1184,8 @@ function FirstTimeGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => v
             key={i}
             className="bg-card border border-border rounded-xl p-4 flex items-start gap-3"
           >
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-soft flex items-center justify-center text-xl">
-              {s.emoji}
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-soft flex items-center justify-center">
+              <s.Icon className="w-5 h-5 text-brand-strong" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-0.5">
