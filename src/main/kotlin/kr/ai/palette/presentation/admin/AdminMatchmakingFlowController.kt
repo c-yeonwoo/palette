@@ -32,7 +32,8 @@ class AdminMatchmakingFlowController(
 
     /**
      * @param date 기준 일자 (KST). 생략 시 오늘. created_at 이 이 날짜인 요청만 반환.
-     * @param status 필터 (옵션). PENDING_MATCHMAKER · PENDING_TARGET · MATCHED · REJECTED · EXPIRED 등
+     * @param status 필터 (옵션). MatchmakingRequestStatus enum 명과 정확히 일치:
+     *        PENDING · MATCHMAKER_APPROVED · COMPLETED · REJECTED_BY_MATCHMAKER · REJECTED_BY_TARGET · CANCELLED_BY_ADMIN
      */
     @GetMapping
     fun byDate(

@@ -79,7 +79,7 @@ export function AdminDashboardScreen({ admin, onNavigate }: Props) {
               </span>
             )}
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <MetricCard
               label="신규 가입"
               today={metrics?.users.today}
@@ -105,6 +105,13 @@ export function AdminDashboardScreen({ admin, onNavigate }: Props) {
               today={metrics ? (metrics.queues.pendingReports + metrics.queues.holdWithdrawals) : undefined}
               note={metrics ? `신고 ${metrics.queues.pendingReports} · 출금 ${metrics.queues.holdWithdrawals}` : undefined}
               accent={metrics && (metrics.queues.pendingReports + metrics.queues.holdWithdrawals) > 0 ? "amber" : undefined}
+              loading={loadingMetrics}
+            />
+            <MetricCard
+              label="운영자 충전"
+              today={metrics?.adminGrants.today}
+              total={metrics?.adminGrants.total}
+              note="수동 물감 지급 건수"
               loading={loadingMetrics}
             />
           </div>
