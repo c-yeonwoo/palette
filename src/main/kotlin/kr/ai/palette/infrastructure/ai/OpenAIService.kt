@@ -25,6 +25,16 @@ data class ProfileGenerationRequest(
     val mbti: String? = null,
     /** 생년월일 기반 사주 오행 요약 한 줄 (SajuService.analyze().summary). 색 판별 보강 근거 */
     val sajuSummary: String? = null,
+    /**
+     * 관심사·취미 (한글 라벨). 인터뷰가 스토리 5문항으로 축소되며 잃은 신호 복원 —
+     * 색·소개글의 구체성을 높이는 강한 단서. 자유서술 아닌 칩이라 인젝션 표면 없음(ADR 0068).
+     */
+    val interests: List<String> = emptyList(),
+    /**
+     * 재생성 nonce — 같은 입력이라도 값이 다르면 inputHash 가 달라져 캐시를 건너뛰고
+     * 새 결과를 받는다("다른 느낌으로 다시"). 프롬프트엔 넣지 않음(해시에만 반영).
+     */
+    val variant: Int = 0,
 )
 
 enum class IntroMethod { INTERVIEW, MANUAL, DATING_STYLE }
@@ -340,6 +350,12 @@ class OpenAIService(
                     }
                 }
             }
+        }
+
+        if (request.interests.isNotEmpty()) {
+            appendLine()
+            appendLine("【관심사·취미】 ${request.interests.joinToString(", ")}")
+            appendLine("(일상·소개글의 구체적 소재로 자연스럽게 녹이되, 목록을 그대로 나열하진 말 것)")
         }
 
         request.idealType?.let { ideal ->

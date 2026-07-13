@@ -85,6 +85,8 @@ class AIProfileController(
                 },
                 mbti = mbti,
                 sajuSummary = sajuSummary,
+                interests = request.interests.map { it.trim() }.filter { it.isNotBlank() }.take(10),
+                variant = request.variant,
             ),
             userId = userId,
         )
@@ -102,6 +104,10 @@ data class GenerateRequest(
     val mbti: String? = null,
     /** 온보딩 draft 의 생년월일(yyyy-MM-dd). 단, 서버 User.birthDate 가 있으면 그쪽 우선 */
     val birthDate: String? = null,
+    /** 관심사·취미 한글 라벨 — 색·소개글 정확도 보강 (클라가 코드→라벨 변환해 전달) */
+    val interests: List<String> = emptyList(),
+    /** 재생성 nonce — 값이 바뀌면 캐시를 건너뛰고 새 결과("다른 느낌으로 다시") */
+    val variant: Int = 0,
 )
 
 data class IdealTypeRequest(

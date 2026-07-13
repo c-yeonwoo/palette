@@ -92,6 +92,37 @@ class OpenAIServiceTest : DescribeSpec({
                 (prompt.contains("이상형 정보")) shouldBe false
             }
         }
+
+        context("관심사 — 인터뷰 축소로 잃은 신호 복원") {
+            it("관심사가 있으면 프롬프트에 라벨로 포함된다") {
+                val request = ProfileGenerationRequest(
+                    introMethod = IntroMethod.INTERVIEW,
+                    interests = listOf("등산", "사진", "재즈"),
+                )
+                val prompt = makeService().buildUserPrompt(request)
+
+                prompt shouldContain "관심사·취미"
+                prompt shouldContain "등산, 사진, 재즈"
+            }
+
+            it("관심사가 없으면 관심사 섹션이 없다") {
+                val request = ProfileGenerationRequest(introMethod = IntroMethod.INTERVIEW)
+                val prompt = makeService().buildUserPrompt(request)
+                (prompt.contains("관심사·취미")) shouldBe false
+            }
+        }
+
+        context("variant nonce — 캐시 우회") {
+            it("variant 만 다르면 같은 프롬프트지만 직렬화 해시는 달라진다") {
+                val base = ProfileGenerationRequest(
+                    introMethod = IntroMethod.INTERVIEW,
+                    interviewAnswers = mapOf("weekend" to "카페"),
+                )
+                val service = makeService()
+                // 프롬프트 자체엔 variant 가 노출되지 않는다 (해시에만 반영)
+                service.buildUserPrompt(base.copy(variant = 3)) shouldBe service.buildUserPrompt(base)
+            }
+        }
     }
 
     describe("parseResult") {
