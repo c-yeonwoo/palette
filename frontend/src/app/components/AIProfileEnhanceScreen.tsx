@@ -157,6 +157,8 @@ export function AIProfileEnhanceScreen({
   // 소개글 직접 수정 (override) — AI 결과를 사람이 다듬어 그대로 저장
   const [editingIntro, setEditingIntro] = useState(false);
   const [editedIntro, setEditedIntro] = useState("");
+  // 재생성 nonce — "다른 느낌으로 다시" 시 증가시켜 백엔드 캐시를 건너뛰고 새 결과를 받는다.
+  const [variant, setVariant] = useState(0);
   const loadingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // 섹션/평문 소개글을 편집용 단일 텍스트로 (heading 줄 + body, 섹션 사이 빈 줄)
@@ -225,7 +227,7 @@ export function AIProfileEnhanceScreen({
     }, 100);
   }, []);
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (genVariant = 0) => {
     setIsGenerating(true);
     setRevealed(false);
     setResult(null);
@@ -242,14 +244,18 @@ export function AIProfileEnhanceScreen({
         ...(introMethod === "INTERVIEW"
           ? { interviewAnswers: answers }
           : { manualAnswers: answers }),
+        // 이상형·관심사는 저장된 '코드'라 그대로 보내면 LLM 이 코드를 읽음 → 반드시 한글 라벨로 변환.
         idealType: {
-          personalities: idealType.personalities ?? [],
-          datePreferences: idealType.datePreferences ?? [],
-          importantValues: idealType.importantValues ?? [],
-          dealBreakers: idealType.dealBreakers ?? [],
+          personalities: lblList("personality", idealType.personalities),
+          datePreferences: lblList("datePreference", idealType.datePreferences),
+          importantValues: lblList("importantValue", idealType.importantValues),
+          dealBreakers: lblList("dealBreaker", idealType.dealBreakers),
         },
+        // 인터뷰가 스토리 5문항으로 축소되며 빠졌던 관심사 신호 복원 — 색·소개글 정확도 보강.
+        interests: lblList("interest", profileData.introduction.interests),
         ...(bi?.mbti ? { mbti: bi.mbti } : {}),
         ...(birthDate ? { birthDate } : {}),
+        ...(genVariant ? { variant: genVariant } : {}),
       };
 
       const data = await api.post<ProfileGenerationResult>(
@@ -264,6 +270,14 @@ export function AIProfileEnhanceScreen({
       stopLoadingAnimation();
       setIsGenerating(false);
     }
+  };
+
+  // "다른 느낌으로 다시" — nonce 증가로 캐시를 건너뛰고 새 결과를 받는다.
+  const handleRegenerate = () => {
+    const next = variant + 1;
+    setVariant(next);
+    setEditingIntro(false);
+    handleGenerate(next);
   };
 
   // 인터뷰가 끝나면 이 화면에서 바로 자동 생성 (수동 "생성하기" 클릭 제거).
@@ -712,15 +726,25 @@ export function AIProfileEnhanceScreen({
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
 
+              {/* 답변은 그대로 두고 AI 결과만 다시 — 캐시 우회로 새 결과 */}
+              <Button
+                onClick={handleRegenerate}
+                disabled={isGenerating || editingIntro}
+                variant="outline"
+                className="w-full h-11 border-border text-foreground hover:bg-muted"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                다른 느낌으로 다시 써줘
+              </Button>
+
               {onRedoAnswers && (
-                <Button
+                <button
                   onClick={onRedoAnswers}
                   disabled={isGenerating || editingIntro}
-                  variant="outline"
-                  className="w-full h-11 border-border text-foreground hover:bg-muted"
+                  className="w-full h-10 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
                 >
-                  인터뷰부터 다시 작성
-                </Button>
+                  답변부터 다시 작성할래요
+                </button>
               )}
             </div>
 
