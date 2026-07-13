@@ -51,7 +51,7 @@ interface ProfileData {
     strengths?: string[] | null;
   } | null;
   attachmentProfile?: unknown;
-  settings?: { isAcceptingMatches: boolean; hiddenAt: string | null; detailsVisibleToFriends?: boolean };
+  settings?: { isAcceptingMatches: boolean; hiddenAt: string | null; detailsVisibleToFriends?: boolean; publicDiscoverable?: boolean };
 }
 
 export function MyPageScreen({
@@ -103,6 +103,17 @@ export function MyPageScreen({
       await api.patch("/api/v1/profile/settings", { detailsVisibleToFriends: val });
       setProfile(prev => prev ? { ...prev, settings: { ...(prev.settings ?? { isAcceptingMatches: true, hiddenAt: null }), detailsVisibleToFriends: val } } : prev);
       toast.success(val ? "지인에게도 상세 프로필을 공개해요" : "지인에겐 핵심 정보만 보여줘요");
+    } catch {
+      toast.error("설정 변경에 실패했습니다");
+    }
+  };
+
+  // 팔레트 Pick 공개 발견 풀 노출 여부 (ADR 0072) — 기본 ON, 지인망 밖 수도권 유저에게도 추천됨
+  const handleTogglePublicDiscoverable = async (val: boolean) => {
+    try {
+      await api.patch("/api/v1/profile/settings", { publicDiscoverable: val });
+      setProfile(prev => prev ? { ...prev, settings: { ...(prev.settings ?? { isAcceptingMatches: true, hiddenAt: null }), publicDiscoverable: val } } : prev);
+      toast.success(val ? "팔레트 Pick 공개 발견을 켰어요" : "지인 네트워크 안에서만 추천돼요");
     } catch {
       toast.error("설정 변경에 실패했습니다");
     }
@@ -397,6 +408,17 @@ export function MyPageScreen({
                   </p>
                 </div>
                 <Switch checked={!!profile.settings?.detailsVisibleToFriends} onCheckedChange={handleToggleDetailsToFriends} />
+              </div>
+              <div className="flex items-center justify-between px-4 py-3.5">
+                <div className="min-w-0 pr-3">
+                  <p className="text-sm font-medium text-foreground">팔레트 Pick 공개 발견</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {profile.settings?.publicDiscoverable === false
+                      ? "지인 네트워크 안에서만 추천돼요"
+                      : "지인이 아니어도 가까운 지역의 잘 맞는 분에게 추천돼요"}
+                  </p>
+                </div>
+                <Switch checked={profile.settings?.publicDiscoverable !== false} onCheckedChange={handleTogglePublicDiscoverable} />
               </div>
             </div>
           </section>

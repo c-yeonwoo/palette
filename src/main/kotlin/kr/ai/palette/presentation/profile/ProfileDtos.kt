@@ -138,7 +138,8 @@ data class UpdateProfileRequest(
 
 data class UpdateSettingsRequest(
     val isAcceptingMatches: Boolean? = null,
-    val detailsVisibleToFriends: Boolean? = null
+    val detailsVisibleToFriends: Boolean? = null,
+    val publicDiscoverable: Boolean? = null   // 팔레트 Pick 공개 발견 풀 opt-in/out (ADR 0072)
 )
 
 data class BasicInfoDto(
@@ -398,13 +399,15 @@ data class ProfileMetricsDto(
 data class ProfileSettingsDto(
     val isAcceptingMatches: Boolean,
     val hiddenAt: Instant?,
-    val detailsVisibleToFriends: Boolean = false
+    val detailsVisibleToFriends: Boolean = false,
+    val publicDiscoverable: Boolean = true   // 팔레트 Pick 공개 발견 풀 노출 (ADR 0072, 기본 ON)
 ) {
     fun toDomain(): ProfileSettings {
         return ProfileSettings(
             isAcceptingMatches = isAcceptingMatches,
             hiddenAt = hiddenAt,
-            detailsVisibleToFriends = detailsVisibleToFriends
+            detailsVisibleToFriends = detailsVisibleToFriends,
+            publicDiscoverable = publicDiscoverable
         )
     }
 
@@ -413,7 +416,8 @@ data class ProfileSettingsDto(
             return ProfileSettingsDto(
                 isAcceptingMatches = settings.isAcceptingMatches,
                 hiddenAt = settings.hiddenAt,
-                detailsVisibleToFriends = settings.detailsVisibleToFriends
+                detailsVisibleToFriends = settings.detailsVisibleToFriends,
+                publicDiscoverable = settings.publicDiscoverable
             )
         }
     }
