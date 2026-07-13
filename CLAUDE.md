@@ -392,7 +392,7 @@ When implementing APIs, follow these guidelines:
 - **매칭 상세 / 마켓플레이스**: 프론트 mock 데이터
 - **사진 신원 검증**: 95% 통과 mock. Vision API 미연동
 - **홈택스 직업 검증**: UI stub
-- **Apple/Google/Naver OAuth**: UI 표시되나 백엔드 미지원 (graceful error 반환)
+- **소셜 로그인**: Kakao(동작) + Apple(iOS 네이티브 전용, `AppleSignInController` 가 Apple JWKS 로 identityToken 실검증 → JWT) + 이메일. Google/Naver 로그인 버튼은 미노출(구현 안 함). iOS 는 Kakao+Apple 공존으로 App Store 가이드라인 충족.
 
 ### 🔐 보안 규칙 (코드 기여 시 필수 준수)
 - `JWT_SECRET`, `KAKAO_CLIENT_ID/SECRET` 등 실제 자격증명을 코드/application.yml 기본값으로 절대 커밋 금지
