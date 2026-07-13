@@ -147,8 +147,9 @@ export function MatchmakerPublicProfileScreen({
         )}
         <h2 className="text-xl font-bold text-foreground">{matchmaker.nickname}</h2>
         <div className="flex items-center justify-center gap-2 mt-1">
-          <span className="text-sm font-medium" style={{ color: lv.color }}>
-            {lv.emoji} Lv.{matchmaker.level} {lv.name}
+          <span className="text-sm font-medium inline-flex items-center gap-1" style={{ color: lv.color }}>
+            <lv.Icon className="w-4 h-4" />
+            Lv.{matchmaker.level} {lv.name}
           </span>
           {matchmaker.averageRating > 0 && (
             <>

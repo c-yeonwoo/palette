@@ -120,7 +120,7 @@ export function FortuneBanner() {
                 </div>
                 <div className="flex-1">
                   <p className="text-xs font-semibold text-foreground mb-1">
-                    {myMeta.name} {myMeta.emoji} × {compatibleMeta.name} {compatibleMeta.emoji}
+                    {myMeta.name} × {compatibleMeta.name}
                   </p>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     {fortune?.compatibilityHint

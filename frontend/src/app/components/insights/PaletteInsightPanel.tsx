@@ -195,7 +195,7 @@ export function PaletteInsightPanel({ profile, onNavigateToEdit, onNavigateToCol
       {/* ── 다시 분석 확인 ── */}
       {showReanalyzeConfirm && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in" onClick={() => setShowReanalyzeConfirm(false)}>
-          <div className="w-full sm:max-w-sm bg-card rounded-t-3xl sm:rounded-3xl p-6 shadow-overlay animate-slide-up" onClick={e => e.stopPropagation()}>
+          <div className="w-full sm:max-w-sm bg-card rounded-t-2xl sm:rounded-2xl p-6 shadow-overlay animate-slide-up" onClick={e => e.stopPropagation()}>
             <div className="flex flex-col items-center text-center">
               <div className="w-12 h-12 rounded-2xl bg-brand-soft flex items-center justify-center mb-3">
                 <RefreshCw className="w-6 h-6 text-brand-strong" />
@@ -340,7 +340,7 @@ function InsightUnlockModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose}>
       <div
-        className="w-full sm:max-w-sm bg-card rounded-t-3xl sm:rounded-3xl p-6 shadow-overlay animate-slide-up"
+        className="w-full sm:max-w-sm bg-card rounded-t-2xl sm:rounded-2xl p-6 shadow-overlay animate-slide-up"
         onClick={e => e.stopPropagation()}
       >
         <button onClick={onClose} className="absolute right-4 top-4 w-8 h-8 rounded-full hover:bg-muted/50 flex items-center justify-center" aria-label="닫기">
@@ -435,7 +435,7 @@ function UsageHelpButton({
           onMouseLeave={() => setOpen(false)}
         >
           <div
-            className="w-full sm:max-w-sm bg-card rounded-t-3xl sm:rounded-3xl p-5 shadow-overlay animate-slide-up relative"
+            className="w-full sm:max-w-sm bg-card rounded-t-2xl sm:rounded-2xl p-5 shadow-overlay animate-slide-up relative"
             onClick={e => e.stopPropagation()}
           >
             <button

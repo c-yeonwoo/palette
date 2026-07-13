@@ -9,24 +9,26 @@
  * 성사 건수 구간 / 커미션율은 정책값(ADR 참고).
  */
 
+import { Medal, Gem, Crown, type LucideIcon } from "lucide-react";
+
 export type MatchmakerLevel = 1 | 2 | 3 | 4 | 5;
 
 export interface MatchmakerTier {
   level: MatchmakerLevel;
   name: string;          // 등급명
-  emoji: string;         // 등급 상징
+  Icon: LucideIcon;      // 등급 상징 (lucide — 브랜드 v2, 이모지 대체)
   commission: number;    // 커미션율 (%)
   minMatches: number;    // 진입 성사 건수
   maxMatches: number;    // 구간 상한 (최고 등급은 Infinity)
-  color: string;         // 등급 식별 색 (데이터값)
+  color: string;         // 등급 식별 색 (데이터값 · 아이콘 색으로도 사용)
 }
 
 export const MATCHMAKER_TIERS: Record<MatchmakerLevel, MatchmakerTier> = {
-  1: { level: 1, name: "브론즈",     emoji: "🥉", commission: 15, minMatches: 0,   maxMatches: 14,                      color: "#B87333" },
-  2: { level: 2, name: "실버",       emoji: "🥈", commission: 20, minMatches: 15,  maxMatches: 39,                      color: "#A8AEB8" },
-  3: { level: 3, name: "골드",       emoji: "🥇", commission: 25, minMatches: 40,  maxMatches: 69,                      color: "#BD9244" },
-  4: { level: 4, name: "플래티넘",   emoji: "💠", commission: 30, minMatches: 70,  maxMatches: 149,                     color: "#6E8CA0" },
-  5: { level: 5, name: "다이아몬드", emoji: "💎", commission: 40, minMatches: 150, maxMatches: Number.POSITIVE_INFINITY, color: "#45B6CC" },
+  1: { level: 1, name: "브론즈",     Icon: Medal, commission: 15, minMatches: 0,   maxMatches: 14,                      color: "#B87333" },
+  2: { level: 2, name: "실버",       Icon: Medal, commission: 20, minMatches: 15,  maxMatches: 39,                      color: "#9AA3AE" },
+  3: { level: 3, name: "골드",       Icon: Medal, commission: 25, minMatches: 40,  maxMatches: 69,                      color: "#C79A3A" },
+  4: { level: 4, name: "플래티넘",   Icon: Gem,   commission: 30, minMatches: 70,  maxMatches: 149,                     color: "#6E8CA0" },
+  5: { level: 5, name: "다이아몬드", Icon: Crown, commission: 40, minMatches: 150, maxMatches: Number.POSITIVE_INFINITY, color: "#45B6CC" },
 };
 
 /** 1~5 순서 배열 */

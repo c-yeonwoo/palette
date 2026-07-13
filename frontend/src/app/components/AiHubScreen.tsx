@@ -9,6 +9,9 @@ import {
   ChevronRight,
   Zap,
   X,
+  User,
+  Moon,
+  Palette as PaletteIcon,
 } from "lucide-react";
 import { FortuneBanner } from "./FortuneBanner";
 import { api } from "../../lib/api/apiClient";
@@ -344,7 +347,7 @@ function PaintCard({
           <img src={profile.primaryPhotoUrl} alt="" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-muted via-accent to-muted/60 flex items-center justify-center">
-            <span className="text-4xl opacity-20 select-none">👤</span>
+            <User className="w-10 h-10 text-muted-foreground/25" />
           </div>
         )}
         {revealed && <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />}
@@ -437,7 +440,7 @@ function AiSignalSection({
             <div key={i} className="flex-shrink-0 w-40">
               <div className="relative rounded-2xl overflow-hidden aspect-[3/4] bg-muted shadow-sm">
                 <div className="w-full h-full bg-gradient-to-br from-primary/20 via-primary/10 to-muted flex items-center justify-center">
-                  <span className="text-5xl opacity-10 select-none">👤</span>
+                  <User className="w-12 h-12 text-foreground/10" />
                 </div>
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3">
                   <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
@@ -833,7 +836,7 @@ function CompatibilityCalculatorCard() {
           disabled={loading || !date1 || !date2}
           className="w-full py-3 rounded-xl bg-brand-soft text-brand-strong text-sm font-bold disabled:opacity-50 active:scale-[0.98] transition-transform"
         >
-          {loading ? "계산 중..." : "인연 점수 계산하기 ✨"}
+          {loading ? "계산 중..." : "인연 점수 계산하기"}
         </button>
       </div>
 
@@ -1073,15 +1076,15 @@ export function AiHubScreen({
           <div className="rounded-2xl bg-card border border-border/60 p-4 space-y-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">팔레트 AI 가이드</p>
             {[
-              { icon: "🎨", title: "컬러 타입", desc: "AI 인터뷰로 결정된 내 성격 색상이 매칭 기준이 돼요" },
-              { icon: "✨", title: "AI 시그널", desc: "매일 1장 무료 — 컬러 유사도 기반 추천 프로필" },
-              { icon: "🔮", title: "오늘의 운세", desc: "컬러 타입별 맞춤 연애 운세를 매일 확인해보세요" },
-              { icon: "🧠", title: "나를 알아가기", desc: "애착 유형, 러브 랭귀지로 더 나은 연애를 시작해요" },
-              { icon: "💑", title: "인연 점수", desc: "생년월일과 MBTI로 궁합을 AI가 분석해 드려요" },
+              { Icon: PaletteIcon, title: "컬러 타입", desc: "AI 인터뷰로 결정된 내 성격 색상이 매칭 기준이 돼요" },
+              { Icon: Sparkles, title: "AI 시그널", desc: "매일 1장 무료 — 컬러 유사도 기반 추천 프로필" },
+              { Icon: Moon, title: "오늘의 운세", desc: "컬러 타입별 맞춤 연애 운세를 매일 확인해보세요" },
+              { Icon: Brain, title: "나를 알아가기", desc: "애착 유형, 러브 랭귀지로 더 나은 연애를 시작해요" },
+              { Icon: Heart, title: "인연 점수", desc: "생년월일과 MBTI로 궁합을 AI가 분석해 드려요" },
             ].map((item) => (
               <div key={item.title} className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center flex-shrink-0 text-base">
-                  {item.icon}
+                <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                  <item.Icon className="w-4 h-4 text-brand-strong" />
                 </div>
                 <div>
                   <p className="text-sm font-medium">{item.title}</p>

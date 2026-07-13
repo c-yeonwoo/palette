@@ -120,7 +120,7 @@ export function PhotoVerifyScreen({ onBack, onComplete, colorType = "orange", us
 
       <div className="flex-1 px-6 py-8 space-y-6">
         <div className="flex flex-col items-center text-center gap-4">
-          <div className="w-20 h-20 rounded-3xl bg-brand-soft flex items-center justify-center">
+          <div className="w-20 h-20 rounded-2xl bg-brand-soft flex items-center justify-center">
             <Shield className="w-10 h-10 text-brand" />
           </div>
           <div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { MapPin, SlidersHorizontal, X, Bell, Sparkles, Users, Palette as PaletteIcon } from "lucide-react";
+import { MapPin, SlidersHorizontal, X, Bell, Sparkles, Users, Palette as PaletteIcon, Infinity as InfinityIcon, BarChart3, Sprout, HeartHandshake } from "lucide-react";
 import { Button } from "./ui/button";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
@@ -938,14 +938,14 @@ function AiPassPaywall({
   onClose: () => void;
 }) {
   const benefits = [
-    { emoji: "♾️", title: "매일 추천 무제한", desc: "하루 1장 제한 없이 팔레트 Pick을 모두 열람" },
-    { emoji: "📊", title: "궁합 리포트", desc: "왜 잘 맞는지 색깔 기반 상세 분석 제공" },
-    { emoji: "✨", title: "우선 추천", desc: "더 정교한 궁합 기반으로 먼저 소개" },
+    { Icon: InfinityIcon, title: "매일 추천 무제한", desc: "하루 1장 제한 없이 팔레트 Pick을 모두 열람" },
+    { Icon: BarChart3, title: "궁합 리포트", desc: "왜 잘 맞는지 색깔 기반 상세 분석 제공" },
+    { Icon: Sparkles, title: "우선 추천", desc: "더 정교한 궁합 기반으로 먼저 소개" },
   ];
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose}>
       <div
-        className="w-full sm:max-w-sm bg-card rounded-t-3xl sm:rounded-3xl p-6 shadow-overlay animate-slide-up"
+        className="w-full sm:max-w-sm bg-card rounded-t-2xl sm:rounded-2xl p-6 shadow-overlay animate-slide-up"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex flex-col items-center text-center mb-5">
@@ -959,7 +959,9 @@ function AiPassPaywall({
         <div className="space-y-3 mb-5">
           {benefits.map((b, i) => (
             <div key={i} className="flex items-start gap-3">
-              <span className="text-xl">{b.emoji}</span>
+              <span className="w-8 h-8 rounded-xl bg-brand-soft flex items-center justify-center flex-shrink-0">
+                <b.Icon className="w-4 h-4 text-brand-strong" />
+              </span>
               <div>
                 <p className="text-sm font-semibold text-foreground">{b.title}</p>
                 <p className="text-xs text-muted-foreground">{b.desc}</p>
@@ -1130,7 +1132,7 @@ function LoadingState() {
 function EmptyState({ title, description }: { title: string; description: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center col-span-2">
-      <div className="w-16 h-16 rounded-3xl bg-muted flex items-center justify-center mb-5">
+      <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-5">
         <MapPin className="w-7 h-7 text-muted-foreground/60" />
       </div>
       <h3 className="text-base font-semibold mb-1.5">{title}</h3>
@@ -1146,17 +1148,17 @@ function EmptyState({ title, description }: { title: string; description: string
 function FirstTimeGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => void }) {
   const steps = [
     {
-      emoji: "🎨",
+      Icon: PaletteIcon,
       title: "프로필 다듬기",
       desc: "마이프로필에서 사진을 추가하면 매칭 확률이 올라가요",
     },
     {
-      emoji: "👥",
+      Icon: Users,
       title: "지인 연결하기",
       desc: "친구를 초대하면 친구의 친구까지 소개받을 수 있어요",
     },
     {
-      emoji: "✨",
+      Icon: Sparkles,
       title: "AI 시그널 받기",
       desc: "매일 한 명, AI가 골라준 추천을 무료로 받아보세요",
     },
@@ -1165,8 +1167,10 @@ function FirstTimeGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => v
   return (
     <div className="space-y-4">
       {/* 환영 메시지 */}
-      <div className="bg-gradient-to-br from-orange-50 to-pink-50 rounded-2xl p-5 border border-orange-100">
-        <div className="text-3xl mb-2">🌟</div>
+      <div className="bg-brand-soft rounded-2xl p-5 border border-border-subtle">
+        <div className="w-10 h-10 rounded-xl bg-surface flex items-center justify-center mb-3">
+          <Sparkles className="w-5 h-5 text-brand-strong" />
+        </div>
         <h3 className="text-lg font-bold text-foreground mb-1">팔레트에 오신 걸 환영해요</h3>
         <p className="text-sm text-muted-foreground leading-relaxed">
           지인 네트워크로 신뢰할 수 있는 만남을 만들어가요.
@@ -1182,8 +1186,8 @@ function FirstTimeGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => v
             key={i}
             className="bg-card border border-border rounded-xl p-4 flex items-start gap-3"
           >
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-soft flex items-center justify-center text-xl">
-              {s.emoji}
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-soft flex items-center justify-center">
+              <s.Icon className="w-5 h-5 text-brand-strong" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-0.5">
@@ -1202,7 +1206,7 @@ function FirstTimeGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => v
           onClick={onNavigateToFriends}
           className="w-full bg-brand-soft text-brand-strong font-semibold py-3.5 rounded-2xl shadow-md active:scale-95 transition-transform flex items-center justify-center gap-2"
         >
-          <span>👥</span>
+          <Users className="w-4 h-4" />
           지금 친구 연결하기
         </button>
       )}
@@ -1222,8 +1226,8 @@ function EmptyNetworkGuide({ friendCount, onNavigateToFriends }: { friendCount: 
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
       <div className="relative mb-7">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-brand-soft to-primary/15 flex items-center justify-center">
-          <span className="text-3xl">🌱</span>
+        <div className="w-20 h-20 rounded-full bg-brand-soft flex items-center justify-center">
+          <Sprout className="w-9 h-9 text-brand-strong" />
         </div>
       </div>
 
@@ -1241,7 +1245,7 @@ function EmptyNetworkGuide({ friendCount, onNavigateToFriends }: { friendCount: 
           onClick={onNavigateToFriends}
           className="flex items-center gap-2 bg-foreground text-background font-semibold px-5 py-2.5 rounded-2xl shadow-md active:scale-95 transition-transform"
         >
-          <span className="text-base">👥</span>
+          <Users className="w-4 h-4" />
           지인 더 초대하기
         </button>
       )}
@@ -1258,11 +1262,11 @@ function NoFriendsNudge({ onNavigateToFriends }: { onNavigateToFriends?: () => v
     <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
       {/* Illustration */}
       <div className="relative mb-8">
-        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-          <span className="text-4xl">🫂</span>
+        <div className="w-24 h-24 rounded-full bg-brand-soft flex items-center justify-center">
+          <HeartHandshake className="w-11 h-11 text-brand-strong" />
         </div>
-        <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">
-          <span className="text-sm">✨</span>
+        <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-card border border-border-subtle flex items-center justify-center shadow-sm">
+          <Sparkles className="w-4 h-4 text-brand-strong" />
         </div>
       </div>
 
@@ -1279,7 +1283,7 @@ function NoFriendsNudge({ onNavigateToFriends }: { onNavigateToFriends?: () => v
           onClick={onNavigateToFriends}
           className="flex items-center gap-2 bg-brand-soft text-brand-strong font-semibold px-6 py-3 rounded-2xl shadow-md active:scale-95 transition-transform"
         >
-          <span className="text-base">👥</span>
+          <Users className="w-4 h-4" />
           친구 추가하기
         </button>
       )}

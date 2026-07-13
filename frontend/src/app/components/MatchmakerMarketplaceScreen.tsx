@@ -275,11 +275,11 @@ function MatchmakerCard({
           />
           {/* 레벨 뱃지 */}
           <div
-            className="absolute -bottom-1 -right-1 text-xs leading-none"
+            className="absolute -bottom-1 -right-1 leading-none bg-card rounded-full p-0.5 shadow-sm"
             title={`Lv.${m.level} ${levelMeta.name}`}
             aria-label={levelMeta.name}
           >
-            {levelMeta.emoji}
+            <levelMeta.Icon className="w-3.5 h-3.5" style={{ color: levelMeta.color }} />
           </div>
         </div>
 

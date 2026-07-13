@@ -13,6 +13,7 @@
  */
 
 import { useState } from "react";
+import { Palette, HeartHandshake, Heart, type LucideIcon } from "lucide-react";
 import { Button } from "./ui/button";
 
 const INTRO_SEEN_KEY = "palette_intro_seen";
@@ -21,24 +22,21 @@ interface BetaWelcomeIntroProps {
   onDone: () => void;
 }
 
-const slides = [
+const slides: { Icon: LucideIcon; title: string; desc: string }[] = [
   {
-    emoji: "🎨",
+    Icon: Palette,
     title: "나만의 색을 찾아요",
     desc: "AI 인터뷰로 3분이면 끝.\n8가지 컬러로 나의 매력을 표현해요.",
-    bg: "from-orange-50 to-pink-50",
   },
   {
-    emoji: "🫂",
+    Icon: HeartHandshake,
     title: "지인이 보증하는 만남",
     desc: "모르는 사람보다 친구의 친구부터.\n익명 데이팅 앱과 가장 큰 차이예요.",
-    bg: "from-blue-50 to-purple-50",
   },
   {
-    emoji: "💝",
+    Icon: Heart,
     title: "친구를 이어주는 보람",
     desc: "믿을 수 있는 지인이 직접 소개하는 만남.\n성사할수록 주선자 등급과 명예가 쌓여요.",
-    bg: "from-green-50 to-yellow-50",
   },
 ];
 
@@ -52,8 +50,10 @@ export function BetaWelcomeIntro({ onDone }: BetaWelcomeIntroProps) {
     onDone();
   };
 
+  const SlideIcon = slide.Icon;
+
   return (
-    <div className={`min-h-screen flex flex-col bg-gradient-to-br ${slide.bg} transition-colors duration-500`}>
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-brand-soft/50 to-background transition-colors duration-500">
       {/* 상단 건너뛰기 */}
       <div className="flex justify-end px-6 py-4">
         <button
@@ -66,7 +66,9 @@ export function BetaWelcomeIntro({ onDone }: BetaWelcomeIntroProps) {
 
       {/* 슬라이드 본문 */}
       <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
-        <div className="text-7xl mb-8 animate-bounce">{slide.emoji}</div>
+        <div className="w-24 h-24 rounded-full bg-brand-soft flex items-center justify-center mb-8">
+          <SlideIcon className="w-11 h-11 text-brand-strong" />
+        </div>
         <h1 className="text-2xl font-bold text-foreground mb-4">{slide.title}</h1>
         <p className="text-base text-muted-foreground leading-relaxed whitespace-pre-line">
           {slide.desc}
@@ -91,7 +93,7 @@ export function BetaWelcomeIntro({ onDone }: BetaWelcomeIntroProps) {
           onClick={isLast ? handleDone : () => setIdx(idx + 1)}
           className="w-full h-12 text-sm font-semibold"
         >
-          {isLast ? "시작하기 🎨" : "다음"}
+          {isLast ? "시작하기" : "다음"}
         </Button>
         {idx > 0 && (
           <button
