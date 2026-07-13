@@ -86,6 +86,7 @@ class AIProfileController(
                 mbti = mbti,
                 sajuSummary = sajuSummary,
                 interests = request.interests.map { it.trim() }.filter { it.isNotBlank() }.take(10),
+                residence = request.residence?.trim()?.takeIf { it.isNotBlank() },
                 variant = request.variant,
             ),
             userId = userId,
@@ -106,6 +107,8 @@ data class GenerateRequest(
     val birthDate: String? = null,
     /** 관심사·취미 한글 라벨 — 색·소개글 정확도 보강 (클라가 코드→라벨 변환해 전달) */
     val interests: List<String> = emptyList(),
+    /** 거주 생활권(예: "서울 성동구") — 소개글 일상 섹션의 동네 감각 소재 */
+    val residence: String? = null,
     /** 재생성 nonce — 값이 바뀌면 캐시를 건너뛰고 새 결과("다른 느낌으로 다시") */
     val variant: Int = 0,
 )

@@ -31,6 +31,11 @@ data class ProfileGenerationRequest(
      */
     val interests: List<String> = emptyList(),
     /**
+     * 거주 생활권(예: "서울 성동구"). 소개글의 일상 섹션에 동네 감각을 살짝 녹이는 소재.
+     * 시/도·시·군·구 드롭다운에서 온 값이라 자유서술 아님(인젝션 표면 없음).
+     */
+    val residence: String? = null,
+    /**
      * 재생성 nonce — 같은 입력이라도 값이 다르면 inputHash 가 달라져 캐시를 건너뛰고
      * 새 결과를 받는다("다른 느낌으로 다시"). 프롬프트엔 넣지 않음(해시에만 반영).
      */
@@ -356,6 +361,12 @@ class OpenAIService(
             appendLine()
             appendLine("【관심사·취미】 ${request.interests.joinToString(", ")}")
             appendLine("(일상·소개글의 구체적 소재로 자연스럽게 녹이되, 목록을 그대로 나열하진 말 것)")
+        }
+
+        request.residence?.takeIf { it.isNotBlank() }?.let {
+            appendLine()
+            appendLine("【생활 반경】 $it")
+            appendLine("(일상/하루 섹션에 동네·생활권의 감각으로 가볍게 녹여도 좋음. 단, 주소를 스펙처럼 적지 말 것 — 억지로 넣지 않아도 됨)")
         }
 
         request.idealType?.let { ideal ->

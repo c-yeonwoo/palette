@@ -134,62 +134,10 @@ interface ProfileData {
   settings?: { detailsVisibleToFriends?: boolean } | null;
 }
 
-function PhotoCarousel({ photos }: { photos: Array<{ id: string; url: string }> }) {
-  const [idx, setIdx] = useState(0);
-  const startX = useRef<number | null>(null);
-
-  const prev = () => setIdx(i => Math.max(0, i - 1));
-  const next = () => setIdx(i => Math.min(photos.length - 1, i + 1));
-
-  return (
-    <div className="relative select-none">
-      <div
-        className="relative h-[480px] bg-black overflow-hidden flex items-center justify-center"
-        onTouchStart={e => { startX.current = e.touches[0].clientX; }}
-        onTouchEnd={e => {
-          if (startX.current === null) return;
-          const dx = e.changedTouches[0].clientX - startX.current;
-          if (dx < -40) next();
-          else if (dx > 40) prev();
-          startX.current = null;
-        }}
-      >
-        {/* 블러 배경 */}
-        <img src={photos[idx].url} alt="" className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-40 pointer-events-none" aria-hidden />
-        {/* 실제 사진 — 중앙 정렬 */}
-        <img src={photos[idx].url} alt="" className="absolute inset-0 w-full h-full object-contain z-10" />
-      </div>
-
-      {/* prev/next tap zones */}
-      {idx > 0 && (
-        <button onClick={prev} className="absolute left-0 top-0 h-full w-1/3" aria-label="이전 사진" />
-      )}
-      {idx < photos.length - 1 && (
-        <button onClick={next} className="absolute right-0 top-0 h-full w-1/3" aria-label="다음 사진" />
-      )}
-
-      {/* dots */}
-      {photos.length > 1 && (
-        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
-          {photos.map((_, i) => (
-            <div key={i} className={`rounded-full transition-all ${i === idx ? "w-4 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/50"}`} />
-          ))}
-        </div>
-      )}
-
-      {/* counter */}
-      <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-sm rounded-full px-2 py-0.5">
-        <span className="text-white text-xs font-medium">{idx + 1} / {photos.length}</span>
-      </div>
-    </div>
-  );
-}
-
 export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree = 2, viewCost = 20, onNavigateToFriends, onNavigateToBilling }: ProfileDetailScreenProps) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [userInfo, setUserInfo] = useState<PublicUserResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"about" | "ideal">("about");
   const [showMatchmakerModal, setShowMatchmakerModal] = useState(false);
   const [modalStep, setModalStep] = useState<1 | 2>(1);
   const [selectedMatchmaker, setSelectedMatchmaker] = useState<MutualFriend | null>(null);
@@ -596,15 +544,6 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     );
   };
 
-  const InterviewAnswer = ({ question, answer }: { question: string; answer: string }) => {
-    return (
-      <div className="space-y-1.5 pb-3 border-b border-border/50 last:border-0">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{question}</p>
-        <p className="text-sm leading-relaxed text-foreground">{answer}</p>
-      </div>
-    );
-  };
-
   // Display mappings
   const getBodyTypeDisplay = (bodyType: string | null) => {
     if (!bodyType) return null;
@@ -754,20 +693,45 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
       </div>
 
       <div className="max-w-2xl mx-auto">
-        {/* Photo Carousel */}
-        <div className="px-4 pt-3 flex justify-center">
+        {/* Hero — 대표사진을 표지로. 이름·색·한 줄 태그라인이 사진 위에 얹힌다 (스펙 카드가 아니라 '사람'의 첫인상). */}
+        <div className="relative w-full aspect-[4/5] max-h-[520px] bg-muted overflow-hidden">
           {sortedPhotos.length > 0 ? (
-            <div className="rounded-2xl overflow-hidden w-full max-w-[320px] shadow-card-hover ring-1 ring-black/5">
-              <PhotoCarousel photos={sortedPhotos} />
-            </div>
+            <img src={sortedPhotos[0].url} alt="" className="absolute inset-0 w-full h-full object-cover" />
           ) : (
-            <div className="aspect-[3/4] max-h-[420px] w-full max-w-[320px] bg-muted flex items-center justify-center rounded-2xl">
+            <div className="absolute inset-0 flex items-center justify-center">
               <span className="text-sm text-muted-foreground">사진 없음</span>
             </div>
           )}
+          <div
+            className="absolute inset-x-0 bottom-0 px-5 pb-5 pt-16"
+            style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.62))" }}
+          >
+            {profile.colorType?.name && (
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 mb-2">
+                {accentColor && <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: accentColor }} />}
+                <span className="text-xs font-medium" style={{ color: accentColor ?? "#333" }}>{profile.colorType.name}</span>
+              </div>
+            )}
+            <h2 className="text-2xl font-bold text-white drop-shadow-sm leading-tight">{userInfo.nickname}</h2>
+            {profile.colorType?.description && (
+              <p className="text-sm text-white/90 mt-1 leading-snug">{profile.colorType.description}</p>
+            )}
+          </div>
         </div>
 
-        {/* 색깔 궁합 배너 (색 이론 기반) */}
+        {/* 공감 먼저 — 공통 친구로 '아는 사이의 신뢰'를 스토리 초입에 (지인망 서비스의 핵심 감각). */}
+        {!detailsHidden && mutualFriends.length > 0 && (
+          <div className="mx-4 mt-4 flex items-center gap-2.5 rounded-xl px-4 py-3"
+               style={{ backgroundColor: accentColor ? `${accentColor}14` : "hsl(var(--muted))" }}>
+            <Users className="w-4 h-4 flex-shrink-0" style={{ color: accentColor ?? undefined }} />
+            <p className="text-[13px] leading-snug text-foreground">
+              공통 친구 <span className="font-semibold">{mutualFriends.length}명</span>
+              <span className="text-muted-foreground"> · {mutualFriends.slice(0, 2).map(f => f.name).join(", ")}{mutualFriends.length > 2 ? " 외" : ""} 님이 이어줬어요</span>
+            </p>
+          </div>
+        )}
+
+        {/* 색깔 궁합 배너 (색 이론 기반) — 공감 요소로 히어로 바로 아래 */}
         <ColorCompatBanner
           theirColorType={(profile.colorType?.type ?? null) as ColorType | null}
           theirColorName={profile.colorType?.name ?? null}
@@ -776,63 +740,23 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
           targetUserId={userId}
         />
 
-        {/* Tabs */}
-        <div className="border-b border-border px-6 mt-6">
-          <div className="flex gap-6">
-            <button
-              onClick={() => setActiveTab("about")}
-              className={`pb-3 px-1 font-medium transition-colors relative ${
-                activeTab === "about" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              내소개
-              {activeTab === "about" && (
-                <div
-                  className="absolute bottom-0 left-0 right-0 h-0.5"
-                  style={{ backgroundColor: accentColor ?? "hsl(var(--primary))" }}
-                />
-              )}
-            </button>
-            {!detailsHidden && (
-              <button
-                onClick={() => setActiveTab("ideal")}
-                className={`pb-3 px-1 font-medium transition-colors relative ${
-                  activeTab === "ideal" ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                원하는 이상형
-                {activeTab === "ideal" && (
-                  <div
-                    className="absolute bottom-0 left-0 right-0 h-0.5"
-                    style={{ backgroundColor: accentColor ?? "hsl(var(--primary))" }}
-                  />
-                )}
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Tab Content */}
+        {/* 본문 — 탭 제거, 하나의 스토리 스크롤 (색 → 소개 → 이야기+사진 → 보증 → 한눈에 → 이런 인연) */}
         <div className="p-6 space-y-6">
-          {(activeTab === "about" || detailsHidden) ? (
+          {(
             <>
-              {/* 기본정보 — CategoryCard 3종 */}
-              <div className="space-y-3">
-                {PROFILE_GROUPS.map((group) => (
-                  <CategoryCard
-                    key={group.key}
-                    group={group}
-                    values={toProfileValues(profile)}
-                    mode="view"
-                  />
-                ))}
-              </div>
-
               {detailsHidden ? (
-                <div className="rounded-2xl bg-muted/60 border border-border p-4 text-center">
-                  <p className="text-sm font-medium text-foreground">핵심 정보만 공개된 프로필이에요</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">이 분은 지인에게 소개글·성향·이상형을 비공개했어요</p>
-                </div>
+                <>
+                  {/* 비공개 프로필 — 팩트만 노출 */}
+                  <div className="space-y-3">
+                    {PROFILE_GROUPS.map((group) => (
+                      <CategoryCard key={group.key} group={group} values={toProfileValues(profile)} mode="view" />
+                    ))}
+                  </div>
+                  <div className="rounded-2xl bg-muted/60 border border-border p-4 text-center">
+                    <p className="text-sm font-medium text-foreground">핵심 정보만 공개된 프로필이에요</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">이 분은 지인에게 소개글·성향·이상형을 비공개했어요</p>
+                  </div>
+                </>
               ) : (
                 <>
               {/* C-3 — 이 사람의 색 (백엔드 이미 내려주지만 ProfileDetail 에 미노출이었음) */}
@@ -950,55 +874,39 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                 </Section>
               )}
 
-              {/* Introduction */}
-              <Section title="인터뷰 답변">
-                {profile?.introduction.interviewAnswers ? (
-                  <div
-                    className="bg-card rounded-lg p-4"
-                    style={accentColor
-                      ? { border: `1px solid ${accentColor}40` }
-                      : { border: "1px solid hsl(var(--border))" }
-                    }
-                  >
-                    <div className="space-y-4">
-                      {profile.introduction.interviewAnswers.hobby && (
-                        <InterviewAnswer
-                          question="쉬는 날엔 주로 이렇게 시간을 보내요"
-                          answer={profile.introduction.interviewAnswers.hobby}
-                        />
-                      )}
-                      {profile.introduction.interviewAnswers.charm && (
-                        <InterviewAnswer
-                          question="제 매력 포인트는 바로 이거!"
-                          answer={profile.introduction.interviewAnswers.charm}
-                        />
-                      )}
-                      {profile.introduction.interviewAnswers.passion && (
-                        <InterviewAnswer
-                          question="요즘 제가 푹 빠져있는 것"
-                          answer={profile.introduction.interviewAnswers.passion}
-                        />
-                      )}
-                      {profile.introduction.interviewAnswers.happiness && (
-                        <InterviewAnswer
-                          question="저는 이럴 때 행복해요"
-                          answer={profile.introduction.interviewAnswers.happiness}
-                        />
-                      )}
-                      {profile.introduction.interviewAnswers.motto && (
-                        <InterviewAnswer
-                          question="제 인생의 좌우명은"
-                          answer={profile.introduction.interviewAnswers.motto}
-                        />
-                      )}
-                    </div>
+              {/* 이야기 — 인터뷰 답변을 비트로, 사이사이 추가 사진을 끼워 하나의 서사로 읽히게 (스펙 나열이 아니라 '읽는 재미') */}
+              {profile?.introduction.interviewAnswers && (() => {
+                const ia = profile.introduction.interviewAnswers!;
+                const beats = ([
+                  { q: "쉬는 날엔 이렇게 보내요", a: ia.hobby },
+                  { q: "제 매력 포인트는요", a: ia.charm },
+                  { q: "요즘 푹 빠져있는 건", a: ia.passion },
+                  { q: "저는 이럴 때 행복해요", a: ia.happiness },
+                  { q: "제 인생의 좌우명", a: ia.motto },
+                ] as const).filter((b) => b.a && b.a.trim());
+                const extra = sortedPhotos.slice(1); // 대표사진(index 0)은 히어로에 사용
+                if (beats.length === 0) return null;
+                return (
+                  <div className="-mx-6">
+                    <h3 className="px-6 mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-widest">이야기</h3>
+                    {beats.map((b, i) => (
+                      <div key={i}>
+                        <div className="px-6 py-5">
+                          <p className="text-xs text-muted-foreground mb-1.5">Q. {b.q}</p>
+                          <p className="text-[15px] leading-relaxed text-foreground whitespace-pre-line">{b.a}</p>
+                        </div>
+                        {extra[i] && (
+                          <img src={extra[i].url} alt="" className="w-full aspect-[4/5] max-h-[460px] object-cover" />
+                        )}
+                      </div>
+                    ))}
+                    {/* 비트보다 사진이 많으면 남은 사진을 이어서 */}
+                    {extra.slice(beats.length).map((p) => (
+                      <img key={p.id} src={p.url} alt="" className="w-full aspect-[4/5] max-h-[460px] object-cover" />
+                    ))}
                   </div>
-                ) : (
-                  <div className="bg-card rounded-lg border border-border p-4">
-                    <p className="text-sm text-muted-foreground text-center py-8">자기소개를 작성해주세요</p>
-                  </div>
-                )}
-              </Section>
+                );
+              })()}
 
               {/* Personality Tests */}
               {profile.personalityTests && profile.personalityTests.length > 0 && (
@@ -1021,10 +929,33 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                   </div>
                 </Section>
               )}
+
+              {/* 친구 보증 — 지인망 신뢰의 핵심. 서사 말미에 인용 카드로 (남의 프로필에도 이제 노출). */}
+              {vouchCount > 0 && (
+                <div className="rounded-xl p-4" style={{ backgroundColor: accentColor ? `${accentColor}12` : "hsl(var(--muted))" }}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Users className="w-4 h-4 flex-shrink-0" style={{ color: accentColor ?? undefined }} />
+                    <span className="text-xs font-semibold text-foreground">친구 {vouchCount}명이 신뢰를 보증했어요</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">가깝게 지내는 지인들이 이 분을 자신 있게 소개했어요.</p>
+                </div>
+              )}
+
+              {/* 한눈에 보기 — 팩트는 서사 뒤로. 스펙이 사람을 앞서지 않게. */}
+              <Section title="한눈에 보기">
+                <div className="space-y-3">
+                  {PROFILE_GROUPS.map((group) => (
+                    <CategoryCard key={group.key} group={group} values={toProfileValues(profile)} mode="view" />
+                  ))}
+                </div>
+              </Section>
                 </>
               )}
             </>
-          ) : (
+          )}
+
+          {/* 이런 인연을 찾아요 — 이상형 탭을 스크롤 하단으로 흡수 (탭 제거) */}
+          {!detailsHidden && (
             <>
               {/* Appearance Styles */}
               <Section title="외모 스타일">
