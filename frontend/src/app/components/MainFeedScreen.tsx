@@ -537,7 +537,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
                         }}
                       />
                     ) : (
-                      <EmptyState title="팔레트 Pick을 준비 중이에요" description="프로필을 완성하면 더 정밀하게 추천해드려요" />
+                      <PalettePickEmptyGuide onNavigateToFriends={onNavigateToFriends} />
                     )
                   ) : feedItems.length === 0 ? (
                     hasActiveFilters ? (
@@ -1212,7 +1212,7 @@ function FirstTimeGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => v
       )}
 
       <p className="text-xs text-muted-foreground/60 text-center pt-1">
-        베타 기간 동안은 친구 없이도 시드 유저 12명을 둘러볼 수 있어요
+        지인이 없어도 가까운 지역의 공개 프로필을 둘러볼 수 있어요
       </p>
     </div>
   );
@@ -1252,6 +1252,42 @@ function EmptyNetworkGuide({ friendCount, onNavigateToFriends }: { friendCount: 
 
       <p className="text-[11px] text-muted-foreground/60 mt-3 max-w-[240px]">
         초대된 지인이 가입하면 양쪽에 열람권 1장 보너스
+      </p>
+    </div>
+  );
+}
+
+/**
+ * 팔레트 Pick 추천이 아직 비어있을 때 (콜드스타트 — 주변 사용자·지인망이 얇음).
+ * 밋밋한 "준비 중" 대신 무엇을 하면 채워지는지 따뜻하게 안내.
+ */
+function PalettePickEmptyGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+      <div className="w-20 h-20 rounded-full bg-brand-soft flex items-center justify-center mb-6">
+        <Sparkles className="w-9 h-9 text-brand-strong" />
+      </div>
+      <h3 className="text-base font-bold mb-1.5">팔레트 Pick이 곧 도착해요</h3>
+      <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px] mb-3">
+        색 궁합으로 매일 어울리는 인연을 골라드려요.<br />
+        지금은 주변에서 잘 맞는 분을 찾는 중이에요.
+      </p>
+      <p className="text-xs text-muted-foreground/80 max-w-[270px] mb-7 leading-relaxed">
+        프로필(나의 색·이상형)을 채울수록, 가까운 지역에 사용자가 늘수록 추천이 더 정밀해져요.
+      </p>
+
+      {onNavigateToFriends && (
+        <button
+          onClick={onNavigateToFriends}
+          className="flex items-center gap-2 bg-foreground text-background font-semibold px-5 py-2.5 rounded-2xl shadow-md active:scale-95 transition-transform"
+        >
+          <Users className="w-4 h-4" />
+          지인 초대하고 풀 넓히기
+        </button>
+      )}
+
+      <p className="text-[11px] text-muted-foreground/60 mt-3 max-w-[250px]">
+        지인이 없어도 가까운 지역의 공개 프로필이 추천에 포함돼요
       </p>
     </div>
   );
