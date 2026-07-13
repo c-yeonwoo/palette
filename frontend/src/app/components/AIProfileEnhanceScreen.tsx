@@ -253,6 +253,11 @@ export function AIProfileEnhanceScreen({
         },
         // 인터뷰가 스토리 5문항으로 축소되며 빠졌던 관심사 신호 복원 — 색·소개글 정확도 보강.
         interests: lblList("interest", profileData.introduction.interests),
+        // 거주 생활권 — 소개글 일상 섹션의 동네 감각 소재 (드롭다운 값이라 안전).
+        ...((() => {
+          const r = [profileData.locationInfo?.region, profileData.locationInfo?.district].filter(Boolean).join(" ").trim();
+          return r ? { residence: r } : {};
+        })()),
         ...(bi?.mbti ? { mbti: bi.mbti } : {}),
         ...(birthDate ? { birthDate } : {}),
         ...(genVariant ? { variant: genVariant } : {}),
