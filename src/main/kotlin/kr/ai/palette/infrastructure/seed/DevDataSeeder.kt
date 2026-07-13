@@ -18,30 +18,29 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 /**
- * 베타/개발 환경용 목 데이터 시더.
+ * 운영자 계정 보장 + (선택) 베타/개발용 목 데이터 시더.
  *
- * 활성 조건:
- *  - SPRING_PROFILES_ACTIVE = dev | prod (베타 단계엔 prod 도 포함)
- *  - `app.seed-enabled=true` 설정 시 (default: true)
+ * **2단 분리** — 운영 필수(admin)와 데모 편의(mock)를 게이트로 나눔:
+ *  1. 운영자 계정: `app.seed-enabled` 값과 무관하게 **항상 보장**.
+ *     (prod 에 admin 이 빠지면 어드민 콘솔 진입 불가 → 운영 마비)
+ *  2. 모의 데이터(테스트 계정·피드용 유저·주선 요청): `app.seed-enabled=true` 일 때만.
  *
- * 멱등성:
+ * `app.seed-enabled` 기본값:
+ *  - dev / default / test: `true`  (풍부한 데모 환경)
+ *  - prod: `false`  (application-prod.properties — 깨끗한 실서비스. 데모 필요 시 `APP_SEED_ENABLED=true`)
+ *
+ * 모의 데이터 멱등성:
  *  - 고정 UUID (00000000-0000-0000-0000-000000000001) 의 테스트 계정 존재 시 skip
  *  - 실 유저 가입 후에도 안전하게 한 번만 실행됨
+ *  - 실 신규 가입자에겐 SeedUserPolicy 가 시드 유저를 격리 (후보 풀·피드에서 제외)
  *
- * 생성 데이터:
+ * 생성 데이터(모의):
  *  - 로그인 테스트 계정 1명 (dev@palette.kr / devpass123)
  *  - 일반 유저 12명 (남6/여6) — 피드용
  *  - 주선자 유저 5명 (marketplace mock과 동일)
  *  - 주선 요청 3건 (pending/approved/completed)
- *
- * 정식 출시 후엔 application-prod.properties 에서 `app.seed-enabled=false` 로 비활성.
  */
 @Component
-@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(
-    name = ["app.seed-enabled"],
-    havingValue = "true",
-    matchIfMissing = true,
-)
 class DevDataSeeder(
     private val userRepo: UserJpaRepository,
     private val profileRepo: ProfileJpaRepository,
@@ -53,14 +52,23 @@ class DevDataSeeder(
     // (하드코딩 'adminpass123' 이 prod 에 남으면 어드민 패널 전체 탈취 가능)
     @org.springframework.beans.factory.annotation.Value("\${app.admin-seed-password:adminpass123}")
     private val adminSeedPassword: String,
+    // 모의 데이터 시드 여부 (운영자 계정은 이 값과 무관하게 항상 보장). prod 기본 false.
+    @org.springframework.beans.factory.annotation.Value("\${app.seed-enabled:true}")
+    private val seedEnabled: Boolean,
 ) : ApplicationRunner {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
     @Transactional
     override fun run(args: ApplicationArguments) {
-        // 운영자 계정은 항상 보장 — 테스트 계정 존재 여부와 무관 (prod 에 admin 빠지면 운영 자체 마비)
+        // 운영자 계정은 항상 보장 — seed-enabled / 테스트 계정 존재 여부와 무관 (prod 에 admin 빠지면 운영 자체 마비)
         seedAdminAccount(Instant.now())
+
+        // 모의 데이터는 게이트 — prod 기본 off. admin 은 위에서 이미 보장됨.
+        if (!seedEnabled) {
+            log.info("[Seeder] app.seed-enabled=false — 모의 데이터 시드 skip (운영자 계정만 보장)")
+            return
+        }
 
         // 모의 데이터 시드는 멱등성 — 테스트 계정 (고정 UUID) 이 이미 있으면 skip
         // 실 유저들이 가입한 상태에서도 안전하게 한 번만 실행됨
