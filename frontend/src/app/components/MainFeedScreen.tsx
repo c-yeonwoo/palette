@@ -841,11 +841,18 @@ function AiSignalSection({
   return (
     <div className="mb-2">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm text-muted-foreground">
-          {isSubscriber ? "오늘 당신과 가장 잘 맞는 색을 골랐어요" : "프로필 궁합도를 기반으로 추천해드려요"}
-        </p>
+        <div className="flex items-center gap-2 min-w-0">
+          {/* 로고 에코 — 두 색의 조화(골드+로즈) 미니 마크. 조화 보조색 적용 지점 (ADR 0073 §2-1c) */}
+          <span className="relative inline-block w-6 h-4 flex-shrink-0" aria-hidden="true">
+            <span className="absolute left-0 top-0 w-4 h-4 rounded-full bg-brand opacity-80" />
+            <span className="absolute right-0 top-0 w-4 h-4 rounded-full bg-brand-2 opacity-80" />
+          </span>
+          <p className="text-sm text-muted-foreground truncate">
+            {isSubscriber ? "오늘 당신과 가장 잘 맞는 색을 골랐어요" : "프로필 궁합도를 기반으로 추천해드려요"}
+          </p>
+        </div>
         {isSubscriber && (
-          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand-strong">PASS</span>
+          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand-strong flex-shrink-0">PASS</span>
         )}
       </div>
 
