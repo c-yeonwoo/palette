@@ -21,6 +21,7 @@ import java.time.Duration
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import java.util.*
 
@@ -63,6 +64,7 @@ class MatchmakingController(
     }
 
     @PostMapping("/request")
+    @Transactional  // 이벤트 발행을 tx 안에서 → AFTER_COMMIT 알림 리스너 발화(주선자 새 요청 알림). 없으면 알림 유실.
     fun createMatchmakingRequest(
         @AuthenticationPrincipal authUser: AuthUser,
         @RequestBody request: CreateMatchmakingRequestDto
@@ -150,6 +152,7 @@ class MatchmakingController(
      * 주선자 단계를 자동 승인 처리하고 대상자 응답 대기 상태로 생성한다.
      */
     @PostMapping("/direct")
+    @Transactional  // 이벤트 발행을 tx 안에서 → AFTER_COMMIT 알림 리스너 발화(대상자 "소개 요청 도착"). 없으면 팔레트픽 요청이 대상에게 무음.
     fun createDirectRequest(
         @AuthenticationPrincipal authUser: AuthUser,
         @RequestBody request: CreateDirectRequestDto
