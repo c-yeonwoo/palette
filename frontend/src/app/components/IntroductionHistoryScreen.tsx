@@ -489,14 +489,19 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
                       {/* Stage bar */}
                       <div>
                         <div className="flex items-start gap-1">
-                          {STAGE_STEPS.map((step, idx) => (
-                            <div key={step.key} className="flex-1 text-center">
-                              <div className={`h-1.5 rounded-full mb-1 transition-all ${idx <= currentStageIdx ? "bg-primary" : "bg-muted"}`} />
-                              <span className={`text-[10px] leading-tight ${idx === currentStageIdx ? "text-primary font-semibold" : "text-muted-foreground"}`}>
-                                {step.label}
-                              </span>
-                            </div>
-                          ))}
+                          {STAGE_STEPS.map((step, idx) => {
+                            const isCurrent = idx === currentStageIdx;
+                            const isPast = idx < currentStageIdx;
+                            return (
+                              <div key={step.key} className="flex-1 text-center">
+                                {/* 현재 지점은 연두색으로 강조 · 지나온 단계는 charcoal · 남은 단계는 muted */}
+                                <div className={`h-1.5 rounded-full mb-1 transition-all ${isCurrent ? "bg-[hsl(var(--ct-green-500))]" : isPast ? "bg-primary" : "bg-muted"}`} />
+                                <span className={`text-[10px] leading-tight ${isCurrent ? "text-[hsl(var(--ct-green-700))] font-semibold" : "text-muted-foreground"}`}>
+                                  {step.label}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
 
@@ -682,15 +687,16 @@ function RequestTimeline({ request }: { request: MatchRequestWithRole }) {
     return [{ label: "처리 중", state: "active" }];
   })();
 
+  // 현재 지점(active)은 연두색으로 강조 — 진행 중 단계를 한눈에.
   const dotColor: Record<Step["state"], string> = {
     done: "bg-primary",
-    active: "bg-primary ring-4 ring-primary/20",
+    active: "bg-[hsl(var(--ct-green-500))] ring-4 ring-[hsl(var(--ct-green-500)/0.2)]",
     failed: "bg-muted-foreground/30",
     waiting: "bg-muted",
   };
   const labelColor: Record<Step["state"], string> = {
     done: "text-foreground",
-    active: "text-primary font-semibold",
+    active: "text-[hsl(var(--ct-green-700))] font-semibold",
     failed: "text-muted-foreground",
     waiting: "text-muted-foreground/50",
   };

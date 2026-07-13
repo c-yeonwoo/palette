@@ -1217,7 +1217,10 @@ export default function App() {
       )}
 
       {currentScreen === "league" && (
-        <LeagueScreen onNavigateToMatchmaker={() => setCurrentScreen("connectorDashboard")} />
+        <LeagueScreen
+          onNavigateToMatchmaker={() => setCurrentScreen("connectorDashboard")}
+          onBack={() => setCurrentScreen("connectorDashboard")}
+        />
       )}
 
       {currentScreen === "aiHub" && (

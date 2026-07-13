@@ -120,12 +120,12 @@
   --gold-strong:      37 60% 30%;     /* #7A5A1E — gold-soft 위 텍스트 */
 
   /* ── Brand (시스템 메인 액센트 — 무르익은 코랄/테라코타. ADR 0073 브랜드 v2.
-        정체성: '차분한 신뢰 + 따뜻한 온기'. 살몬빛(young) → 테라코타빛(어른).
-        같은 hue(15) 유지, 채도 72→54·명도 60→49 로 한 톤 깊게. 라이트값(다크는 .dark override) ── */
-  --brand:            15 54% 49%;     /* #C25D3A — 흰 배경 대비 AA (포인트/active) */
-  --brand-foreground: 20 14% 12%;     /* coral solid 위 charcoal (대비 5+) */
-  --brand-soft:       15 50% 93%;     /* 연한 코랄 채움 (버튼/칩) */
-  --brand-strong:     15 58% 34%;     /* coral-soft 위 텍스트 (대비 5+) */
+        정체성: '따뜻한 온기 + 상큼한 생기'. 밝고 상큼한 골드(hue 40).
+        칙칙한 테라코타(hue 15) → 화사한 gold 로 전환. 라이트값(다크는 .dark override) ── */
+  --brand:            40 96% 52%;     /* #FAA80A — 밝은 골드 (포인트/active·아이콘·틴트) */
+  --brand-foreground: 32 45% 12%;     /* gold solid 위 딥 브라운 (대비 7+) */
+  --brand-soft:       44 92% 93%;     /* 화사한 골드 틴트 채움 (버튼/칩) */
+  --brand-strong:     34 90% 36%;     /* soft/흰 배경 위 텍스트 gold (대비 5+ AA) */
 
   /* ── User Accent (장식 전용, P3 AccentScope가 런타임 교체) ──
      기본값: 브랜드 오렌지와 동일
@@ -247,10 +247,10 @@
   --sidebar-ring:      #F0EDE8;
 
   /* semantic overrides for dark */
-  /* Brand (ADR 0073) — 어두운 배경 가독성 위해 라이트보다 밝은 코랄 */
-  --brand:             15 66% 64%;    /* #E08A63 — 다크 배경 대비 OK */
-  --brand-soft:        14 26% 18%;    /* 어두운 코랄 틴트 채움 */
-  --brand-strong:      15 62% 74%;    /* dark brand-soft 위 텍스트 (밝게) */
+  /* Brand (ADR 0073) — 어두운 배경 가독성 위해 라이트보다 밝은 골드 */
+  --brand:             42 92% 62%;    /* 밝은 골드 — 다크 배경 대비 OK */
+  --brand-soft:        36 42% 17%;    /* 어두운 골드 틴트 채움 */
+  --brand-strong:      44 92% 70%;    /* dark brand-soft 위 텍스트 (밝게) */
   --surface:           16 5% 12%;
   --surface-elevated:  20 5% 14%;
   --surface-sunken:    20 6% 10%;
