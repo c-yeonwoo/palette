@@ -112,19 +112,25 @@ class MatchmakingService(
         validateContactInfo(request.requesterId)
         validateContactInfo(request.targetUserId)
 
-        updateMatchmakerStats(request.matchmakerId) { it.recordMatchSuccess() }
+        // 팔레트 Pick 직접 연결(createDirect)은 실제 주선자가 없어 matchmakerId=requesterId(placeholder).
+        // 이 경우 주선자 보상(등급·크레딧)을 지급하면 요청자가 자기 매칭으로 '주선자' 보상을 챙기는 자가-크레딧/랭킹 오염 +
+        // direct 요청 남발 파밍 인센티브가 된다 → 실제 주선자가 있을 때만 보상.
+        val hasRealMatchmaker = request.matchmakerId != request.requesterId
+        if (hasRealMatchmaker) {
+            updateMatchmakerStats(request.matchmakerId) { it.recordMatchSuccess() }
 
-        // 주선자 폐쇄형 크레딧 (CS-009, ADR 0072 §2-5) — 성사 시 주선자에게 물감 보너스.
-        // 현금 아님(출금 불가·내부 재사용만) → 컴플라이언스 회피 + 공급 동기. 명예(등급·리그)가 1차, 크레딧은 보조.
-        // 액수는 소소하게(어뷰징=가짜 매칭 파밍 인센티브 최소화; 매칭은 2단계 승인+연락처 검증으로 이미 게이팅).
-        runCatching {
-            billingService.grantBonus(
-                userId = request.matchmakerId.value.toString(),
-                points = MATCH_SUCCESS_CREDIT_POINTS,
-                validDays = MATCH_SUCCESS_CREDIT_VALID_DAYS,
-                reason = "match_success:${requestId.value}",
-            )
-        }.onFailure { log.warn("주선자 크레딧 지급 실패 — matchmaker={} req={} err={}", request.matchmakerId.value, requestId.value, it.message) }
+            // 주선자 폐쇄형 크레딧 (CS-009, ADR 0072 §2-5) — 성사 시 주선자에게 물감 보너스.
+            // 현금 아님(출금 불가·내부 재사용만) → 컴플라이언스 회피 + 공급 동기. 명예(등급·리그)가 1차, 크레딧은 보조.
+            // 액수는 소소하게(어뷰징=가짜 매칭 파밍 인센티브 최소화; 매칭은 2단계 승인+연락처 검증으로 이미 게이팅).
+            runCatching {
+                billingService.grantBonus(
+                    userId = request.matchmakerId.value.toString(),
+                    points = MATCH_SUCCESS_CREDIT_POINTS,
+                    validDays = MATCH_SUCCESS_CREDIT_VALID_DAYS,
+                    reason = "match_success:${requestId.value}",
+                )
+            }.onFailure { log.warn("주선자 크레딧 지급 실패 — matchmaker={} req={} err={}", request.matchmakerId.value, requestId.value, it.message) }
+        }
 
         // 매칭 성사 이벤트: 요청자 + 주선자에게 알림
         val targetName = userRepository.findById(targetUserId)?.publicInfo?.nickname ?: "상대방"

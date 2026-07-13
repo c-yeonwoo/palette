@@ -93,14 +93,17 @@ class NotificationEventListener(
             body = "${event.partnerName}님과의 소개가 성사되었습니다! 연락처를 확인해보세요.",
             metadata = mapOf("requestId" to event.requestId)
         )
-        // 주선자에게
-        notificationService.create(
-            userId = event.matchmakerId,
-            type = NotificationType.MATCH_COMPLETED,
-            title = "주선 성공! +1,500P 🎊",
-            body = "${event.partnerName}님과의 주선이 성사되었습니다. 포인트가 지급되었어요.",
-            metadata = mapOf("requestId" to event.requestId)
-        )
+        // 주선자에게 — 단, 팔레트 Pick 직접 연결(matchmakerId==requesterId, 실제 주선자 없음)이면 스킵(요청자에게 중복 알림 방지).
+        if (event.matchmakerId != event.requesterId) {
+            notificationService.create(
+                userId = event.matchmakerId,
+                type = NotificationType.MATCH_COMPLETED,
+                // 무현금 모델(ADR 0064/0072): 현금 지급 아님 → "1,500P" 표기 폐기. 명예(등급·리그) + 폐쇄형 물감 크레딧.
+                title = "주선 성공! 🎊",
+                body = "${event.partnerName}님과의 주선이 성사됐어요. 등급이 오르고 크레딧(물감)이 적립됐습니다.",
+                metadata = mapOf("requestId" to event.requestId)
+            )
+        }
     }
 
     // ── 피주선자 거절 ──────────────────────────────────────────────────
