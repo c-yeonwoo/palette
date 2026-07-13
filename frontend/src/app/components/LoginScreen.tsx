@@ -102,20 +102,11 @@ export function LoginScreen({ onEmailLogin, onLoginSuccess }: LoginScreenProps) 
       <div className="relative z-10 flex flex-col items-center gap-8 px-6 max-w-md w-full">
         {/* 필기체 P 마크 + Wordmark + slogan — 프리미엄 brand (Snell Roundhand vectorized) */}
         <div className="text-center flex flex-col items-center gap-6">
-          {/* Palette 심볼 — 흰 카드 + 컬러 하트 (앱아이콘과 동일) */}
+          {/* Palette 심볼 — 흰 카드 + 두 색의 조화 (앱아이콘과 동일, ADR 0073 브랜드 골드+로즈) */}
           <svg width="92" height="92" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Palette">
-            <defs>
-              <linearGradient id="palette-heart-login" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor="#FF7E5F" />
-                <stop offset="0.4" stopColor="#FFB088" />
-                <stop offset="0.72" stopColor="#FFD166" />
-                <stop offset="1" stopColor="#5EEAD4" />
-              </linearGradient>
-            </defs>
             <rect width="100" height="100" rx="24" fill="#FFFFFF" />
-            <g transform="translate(50 50) scale(0.62) translate(-50 -54)">
-              <path d="M50 80 C16 56 20 28 40 28 C49 28 50 37 50 39 C50 37 51 28 60 28 C80 28 84 56 50 80 Z" fill="url(#palette-heart-login)" />
-            </g>
+            <circle cx="40" cy="52" r="24" fill="#FAA80A" opacity="0.82" />
+            <circle cx="60" cy="52" r="24" fill="#F2789F" opacity="0.82" />
           </svg>
           <div className="space-y-3">
             <h1
