@@ -252,9 +252,7 @@ class ProfileMapper(
     }
 
     private fun serializePersonalityTests(tests: List<PersonalityTestResult>): String? {
-        println(">>> serializePersonalityTests: input tests = ${tests}, size = ${tests.size}")
         if (tests.isEmpty()) {
-            println(">>> serializePersonalityTests: tests is empty, returning null")
             return null
         }
         return try {
