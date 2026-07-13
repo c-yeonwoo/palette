@@ -8,8 +8,8 @@ import { UserSearchInput } from "./UserSearchInput";
  * 좌측: 충전 폼 (사용자 ID + 물감 수 + BONUS/PAID + 사유)
  * 우측: 이력 테이블 (페이지네이션 + recipient 필터)
  *
- * BONUS — bonusPoints 적립 (만료 가능, 출금 X). CS 응대·이벤트.
- * PAID  — paidPoints 적립 (만료 X, 출금 가능). 결제 보정·환불.
+ * BONUS — bonusPoints 적립 (만료 가능). CS 응대·이벤트.
+ * PAID  — paidPoints 적립 (만료 없음). 결제 보정·환불. (무현금 모델 ADR 0064 — 현금 출금은 정책상 비활성)
  */
 interface Grant {
   id: string;
@@ -197,14 +197,14 @@ export function AdminBillingScreen({ onBack }: Props) {
                     }`}
                     disabled={submitting}
                   >
-                    {t === "BONUS" ? "BONUS (보너스·출금X)" : "PAID (유료·출금 가능)"}
+                    {t === "BONUS" ? "BONUS (보너스·만료O)" : "PAID (유료·만료X)"}
                   </button>
                 ))}
               </div>
               <p className="text-[11px] text-muted-foreground mt-1">
                 {grantType === "BONUS"
-                  ? "이벤트·CS 보상 등. 만료 가능, 출금 불가."
-                  : "결제 보정·환불 등. 만료 없음, 출금 가능."}
+                  ? "이벤트·CS 보상 등. 만료 가능."
+                  : "결제 보정·환불 등. 만료 없음. (현금 출금은 무현금 모델 ADR 0064 로 비활성)"}
               </p>
             </Field>
 

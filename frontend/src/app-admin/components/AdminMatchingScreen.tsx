@@ -11,7 +11,7 @@ interface Props {
 /**
  * 매칭 관리 — 2-tab 구조.
  * - ai: AI 시그널 추천 이력 + 운영자 override (REPLACE/BLOCK)
- * - pool: 주선자 매칭 풀 (PR #9 예정, 현재는 placeholder)
+ * - pool: 주선자 매칭 풀 (AdminMatchingPoolScreen — 검색·필터·상세·상태 override 실동작)
  */
 export function AdminMatchingScreen({ onBack }: Props) {
   const [tab, setTab] = useState<Tab>("ai");

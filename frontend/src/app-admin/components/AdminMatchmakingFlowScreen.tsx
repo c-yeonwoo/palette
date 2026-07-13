@@ -51,14 +51,16 @@ interface Props {
   onBack: () => void;
 }
 
+// value = 실제 MatchmakingRequestStatus enum 명과 정확히 일치해야 함 (백엔드가 문자열 exact match).
+// 과거 스테일 값(PENDING_MATCHMAKER/PENDING_TARGET/MATCHED/EXPIRED)은 enum에 없어 필터가 빈 결과만 반환하던 버그였음.
 const STATUS_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "", label: "전체 상태" },
-  { value: "PENDING_MATCHMAKER", label: "주선자 대기" },
-  { value: "PENDING_TARGET", label: "수신자 대기" },
-  { value: "MATCHED", label: "성사" },
+  { value: "PENDING", label: "주선자 대기" },
+  { value: "MATCHMAKER_APPROVED", label: "수신자 대기" },
+  { value: "COMPLETED", label: "성사" },
   { value: "REJECTED_BY_MATCHMAKER", label: "주선자 거절" },
   { value: "REJECTED_BY_TARGET", label: "수신자 거절" },
-  { value: "EXPIRED", label: "만료" },
+  { value: "CANCELLED_BY_ADMIN", label: "운영자 취소" },
 ];
 
 export function AdminMatchmakingFlowScreen({ onBack }: Props) {

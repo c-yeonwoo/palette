@@ -39,8 +39,8 @@ interface MatchmakingDetail {
   matchmaker: UserBrief;
   target: UserBrief;
   requesterMessage: string | null;
-  matchmaker_decision: DecisionView | null;
-  target_decision: DecisionView | null;
+  matchmakerDecision: DecisionView | null;
+  targetDecision: DecisionView | null;
   adminNote: string | null;
   adminLastUpdatedAt: string | null;
   adminLastUpdatedBy: string | null;
@@ -342,14 +342,14 @@ function MatchmakingDetailModal({
               {detail.requesterMessage && (
                 <DetailBox title="요청자 메시지">{detail.requesterMessage}</DetailBox>
               )}
-              {detail.matchmaker_decision && (
-                <DetailBox title={`주선자 ${detail.matchmaker_decision.positive ? "승인" : "거절"} · ${detail.matchmaker_decision.decidedAt.slice(0, 19).replace("T", " ")}`}>
-                  {detail.matchmaker_decision.message ?? "—"}
+              {detail.matchmakerDecision && (
+                <DetailBox title={`주선자 ${detail.matchmakerDecision.positive ? "승인" : "거절"} · ${detail.matchmakerDecision.decidedAt.slice(0, 19).replace("T", " ")}`}>
+                  {detail.matchmakerDecision.message ?? "—"}
                 </DetailBox>
               )}
-              {detail.target_decision && (
-                <DetailBox title={`대상자 ${detail.target_decision.positive ? "수락" : "거절"} · ${detail.target_decision.decidedAt.slice(0, 19).replace("T", " ")}`}>
-                  {detail.target_decision.message ?? "—"}
+              {detail.targetDecision && (
+                <DetailBox title={`대상자 ${detail.targetDecision.positive ? "수락" : "거절"} · ${detail.targetDecision.decidedAt.slice(0, 19).replace("T", " ")}`}>
+                  {detail.targetDecision.message ?? "—"}
                 </DetailBox>
               )}
 

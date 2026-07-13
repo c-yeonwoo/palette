@@ -174,8 +174,8 @@ data class AdminMatchmakingDetail(
     val matchmaker: UserBrief,
     val target: UserBrief,
     val requesterMessage: String?,
-    val matchmaker_decision: DecisionView?,
-    val target_decision: DecisionView?,
+    val matchmakerDecision: DecisionView?,
+    val targetDecision: DecisionView?,
     val adminNote: String?,
     val adminLastUpdatedAt: String?,
     val adminLastUpdatedBy: String?,
@@ -190,10 +190,10 @@ data class AdminMatchmakingDetail(
             matchmaker = brief(r.matchmakerId, users),
             target = brief(r.targetUserId, users),
             requesterMessage = r.requesterMessage,
-            matchmaker_decision = r.matchmakerDecision?.let {
+            matchmakerDecision = r.matchmakerDecision?.let {
                 DecisionView(it.decidedAt.toString(), it.message, it.approved)
             },
-            target_decision = r.targetUserDecision?.let {
+            targetDecision = r.targetUserDecision?.let {
                 DecisionView(it.decidedAt.toString(), it.message, it.accepted)
             },
             adminNote = r.adminNote,
