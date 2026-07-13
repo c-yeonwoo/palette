@@ -409,12 +409,18 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
 
                       {/* 연락처 공유 카드 (ADR 0065) — 성사 후 실제 연락 시작 전 단계에서 노출 */}
                       {(rel.stage === "MATCHED" || rel.stage === "CONTACTS_EXCHANGED") && (rel.partnerKakaoId || rel.partnerPhone) && (
-                        <div className="rounded-xl border border-primary/30 bg-brand-soft/20 p-3.5 space-y-2.5">
-                          <div className="flex items-center gap-1.5">
-                            <Heart className="w-3.5 h-3.5 text-primary" />
-                            <p className="text-xs font-semibold text-foreground">
-                              {rel.partnerName ? `${rel.partnerName}님의 연락처` : "상대방 연락처"}
+                        // 조화의 정점 — 두 색(골드+로즈)이 이어진 순간. 조화 보조색 적용 (ADR 0073 §2-1c)
+                        <div className="rounded-xl border border-[hsl(var(--brand-2)/0.3)] bg-[linear-gradient(135deg,hsl(var(--brand)/0.12),hsl(var(--brand-2)/0.14))] p-3.5 space-y-2.5">
+                          <div className="space-y-1">
+                            <p className="text-xs font-extrabold bg-[linear-gradient(90deg,hsl(var(--brand-strong)),hsl(var(--brand-2-strong)))] bg-clip-text text-transparent">
+                              두 색이 이어졌어요 🎉
                             </p>
+                            <div className="flex items-center gap-1.5">
+                              <Heart className="w-3.5 h-3.5 text-brand-2-strong" />
+                              <p className="text-xs font-semibold text-foreground">
+                                {rel.partnerName ? `${rel.partnerName}님의 연락처` : "상대방 연락처"}
+                              </p>
+                            </div>
                           </div>
                           {rel.partnerKakaoId && (
                             <div className="flex items-center justify-between gap-2 rounded-lg bg-card px-3 py-2">
