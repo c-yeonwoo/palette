@@ -50,6 +50,15 @@ class DailyRecommendationEntity(
     @Enumerated(EnumType.STRING)
     var source: RecommendationSourceEntity = RecommendationSourceEntity.AUTO,
 
+    /**
+     * 후보 티어 출처 (CS-010, ADR 0072) — 지인망(ACQUAINTANCE) vs 공개 발견 풀(PUBLIC).
+     * `source`(AUTO/ADMIN_*)와 다른 축: 이건 "어느 풀에서 왔나", source 는 "누가 결정했나".
+     * nullable — 컬럼 도입 이전 row 는 null(UNTAGGED 로 집계).
+     */
+    @Column(name = "candidate_source", length = 16)
+    @Enumerated(EnumType.STRING)
+    var candidateSource: CandidateSourceEntity? = null,
+
     @Column(name = "created_at", nullable = false)
     var createdAt: Instant = Instant.now(),
 
@@ -88,4 +97,13 @@ enum class RecommendationSourceEntity {
 
     /** 운영자가 자동 결과를 교체 (PR #9) */
     ADMIN_REPLACE,
+}
+
+/** 후보 티어 출처 (CS-010, ADR 0072) — 도메인 CandidateSource 의 영속 미러. */
+enum class CandidateSourceEntity {
+    /** 지인 네트워크(2·3촌) */
+    ACQUAINTANCE,
+
+    /** 콜드스타트 공개 발견 풀(수도권 거리순) */
+    PUBLIC,
 }

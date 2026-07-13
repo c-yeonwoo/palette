@@ -537,3 +537,9 @@ FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanc
 INSERT INTO field_options (id, set_key, code, label, display_order, gender, active, created_at, updated_at)
 SELECT UNHEX(REPLACE(UUID(),'-','')), 'appearanceStyle', 'MOTHER_IN_LAW_APPROVED', '상견례 프리패스상', 17, 'MALE', b'1', NOW(6), NOW(6)
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanceStyle' AND code='MOTHER_IN_LAW_APPROVED' AND gender='MALE');
+
+-- ── 28. 팔레트픽 후보 출처 태깅 (CS-010, ADR 0072) ──────────────────────────
+-- 추천이 지인망(ACQUAINTANCE)에서 왔는지 공개 발견 풀(PUBLIC)에서 왔는지 기록 →
+-- 어드민 메트릭에서 콜드스타트 공개 풀이 실제로 신규 유저를 태우고 있는지 관측.
+-- DailyRecommendationEntity.source(AUTO/ADMIN_*)와는 다른 축(결정 주체 vs 후보 티어). 재적재 시 중복 컬럼 에러는 continue-on-error 로 무시.
+ALTER TABLE daily_recommendations ADD COLUMN candidate_source VARCHAR(16);
