@@ -948,7 +948,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <SubLabel>MBTI</SubLabel>
-                  <span className="text-lg font-bold text-primary">{profile.basicInfo.mbti}</span>
+                  <span className="text-lg font-bold text-primary">{profile.basicInfo.mbti || "미설정"}</span>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                   {[
@@ -965,7 +965,8 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                             key={type}
                             type="button"
                             onClick={() => {
-                              const mbti = profile.basicInfo.mbti;
+                              // MBTI 미설정(null) 유저는 4칸 placeholder 로 시작 — 선택할수록 채워짐.
+                              const mbti = profile.basicInfo.mbti ?? "____";
                               const newMbti =
                                 mbti.substring(0, idx) + type + mbti.substring(idx + 1);
                               setProfile({
@@ -974,7 +975,7 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
                               });
                             }}
                             className={`py-1.5 rounded-lg text-sm font-medium transition-all border ${
-                              profile.basicInfo.mbti[idx] === type
+                              profile.basicInfo.mbti?.[idx] === type
                                 ? "bg-brand-soft text-brand-strong border-brand/40"
                                 : "bg-card border-border text-muted-foreground hover:border-primary/50"
                             }`}

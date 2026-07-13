@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Trophy, Crown, Medal, Gem, Clock, Users, HeartHandshake } from "lucide-react";
+import { Trophy, Crown, Medal, Gem, Clock, Users, HeartHandshake, ChevronLeft } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 
 interface SeasonInfo {
@@ -44,7 +44,7 @@ function tierVisual(tierName?: string) {
   return TIER_INFO.find(t => tierName && (tierName === t.name || tierName.includes(t.name.replace(" 큐피드", "")))) ?? TIER_INFO[0];
 }
 
-export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmaker?: () => void }) {
+export function LeagueScreen({ onNavigateToMatchmaker, onBack }: { onNavigateToMatchmaker?: () => void; onBack?: () => void }) {
   const [league, setLeague] = useState<LeagueData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMatchmaker, setIsMatchmaker] = useState(false);
@@ -59,9 +59,20 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
     }).finally(() => setLoading(false));
   }, []);
 
+  const BackButton = onBack ? (
+    <button
+      onClick={onBack}
+      aria-label="뒤로"
+      className="absolute left-4 top-4 w-9 h-9 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+    >
+      <ChevronLeft className="w-5 h-5" />
+    </button>
+  ) : null;
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center relative">
+        {BackButton}
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
       </div>
     );
@@ -69,7 +80,8 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
 
   if (!league) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-3 text-muted-foreground">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-3 text-muted-foreground relative">
+        {BackButton}
         <Trophy className="w-12 h-12 opacity-20" />
         <p className="text-sm">리그 정보를 불러올 수 없어요</p>
       </div>
@@ -85,7 +97,16 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="bg-gradient-to-b from-primary/10 to-background pt-6 pb-4 px-6">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl mx-auto relative">
+          {onBack && (
+            <button
+              onClick={onBack}
+              aria-label="뒤로"
+              className="absolute left-0 top-0 w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          )}
           <h2 className="text-center text-xl font-bold flex items-center justify-center gap-1.5">
             <Trophy className="w-5 h-5 text-yellow-500" />
             큐피드 리그

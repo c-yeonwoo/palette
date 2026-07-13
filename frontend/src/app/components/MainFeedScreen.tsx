@@ -908,7 +908,7 @@ function AiSignalSection({
         >
           <span className="flex items-center gap-2 text-xs text-foreground">
             <Sparkles className="w-3.5 h-3.5 text-primary" />
-            매일 무제한 추천 + 궁합 리포트
+            그날 추천 모두 열람 + 궁합 리포트
           </span>
           <span className="text-xs font-bold text-brand-strong whitespace-nowrap">월 {passPrice.toLocaleString()}원 →</span>
         </button>
@@ -938,7 +938,7 @@ function AiPassPaywall({
   onClose: () => void;
 }) {
   const benefits = [
-    { Icon: InfinityIcon, title: "매일 추천 무제한", desc: "하루 1장 제한 없이 팔레트 Pick을 모두 열람" },
+    { Icon: InfinityIcon, title: "그날 추천 모두 열람", desc: "무료 열람 후에도 그날 추천된 상대를 전부 바로 볼 수 있어요" },
     { Icon: BarChart3, title: "궁합 리포트", desc: "왜 잘 맞는지 색깔 기반 상세 분석 제공" },
     { Icon: Sparkles, title: "우선 추천", desc: "더 정교한 궁합 기반으로 먼저 소개" },
   ];
