@@ -136,7 +136,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
   const [isLoading, setIsLoading] = useState(true);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
-  const [activeTab, setActiveTab] = useState<"about" | "ideal">("about");
   const [showPhoneVerificationModal, setShowPhoneVerificationModal] = useState(false);
   const [showCompletionChecklist, setShowCompletionChecklist] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -428,35 +427,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
         </div>
       </div>
 
-      {/* ── 추가 사진 스트립 ── */}
-      <div className="bg-card border-b border-border">
-        <div className="flex gap-2 px-4 py-3 overflow-x-auto">
-          {sortedPhotos.slice(1).map((photo) => (
-            <div
-              key={photo.id}
-              className="relative w-20 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-muted"
-            >
-              <img src={photo.url} alt="사진" className="w-full h-full object-cover" />
-            </div>
-          ))}
-          {/* 사진 추가 슬롯 (최대 6장까지) */}
-          {sortedPhotos.length < 6 && (
-            <button
-              onClick={onEdit}
-              className="w-20 h-20 flex-shrink-0 rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/50 transition-colors flex flex-col items-center justify-center gap-1"
-            >
-              <Plus className="w-5 h-5 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">{sortedPhotos.length}/6</span>
-            </button>
-          )}
-          {/* 사진 0장이면 안내 */}
-          {sortedPhotos.length === 0 && (
-            <p className="text-xs text-muted-foreground self-center py-1">
-              사진을 추가하면 여기에 표시돼요
-            </p>
-          )}
-        </div>
-      </div>
+      {/* 추가 사진은 아래 '이야기'에 인터리브로 노출 (남이 보는 화면과 동일한 서사). 관리는 프로필 수정에서. */}
 
       {/* ── Stats ── */}
       {profile && (
@@ -487,25 +458,8 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
         </button>
       )}
 
-      {/* ── 탭 ── */}
-      <div className="flex border-b border-border sticky top-0 bg-card z-20">
-        {(["about", "ideal"] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-3.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
-              activeTab === tab
-                ? "border-brand/50 text-brand-strong"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {tab === "about" ? "내소개" : "이상형"}
-          </button>
-        ))}
-      </div>
-
-      {/* ── 내소개 탭 ── */}
-      {activeTab === "about" && (
+      {/* ── 내소개 (단일 스토리 스크롤 — 남이 보는 화면과 동일한 뼈대) ── */}
+      {profile && (
         <div className="divide-y divide-border">
 
           {/* A-2 — 소개글 자유 텍스트 (편집화면 "소개글" 필드) */}
@@ -518,44 +472,38 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
             </section>
           )}
 
-          {/* 인터뷰 답변 — D-1: "자기소개" → "인터뷰 답변" 으로 명칭 정리 */}
-          {profile?.introduction.interviewAnswers && (
-            <section className="px-6 py-6">
-              <SectionLabel>인터뷰 답변</SectionLabel>
-              <div className="space-y-5">
-                {[
-                  { key: "hobby" as const,     q: "쉬는 날엔" },
-                  { key: "charm" as const,     q: "나의 매력" },
-                  { key: "passion" as const,   q: "요즘 빠진 것" },
-                  { key: "happiness" as const, q: "행복한 순간" },
-                  { key: "motto" as const,     q: "인생 좌우명" },
-                ]
-                  .filter(({ key }) => !!profile.introduction.interviewAnswers![key])
-                  .map(({ key, q }) => (
-                    <div key={key}>
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{q}</p>
-                      <p className="text-sm text-foreground leading-relaxed">
-                        {profile.introduction.interviewAnswers![key]}
-                      </p>
+          {/* 이야기 — 인터뷰 답변을 비트로, 사이사이 추가 사진 인터리브 (남이 보는 화면과 동일) */}
+          {profile?.introduction.interviewAnswers && (() => {
+            const ia = profile.introduction.interviewAnswers!;
+            const beats = ([
+              { key: "hobby" as const,     q: "쉬는 날엔" },
+              { key: "charm" as const,     q: "나의 매력" },
+              { key: "passion" as const,   q: "요즘 빠진 것" },
+              { key: "happiness" as const, q: "행복한 순간" },
+              { key: "motto" as const,     q: "인생 좌우명" },
+            ]).filter(({ key }) => !!ia[key]);
+            const extra = sortedPhotos.slice(1); // 대표사진(0)은 히어로에 사용
+            if (beats.length === 0) return null;
+            return (
+              <section className="py-6">
+                <div className="px-6"><SectionLabel>이야기</SectionLabel></div>
+                {beats.map(({ key, q }, i) => (
+                  <div key={key}>
+                    <div className="px-6 py-3">
+                      <p className="text-xs text-muted-foreground mb-1.5">Q. {q}</p>
+                      <p className="text-[15px] text-foreground leading-relaxed whitespace-pre-line">{ia[key]}</p>
                     </div>
-                  ))}
-              </div>
-            </section>
-          )}
-
-          {/* 기본 정보 — CategoryCard */}
-          {profile && (
-            <section className="px-6 py-4 space-y-3">
-              {PROFILE_GROUPS.map((group) => (
-                <CategoryCard
-                  key={group.key}
-                  group={group}
-                  values={toProfileValues(profile)}
-                  mode="view"
-                />
-              ))}
-            </section>
-          )}
+                    {extra[i] && (
+                      <img src={extra[i].url} alt="" className="w-full aspect-[4/5] max-h-[460px] object-cover mt-1" />
+                    )}
+                  </div>
+                ))}
+                {extra.slice(beats.length).map((p) => (
+                  <img key={p.id} src={p.url} alt="" className="w-full aspect-[4/5] max-h-[460px] object-cover mt-1" />
+                ))}
+              </section>
+            );
+          })()}
 
           {/* 심리 프로필 */}
           {profile?.attachmentProfile && (
@@ -628,12 +576,25 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
             </section>
           )}
 
+          {/* 한눈에 보기 — 팩트(키·직업·지역 등)는 서사 뒤로. 스펙이 사람을 앞서지 않게. */}
+          <section className="px-6 py-6 space-y-3">
+            <SectionLabel>한눈에 보기</SectionLabel>
+            {PROFILE_GROUPS.map((group) => (
+              <CategoryCard
+                key={group.key}
+                group={group}
+                values={toProfileValues(profile)}
+                mode="view"
+              />
+            ))}
+          </section>
+
           {/* 공개 설정(프로필 공개/소개 받기) 토글은 마이페이지로 이동됨 (MyPageScreen) */}
         </div>
       )}
 
-      {/* ── 이상형 탭 ── */}
-      {activeTab === "ideal" && (
+      {/* ── 이런 인연을 찾아요 — 이상형 탭을 스크롤 하단으로 흡수 (탭 제거) ── */}
+      {profile && (
         <div className="divide-y divide-border">
 
           {/* 연애 스타일 */}
