@@ -2,9 +2,11 @@ package kr.ai.palette.presentation.admin
 
 import kr.ai.palette.persistence.billing.AdminBillingGrantJpaRepository
 import kr.ai.palette.persistence.billing.UserTicketBalanceJpaRepository
+import kr.ai.palette.persistence.feed.CardOpenJpaRepository
 import kr.ai.palette.persistence.matchmaker.WithdrawalRequestJpaRepository
 import kr.ai.palette.persistence.matchmaking.MatchmakingRequestJpaRepository
 import kr.ai.palette.persistence.payment.PaymentTransactionJpaRepository
+import kr.ai.palette.persistence.profile.ProfileJpaRepository
 import kr.ai.palette.persistence.safety.BlockJpaRepository
 import kr.ai.palette.persistence.safety.ReportJpaRepository
 import kr.ai.palette.persistence.user.UserJpaRepository
@@ -35,6 +37,8 @@ class AdminMetricsController(
     private val adminBillingGrantJpaRepository: AdminBillingGrantJpaRepository,
     private val userTicketBalanceJpaRepository: UserTicketBalanceJpaRepository,
     private val blockJpaRepository: BlockJpaRepository,
+    private val profileJpaRepository: ProfileJpaRepository,
+    private val cardOpenJpaRepository: CardOpenJpaRepository,
 ) {
 
     @GetMapping
@@ -88,6 +92,23 @@ class AdminMetricsController(
         // 차단 관계 카운트
         val totalBlocks = blockJpaRepository.findAll().size
 
+        // ── 활성화 퍼널 (신규 이벤트 없이 기존 데이터 조립) ─────────────────────
+        // 웨지 작동 관측: 가입 → 색 완성(AI 분석) → 팔레트픽 열람 → 소개 요청 → 성사.
+        // 단계마다 누적 유니크 유저 수 + 직전 단계 대비 전환율. 성사=매칭 성사한 요청자 수.
+        val signups = users.size
+        val colorCompleted = profileJpaRepository.findAll().count { !it.colorType.isNullOrBlank() }
+        val palettePickViewers = cardOpenJpaRepository.findAll().map { it.viewerId }.distinct().size
+        val introRequesters = matches.map { it.requesterId }.distinct().size
+        val matchedRequesters = matches.filter { it.status == "COMPLETED" }.map { it.requesterId }.distinct().size
+        fun conv(n: Int, base: Int): Double = if (base == 0) 0.0 else (n.toDouble() / base * 1000).toInt() / 1000.0
+        val funnel = listOf(
+            mapOf("stage" to "signup", "label" to "가입", "count" to signups, "convFromPrev" to 1.0),
+            mapOf("stage" to "colorComplete", "label" to "색 완성(AI 분석)", "count" to colorCompleted, "convFromPrev" to conv(colorCompleted, signups)),
+            mapOf("stage" to "palettePickView", "label" to "팔레트픽 열람", "count" to palettePickViewers, "convFromPrev" to conv(palettePickViewers, colorCompleted)),
+            mapOf("stage" to "introRequest", "label" to "소개 요청", "count" to introRequesters, "convFromPrev" to conv(introRequesters, palettePickViewers)),
+            mapOf("stage" to "matched", "label" to "성사", "count" to matchedRequesters, "convFromPrev" to conv(matchedRequesters, introRequesters)),
+        )
+
         return ResponseEntity.ok(
             mapOf(
                 "users" to mapOf(
@@ -133,6 +154,7 @@ class AdminMetricsController(
                 "blocks" to mapOf(
                     "total" to totalBlocks,
                 ),
+                "activationFunnel" to funnel,
                 "generatedAt" to now.toString(),
             )
         )
