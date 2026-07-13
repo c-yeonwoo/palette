@@ -543,3 +543,25 @@ FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM field_options WHERE set_key='appearanc
 -- 어드민 메트릭에서 콜드스타트 공개 풀이 실제로 신규 유저를 태우고 있는지 관측.
 -- DailyRecommendationEntity.source(AUTO/ADMIN_*)와는 다른 축(결정 주체 vs 후보 티어). 재적재 시 중복 컬럼 에러는 continue-on-error 로 무시.
 ALTER TABLE daily_recommendations ADD COLUMN candidate_source VARCHAR(16);
+
+-- ── 29. 팔레트픽 야간 배치 실행 기록 (ADR 0047 §B.3 운영 관측) ────────────────
+-- 배치가 매일 돌지만 결과가 로그로만 남아 어드민에서 볼 수 없던 문제 → 실행 요약 영속화.
+-- AdminPalettePickBatchScreen 이 본 테이블을 조회 (활성유저·처리·호출·실패·소요·에러샘플).
+-- 재적재 시 기존 테이블 에러는 continue-on-error 로 무시.
+CREATE TABLE IF NOT EXISTS palette_pick_batch_runs (
+    id BINARY(16) NOT NULL,
+    run_date VARCHAR(10) NOT NULL,
+    trigger_type VARCHAR(16) NOT NULL,
+    status VARCHAR(16) NOT NULL,
+    started_at DATETIME(6) NOT NULL,
+    finished_at DATETIME(6),
+    active_users INTEGER NOT NULL,
+    viewers_processed INTEGER NOT NULL,
+    llm_calls INTEGER NOT NULL,
+    failures INTEGER NOT NULL,
+    hit_call_cap BIT NOT NULL,
+    error_sample VARCHAR(500),
+    PRIMARY KEY (id),
+    INDEX idx_ppbatch_started (started_at),
+    INDEX idx_ppbatch_run_date (run_date)
+) ENGINE=InnoDB;

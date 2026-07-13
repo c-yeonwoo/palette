@@ -170,6 +170,7 @@ kr.ai.palette.palettepick/
 | **B.2** | 결정적 스코어링 — `ColorCompatibility` · `ActivityMomentum` · `CandidatePool` · `EmbeddingRefresh` · `PalettePickRecommendationService` orchestrator · `AiSignalController` 위임 | ✅ Done |
 | **B.3** | LLM Stage 3 — `CompatibilityAnalysisEntity` 캐시 · `LlmCompatibilityScorer` (gpt-4o-mini JSON) · `PalettePickBatchService` (자정 KST cron) · AiSignal `PalettePickInsight` 응답 노출 | ✅ Done |
 | **B.4** | **관측 + variant tagging** (이번 갱신) — DailyRecommendation.variant 컬럼으로 추천 출처 기록, 어드민 메트릭에서 variant 별 카드 오픈/매칭 요청 비율 추적. 본격 A/B (control=random)는 사용자 1,000명+ 이후 재검토 | ✅ Done |
+| **B.4b** | **배치 실행 관측** — `PalettePickBatchRunEntity` 로 야간 배치 실행(활성유저·처리·LLM호출·실패·소요·에러샘플)을 영속화. `AdminPalettePickBatchController` (`/api/v1/admin/palette-pick/batch/runs` 조회 + `/run` 수동 실행) + `AdminPalettePickBatchScreen`. 배치가 로그로만 남아 어드민에서 진척·오류를 볼 수 없던 문제 해소. 콜드스타트(활성유저 0 → no-op) 정상 동작 확인 포함 | ✅ Done |
 | **B.5** | 옵션: MSA 추출 — 트래픽 폭증 시 별도 deploy. **현재는 too much, 결정 미룸** | 후속 |
 
 ## C. LLM 확장 활용 — 향후 검토 항목

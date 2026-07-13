@@ -427,3 +427,24 @@
         add column admin_note text,
         add column admin_last_updated_at datetime(6),
         add column admin_last_updated_by BINARY(16);
+
+    create table palette_pick_batch_runs (
+        id BINARY(16) not null,
+        run_date varchar(10) not null,
+        trigger_type varchar(16) not null,
+        status varchar(16) not null,
+        started_at datetime(6) not null,
+        finished_at datetime(6),
+        active_users integer not null,
+        viewers_processed integer not null,
+        llm_calls integer not null,
+        failures integer not null,
+        hit_call_cap bit not null,
+        error_sample varchar(500),
+        primary key (id)
+    ) engine=InnoDB;
+
+    create index idx_ppbatch_started
+        on palette_pick_batch_runs (started_at);
+    create index idx_ppbatch_run_date
+        on palette_pick_batch_runs (run_date);

@@ -169,6 +169,12 @@ export function AdminDashboardScreen({ admin, onNavigate }: Props) {
           />
           <MenuCard
             tone="sky"
+            onClick={() => onNavigate("/admin/palette-pick-batch")}
+            title="팔레트픽 배치"
+            desc="야간 매칭 배치 실행 이력·진척·오류 + 수동 실행 (ADR 0047)"
+          />
+          <MenuCard
+            tone="sky"
             onClick={() => onNavigate("/admin/interview-questions")}
             title="AI 인터뷰 질문"
             desc="질문 선별·추가·수정·순서·노출 관리 (ADR 0055)"

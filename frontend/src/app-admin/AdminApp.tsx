@@ -18,6 +18,7 @@ import { AdminFieldOptionsScreen } from "./components/AdminFieldOptionsScreen";
 import { AdminOnboardingFieldsScreen } from "./components/AdminOnboardingFieldsScreen";
 import { AdminApprovalsScreen } from "./components/AdminApprovalsScreen";
 import { AdminAlertsScreen } from "./components/AdminAlertsScreen";
+import { AdminPalettePickBatchScreen } from "./components/AdminPalettePickBatchScreen";
 import { adminAuth, type AdminInfo } from "./lib/adminAuth";
 
 /**
@@ -50,7 +51,8 @@ type Screen =
   | { kind: "fieldOptions" }
   | { kind: "onboardingFields" }
   | { kind: "approvals" }
-  | { kind: "alerts" };
+  | { kind: "alerts" }
+  | { kind: "palettePickBatch" };
 
 function pathToScreen(path: string): Screen {
   if (path === "/admin" || path === "/admin/") return { kind: "dashboard" };
@@ -72,6 +74,7 @@ function pathToScreen(path: string): Screen {
   if (path === "/admin/onboarding-fields") return { kind: "onboardingFields" };
   if (path === "/admin/approvals") return { kind: "approvals" };
   if (path === "/admin/alerts") return { kind: "alerts" };
+  if (path === "/admin/palette-pick-batch") return { kind: "palettePickBatch" };
   return { kind: "dashboard" };
 }
 
@@ -157,5 +160,7 @@ export default function AdminApp() {
       return <AdminApprovalsScreen onBack={() => navigate("/admin")} />;
     case "alerts":
       return <AdminAlertsScreen onBack={() => navigate("/admin")} onNavigate={navigate} />;
+    case "palettePickBatch":
+      return <AdminPalettePickBatchScreen onBack={() => navigate("/admin")} />;
   }
 }
