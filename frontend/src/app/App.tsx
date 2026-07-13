@@ -1224,7 +1224,10 @@ export default function App() {
         <AiHubScreen onProfileClick={(userId) => {
           setSelectedUserId(userId);
           setSelectedMutualFriends([] as MutualFriend[]);
-          setSelectedDegree(2);
+          // 팔레트 Pick 표면의 모든 추천은 AI 중개 direct 연결(공유 친구 불필요, ADR 0072/CS).
+          // degree=0 → ProfileDetail 이 isPalettePick 경로(소개 요청하기 → /matchmaking/direct)로 라우팅
+          // + degree<2 라 무료 열람(AI 시그널 카드에서 이미 unlock 게이트 통과 — 이중 페이월 방지).
+          setSelectedDegree(0);
           setSelectedViewCost(0);
           setProfileDetailFrom("aiHub");
           setCurrentScreen("profileDetail");
