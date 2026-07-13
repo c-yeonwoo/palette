@@ -98,7 +98,6 @@ export function ColorDetailScreen({ onBack, onNavigateToProfile }: ColorDetailSc
   const meta = colorType?.type ? COLOR_META[colorType.type as ColorType] : undefined;
   const typeMeta = colorType?.key ? getColorTypeMeta(colorType.key) : null;
   const name = colorType?.name ?? meta?.name ?? "나의 색";
-  const emoji = meta?.emoji ?? "🎨";
   const energy = meta?.energy ?? null;
   const keywords = typeMeta?.keywords ?? null;
   const description = colorType?.description ?? null;
@@ -124,7 +123,7 @@ export function ColorDetailScreen({ onBack, onNavigateToProfile }: ColorDetailSc
 
       {!hex ? (
         <div className="max-w-2xl mx-auto px-6 py-20 text-center space-y-4">
-          <div className="text-5xl">🎨</div>
+          <Palette className="w-12 h-12 mx-auto text-muted-foreground/40" />
           <p className="font-semibold text-foreground">아직 나의 색이 없어요</p>
           <p className="text-sm text-muted-foreground">AI 프로필을 완성하면 당신만의 색이 발급돼요</p>
           {onNavigateToProfile && (
@@ -138,7 +137,7 @@ export function ColorDetailScreen({ onBack, onNavigateToProfile }: ColorDetailSc
           {/* 히어로 (무료) */}
           <div className="flex flex-col items-center text-center pt-8 pb-6">
             <div className="w-28 h-28 rounded-full flex items-center justify-center ring-4 ring-white shadow-card-hover" style={{ backgroundColor: hex }}>
-              <span className="text-5xl drop-shadow-sm">{emoji}</span>
+              <span className="w-10 h-10 rounded-full bg-white/25 backdrop-blur-sm" />
             </div>
             <h2 className="mt-5 text-2xl font-bold text-foreground">{name}</h2>
             {report?.tagline ? (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Trophy, Crown, Medal, Clock, Users, HeartHandshake } from "lucide-react";
+import { Trophy, Crown, Medal, Gem, Clock, Users, HeartHandshake } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 
 interface SeasonInfo {
@@ -32,12 +32,17 @@ interface LeagueData {
 }
 
 const TIER_INFO = [
-  { name: "브론즈 큐피드", emoji: "🥉", min: 0, color: "#CD7F32", bg: "bg-orange-50 dark:bg-orange-950/20", border: "border-orange-200 dark:border-orange-800/50" },
-  { name: "실버 큐피드", emoji: "🥈", min: 3, color: "#C0C0C0", bg: "bg-gray-50 dark:bg-gray-900/20", border: "border-gray-200 dark:border-gray-700/50" },
-  { name: "골드 큐피드", emoji: "🥇", min: 6, color: "#FFD700", bg: "bg-yellow-50 dark:bg-yellow-950/20", border: "border-yellow-200 dark:border-yellow-800/50" },
-  { name: "플래티넘 큐피드", emoji: "💎", min: 11, color: "#E5E4E2", bg: "bg-secondary dark:bg-slate-900/20", border: "border-border dark:border-slate-700/50" },
-  { name: "다이아 큐피드", emoji: "👑", min: 21, color: "#B9F2FF", bg: "bg-cyan-50 dark:bg-cyan-950/20", border: "border-cyan-200 dark:border-cyan-800/50" },
+  { name: "브론즈 큐피드", Icon: Medal, iconColor: "#CD7F32", min: 0, color: "#CD7F32", bg: "bg-orange-50 dark:bg-orange-950/20", border: "border-orange-200 dark:border-orange-800/50" },
+  { name: "실버 큐피드", Icon: Medal, iconColor: "#9AA3AE", min: 3, color: "#C0C0C0", bg: "bg-gray-50 dark:bg-gray-900/20", border: "border-gray-200 dark:border-gray-700/50" },
+  { name: "골드 큐피드", Icon: Medal, iconColor: "#D9A431", min: 6, color: "#FFD700", bg: "bg-yellow-50 dark:bg-yellow-950/20", border: "border-yellow-200 dark:border-yellow-800/50" },
+  { name: "플래티넘 큐피드", Icon: Gem, iconColor: "#7E93A6", min: 11, color: "#E5E4E2", bg: "bg-secondary dark:bg-slate-900/20", border: "border-border dark:border-slate-700/50" },
+  { name: "다이아 큐피드", Icon: Crown, iconColor: "#3FA3C2", min: 21, color: "#B9F2FF", bg: "bg-cyan-50 dark:bg-cyan-950/20", border: "border-cyan-200 dark:border-cyan-800/50" },
 ];
+
+// 티어명(백엔드 제공 문자열 포함) → 아이콘/색 매핑
+function tierVisual(tierName?: string) {
+  return TIER_INFO.find(t => tierName && (tierName === t.name || tierName.includes(t.name.replace(" 큐피드", "")))) ?? TIER_INFO[0];
+}
 
 export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmaker?: () => void }) {
   const [league, setLeague] = useState<LeagueData | null>(null);
@@ -81,7 +86,10 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
       {/* Header */}
       <div className="bg-gradient-to-b from-primary/10 to-background pt-6 pb-4 px-6">
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-center text-xl font-bold">큐피드 리그 🏆</h2>
+          <h2 className="text-center text-xl font-bold flex items-center justify-center gap-1.5">
+            <Trophy className="w-5 h-5 text-yellow-500" />
+            큐피드 리그
+          </h2>
           <p className="text-center text-sm text-muted-foreground mt-1">{league.season.seasonName}</p>
         </div>
       </div>
@@ -139,7 +147,7 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
               </p>
             </div>
             <div className="text-center">
-              <div className="text-4xl">{league.myTierEmoji}</div>
+              {(() => { const v = tierVisual(league.myTier); return <v.Icon className="w-9 h-9 mx-auto" style={{ color: v.iconColor }} />; })()}
               <p className="text-xs font-medium mt-1">{league.myTier}</p>
             </div>
             <div className="text-right">
@@ -162,14 +170,23 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
                 />
               </div>
               <div className="flex justify-between text-xs mt-1">
-                <span className="text-muted-foreground">{league.myTierEmoji} {league.myTier}</span>
-                <span className="font-medium">{nextTier.emoji} {nextTier.name}</span>
+                <span className="text-muted-foreground inline-flex items-center gap-1">
+                  {(() => { const v = tierVisual(league.myTier); return <v.Icon className="w-3.5 h-3.5" style={{ color: v.iconColor }} />; })()}
+                  {league.myTier}
+                </span>
+                <span className="font-medium inline-flex items-center gap-1">
+                  <nextTier.Icon className="w-3.5 h-3.5" style={{ color: nextTier.iconColor }} />
+                  {nextTier.name}
+                </span>
               </div>
             </div>
           )}
           {!nextTier && (
             <div className="text-center py-1">
-              <p className="text-sm text-primary font-medium">👑 최고 티어 달성! 대단해요!</p>
+              <p className="text-sm text-primary font-medium inline-flex items-center gap-1.5">
+                <Crown className="w-4 h-4" />
+                최고 티어 달성! 대단해요!
+              </p>
             </div>
           )}
         </div>
@@ -184,7 +201,7 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
             {TIER_INFO.map(tier => (
               <div key={tier.name} className={`flex items-center justify-between rounded-xl px-3 py-2 ${tier.bg} border ${tier.border}`}>
                 <div className="flex items-center gap-2">
-                  <span className="text-lg">{tier.emoji}</span>
+                  <tier.Icon className="w-5 h-5" style={{ color: tier.iconColor }} />
                   <span className="text-sm font-medium">{tier.name}</span>
                 </div>
                 <span className="text-xs text-muted-foreground">
@@ -203,7 +220,7 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
           </p>
           {league.topRankers.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-3xl mb-2">🏹</p>
+              <Trophy className="w-8 h-8 mx-auto mb-2 text-muted-foreground/40" />
               <p className="text-sm text-muted-foreground">아직 이번 시즌 성사된 매칭이 없어요</p>
               <p className="text-xs text-muted-foreground mt-1">먼저 커플을 탄생시켜 1위가 되어보세요!</p>
             </div>
@@ -219,20 +236,20 @@ export function LeagueScreen({ onNavigateToMatchmaker }: { onNavigateToMatchmake
                   }`}
                 >
                   {/* Rank number */}
-                  <div className="w-7 text-center">
+                  <div className="w-7 flex items-center justify-center">
                     {entry.rank === 1 ? (
-                      <span className="text-xl">🥇</span>
+                      <Medal className="w-5 h-5" style={{ color: "#D9A431" }} />
                     ) : entry.rank === 2 ? (
-                      <span className="text-xl">🥈</span>
+                      <Medal className="w-5 h-5" style={{ color: "#9AA3AE" }} />
                     ) : entry.rank === 3 ? (
-                      <span className="text-xl">🥉</span>
+                      <Medal className="w-5 h-5" style={{ color: "#CD7F32" }} />
                     ) : (
                       <span className="text-sm font-bold text-muted-foreground">{entry.rank}</span>
                     )}
                   </div>
 
-                  {/* Tier emoji */}
-                  <span className="text-lg">{entry.tierEmoji}</span>
+                  {/* Tier icon */}
+                  {(() => { const v = tierVisual(entry.tier); return <v.Icon className="w-4 h-4" style={{ color: v.iconColor }} />; })()}
 
                   {/* Name */}
                   <div className="flex-1">

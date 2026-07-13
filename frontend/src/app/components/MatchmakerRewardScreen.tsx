@@ -138,7 +138,7 @@ export function MatchmakerRewardScreen({ onBack }: MatchmakerRewardScreenProps) 
               </p>
             </>
           ) : (
-            <p className="text-sm opacity-80 text-center mt-2">🏆 최고 등급 달성!</p>
+            <p className="text-sm opacity-80 text-center mt-2 inline-flex items-center justify-center gap-1.5 w-full"><Award className="w-4 h-4" /> 최고 등급 달성!</p>
           )}
         </div>
 

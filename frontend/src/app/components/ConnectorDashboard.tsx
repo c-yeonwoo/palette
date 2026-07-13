@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { CheckCircle2, XCircle, Coins, Loader2, ChevronLeft, Award, ChevronRight, Users, Trophy } from "lucide-react";
+import { CheckCircle2, XCircle, Coins, Loader2, ChevronLeft, Award, ChevronRight, Users, Trophy, Inbox, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "../../lib/api/apiClient";
 import { MessageModal } from "./MessageModal";
@@ -412,7 +412,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
               {/* 지인 그리드 */}
               {filteredMembers.length === 0 ? (
                 <div className="py-16 text-center space-y-3">
-                  <div className="text-4xl">👥</div>
+                  <Users className="w-9 h-9 mx-auto text-muted-foreground/40" />
                   <p className="font-semibold text-foreground">아직 {memberGender === "MALE" ? "남성" : "여성"} 지인이 없어요</p>
                   <p className="text-sm text-muted-foreground">친구 코드로 지인을 초대하거나 받은 친구 요청을 수락해보세요</p>
                   {onNavigateToFriends && (
@@ -468,7 +468,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
             <div className="space-y-4">
               {pendingRequests.length === 0 ? (
                 <div className="py-16 text-center space-y-3">
-                  <div className="text-4xl">📭</div>
+                  <Inbox className="w-9 h-9 mx-auto text-muted-foreground/40" />
                   <p className="font-semibold text-foreground">대기 중인 소개 요청이 없어요</p>
                   <p className="text-sm text-muted-foreground">지인을 모아두면 소개 요청이 들어와요</p>
                   {onNavigateToFriends && (
@@ -499,7 +499,7 @@ export function ConnectorDashboard({ onBack, onNavigateToReward, onNavigateToFri
             <div className="space-y-4">
               {historyRequests.length === 0 ? (
                 <div className="py-16 text-center space-y-3">
-                  <div className="text-4xl">📋</div>
+                  <ClipboardList className="w-9 h-9 mx-auto text-muted-foreground/40" />
                   <p className="font-semibold text-foreground">아직 주선 이력이 없어요</p>
                   <p className="text-sm text-muted-foreground">첫 주선을 성사시켜보세요</p>
                 </div>
