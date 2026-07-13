@@ -31,6 +31,7 @@ interface MetricsResponse {
     palettePickTrialActive: number;
   };
   blocks?: { total: number };
+  activationFunnel?: { stage: string; label: string; count: number; convFromPrev: number }[];
   generatedAt: string;
 }
 
@@ -189,6 +190,37 @@ export function AdminDashboardScreen({ admin, onNavigate }: Props) {
               <MetricCard label="무료 소개 잔여" today={metrics.trial.freeIntroRemainingTotal} note="총 누적 카운터" loading={false} />
               <MetricCard label="팔레트픽 트라이얼" today={metrics.trial.palettePickTrialActive} note="첫 30일 무료 활성" loading={false} />
               <MetricCard label="누적 차단 관계" today={metrics.blocks?.total} note="유저간 (단방향)" loading={false} />
+            </div>
+          </section>
+        )}
+
+        {metrics?.activationFunnel && metrics.activationFunnel.length > 0 && (
+          <section>
+            <h3 className="text-sm font-bold text-foreground mb-1">활성화 퍼널 (누적)</h3>
+            <p className="text-xs text-muted-foreground mb-2.5">가입 → 색 완성 → 팔레트픽 열람 → 소개 요청 → 성사. 단계별 <strong>누적 유니크 유저 수</strong>(엄격한 순차 코호트 아님 — 소개 요청은 지인 피드에서도 발생해 직전比 100% 초과 가능). 웨지가 어디서 새는지 관측.</p>
+            <div className="rounded-xl border border-border bg-card divide-y divide-border">
+              {metrics.activationFunnel.map((s, i) => {
+                const top = metrics.activationFunnel![0].count || 1;
+                const widthPct = Math.max(4, Math.round((s.count / top) * 100));
+                return (
+                  <div key={s.stage} className="px-4 py-3">
+                    <div className="flex items-baseline justify-between mb-1.5">
+                      <span className="text-sm font-medium text-foreground">{i + 1}. {s.label}</span>
+                      <span className="text-sm">
+                        <span className="font-bold text-foreground">{s.count.toLocaleString()}</span>
+                        {i > 0 && (
+                          <span className={`ml-2 text-xs ${s.convFromPrev < 0.3 ? "text-rose-500" : "text-muted-foreground"}`}>
+                            직전比 {Math.round(s.convFromPrev * 100)}%
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full rounded-full bg-brand" style={{ width: `${widthPct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
         )}
