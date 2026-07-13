@@ -387,8 +387,8 @@ When implementing APIs, follow these guidelines:
 
 ### 🚧 MVP에서 제한/미완성
 - **AI Signal unlock 결제**: paymentKey 존재 여부만 체크. Phase 2에서 Toss 검증 연동 필요
-- **채팅**: 프론트 mock. WebSocket/SSE 백엔드 미구현
-- **알림 화면**: 프론트 mock. 백엔드 알림 조회 API 미연동
+- **채팅**: 프론트 mock. 폴링 REST 백엔드 미구현 (ADR 0066 — 트리거 기반 P1, WebSocket 아님)
+- ~~알림 화면 mock~~ → **완료**: `NotificationController` (`GET /api/v1/notifications` 등) + `NotificationEventListener` 실영속. 프론트 `NotificationScreen` 실연동 (commit fc6b393)
 - **매칭 상세 / 마켓플레이스**: 프론트 mock 데이터
 - **사진 신원 검증**: 95% 통과 mock. Vision API 미연동
 - **홈택스 직업 검증**: UI stub
