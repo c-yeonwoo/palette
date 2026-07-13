@@ -565,3 +565,9 @@ CREATE TABLE IF NOT EXISTS palette_pick_batch_runs (
     INDEX idx_ppbatch_started (started_at),
     INDEX idx_ppbatch_run_date (run_date)
 ) ENGINE=InnoDB;
+
+-- ── 30. 근무지(선택) 컬럼 추가 — 고향(hometown) 대체 ──────────────────────────
+-- 거주지역(sido/sigungu) 유지 + 근무지(work_sido/work_sigungu) 추가. 고향 필드는
+-- 코드에서 미사용 처리(orphan). 재적재 시 기존 컬럼 에러는 continue-on-error 로 무시.
+ALTER TABLE profiles ADD COLUMN work_sido VARCHAR(50);
+ALTER TABLE profiles ADD COLUMN work_sigungu VARCHAR(50);

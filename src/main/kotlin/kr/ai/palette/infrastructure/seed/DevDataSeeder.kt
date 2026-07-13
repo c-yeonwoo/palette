@@ -469,7 +469,7 @@ class DevDataSeeder(
         createdAt = now, updatedAt = now, lastAccessedAt = now, deletedAt = null,
         completionRate = 80, trustScore = trustScore,
         viewCount = (5..100).random(), isAcceptingMatches = true, hiddenAt = null,
-        hometownSido = null, hometownSigungu = null,
+        workSido = null, workSigungu = null,
         attachmentContactAnxiety = null, attachmentIntimacyAvoidance = null,
         attachmentConflictStyle = null, attachmentEmotionExpression = null,
         attachmentIndependenceLevel = null,

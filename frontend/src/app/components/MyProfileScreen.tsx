@@ -58,8 +58,8 @@ interface ProfileData {
   locationInfo: {
     sido: string | null;
     sigungu: string | null;
-    hometownSido: string | null;
-    hometownSigungu: string | null;
+    workSido: string | null;
+    workSigungu: string | null;
   };
   lifestyleInfo: {
     smoking: string | null;

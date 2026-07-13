@@ -7,6 +7,7 @@ import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { PersonalityTestManager } from "./PersonalityTestManager";
 import { JOB_CATEGORY_OPTIONS } from "../../lib/jobCategory";
+import { SIDO_LIST, SIGUNGU } from "../../lib/regions";
 
 interface ProfileEditScreenProps {
   onBack: () => void;
@@ -35,8 +36,8 @@ interface ProfileData {
   locationInfo: {
     sido: string | null;
     sigungu: string | null;
-    hometownSido: string | null;
-    hometownSigungu: string | null;
+    workSido: string | null;
+    workSigungu: string | null;
   };
   lifestyleInfo: {
     smoking: string | null;
@@ -1094,68 +1095,87 @@ export function ProfileEditScreen({ onBack, onSave, userGender }: ProfileEditScr
               defaultOpen={!profile.locationInfo.sido}
             >
               <div className="grid grid-cols-2 gap-3">
+                {/* 거주지역 — 시/도(1depth) → 시·군·구(2depth) 캐스케이드 */}
                 <div>
-                  <Label htmlFor="sido" className="block mb-2 text-sm font-semibold">시/도</Label>
+                  <Label htmlFor="sido" className="block mb-2 text-sm font-semibold">거주 시/도</Label>
                   <select
                     id="sido"
                     value={profile.locationInfo.sido || ""}
                     onChange={(e) =>
                       setProfile({
                         ...profile,
-                        locationInfo: { ...profile.locationInfo, sido: e.target.value || null },
+                        // 시/도 변경 시 시·군·구 초기화 (캐스케이드 정합)
+                        locationInfo: { ...profile.locationInfo, sido: e.target.value || null, sigungu: null },
                       })
                     }
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <option value="">선택</option>
-                    {["서울", "경기", "인천", "부산", "대구", "광주", "대전", "울산", "세종", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"].map((r) => (
+                    {SIDO_LIST.map((r) => (
                       <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
                 </div>
                 <div>
                   <Label htmlFor="sigungu" className="block mb-2 text-sm font-semibold">시/군/구</Label>
-                  <Input
+                  <select
                     id="sigungu"
                     value={profile.locationInfo.sigungu || ""}
+                    disabled={!profile.locationInfo.sido || (SIGUNGU[profile.locationInfo.sido]?.length ?? 0) === 0}
                     onChange={(e) =>
                       setProfile({
                         ...profile,
                         locationInfo: { ...profile.locationInfo, sigungu: e.target.value || null },
                       })
                     }
-                    placeholder="예: 강남구"
-                  />
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="">{!profile.locationInfo.sido ? "시/도 먼저" : (SIGUNGU[profile.locationInfo.sido]?.length ?? 0) === 0 ? "해당 없음" : "선택"}</option>
+                    {(SIGUNGU[profile.locationInfo.sido || ""] ?? []).map((g) => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
                 </div>
 
-                {/* DA-004 — 고향 (선택). 백엔드는 받을 준비 OK, UI만 없던 갭 해소 */}
+                {/* 근무지 (선택) — 고향 대체, 동일 캐스케이드 */}
                 <div className="col-span-2 pt-2 border-t border-border/40">
-                  <Label className="block mb-2 text-sm font-semibold">고향 <span className="text-muted-foreground font-normal">(선택)</span></Label>
-                  <p className="text-[11px] text-muted-foreground mb-2">대화 소재 · 같은 고향 추천에 활용돼요</p>
+                  <Label className="block mb-2 text-sm font-semibold">근무지 <span className="text-muted-foreground font-normal">(선택)</span></Label>
+                  <p className="text-[11px] text-muted-foreground mb-2">생활권이 비슷한 인연 추천에 활용돼요</p>
                 </div>
                 <div>
-                  <Input
-                    value={profile.locationInfo.hometownSido || ""}
+                  <select
+                    value={profile.locationInfo.workSido || ""}
                     onChange={(e) =>
                       setProfile({
                         ...profile,
-                        locationInfo: { ...profile.locationInfo, hometownSido: e.target.value || null },
+                        locationInfo: { ...profile.locationInfo, workSido: e.target.value || null, workSigungu: null },
                       })
                     }
-                    placeholder="고향 시/도"
-                  />
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="">근무 시/도</option>
+                    {SIDO_LIST.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
-                  <Input
-                    value={profile.locationInfo.hometownSigungu || ""}
+                  <select
+                    value={profile.locationInfo.workSigungu || ""}
+                    disabled={!profile.locationInfo.workSido || (SIGUNGU[profile.locationInfo.workSido]?.length ?? 0) === 0}
                     onChange={(e) =>
                       setProfile({
                         ...profile,
-                        locationInfo: { ...profile.locationInfo, hometownSigungu: e.target.value || null },
+                        locationInfo: { ...profile.locationInfo, workSigungu: e.target.value || null },
                       })
                     }
-                    placeholder="고향 시/군/구"
-                  />
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="">{!profile.locationInfo.workSido ? "시/도 먼저" : (SIGUNGU[profile.locationInfo.workSido]?.length ?? 0) === 0 ? "해당 없음" : "선택"}</option>
+                    {(SIGUNGU[profile.locationInfo.workSido || ""] ?? []).map((g) => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </Section>

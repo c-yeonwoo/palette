@@ -11,7 +11,7 @@ export interface AdminProfileData {
   basicInfo: { height: number | null; bodyType: string | null; mbti: string | null };
   careerInfo: { category: string | null; company: string | null; position?: string | null; incomeRange: string | null };
   educationInfo: { level: string | null; school: string | null; major: string | null };
-  locationInfo: { sido: string | null; sigungu: string | null; hometownSido?: string | null; hometownSigungu?: string | null };
+  locationInfo: { sido: string | null; sigungu: string | null; workSido?: string | null; workSigungu?: string | null };
   lifestyleInfo: { smoking: string | null; drinking: string | null; religion: string | null };
   introduction: {
     text: string | null;
@@ -72,7 +72,7 @@ export function AdminProfilePreview({
   const selectable = !!onToggleReject;
 
   const region = [locationInfo.sido, locationInfo.sigungu].filter(Boolean).join(" ") || null;
-  const hometown = [locationInfo.hometownSido, locationInfo.hometownSigungu].filter(Boolean).join(" ") || null;
+  const work = [locationInfo.workSido, locationInfo.workSigungu].filter(Boolean).join(" ") || null;
   const ageRange = idealType.ageMin || idealType.ageMax ? `${idealType.ageMin ?? "?"} ~ ${idealType.ageMax ?? "?"}세` : null;
   const heightRange = idealType.heightMin || idealType.heightMax ? `${idealType.heightMin ?? "?"} ~ ${idealType.heightMax ?? "?"}cm` : null;
   const ans = introduction.interviewAnswers;
@@ -156,7 +156,7 @@ export function AdminProfilePreview({
           ["학교", educationInfo.school],
           ["전공", educationInfo.major],
           ["거주지", region],
-          ["고향", hometown],
+          ["근무지", work],
         ]} />
       </Section>
 

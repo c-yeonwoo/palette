@@ -220,16 +220,16 @@ data class EducationInfoDto(
 data class LocationInfoDto(
     val sido: String?,
     val sigungu: String?,
-    val hometownSido: String? = null,
-    val hometownSigungu: String? = null,
+    val workSido: String? = null,
+    val workSigungu: String? = null,
 ) {
     fun toDomain(): LocationInfo {
-        return LocationInfo(sido = sido, sigungu = sigungu, hometownSido = hometownSido, hometownSigungu = hometownSigungu)
+        return LocationInfo(sido = sido, sigungu = sigungu, workSido = workSido, workSigungu = workSigungu)
     }
 
     companion object {
         fun from(locationInfo: LocationInfo): LocationInfoDto {
-            return LocationInfoDto(sido = locationInfo.sido, sigungu = locationInfo.sigungu, hometownSido = locationInfo.hometownSido, hometownSigungu = locationInfo.hometownSigungu)
+            return LocationInfoDto(sido = locationInfo.sido, sigungu = locationInfo.sigungu, workSido = locationInfo.workSido, workSigungu = locationInfo.workSigungu)
         }
     }
 }

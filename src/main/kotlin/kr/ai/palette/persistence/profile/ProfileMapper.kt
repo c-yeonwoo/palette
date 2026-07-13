@@ -35,8 +35,8 @@ class ProfileMapper(
             locationInfo = LocationInfo(
                 sido = entity.sido,
                 sigungu = entity.sigungu,
-                hometownSido = entity.hometownSido,
-                hometownSigungu = entity.hometownSigungu,
+                workSido = entity.workSido,
+                workSigungu = entity.workSigungu,
             ),
             lifestyleInfo = LifestyleInfo(
                 smoking = entity.smoking,            // ADR 0057 — 코드 문자열 직통
@@ -146,8 +146,8 @@ class ProfileMapper(
             major = profile.educationInfo.major,
             sido = profile.locationInfo.sido,
             sigungu = profile.locationInfo.sigungu,
-            hometownSido = profile.locationInfo.hometownSido,
-            hometownSigungu = profile.locationInfo.hometownSigungu,
+            workSido = profile.locationInfo.workSido,
+            workSigungu = profile.locationInfo.workSigungu,
             introductionText = profile.introduction.text,
             smoking = profile.lifestyleInfo.smoking,
             drinking = profile.lifestyleInfo.drinking,

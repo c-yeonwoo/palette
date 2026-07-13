@@ -187,12 +187,12 @@ class ProfileEntity(
     @Column(name = "public_discoverable")
     var publicDiscoverable: Boolean? = true,
 
-    // LocationInfo - hometown
-    @Column(name = "hometown_sido", length = 50)
-    var hometownSido: String? = null,
+    // LocationInfo - 근무지 (선택, 고향 대체). 기존 hometown_* 컬럼은 미사용(orphan) 처리.
+    @Column(name = "work_sido", length = 50)
+    var workSido: String? = null,
 
-    @Column(name = "hometown_sigungu", length = 50)
-    var hometownSigungu: String? = null,
+    @Column(name = "work_sigungu", length = 50)
+    var workSigungu: String? = null,
 
     // Introduction text (AI generated or manual)
     @Column(name = "introduction_text", columnDefinition = "TEXT")
