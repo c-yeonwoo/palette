@@ -98,8 +98,8 @@ export const FIELD_META: Record<string, FieldMeta> = {
     label: "거주지",
     widget: "text",
   },
-  hometown: {
-    label: "고향",
+  work: {
+    label: "근무지",
     widget: "text",
   },
 };
@@ -130,7 +130,7 @@ export const PROFILE_GROUPS = [
     key: "lifestyle",
     title: "라이프스타일",
     icon: "Sparkles",
-    fields: ["smoking", "drinking", "religion", "location", "hometown"],
+    fields: ["smoking", "drinking", "religion", "location", "work"],
   },
 ] as const satisfies readonly ProfileGroup[];
 
@@ -152,10 +152,10 @@ export function toProfileValues(profile: {
   careerInfo?: { category?: string | null; company?: string | null };
   educationInfo?: { level?: string | null; school?: string | null; major?: string | null };
   lifestyleInfo?: { smoking?: string | null; drinking?: string | null; religion?: string | null };
-  locationInfo?: { sido?: string | null; sigungu?: string | null; hometownSido?: string | null; hometownSigungu?: string | null };
+  locationInfo?: { sido?: string | null; sigungu?: string | null; workSido?: string | null; workSigungu?: string | null };
 }): ProfileValues {
   const loc = [profile.locationInfo?.sido, profile.locationInfo?.sigungu].filter(Boolean).join(" ");
-  const hometown = [profile.locationInfo?.hometownSido, profile.locationInfo?.hometownSigungu].filter(Boolean).join(" ");
+  const work = [profile.locationInfo?.workSido, profile.locationInfo?.workSigungu].filter(Boolean).join(" ");
 
   return {
     height:      profile.basicInfo?.height,
@@ -170,7 +170,7 @@ export function toProfileValues(profile: {
     drinking:    profile.lifestyleInfo?.drinking,
     religion:    profile.lifestyleInfo?.religion,
     location:    loc || undefined,
-    hometown:    hometown || undefined,
+    work:        work || undefined,
   };
 }
 
