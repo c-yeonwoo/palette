@@ -118,7 +118,8 @@ class ProfileController(
         val cur = profile.settings
         val merged = cur.copy(
             isAcceptingMatches = request.isAcceptingMatches ?: cur.isAcceptingMatches,
-            detailsVisibleToFriends = request.detailsVisibleToFriends ?: cur.detailsVisibleToFriends
+            detailsVisibleToFriends = request.detailsVisibleToFriends ?: cur.detailsVisibleToFriends,
+            publicDiscoverable = request.publicDiscoverable ?: cur.publicDiscoverable
         )
         profile = profile.updateSettings(merged)
 
