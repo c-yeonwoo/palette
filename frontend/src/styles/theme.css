@@ -126,6 +126,11 @@
   --brand-foreground: 32 45% 12%;     /* gold solid 위 딥 브라운 (대비 7+) */
   --brand-soft:       44 92% 93%;     /* 화사한 골드 틴트 채움 (버튼/칩) */
   --brand-strong:     34 90% 36%;     /* soft/흰 배경 위 텍스트 gold (대비 5+ AA) */
+  /* 조화 보조색 (로고 두 번째 색) — '두 사람이 만나는' 순간 한정(매칭 성사·팔레트픽 히어로·로고).
+     일반 UI 액센트는 golden(--brand) 유지. ct-pink(성격색)와 계열 겹치므로 범위 한정. ADR 0073 §2-1b */
+  --brand-2:          340 82% 71%;    /* #F2789F — 로즈 */
+  --brand-2-soft:     342 80% 95%;    /* 연한 로즈 채움 */
+  --brand-2-strong:   340 58% 42%;    /* soft/흰 배경 위 텍스트 로즈 (대비 AA) */
 
   /* ── User Accent (장식 전용, P3 AccentScope가 런타임 교체) ──
      기본값: 브랜드 오렌지와 동일
@@ -251,6 +256,10 @@
   --brand:             42 92% 62%;    /* 밝은 골드 — 다크 배경 대비 OK */
   --brand-soft:        36 42% 17%;    /* 어두운 골드 틴트 채움 */
   --brand-strong:      44 92% 70%;    /* dark brand-soft 위 텍스트 (밝게) */
+  /* 조화 보조색 (로즈) — 다크 */
+  --brand-2:           340 82% 74%;   /* 밝은 로즈 — 다크 배경 대비 OK */
+  --brand-2-soft:      340 35% 20%;   /* 어두운 로즈 틴트 채움 */
+  --brand-2-strong:    340 82% 78%;   /* dark 위 텍스트 (밝게) */
   --surface:           16 5% 12%;
   --surface-elevated:  20 5% 14%;
   --surface-sunken:    20 6% 10%;
@@ -320,6 +329,9 @@
   --color-brand-foreground:     hsl(var(--brand-foreground));
   --color-brand-soft:           hsl(var(--brand-soft));
   --color-brand-strong:         hsl(var(--brand-strong));
+  --color-brand-2:              hsl(var(--brand-2));
+  --color-brand-2-soft:         hsl(var(--brand-2-soft));
+  --color-brand-2-strong:       hsl(var(--brand-2-strong));
 
   /* ── Gold (ADR 0073: 강등 — '골드 큐피드 등급' 전용, 신규 사용 금지) ── */
   --color-gold:                 hsl(var(--gold));
