@@ -583,8 +583,8 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     );
   };
 
-  const ChipGroup = ({ items }: { items: string[] }) => {
-    if (items.length === 0) return <p className="text-muted-foreground text-sm">정보 없음</p>;
+  const ChipGroup = ({ items }: { items: string[] | null | undefined }) => {
+    if (!items || items.length === 0) return <p className="text-muted-foreground text-sm">정보 없음</p>;
     return (
       <div className="flex flex-wrap gap-2">
         {items.map((item, index) => (
@@ -653,7 +653,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
       ACTIVE: "액티브", INDOOR: "인도어", CULTURE: "문화생활", NATURE: "자연 속으로",
       NIGHT: "야경/술자리", RELAXED: "여유롭게",
     };
-    return prefs.map(p => map[p] || p);
+    return (prefs ?? []).map(p => map[p] || p);
   };
 
   const getImportantValueDisplay = (values: string[]) => {
@@ -662,7 +662,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
       CAREER: "능력/커리어", FAMILY: "집안/가족", JOB: "직업",
       WEALTH: "경제력", VALUES: "가치관"
     };
-    return values.map(v => map[v] || v);
+    return (values ?? []).map(v => map[v] || v);
   };
 
   const getAppearanceStyleDisplay = (styles: string[]) => {
@@ -675,7 +675,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
       STUDENT_COUNCIL: "전교회장상", ATHLETIC: "체대상", NERD: "너드상",
       WARM: "훈남상", DANDY: "댄디상", BEAST: "짐승상",
     };
-    return styles.map(s => map[s] || s);
+    return (styles ?? []).map(s => map[s] || s);
   };
 
   const getDealBreakerDisplay = (dealBreakers: string[]) => {
@@ -693,7 +693,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
       PETS: "반려동물",
       CHILDREN: "아이 있음"
     };
-    return dealBreakers.map(d => map[d] || d);
+    return (dealBreakers ?? []).map(d => map[d] || d);
   };
 
   const sortedPhotos = [...profile.photos].sort((a, b) => a.displayOrder - b.displayOrder);
@@ -1408,7 +1408,7 @@ function generateMatchInsights(
   }
 
   // 4. 중요 가치관
-  const values = theirProfile.idealType.importantValues;
+  const values = theirProfile.idealType.importantValues ?? [];
   const valueLabel: Record<string, string> = {
     PERSONALITY: "성격", APPEARANCE: "외모", STABILITY: "안정감",
     HUMOR: "유머 감각", CARE: "배려심", AMBITION: "열정", HONESTY: "솔직함",
