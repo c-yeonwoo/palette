@@ -5,7 +5,10 @@ import { BetaWelcomeIntro, hasIntroSeen } from "./components/BetaWelcomeIntro";
 import { LoginScreen } from "./components/LoginScreen";
 import { OAuth2RedirectHandler } from "./components/OAuth2RedirectHandler";
 import type { MutualFriend } from "./components/MainFeedScreen";
+import { MATCHMAKER_MARKETPLACE_ENABLED } from "../lib/featureFlags";
 // MatchmakerInfoScreen 은 ADR 0013 에서 제거됨 — 회원가입 데이터로 충분
+
+const INVITE_WIZARD_SEEN_KEY = "palette_invite_wizard_seen";
 
 // ── 나머지 화면은 route-level code splitting (lazy) — 첫 bundle 크기 ↓ (ADR 0019) ──
 // named export → default 로 래핑
@@ -1104,6 +1107,7 @@ export default function App() {
           onNavigateToFriends={() => { setFriendConnectFrom(currentScreen); setCurrentScreen("friendConnect"); }}
           onNavigateToMyPage={() => setCurrentScreen("myPage")}
           onNavigateToBilling={() => setCurrentScreen("billing")}
+          onNavigateToAiHub={() => setCurrentScreen("aiHub")}
           unreadNotifications={unreadNotificationCount}
         />
       )}
@@ -1141,7 +1145,7 @@ export default function App() {
           onNavigateToReward={() => setCurrentScreen("matchmakerReward")}
           onNavigateToLeague={() => setCurrentScreen("league")}
           onNavigateToFriends={() => { setFriendConnectFrom(currentScreen); setCurrentScreen("friendConnect"); }}
-          onNavigateToMarketplace={() => setCurrentScreen("matchmakerMarketplace")}
+          onNavigateToMarketplace={MATCHMAKER_MARKETPLACE_ENABLED ? () => setCurrentScreen("matchmakerMarketplace") : undefined}
           onMemberProfileClick={(userId) => {
             // 1촌 지인 프로필 — degree=1 + 무료 열람. ProfileDetailScreen 의 detailsHidden 룰로 비공개는 자동 hide (ADR 0035).
             setSelectedUserId(userId);
@@ -1154,7 +1158,7 @@ export default function App() {
         />
       )}
 
-      {currentScreen === "matchmakerMarketplace" && (
+      {currentScreen === "matchmakerMarketplace" && MATCHMAKER_MARKETPLACE_ENABLED && (
         <MatchmakerMarketplaceScreen
           onBack={() => setCurrentScreen("connectorDashboard")}
           onViewMatchmaker={(id) => {
@@ -1187,6 +1191,7 @@ export default function App() {
           onNavigateBlocks={() => setCurrentScreen("blockList")}
           onNavigateDeleteAccount={() => setCurrentScreen("deleteAccount")}
           onNavigateBilling={() => setCurrentScreen("billing")}
+          onNavigateToAiHub={() => setCurrentScreen("aiHub")}
           onLogout={() => {
             localStorage.removeItem(ONBOARDING_DRAFT_KEY);
             localStorage.removeItem(ONBOARDING_STEP_KEY);
@@ -1320,8 +1325,14 @@ export default function App() {
 
       {currentScreen === "inviteWizard" && (
         <InviteWizardScreen
-          onSkip={() => setCurrentScreen("mainFeed")}
-          onDone={() => setCurrentScreen("mainFeed")}
+          onSkip={() => {
+            localStorage.setItem(INVITE_WIZARD_SEEN_KEY, "1");
+            setCurrentScreen("mainFeed");
+          }}
+          onDone={() => {
+            localStorage.setItem(INVITE_WIZARD_SEEN_KEY, "1");
+            setCurrentScreen("mainFeed");
+          }}
         />
       )}
 
@@ -1339,7 +1350,7 @@ export default function App() {
       </Suspense>
 
       {/* Bottom Navigation - Only show when logged in and not on login/onboarding/detail screens */}
-      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "pendingApproval", "basicInfo", "photoUpload", "aiInterview", "lifestyle", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "league", "photoVerify", "colorTest", "colorDetail", "inviteHub", "support", "blockList", "privacyPolicy", "termsOfService", "deleteAccount", "billing", "inviteWizard", "paymentSuccess", "paymentFail"].includes(currentScreen) && (
+      {isLoggedIn && !["login", "emailLogin", "emailSignup", "matchmakerSignup", "oauth2Redirect", "requiredInfo", "accountTypeSelection", "pendingApproval", "basicInfo", "photoUpload", "aiInterview", "lifestyle", "idealType", "aiProfileEnhance", "profileEdit", "profileDetail", "publicProfile", "friendConnect", "matchmakerReward", "league", "photoVerify", "colorTest", "colorDetail", "inviteHub", "support", "blockList", "privacyPolicy", "termsOfService", "deleteAccount", "billing", "inviteWizard", "paymentSuccess", "paymentFail", "aiHub"].includes(currentScreen) && (
         <BottomNavigation
           currentScreen={currentScreen}
           onNavigate={setCurrentScreen}
@@ -1366,7 +1377,11 @@ export default function App() {
               onClick={() => {
                 const target = approvalCelebration;
                 setApprovalCelebration(null);
-                if (target) setCurrentScreen(target);
+                if (target === "mainFeed" && !localStorage.getItem(INVITE_WIZARD_SEEN_KEY)) {
+                  setCurrentScreen("inviteWizard");
+                } else if (target) {
+                  setCurrentScreen(target);
+                }
               }}
             >
               팔레트 시작하기

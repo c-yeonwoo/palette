@@ -55,6 +55,7 @@ class AiSignalController(
     private val palettePickRecommendationService: kr.ai.palette.palettepick.application.PalettePickRecommendationService,
     private val compatibilityAnalysisRepository: kr.ai.palette.palettepick.persistence.CompatibilityAnalysisJpaRepository,
     private val objectMapper: tools.jackson.databind.ObjectMapper,
+    private val paymentGateway: kr.ai.palette.infrastructure.payment.PaymentGateway,
     @Value("\${toss.payments.secret-key:}") private val paymentSecretKey: String,
 ) {
     companion object {
@@ -159,6 +160,10 @@ class AiSignalController(
                 .associateBy { it.candidateUserId }
         } else emptyMap()
 
+        val sourceByTarget = dailyRecommendationRepo
+            .findByViewerUserIdAndRecommendedDateOrderByPositionAsc(viewerId.value, today)
+            .associate { it.targetUserId to it.candidateSource?.name }
+
         // 거리 표시용 — viewer 시군구 중심좌표 기준 근사 (ADR 0072). 좌표 없으면 null.
         val viewerProfileForGeo = profileRepository.findByUserId(viewerId)
         val viewerSido = viewerProfileForGeo?.locationInfo?.sido
@@ -194,6 +199,7 @@ class AiSignalController(
                     viewerSido, viewerSigungu,
                     profile.locationInfo?.sido, profile.locationInfo?.sigungu,
                 )?.let { Math.round(it).toInt() },
+                candidateSource = sourceByTarget[targetUserId],
             )
         }
 
@@ -253,13 +259,25 @@ class AiSignalController(
             return ResponseEntity.ok(UnlockResponse(alreadyUnlocked = true, price = 0))
         }
 
-        // 결제 키 검증 (MVP: paymentKey 필수)
         if (body?.paymentKey.isNullOrBlank()) {
             return ResponseEntity.status(402).build()
         }
 
-        // TODO Phase 2: Toss Payments /v1/payments/confirm API 호출하여 paymentKey 검증
-        // 현재는 paymentKey 존재 여부만 체크 (사전 검증 없음)
+        if (!isPaymentStubMode) {
+            val orderId = body?.orderId?.trim().orEmpty()
+            if (orderId.isBlank()) {
+                return ResponseEntity.status(402).build()
+            }
+            val result = paymentGateway.confirm(
+                orderId = orderId,
+                paymentKey = body.paymentKey!!.trim(),
+                expectedAmount = UNLOCK_PRICE,
+            )
+            if (result is kr.ai.palette.infrastructure.payment.PaymentGatewayResult.Failure) {
+                return ResponseEntity.status(402).build()
+            }
+        }
+
         unlockedToday[unlockKey] = true
 
         return ResponseEntity.ok(UnlockResponse(alreadyUnlocked = false, price = UNLOCK_PRICE))
@@ -277,11 +295,21 @@ class AiSignalController(
         @AuthenticationPrincipal authUser: AuthUser,
         @RequestBody(required = false) body: UnlockRequestBody?
     ): ResponseEntity<SubscribeResponse> {
-        // 실 결제 모드인데 paymentKey 없으면 결제 필요
-        if (!isPaymentStubMode && body?.paymentKey.isNullOrBlank()) {
-            return ResponseEntity.status(402).build()
+        if (!isPaymentStubMode) {
+            val paymentKey = body?.paymentKey?.trim().orEmpty()
+            val orderId = body?.orderId?.trim().orEmpty()
+            if (paymentKey.isBlank() || orderId.isBlank()) {
+                return ResponseEntity.status(402).build()
+            }
+            val result = paymentGateway.confirm(
+                orderId = orderId,
+                paymentKey = paymentKey,
+                expectedAmount = PASS_PRICE_MONTHLY,
+            )
+            if (result is kr.ai.palette.infrastructure.payment.PaymentGatewayResult.Failure) {
+                return ResponseEntity.status(402).build()
+            }
         }
-        // TODO Phase 2: Toss Payments 정기결제(빌링) 검증 후 활성화
 
         val userId = authUser.userId.value
         val now = Instant.now()
@@ -332,6 +360,8 @@ data class AiSignalRecommendation(
     val insight: PalettePickInsight? = null,
     /** 시군구 중심좌표 기준 근사 거리(km, 반올림). 좌표 없으면 null. (ADR 0072) */
     val distanceKm: Int? = null,
+    /** 후보 출처 — ACQUAINTANCE(지인망) / PUBLIC(공개 발견 풀). (ADR 0072) */
+    val candidateSource: String? = null,
 )
 
 /** 팔레트픽 LLM 매칭 인사이트 — 캐시된 분석 결과의 클라이언트 노출용 sub-DTO. */
@@ -356,5 +386,7 @@ data class SubscribeResponse(
 
 data class UnlockRequestBody(
     /** Toss Payments paymentKey from front-end payment approval response */
-    val paymentKey: String?
+    val paymentKey: String?,
+    /** Toss orderId — confirm API 검증용 */
+    val orderId: String? = null,
 )

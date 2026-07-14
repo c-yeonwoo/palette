@@ -11,6 +11,8 @@ import { api } from "../../lib/api/apiClient";
 import { tokenStorage } from "../../lib/auth/tokenStorage";
 import { toast } from "sonner";
 import { WeeklyColorInsightCard } from "./insights/WeeklyColorInsightCard";
+import { ShareInsightCard } from "./insights/ShareInsightCard";
+import { TrustBadgeRow } from "./profile/TrustBadgeRow";
 
 interface MyPageScreenProps {
   onNavigateToProfile: () => void;
@@ -25,6 +27,7 @@ interface MyPageScreenProps {
   onNavigateBilling?: () => void;
   onNavigateSupport?: () => void;
   onNavigateBlocks?: () => void;
+  onNavigateToAiHub?: () => void;
 }
 
 interface MatchmakerData {
@@ -67,6 +70,7 @@ export function MyPageScreen({
   onNavigateBilling,
   onNavigateSupport,
   onNavigateBlocks,
+  onNavigateToAiHub,
 }: MyPageScreenProps) {
   const [user, setUser] = useState<any>(null);
   const [matchmaker, setMatchmaker] = useState<MatchmakerData | null>(null);
@@ -308,6 +312,12 @@ export function MyPageScreen({
               {user?.email && (
                 <p className="text-xs text-muted-foreground mt-1 truncate">{user.email}</p>
               )}
+              <TrustBadgeRow
+                className="mt-2"
+                phoneVerified={!!user?.phoneNumber}
+                niceVerified={!!user?.isPhoneVerified}
+                trustScore={profile?.metrics?.trustScore ?? null}
+              />
             </div>
           </div>
         </div>
@@ -349,6 +359,17 @@ export function MyPageScreen({
         />
       )}
 
+      {/* P2-004 — 공유 인사이트 카드 */}
+      {!isMatchmakerOnly && profile?.colorType?.strengths && profile.colorType.strengths.length > 0 && (
+        <div className="max-w-2xl mx-auto px-5 mt-3">
+          <ShareInsightCard
+            colorName={profile.colorType.name}
+            strengths={profile.colorType.strengths}
+            colorHex={profile.colorType.hex}
+          />
+        </div>
+      )}
+
       {/* 핸드폰 인증 배너 */}
       {!user?.phoneNumber && isMatchmaker && (
         <div className="max-w-2xl mx-auto px-5 mt-3">
@@ -371,6 +392,14 @@ export function MyPageScreen({
                 title="내 프로필"
                 subtitle={profileSubtitle}
                 onClick={onNavigateToProfile}
+              />
+            )}
+            {!isMatchmakerOnly && onNavigateToAiHub && (
+              <MenuItem
+                icon={<PaletteIcon className="w-4 h-4" />}
+                title="AI 허브"
+                subtitle="팔레트 Pick · 궁합 리포트"
+                onClick={onNavigateToAiHub}
               />
             )}
             {onNavigateToFriends && (

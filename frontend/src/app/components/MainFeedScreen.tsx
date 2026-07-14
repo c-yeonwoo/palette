@@ -106,6 +106,14 @@ interface AiSignalRecommendation {
   teaserAge: number | null;
   teaserLocation: string | null;
   teaserColorType?: string | null;
+  distanceKm?: number | null;
+  candidateSource?: string | null;
+  insight?: {
+    summary: string;
+    strengths: string[];
+    watchOuts: string[];
+    score: number;
+  } | null;
 }
 
 interface AiSignalResponse {
@@ -155,9 +163,11 @@ interface MainFeedScreenPropsExtended extends MainFeedScreenProps {
   onNavigateToMyPage?: () => void;
   /** 물감 잔액 chip 탭 → 충전 화면 (잔액 가시성 — 비용 게이트 전에 잔액 인지) */
   onNavigateToBilling?: () => void;
+  /** AI 허브 (팔레트 Pick 상세·궁합 리포트) */
+  onNavigateToAiHub?: () => void;
 }
 
-export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigateToFriends, onNavigateToMyPage, onNavigateToBilling, unreadNotifications = 0 }: MainFeedScreenPropsExtended) {
+export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigateToFriends, onNavigateToMyPage, onNavigateToBilling, onNavigateToAiHub, unreadNotifications = 0 }: MainFeedScreenPropsExtended) {
   const [feedItems, setFeedItems] = useState<FeedProfileItem[]>([]);
   const [aiSignal, setAiSignal] = useState<AiSignalResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -288,6 +298,15 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
               )}
             </button>
+            {onNavigateToAiHub && (
+              <button
+                onClick={onNavigateToAiHub}
+                className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted/50 transition-colors text-foreground"
+                aria-label="AI 허브"
+              >
+                <Sparkles className="w-[18px] h-[18px]" />
+              </button>
+            )}
             {userProfile?.accountType !== "MATCHMAKER_ONLY" && (
               <button
                 onClick={() => { setPendingFilters({ ...filters }); setShowFilter(true); }}
@@ -819,6 +838,8 @@ function AiSignalSection({
   const recommendations = aiSignal.recommendations;
   const isSubscriber = aiSignal.isSubscriber ?? false;
   const passPrice = aiSignal.passPriceMonthly ?? 9900;
+  const hasPublicPool = recommendations.some(r => r.candidateSource === "PUBLIC");
+  const hasAcquaintancePool = recommendations.some(r => r.candidateSource === "ACQUAINTANCE" || !r.candidateSource);
   const [showPaywall, setShowPaywall] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
 
@@ -855,6 +876,22 @@ function AiSignalSection({
           <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-brand-soft text-brand-strong flex-shrink-0">PASS</span>
         )}
       </div>
+
+      {/* P-008 — 콜드스타트 vs 지인망 모드 라벨 */}
+      {(hasPublicPool || hasAcquaintancePool) && (
+        <div className="flex flex-wrap gap-1.5 mb-2.5">
+          {hasAcquaintancePool && (
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+              지인 추천
+            </span>
+          )}
+          {hasPublicPool && (
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-brand-soft text-brand-strong">
+              공개 발견
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         {recommendations.map((rec, i) => {
@@ -1107,6 +1144,25 @@ function AiSignalCard({
           )}
           <div className="pl-2.5">
             <CardInfoSection nickname={null} job={job} age={rec.teaserAge ?? null} region={location} colorHex={accentHex} colorName={theirColor ? COLOR_META[theirColor]?.name ?? null : null} />
+            {/* P-007 — Pick 3-bullet 근거 */}
+            {rec.insight && (rec.insight.strengths.length > 0 || rec.insight.summary) && (
+              <div className="mt-2 pt-2 border-t border-border/60 space-y-1">
+                {rec.insight.summary && (
+                  <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">{rec.insight.summary}</p>
+                )}
+                {rec.insight.strengths.slice(0, 3).map((s, i) => (
+                  <p key={i} className="text-[11px] text-foreground flex items-start gap-1">
+                    <span className="text-brand-strong mt-0.5">•</span>
+                    <span className="line-clamp-1">{s}</span>
+                  </p>
+                ))}
+              </div>
+            )}
+            {rec.candidateSource === "PUBLIC" && rec.distanceKm != null && (
+              <p className="text-[10px] text-muted-foreground mt-1.5">
+                {rec.distanceKm <= 1 ? "가까운 거리" : `약 ${rec.distanceKm}km`}
+              </p>
+            )}
           </div>
         </div>
       )}

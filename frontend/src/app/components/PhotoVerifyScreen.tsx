@@ -16,6 +16,7 @@ import {
 import { getColorTypeMeta } from "../../lib/colorTypes";
 import { toast } from "sonner";
 import { cn } from "./ui/utils";
+import { PHOTO_VERIFY_IS_BETA } from "../../lib/featureFlags";
 
 type Step = "intro" | "capture" | "processing" | "success" | "failed";
 
@@ -125,6 +126,11 @@ export function PhotoVerifyScreen({ onBack, onComplete, colorType = "orange", us
           </div>
           <div>
             <h2 className="text-display font-bold text-text-primary">사진 본인 인증</h2>
+            {PHOTO_VERIFY_IS_BETA && (
+              <span className="inline-block mt-2 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">
+                베타 — AI 검증 준비 중
+              </span>
+            )}
             <p className="text-body-sm text-text-secondary mt-1.5">
               셀카 4컷으로 프로필 사진과 일치하는지 확인해요.
               <br />약 1분 소요됩니다.
