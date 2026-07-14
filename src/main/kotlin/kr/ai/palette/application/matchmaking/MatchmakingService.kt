@@ -46,13 +46,15 @@ class MatchmakingService(
 
         // 이벤트 발행 (트랜잭션 커밋 후 알림 생성)
         val matchmakerName = userRepository.findById(matchmakerId)?.privateInfo?.realName ?: "주선자"
+        val requesterName = userRepository.findById(request.requesterId)?.publicInfo?.nickname
         eventPublisher.publishEvent(
             PaletteEvent.MatchmakingApproved(
                 requestId = requestId.value.toString(),
                 requesterId = request.requesterId.value.toString(),
                 targetUserId = request.targetUserId.value.toString(),
                 matchmakerName = matchmakerName,
-                matchmakerMessage = message
+                matchmakerMessage = message,
+                requesterName = requesterName,
             )
         )
 

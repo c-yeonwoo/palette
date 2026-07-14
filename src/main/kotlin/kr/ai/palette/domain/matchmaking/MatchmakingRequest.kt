@@ -61,7 +61,7 @@ data class MatchmakingRequest(
                 targetUserId = targetUserId,
                 matchmakerId = requesterId,
                 requesterMessage = requesterMessage,
-                matchmakerDecision = MatchmakerDecision.approve("팔레트 Pick 자동 연결"),
+                matchmakerDecision = MatchmakerDecision.approve("팔리 주선"),
                 targetUserDecision = null,
                 status = MatchmakingRequestStatus.MATCHMAKER_APPROVED,
                 createdAt = now,

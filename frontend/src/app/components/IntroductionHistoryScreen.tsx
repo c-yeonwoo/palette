@@ -30,6 +30,15 @@ interface MatchRequestWithRole extends MatchRequest {
   myRole: "requester" | "target";
 }
 
+/** ADR 0078 — Pick direct는 matchmakerId===requesterId 또는 표시명 팔리 */
+function isPalliMatchmaker(request: Pick<MatchRequest, "matchmakerId" | "requesterId" | "matchmakerName">): boolean {
+  return request.matchmakerName === "팔리" || request.matchmakerId === request.requesterId;
+}
+
+function matchmakerLabel(request: Pick<MatchRequest, "matchmakerId" | "requesterId" | "matchmakerName">): string {
+  return isPalliMatchmaker(request) ? "팔리" : (request.matchmakerName ?? "주선자");
+}
+
 interface RelationshipStatus {
   requestId: string;
   stage: string;
@@ -281,7 +290,7 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
               <div className="mb-3 rounded-2xl border border-border bg-brand-soft px-4 py-3.5 space-y-2">
                 <p className="text-sm font-semibold text-foreground">이건 당신 잘못이 아니에요</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  거절은 자연스러운 과정이에요. 홈의 팔레트 Pick에서 다른 인연을 만나보세요.
+                  거절은 자연스러운 과정이에요. 홈에서 팔리의 추천으로 다른 인연을 만나보세요.
                 </p>
                 <button
                   type="button"
@@ -331,7 +340,9 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
                               }
                             </p>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              {request.matchmakerName}님 주선 ·{" "}
+                              {isPalliMatchmaker(request)
+                                ? "팔리 주선 · "
+                                : `${matchmakerLabel(request)}님 주선 · `}
                               {new Date(request.createdAt).toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}
                             </p>
                           </div>
@@ -350,7 +361,9 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
                           <div className="bg-secondary rounded-xl p-3 flex gap-2">
                             <MessageSquare className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
                             <div>
-                              <p className="text-xs text-muted-foreground mb-0.5">주선자 메시지</p>
+                              <p className="text-xs text-muted-foreground mb-0.5">
+                                {isPalliMatchmaker(request) ? "팔리의 한마디" : "주선자 메시지"}
+                              </p>
                               <p className="text-sm">{request.matchmakerMessage}</p>
                             </div>
                           </div>
@@ -737,12 +750,15 @@ function RequestTimeline({ request }: { request: MatchRequestWithRole }) {
   type Step = { label: string; sub?: string; state: "done" | "active" | "failed" | "waiting" };
 
   const steps: Step[] = (() => {
-    const { status, myRole, matchmakerName, offeredPoints } = request;
+    const { status, myRole, offeredPoints } = request;
     const pts = offeredPoints ?? 0;
+    const palli = isPalliMatchmaker(request);
+    const mm = matchmakerLabel(request);
 
     if (myRole === "requester") {
-      // 주선자가 검토하는 단계
-      const step1: Step = { label: "소개 요청 전달", sub: `${matchmakerName}님께 전달됐어요`, state: "done" };
+      const step1: Step = palli
+        ? { label: "팔리에게 부탁했어요", sub: "상대에게 바로 전달됐어요", state: "done" }
+        : { label: "소개 요청 전달", sub: `${mm}님께 전달됐어요`, state: "done" };
 
       if (status === "PENDING") {
         return [
@@ -757,11 +773,13 @@ function RequestTimeline({ request }: { request: MatchRequestWithRole }) {
           { label: "이번엔 인연이 닿지 않았어요", sub: "다음 인연을 찾아볼게요 🌿", state: "failed" },
         ];
       }
-      const step2: Step = {
-        label: "주선자가 수락했어요",
-        sub: pts > 0 ? `${pts}P가 ${matchmakerName}님께 전달됐어요` : undefined,
-        state: "done",
-      };
+      const step2: Step = palli
+        ? { label: "팔리가 이어줬어요", state: "done" }
+        : {
+            label: "주선자가 수락했어요",
+            sub: pts > 0 ? `${pts}P가 ${mm}님께 전달됐어요` : undefined,
+            state: "done",
+          };
       if (status === "MATCHMAKER_APPROVED") {
         return [step1, step2, { label: "상대방 검토 중", sub: "보통 1~3일 내 답변해요", state: "active" }];
       }
@@ -777,7 +795,11 @@ function RequestTimeline({ request }: { request: MatchRequestWithRole }) {
     // Target(수신자) 뷰 — 훨씬 단순하게
     if (status === "MATCHMAKER_APPROVED") {
       return [
-        { label: "소개 요청이 도착했어요", sub: `${matchmakerName}님이 연결해드려요`, state: "active" },
+        {
+          label: "소개 요청이 도착했어요",
+          sub: palli ? "팔리가 연결해드려요" : `${mm}님이 연결해드려요`,
+          state: "active",
+        },
       ];
     }
     if (status === "COMPLETED") {

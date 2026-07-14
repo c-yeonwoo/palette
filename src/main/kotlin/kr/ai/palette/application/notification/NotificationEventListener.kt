@@ -40,25 +40,34 @@ class NotificationEventListener(
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun onMatchmakingApproved(event: PaletteEvent.MatchmakingApproved) = runSafely("MatchmakingApproved") {
-        // 요청자에게: 주선자가 승인했다
-        notificationService.create(
-            userId = event.requesterId,
-            type = NotificationType.MATCH_APPROVED,
-            title = "주선 요청이 승인되었습니다 ✅",
-            body = "${event.matchmakerName}님이 주선 요청을 승인했습니다. 상대방의 응답을 기다려주세요.",
-            metadata = mapOf("requestId" to event.requestId)
-        )
-        // 피주선자에게: 새 소개가 도착했다
-        val targetBody = buildString {
-            append("새로운 소개가 도착했습니다")
-            if (!event.matchmakerMessage.isNullOrBlank()) {
-                append(" — \"${event.matchmakerMessage}\"")
+        val isPalli = event.matchmakerName == "팔리"
+
+        // 사람 주선자 승인만 요청자에게 알림. 팔리(시스템) 자동 승인은 중복·어색한 알림 스킵 (ADR 0078).
+        if (!isPalli) {
+            notificationService.create(
+                userId = event.requesterId,
+                type = NotificationType.MATCH_APPROVED,
+                title = "주선 요청이 승인되었습니다 ✅",
+                body = "${event.matchmakerName}님이 주선 요청을 승인했습니다. 상대방의 응답을 기다려주세요.",
+                metadata = mapOf("requestId" to event.requestId)
+            )
+        }
+
+        val targetBody = if (isPalli) {
+            val who = event.requesterName?.takeIf { it.isNotBlank() }?.let { "${it}님을" } ?: "누군가를"
+            "팔리가 ${who} 소개하고 싶어 해요"
+        } else {
+            buildString {
+                append("새로운 소개가 도착했습니다")
+                if (!event.matchmakerMessage.isNullOrBlank()) {
+                    append(" — \"${event.matchmakerMessage}\"")
+                }
             }
         }
         notificationService.create(
             userId = event.targetUserId,
             type = NotificationType.MATCH_APPROVED,
-            title = "새로운 소개가 도착했어요 💌",
+            title = if (isPalli) "팔리가 소개를 보냈어요 💌" else "새로운 소개가 도착했어요 💌",
             body = targetBody,
             metadata = mapOf("requestId" to event.requestId)
         )
@@ -117,7 +126,7 @@ class NotificationEventListener(
                 userId = event.requesterId,
                 type = NotificationType.MATCH_REJECTED_BY_TARGET,
                 title = "이번 인연은 아니었어요 🌿",
-                body = "마음이 맞는 시점은 사람마다 달라요. 당신의 색과 더 잘 어울리는 분이 곧 나타날 거예요 — 팔레트 Pick 에서 확인해보세요.",
+                body = "마음이 맞는 시점은 사람마다 달라요. 당신의 색과 더 잘 어울리는 분이 곧 나타날 거예요 — 팔리의 추천에서 확인해보세요.",
                 metadata = mapOf("requestId" to event.requestId)
             )
         }

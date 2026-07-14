@@ -23,7 +23,9 @@ sealed class PaletteEvent {
         val requesterId: String,
         val targetUserId: String,
         val matchmakerName: String,
-        val matchmakerMessage: String?
+        val matchmakerMessage: String?,
+        /** 수신 알림 카피용 (팔리 주선: "팔리가 ○○님을 소개…") */
+        val requesterName: String? = null,
     ) : PaletteEvent()
 
     /** 주선자 거절: 요청자에게 거절 알림 */

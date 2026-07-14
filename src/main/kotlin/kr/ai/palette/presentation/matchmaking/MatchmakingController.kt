@@ -148,7 +148,7 @@ class MatchmakingController(
     }
 
     /**
-     * 팔레트 Pick(AI) 직접 소개 요청 — 공통 친구(주선자) 없이 시스템이 바로 대상자에게 프로필 전달.
+     * 팔레트 Pick — 팔리(시스템 주선자)가 바로 대상자에게 프로필 전달 (ADR 0078).
      * 주선자 단계를 자동 승인 처리하고 대상자 응답 대기 상태로 생성한다.
      */
     @PostMapping("/direct")
@@ -183,18 +183,29 @@ class MatchmakingController(
             )
         )
 
-        // 대상자에게 바로 전달 — 응답 대기 알림 (주선자 승인 알림 재사용, 주선자명="팔레트 Pick")
+        val requesterNickname = userRepository.findById(requesterId)?.publicInfo?.nickname
+        // 대상자에게 바로 전달 — 팔리 주선 알림 (ADR 0078)
         eventPublisher.publishEvent(
             PaletteEvent.MatchmakingApproved(
                 requestId = saved.id.value.toString(),
                 requesterId = requesterId.value.toString(),
                 targetUserId = targetUserId.value.toString(),
-                matchmakerName = "팔레트 Pick",
-                matchmakerMessage = request.message
+                matchmakerName = PALLI_DISPLAY_NAME,
+                matchmakerMessage = request.message,
+                requesterName = requesterNickname,
             )
         )
 
-        return ResponseEntity.ok(MatchmakingRequestResponse.from(saved))
+        return ResponseEntity.ok(
+            MatchmakingRequestResponse.from(
+                saved,
+                requesterNickname = requesterNickname,
+                requesterRealName = null,
+                targetNickname = null,
+                targetRealName = null,
+                matchmakerName = PALLI_DISPLAY_NAME,
+            )
+        )
     }
 
     @GetMapping("/check/{targetUserId}")
@@ -227,7 +238,7 @@ class MatchmakingController(
                 requesterRealName = requester?.privateInfo?.realName,
                 targetNickname = target?.publicInfo?.nickname,
                 targetRealName = target?.privateInfo?.realName,
-                matchmakerName = matchmaker?.privateInfo?.realName
+                matchmakerName = resolveMatchmakerDisplayName(request, matchmaker)
             )
         }
 
@@ -260,7 +271,7 @@ class MatchmakingController(
                 requesterRealName = null,
                 targetNickname = target?.publicInfo?.nickname,
                 targetRealName = target?.privateInfo?.realName,
-                matchmakerName = matchmaker?.privateInfo?.realName
+                matchmakerName = resolveMatchmakerDisplayName(request, matchmaker)
             )
         }
 
@@ -362,7 +373,7 @@ class MatchmakingController(
                 requesterRealName = requester?.privateInfo?.realName,
                 targetNickname = null,
                 targetRealName = null,
-                matchmakerName = matchmaker?.privateInfo?.realName
+                matchmakerName = resolveMatchmakerDisplayName(request, matchmaker)
             )
         }
 
@@ -372,6 +383,20 @@ class MatchmakingController(
                 totalCount = enrichedRequests.size
             )
         )
+    }
+
+    companion object {
+        /** ADR 0078 — Pick 경로 시스템 주선자 표시명 */
+        const val PALLI_DISPLAY_NAME = "팔리"
+    }
+
+    /** direct(Pick) 요청은 matchmakerId==requesterId placeholder → 표시는 항상 팔리 */
+    private fun resolveMatchmakerDisplayName(
+        request: MatchmakingRequest,
+        matchmaker: kr.ai.palette.domain.user.User?,
+    ): String? {
+        if (request.matchmakerId == request.requesterId) return PALLI_DISPLAY_NAME
+        return matchmaker?.privateInfo?.realName ?: matchmaker?.publicInfo?.nickname
     }
 
     private fun findUserByRealName(realName: String): kr.ai.palette.domain.user.User? {

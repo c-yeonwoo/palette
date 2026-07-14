@@ -875,13 +875,9 @@ function AiSignalSection({
     <div className="mb-2">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 min-w-0">
-          {/* 로고 에코 — 두 색의 조화(골드+로즈) 미니 마크. 조화 보조색 적용 지점 (ADR 0073 §2-1c) */}
-          <span className="relative inline-block w-6 h-4 flex-shrink-0" aria-hidden="true">
-            <span className="absolute left-0 top-0 w-4 h-4 rounded-full bg-brand opacity-80" />
-            <span className="absolute right-0 top-0 w-4 h-4 rounded-full bg-brand-2 opacity-80" />
-          </span>
+          <img src="/pali.png" alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0 bg-brand-soft" />
           <p className="text-sm text-muted-foreground truncate">
-            {isSubscriber ? "오늘 당신과 가장 잘 맞는 색을 골랐어요" : "프로필 궁합도를 기반으로 추천해드려요"}
+            {isSubscriber ? "팔리가 오늘 당신과 잘 맞는 분을 골랐어요" : "팔리가 궁합으로 추천해드려요"}
           </p>
         </div>
         {isSubscriber && (
@@ -947,7 +943,8 @@ function AiSignalSection({
                 </div>
                 <div className="absolute top-2 left-2">
                   <span className="text-xs font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 bg-white/85 text-brand-strong shadow-sm">
-                    <Sparkles className="w-2.5 h-2.5" /> AI
+                    <img src="/pali.png" alt="" className="w-3 h-3 rounded-full object-cover" />
+                    팔리가 고른 분
                   </span>
                 </div>
               </button>
@@ -1113,7 +1110,8 @@ function AiSignalCard({
             )}
             <div className="absolute top-2 left-2">
               <span className="text-xs font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 bg-white/85 text-brand-strong shadow-sm">
-                <Sparkles className="w-2.5 h-2.5" /> AI
+                <img src="/pali.png" alt="" className="w-3 h-3 rounded-full object-cover" />
+                팔리가 고른 분
               </span>
             </div>
           </div>
@@ -1159,6 +1157,7 @@ function AiSignalCard({
             {/* P-007 — Pick 3-bullet 근거 */}
             {rec.insight && (rec.insight.strengths.length > 0 || rec.insight.summary) && (
               <div className="mt-2 pt-2 border-t border-border/60 space-y-1">
+                <p className="text-[10px] font-semibold text-brand-strong">팔리의 한마디</p>
                 {rec.insight.summary && (
                   <p className="text-[11px] text-muted-foreground leading-snug line-clamp-2">{rec.insight.summary}</p>
                 )}
@@ -1234,8 +1233,8 @@ function FirstTimeGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => v
     },
     {
       Icon: Sparkles,
-      title: "AI 시그널 받기",
-      desc: "매일 한 명, AI가 골라준 추천을 무료로 받아보세요",
+      title: "팔리의 추천 받기",
+      desc: "매일 한 명, 팔리가 골라준 추천을 받아보세요",
     },
   ];
 
@@ -1342,7 +1341,7 @@ function PalettePickEmptyGuide({ onNavigateToFriends }: { onNavigateToFriends?: 
       <div className="w-20 h-20 rounded-full bg-brand-soft flex items-center justify-center mb-6">
         <Sparkles className="w-9 h-9 text-brand-strong" />
       </div>
-      <h3 className="text-base font-bold mb-1.5">팔레트 Pick이 곧 도착해요</h3>
+      <h3 className="text-base font-bold mb-1.5">팔리가 곧 추천을 보낼 거예요</h3>
       <p className="text-sm text-muted-foreground leading-relaxed max-w-[280px] mb-3">
         색 궁합으로 매일 어울리는 인연을 골라드려요.<br />
         지금은 주변에서 잘 맞는 분을 찾는 중이에요.

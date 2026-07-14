@@ -118,7 +118,7 @@ export function TodaySection({ onAnswered, onGoToPick }: TodaySectionProps) {
                 className="w-full"
                 onClick={onGoToPick}
               >
-                오늘의 발견 보러 가기
+                팔리의 추천 보러 가기
               </Button>
             )}
           </div>

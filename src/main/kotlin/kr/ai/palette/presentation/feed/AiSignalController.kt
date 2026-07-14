@@ -183,7 +183,7 @@ class AiSignalController(
             AiSignalRecommendation(
                 profile = fullProfile,
                 reason = insight?.summary
-                    ?: if (isUnlocked) "프로필 궁합도 기반 추천" else "구독하면 만날 수 있는 오늘의 추천",
+                    ?: if (isUnlocked) "팔리가 고른 추천이에요" else "구독하면 팔리의 추천을 볼 수 있어요",
                 similarityScore = insight?.score?.toDouble()?.div(100.0) ?: 0.0,
                 isFree = isFree,
                 isUnlocked = isUnlocked,

@@ -370,7 +370,8 @@ function PaintCard({
 
         <div className="absolute top-2 left-2 z-10">
           <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-primary/90 text-primary-foreground flex items-center gap-0.5">
-            <Sparkles className="w-2.5 h-2.5" /> AI
+            <img src="/pali.png" alt="" className="w-3 h-3 rounded-full object-cover" />
+            팔리가 고른 분
           </span>
         </div>
         {/* ADR 0025 시절 'FREE' 뱃지는 ADR 0044/0045 에서 폐기 — 팔레트픽이 계정당 첫 달 통째 무료 모델로 전환 */}
@@ -414,7 +415,7 @@ function AiSignalSection({
       await api.post("/api/v1/feed/ai-signal/unlock", {});
       const updated = await api.get<AiSignalResponse>("/api/v1/feed/ai-signal");
       onSignalChange(updated);
-      toast.success(`${rec.unlockPrice.toLocaleString()}원으로 AI 추천을 열었어요`);
+      toast.success(`${rec.unlockPrice.toLocaleString()}원으로 팔리의 추천을 열었어요`);
     } catch {
       toast.error("열람에 실패했어요. 다시 시도해주세요.");
     } finally {
@@ -428,7 +429,7 @@ function AiSignalSection({
         <div className="w-6 h-6 rounded-lg bg-brand-soft flex items-center justify-center">
           <Sparkles className="w-3.5 h-3.5 text-primary" />
         </div>
-        <p className="text-sm font-semibold">오늘의 AI 시그널</p>
+        <p className="text-sm font-semibold">팔리가 보낸 추천</p>
         <span className="ml-auto text-xs text-muted-foreground">매일 1장 무료</span>
       </div>
       <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4">
@@ -463,7 +464,8 @@ function AiSignalSection({
                 </div>
                 <div className="absolute top-2 left-2">
                   <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-primary/90 text-primary-foreground flex items-center gap-0.5">
-                    <Sparkles className="w-2.5 h-2.5" /> AI
+                    <img src="/pali.png" alt="" className="w-3 h-3 rounded-full object-cover" />
+                    팔리가 고른 분
                   </span>
                 </div>
               </div>
@@ -1038,7 +1040,7 @@ export function AiHubScreen({
           <div className="px-4">
             <div className="rounded-2xl bg-card p-6 text-center">
               <Sparkles className="w-8 h-8 text-primary/40 mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">오늘의 AI 시그널을 불러올 수 없어요</p>
+              <p className="text-sm text-muted-foreground">팔리가 보낸 추천을 불러올 수 없어요</p>
             </div>
           </div>
         )}

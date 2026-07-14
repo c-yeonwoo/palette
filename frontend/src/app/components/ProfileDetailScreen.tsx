@@ -322,7 +322,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     }
   };
 
-  // 팔레트 Pick(AI 추천)으로 들어온 상세는 공통 친구 없이 시스템이 직접 연결 (degree 0)
+  // 팔레트 Pick — 팔리(시스템 주선자)가 이어줌 (degree 0, ADR 0078)
   const isPalettePick = degree === 0;
 
   // 내 지인(1촌)이고, 상대가 '지인에게 상세 공개'를 끈 경우 → 소개글·성향·이상형 숨김 (핵심정보만) (ADR 0035)
@@ -340,7 +340,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   const handleDirectRequest = async () => {
     try {
       await api.post("/api/v1/matchmaking/direct", { targetUserId: userId });
-      toast.success("소개 요청을 보냈어요 · 상대방에게 프로필이 전달됐어요");
+      toast.success("팔리에게 부탁했어요 · 상대에게 바로 전달됐어요");
       setAlreadyRequested(true);
     } catch {
       toast.error("이미 요청했거나 지금은 요청할 수 없어요");
@@ -585,14 +585,16 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
               >
                 <Send className="w-5 h-5 mr-2" />
                 {alreadyRequested
-                  ? "소개 요청 완료"
+                  ? (isPalettePick ? "부탁 완료" : "소개 요청 완료")
                   : inCoolTime
                   ? `쿨타임 중 (${coolTimeRemainingDays}일 남음)`
+                  : isPalettePick
+                  ? "팔리에게 이어달라고 부탁하기"
                   : "소개 요청하기"}
               </Button>
               {isPalettePick && !alreadyRequested && (
                 <p className="text-xs text-center text-muted-foreground mt-2">
-                  팔레트 Pick은 공통 친구 없이 바로 상대방에게 프로필이 전달돼요
+                  팔리가 주선자예요. 상대에게 바로 전달돼요.
                 </p>
               )}
             </>

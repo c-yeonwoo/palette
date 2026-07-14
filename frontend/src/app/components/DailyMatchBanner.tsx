@@ -168,7 +168,7 @@ export function DailyMatchBanner({ myColorType, onViewRecommended, className }: 
                 background: `linear-gradient(to right, ${myHsl}, ${recHsl})`,
               }}
             >
-              팔레트 Pick 보기
+              팔리의 추천 보기
             </button>
           )}
         </div>
