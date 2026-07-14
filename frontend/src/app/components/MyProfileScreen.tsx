@@ -1,25 +1,22 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
 import {
-  Edit3, Loader2, ChevronLeft, ChevronDown,
+  Edit3, Loader2,
   ExternalLink, CheckCircle2, Share2, Link,
-  AlertCircle, Phone, Eye, ChevronRight, Camera, Plus,
+  AlertCircle, Eye, ChevronRight,
 } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { MatchmakerProfileScreen } from "./MatchmakerProfileScreen";
 import NiceVerificationModal from "./NiceVerificationModal";
-import { CategoryCard } from "./profile/CategoryCard";
 import { ProfileDiscoveryDeck } from "./profile/ProfileDiscoveryDeck";
 import { ProfilePhotoEssay } from "./profile/ProfilePhotoEssay";
+import { ProfileMagazineShell } from "./profile/ProfileMagazineShell";
+import { ProfileMagazineHeader } from "./profile/ProfileMagazineHeader";
+import { ProfileMagazineHero } from "./profile/ProfileMagazineHero";
+import { ProfileDetailsCollapsible } from "./profile/ProfileDetailsCollapsible";
+import { ProfileIdealTypeSummary } from "./profile/ProfileIdealTypeSummary";
 import { buildHeroSpecLine } from "../../lib/profileEssay";
-import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
-import {
-  DATING_STYLE_QUESTION_LABELS,
-  DATING_STYLE_OPTION_LABELS,
-} from "../../lib/datingStyleLabels";
 import { jobCategoryLabel } from "../../lib/jobCategory";
 
 interface MyProfileScreenProps {
@@ -255,179 +252,112 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
   const sortedPhotos = profile?.photos.slice().sort((a, b) => a.displayOrder - b.displayOrder) ?? [];
   const heroSpecLine = profile ? buildHeroSpecLine(profile, jobCategoryLabel) : "";
 
-  const idealSummaryChips = profile
-    ? [
-        ...profile.idealType.appearanceStyles?.map(getAppearanceStyleLabel) ?? [],
-        ...profile.idealType.personalities ?? [],
-        ...profile.idealType.datePreferences?.map(getDatePreferenceLabel) ?? [],
-        ...profile.idealType.importantValues?.map(getImportantValueLabel) ?? [],
-        ...profile.idealType.bucketList?.map(getBucketLabel) ?? [],
-      ].filter(Boolean).slice(0, 8)
-    : [];
-
-  return (
-    <div
-      className="min-h-screen pb-32"
-      style={accentColor
-        ? { backgroundColor: "#ffffff", backgroundImage: `linear-gradient(180deg, ${accentColor}26 0%, ${accentColor}12 360px, ${accentColor}0A 100%)` }
-        : { backgroundColor: "var(--background)" }
-      }
+  const completionRing = profile ? (
+    <button
+      type="button"
+      onClick={() => setShowCompletionChecklist(true)}
+      className="flex-shrink-0 flex flex-col items-center gap-0.5"
+      aria-label="프로필 완성도"
     >
-
-      {/* ── 대표사진 히어로 ── */}
-      <div className="relative" style={{ height: 420 }}>
-        {/* 대표사진 or 빈 플레이스홀더 */}
-        {sortedPhotos.length > 0 ? (
-          <img
-            src={sortedPhotos[0].url}
-            alt="대표사진"
-            className="w-full h-full object-cover"
+      <div className="relative w-11 h-11">
+        <svg className="absolute inset-0 w-11 h-11 -rotate-90" viewBox="0 0 44 44">
+          <circle cx="22" cy="22" r="19" fill="none" strokeWidth="3" stroke="rgba(255,255,255,0.25)" />
+          <circle
+            cx="22" cy="22" r="19" fill="none" strokeWidth="3"
+            stroke="white" strokeLinecap="round"
+            strokeDasharray={`${2 * Math.PI * 19}`}
+            strokeDashoffset={`${2 * Math.PI * 19 * (1 - profile.metrics.completionRate / 100)}`}
+            className="transition-all duration-700"
           />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-muted via-muted/80 to-accent/20 flex flex-col items-center justify-center gap-4">
-            <div className="w-20 h-20 rounded-full bg-card/70 backdrop-blur-sm flex items-center justify-center shadow-sm">
-              <Camera className="w-9 h-9 text-muted-foreground" />
-            </div>
-            <div className="text-center space-y-1">
-              <p className="text-sm font-medium text-foreground/80">사진을 추가해보세요</p>
-              <p className="text-xs text-muted-foreground">사진이 있으면 매칭 확률이 3배 높아져요</p>
-            </div>
-            <button
-              onClick={onEdit}
-              className="flex items-center gap-1.5 bg-brand-soft text-brand-strong text-sm font-semibold px-5 py-2.5 rounded-full shadow-md"
-            >
-              <Plus className="w-4 h-4" />
-              사진 추가하기
-            </button>
-          </div>
-        )}
-
-        {/* 상하단 그라데이션 오버레이 */}
-        {sortedPhotos.length > 0 && (
-          <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-black/65 pointer-events-none" />
-        )}
-
-        {/* 상단 네비 */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-12 z-10">
-          <button
-            onClick={onBack}
-            className="w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center"
-          >
-            <ChevronLeft className="w-5 h-5 text-white" />
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="relative" ref={shareMenuRef}>
-              <button
-                onClick={() => setShowShareMenu(!showShareMenu)}
-                className="w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center"
-              >
-                <Share2 className="w-4 h-4 text-white" />
-              </button>
-              {showShareMenu && (
-                <div className="absolute right-0 top-11 bg-card border border-border rounded-xl shadow-lg p-2 flex gap-1 z-30">
-                  <button onClick={handleKakaoShare} className="p-2 hover:bg-muted rounded-lg" title="카카오톡">
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#FEE500">
-                      <path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.442 1.492 4.585 3.773 5.973-.142.53-.92 3.46-.945 3.68-.03.273.099.537.316.649.218.112.486.085.675-.073 0 0 2.216-1.478 3.288-2.186C9.67 18.764 10.814 19 12 19c5.523 0 10-3.477 10-7.5S17.523 3 12 3z" stroke="#000" strokeWidth="0.5" />
-                    </svg>
-                  </button>
-                  <button onClick={handleCopyLink} className="p-2 hover:bg-muted rounded-lg" title="링크 복사">
-                    <Link className="w-5 h-5 text-muted-foreground" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* 하단 이름 + 스펙라인 오버레이 */}
-        <div className="absolute bottom-0 left-0 right-0 px-5 pb-5 z-10">
-          <div className="flex items-end justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              {profile?.colorType?.name && (
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 mb-2">
-                  {accentColor && (
-                    <span
-                      className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: accentColor }}
-                    />
-                  )}
-                  <span className="text-xs font-medium" style={{ color: accentColor ?? "#333" }}>
-                    {profile.colorType.name}
-                  </span>
-                </div>
-              )}
-              <h3 className="text-2xl font-bold text-white drop-shadow-sm tracking-tight leading-tight">
-                {userProfile.nickname}
-              </h3>
-              {heroSpecLine && (
-                <p className="text-sm text-white/95 mt-1 font-medium tracking-tight">{heroSpecLine}</p>
-              )}
-              {profile?.colorType?.description && (
-                <p className="text-sm text-white/80 mt-1.5 leading-snug line-clamp-2">
-                  {profile.colorType.description}
-                </p>
-              )}
-            </div>
-            {/* 완성도 링 (우하단) */}
-            {profile && (
-              <button
-                onClick={() => setShowCompletionChecklist(true)}
-                className="flex-shrink-0 flex flex-col items-center gap-0.5"
-              >
-                <div className="relative w-11 h-11">
-                  <svg className="absolute inset-0 w-11 h-11 -rotate-90" viewBox="0 0 44 44">
-                    <circle cx="22" cy="22" r="19" fill="none" strokeWidth="3" stroke="rgba(255,255,255,0.25)" />
-                    <circle
-                      cx="22" cy="22" r="19" fill="none" strokeWidth="3"
-                      stroke="white" strokeLinecap="round"
-                      strokeDasharray={`${2 * Math.PI * 19}`}
-                      strokeDashoffset={`${2 * Math.PI * 19 * (1 - profile.metrics.completionRate / 100)}`}
-                      className="transition-all duration-700"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-xs font-bold text-white">{profile.metrics.completionRate}%</span>
-                  </div>
-                </div>
-                <span className="text-xs text-white/70">완성도</span>
-              </button>
-            )}
-          </div>
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-xs font-bold text-white">{profile.metrics.completionRate}%</span>
         </div>
       </div>
+    </button>
+  ) : null;
 
-      {/* 추가 사진은 아래 '이야기'에 인터리브로 노출 (남이 보는 화면과 동일한 서사). 관리는 프로필 수정에서. */}
-
-      {/* ── Stats ── */}
-      {profile && (
-        <div className="flex items-center justify-center border-b border-border">
-          <div className="flex items-center py-4 gap-1.5">
-            <Eye className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-sm font-bold text-foreground">{profile.metrics.viewCount}</span>
-            <span className="text-xs text-muted-foreground">명이 내 프로필을 봤어요</span>
+  return (
+    <ProfileMagazineShell
+      accentColor={accentColor}
+      bottomBar={(
+        <div className="sticky bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border p-4 z-20">
+          <div className="max-w-2xl mx-auto">
+            <Button
+              onClick={onEdit}
+              className="w-full h-14 rounded-2xl font-semibold bg-brand-soft text-brand-strong hover:bg-brand-soft/90"
+            >
+              <Edit3 className="w-4 h-4 mr-2" />
+              프로필 수정하기
+            </Button>
           </div>
         </div>
       )}
+    >
+      <ProfileMagazineHeader
+        title="내 프로필"
+        onBack={onBack}
+        accentColor={accentColor}
+        rightSlot={(
+          <div className="relative" ref={shareMenuRef}>
+            <button
+              type="button"
+              onClick={() => setShowShareMenu(!showShareMenu)}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground px-3 py-1.5 rounded-full hover:bg-muted transition-colors"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              공유
+            </button>
+            {showShareMenu && (
+              <div className="absolute right-0 top-11 bg-card border border-border rounded-xl shadow-lg p-2 flex gap-1 z-30">
+                <button type="button" onClick={handleKakaoShare} className="p-2 hover:bg-muted rounded-lg" title="카카오톡">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#FEE500">
+                    <path d="M12 3C6.477 3 2 6.477 2 10.5c0 2.442 1.492 4.585 3.773 5.973-.142.53-.92 3.46-.945 3.68-.03.273.099.537.316.649.218.112.486.085.675-.073 0 0 2.216-1.478 3.288-2.186C9.67 18.764 10.814 19 12 19c5.523 0 10-3.477 10-7.5S17.523 3 12 3z" stroke="#000" strokeWidth="0.5" />
+                  </svg>
+                </button>
+                <button type="button" onClick={handleCopyLink} className="p-2 hover:bg-muted rounded-lg" title="링크 복사">
+                  <Link className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      />
 
+      <ProfileMagazineHero
+        nickname={userProfile.nickname}
+        heroSpecLine={heroSpecLine}
+        colorType={profile?.colorType}
+        primaryPhotoUrl={sortedPhotos[0]?.url ?? null}
+        emptyAction={{ label: "사진 추가하기", onClick: onEdit }}
+        trailingOverlay={completionRing}
+      />
 
-      {/* ── 핸드폰 미인증 ── */}
+      {profile && profile.metrics.viewCount > 0 && (
+        <div
+          className="mx-4 mt-4 flex items-center gap-2 rounded-xl px-4 py-3"
+          style={{ backgroundColor: accentColor ? `${accentColor}14` : "hsl(var(--muted))" }}
+        >
+          <Eye className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
+          <p className="text-[13px] text-foreground">
+            <span className="font-semibold">{profile.metrics.viewCount}명</span>
+            <span className="text-muted-foreground">이 내 프로필을 봤어요</span>
+          </p>
+        </div>
+      )}
+
       {!userProfile.isPhoneVerified && (
         <button
+          type="button"
           onClick={() => setShowPhoneVerificationModal(true)}
-          className="w-full flex items-center gap-3 px-6 py-3.5 bg-amber-50 border-b border-amber-100 text-left"
+          className="mx-4 mt-3 w-[calc(100%-2rem)] flex items-center gap-3 rounded-xl px-4 py-3 bg-amber-50 border border-amber-100 text-left"
         >
           <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-amber-800">핸드폰 인증이 필요해요</p>
-          </div>
-          <div className="flex items-center gap-1 text-amber-500">
-            <Phone className="w-3.5 h-3.5" />
-            <ChevronRight className="w-3.5 h-3.5" />
-          </div>
+          <p className="text-sm font-medium text-amber-800 flex-1">핸드폰 인증이 필요해요</p>
+          <ChevronRight className="w-4 h-4 text-amber-500" />
         </button>
       )}
 
-      {/* ── 발견 덱 (내 프로필 미리보기) ── */}
       {profile && (
         <ProfileDiscoveryDeck
           profile={profile}
@@ -437,7 +367,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
         />
       )}
 
-      {/* ── 본문 — photo essay + 접힌 스펙 + 이상형 (남이 보는 화면과 동일한 뼈대) ── */}
       {profile && (
         <div className="p-6 space-y-6">
           <ProfilePhotoEssay
@@ -483,94 +412,15 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
             </div>
           )}
 
-          <Collapsible open={detailsExpanded} onOpenChange={setDetailsExpanded}>
-            <CollapsibleTrigger className="w-full flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3.5 text-sm font-medium text-foreground hover:bg-muted/40 transition-colors">
-              기본 정보 더 보기
-              <ChevronDown
-                className={`w-4 h-4 text-muted-foreground transition-transform ${detailsExpanded ? "rotate-180" : ""}`}
-              />
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-3 space-y-3">
-              {PROFILE_GROUPS.map((group) => (
-                <CategoryCard
-                  key={group.key}
-                  group={group}
-                  values={toProfileValues(profile)}
-                  mode="view"
-                />
-              ))}
-              {profile.introduction.datingStyle &&
-                Object.keys(profile.introduction.datingStyle).length > 0 && (
-                  <div className="bg-card rounded-lg border border-border p-4">
-                    <p className="text-xs font-semibold text-muted-foreground mb-2">연애 스타일</p>
-                    <div className="space-y-2">
-                      {Object.entries(profile.introduction.datingStyle).map(([qKey, optKey]) => (
-                        <div key={qKey} className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground text-xs">
-                            {DATING_STYLE_QUESTION_LABELS[qKey] ?? qKey}
-                          </span>
-                          <span className="font-medium">
-                            {DATING_STYLE_OPTION_LABELS[optKey] ?? optKey}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-            </CollapsibleContent>
-          </Collapsible>
+          <ProfileDetailsCollapsible
+            profile={profile}
+            open={detailsExpanded}
+            onOpenChange={setDetailsExpanded}
+          />
 
-          {(idealSummaryChips.length > 0 ||
-            (profile.idealType.dealBreakers?.length ?? 0) > 0 ||
-            profile.idealType.ageMin ||
-            profile.idealType.ageMax) && (
-            <div className="space-y-3">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-                이런 인연을 찾아요
-              </h3>
-              {idealSummaryChips.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {idealSummaryChips.map((item, index) => (
-                    <Badge key={index} variant="secondary">
-                      {item}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-              {(profile.idealType.ageMin || profile.idealType.ageMax ||
-                profile.idealType.heightMin || profile.idealType.heightMax) && (
-                <p className="text-xs text-muted-foreground">
-                  {[
-                    (profile.idealType.ageMin || profile.idealType.ageMax) &&
-                      `나이 ${profile.idealType.ageMin ?? "?"}~${profile.idealType.ageMax ?? "?"}세`,
-                    (profile.idealType.heightMin || profile.idealType.heightMax) &&
-                      `키 ${profile.idealType.heightMin ?? "?"}~${profile.idealType.heightMax ?? "?"}cm`,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
-              )}
-              {(profile.idealType.dealBreakers?.length ?? 0) > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  절대 안 되는 것:{" "}
-                  {profile.idealType.dealBreakers.map(getDealBreakerLabel).join(" · ")}
-                </p>
-              )}
-            </div>
-          )}
+          <ProfileIdealTypeSummary idealType={profile.idealType} />
         </div>
       )}
-
-      {/* ── 수정 버튼 — sticky (fixed 는 .app-frame transform 때문에 딸려 올라감, ADR 0063). 하단 네비(60px) 위로. ── */}
-      <div className="sticky bottom-[68px] z-40 px-6 pb-1">
-        <Button
-          onClick={onEdit}
-          className="w-full h-12 rounded-2xl font-semibold shadow-card-hover"
-        >
-          <Edit3 className="w-4 h-4 mr-2" />
-          프로필 수정하기
-        </Button>
-      </div>
 
       <NiceVerificationModal
         isOpen={showPhoneVerificationModal}
@@ -578,7 +428,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
         onVerified={handlePhoneVerified}
       />
 
-      {/* ── 완성도 체크리스트 Bottom Sheet ── */}
       {showCompletionChecklist && profile && (
         <div
           className="fixed inset-0 z-50 flex flex-col justify-end"
@@ -659,7 +508,7 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
           </div>
         </div>
       )}
-    </div>
+    </ProfileMagazineShell>
   );
 }
 
@@ -731,66 +580,4 @@ function buildCompletionChecklist(profile: ProfileData, user: UserProfile): Chec
       done: !!(profile.lifestyleInfo.smoking || profile.lifestyleInfo.drinking),
     },
   ].sort((a, b) => Number(a.done) - Number(b.done)); // incomplete first
-}
-
-function getDatePreferenceLabel(pref: string): string {
-  // SoT: IdealTypeScreen.tsx DATE_STYLE_OPTIONS — ProfileDetail 과 동일하게 통일 (D-3)
-  return {
-    FOOD: "맛집 투어", CAFE: "카페·디저트", ACTIVITY: "액티비티·운동", TRAVEL: "여행·드라이브",
-    EXHIBITION: "전시·공연", MOVIE: "영화·넷플릭스", HOME: "집 데이트", WALK: "산책·피크닉",
-    DRINK: "술 한잔", FESTIVAL: "페스티벌·팝업",
-    // 구버전 호환
-    ACTIVE: "액티브", INDOOR: "인도어", CULTURE: "문화생활", NATURE: "자연 속으로",
-    NIGHT: "야경/술자리", RELAXED: "여유롭게",
-  }[pref] ?? pref;
-}
-
-// DATING_STYLE_*_LABELS — 위 import 로 이동됨 (D-1/C-2)
-
-const BUCKET_LABELS: Record<string, string> = {
-  JEJU_MONTH: "제주도 한 달 살기", BACKPACKING: "배낭여행", OSAKA: "오사카 2박 3일",
-  BANGKOK: "방콕 뚝뚝이", SOLO_ABROAD: "혼자 해외여행", ROAD_TRIP: "아무 계획 없는 드라이브",
-  CAMPING: "캠핑 & 불멍", DAYTRIP: "주말 당일치기",
-  CONVENIENCE_NIGHT: "새벽 편의점 치킨", HANGANG_RAMYEON: "한강에서 라면",
-  MIDNIGHT_MOVIE: "새벽 영화관", ROOFTOP_BAR: "루프탑 바", NIGHT_DRIVE: "야경 드라이브",
-  FOOD_TOUR: "맛집 웨이팅 성공", NIGHT_MARKET: "야시장 투어", HOME_PARTY: "홈파티 열기",
-  COOK_TOGETHER: "함께 요리 도전",
-  MUSICAL: "뮤지컬 관람", MUSEUM_DATE: "미술관 데이트", FESTIVAL: "음악 페스티벌",
-  HANOK_VILLAGE: "한옥마을 투어",
-  BUNGEE: "번지점프", SURFING: "서핑 배우기", SKI: "스키장",
-  HIKING: "한라산 or 설악산", STARGAZING: "별빛 텐트",
-};
-
-function getBucketLabel(key: string): string {
-  if (key.startsWith("custom:")) return key.slice(7);
-  return BUCKET_LABELS[key] ?? key;
-}
-
-function getImportantValueLabel(value: string): string {
-  return {
-    PERSONALITY: "성격/성향", APPEARANCE: "외모", EDUCATION: "학력",
-    CAREER: "능력/커리어", FAMILY: "집안/가족", JOB: "직업", WEALTH: "경제력", VALUES: "가치관",
-  }[value] ?? value;
-}
-
-function getAppearanceStyleLabel(style: string): string {
-  return {
-    PUPPY: "강아지상", CAT: "고양이상", RABBIT: "토끼상", FOX: "여우상", DEER: "사슴상",
-    BEAR: "곰상", HAMSTER: "햄스터상", DINOSAUR: "공룡상", WOLF: "늑대상",
-    TOFU: "두부상", SOFT_TOFU: "순두부상", INNOCENT: "청순상", CHIC: "시크상", BAGEL: "베이글상",
-    DOLL: "인형상", HARMLESS: "무해상", FRESH: "청량상", ANNOUNCER: "아나운서상",
-    ARAB: "아랍상", BOSS: "일진상", MOTHER_IN_LAW_APPROVED: "상견례 프리패스상",
-    STUDENT_COUNCIL: "전교회장상", ATHLETIC: "체대상", NERD: "너드상",
-    WARM: "훈남상", DANDY: "댄디상", BEAST: "짐승상",
-  }[style] ?? style;
-}
-
-function getDealBreakerLabel(dealBreaker: string): string {
-  return {
-    SMOKING: "흡연자", HEAVY_DRINKING: "과음하는 사람", DISLIKES_PETS: "반려동물을 싫어하는 사람",
-    LONG_DISTANCE: "장거리 연애", DIFFERENT_RELIGION: "종교가 다른 사람",
-    NO_MARRIAGE_PLAN: "결혼 의사가 없는 사람", CHILDREN_PLAN: "자녀 계획이 맞지 않는 사람",
-    UNSTABLE_JOB: "직업이 불안정한 사람", CONTACTS_EX: "전 연인과 연락하는 사람",
-    LARGE_AGE_GAP: "나이 차이가 많이 나는 사람",
-  }[dealBreaker] ?? dealBreaker;
 }

@@ -1,21 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
-import { ChevronLeft, ChevronDown, Loader2, Send, Users, ExternalLink, Lock, EyeOff, Palette as PaletteIcon } from "lucide-react";
+import { ChevronLeft, Loader2, Send, Users, ExternalLink, Lock, EyeOff, Palette as PaletteIcon } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { CategoryCard } from "./profile/CategoryCard";
 import { ProfileDiscoveryDeck } from "./profile/ProfileDiscoveryDeck";
 import { ProfilePhotoEssay } from "./profile/ProfilePhotoEssay";
+import { ProfileMagazineShell } from "./profile/ProfileMagazineShell";
+import { ProfileMagazineHeader } from "./profile/ProfileMagazineHeader";
+import { ProfileMagazineHero } from "./profile/ProfileMagazineHero";
+import { ProfileDetailsCollapsible } from "./profile/ProfileDetailsCollapsible";
+import { ProfileIdealTypeSummary } from "./profile/ProfileIdealTypeSummary";
 import { buildHeroSpecLine } from "../../lib/profileEssay";
 import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
 import { onboardingProgress } from "../../lib/onboarding/progress";
-import {
-  DATING_STYLE_QUESTION_LABELS,
-  DATING_STYLE_OPTION_LABELS,
-} from "../../lib/datingStyleLabels";
 import { jobCategoryLabel } from "../../lib/jobCategory";
 import { InfoHint } from "./InfoHint";
 import { SafetyMenu } from "./safety/SafetyMenu";
@@ -524,82 +523,8 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     );
   }
 
-  // Section components (same as MyProfileScreen)
-  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div className="space-y-3">
-      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{title}</h3>
-      {children}
-    </div>
-  );
-
-  const ChipGroup = ({ items }: { items: string[] | null | undefined }) => {
-    if (!items || items.length === 0) return <p className="text-muted-foreground text-sm">정보 없음</p>;
-    return (
-      <div className="flex flex-wrap gap-2">
-        {items.map((item, index) => (
-          <Badge key={index} variant="secondary">
-            {item}
-          </Badge>
-        ))}
-      </div>
-    );
-  };
-
-  // Display mappings
+  // hidden-profile fallback helper
   const getJobCategoryDisplay = (category: string | null) => jobCategoryLabel(category);
-
-  const getDatePreferenceDisplay = (prefs: string[]) => {
-    // SoT: IdealTypeScreen.tsx 의 DATE_STYLE_OPTIONS — 6개 옵션 전체 매핑
-    const map: Record<string, string> = {
-      FOOD: "맛집 투어", CAFE: "카페·디저트", ACTIVITY: "액티비티·운동", TRAVEL: "여행·드라이브",
-      EXHIBITION: "전시·공연", MOVIE: "영화·넷플릭스", HOME: "집 데이트", WALK: "산책·피크닉",
-      DRINK: "술 한잔", FESTIVAL: "페스티벌·팝업",
-      // 구버전 호환
-      ACTIVE: "액티브", INDOOR: "인도어", CULTURE: "문화생활", NATURE: "자연 속으로",
-      NIGHT: "야경/술자리", RELAXED: "여유롭게",
-    };
-    return (prefs ?? []).map(p => map[p] || p);
-  };
-
-  const getImportantValueDisplay = (values: string[]) => {
-    const map: Record<string, string> = {
-      PERSONALITY: "성격/성향", APPEARANCE: "외모", EDUCATION: "학력",
-      CAREER: "능력/커리어", FAMILY: "집안/가족", JOB: "직업",
-      WEALTH: "경제력", VALUES: "가치관"
-    };
-    return (values ?? []).map(v => map[v] || v);
-  };
-
-  const getAppearanceStyleDisplay = (styles: string[]) => {
-    const map: Record<string, string> = {
-      PUPPY: "강아지상", CAT: "고양이상", RABBIT: "토끼상", FOX: "여우상", DEER: "사슴상",
-      BEAR: "곰상", HAMSTER: "햄스터상", DINOSAUR: "공룡상", WOLF: "늑대상",
-      TOFU: "두부상", SOFT_TOFU: "순두부상", INNOCENT: "청순상", CHIC: "시크상", BAGEL: "베이글상",
-      DOLL: "인형상", HARMLESS: "무해상", FRESH: "청량상", ANNOUNCER: "아나운서상",
-      ARAB: "아랍상", BOSS: "일진상", MOTHER_IN_LAW_APPROVED: "상견례 프리패스상",
-      STUDENT_COUNCIL: "전교회장상", ATHLETIC: "체대상", NERD: "너드상",
-      WARM: "훈남상", DANDY: "댄디상", BEAST: "짐승상",
-    };
-    return (styles ?? []).map(s => map[s] || s);
-  };
-
-  const getDealBreakerDisplay = (dealBreakers: string[]) => {
-    const map: Record<string, string> = {
-      SMOKING: "흡연",
-      EXCESSIVE_DRINKING: "과음",
-      HEAVY_DRINKING: "과음",
-      DIFFERENT_RELIGION: "종교 차이",
-      LONG_DISTANCE: "장거리 연애",
-      DIFFERENT_VALUES: "가치관 차이",
-      NO_JOB: "무직",
-      DEBT: "빚",
-      DIVORCED: "이혼 경력",
-      AGE_GAP: "나이 차이",
-      PETS: "반려동물",
-      CHILDREN: "아이 있음"
-    };
-    return (dealBreakers ?? []).map(d => map[d] || d);
-  };
 
   const sortedPhotos = [...profile.photos].sort((a, b) => a.displayOrder - b.displayOrder);
   const accentColor = profile.colorType?.hex ?? null;
@@ -620,96 +545,93 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   const essayContextLine =
     essayContextParts.length > 0 ? essayContextParts.join(" · ") : null;
 
-  const idealSummaryChips = [
-    ...getAppearanceStyleDisplay(profile.idealType.appearanceStyles),
-    ...profile.idealType.personalities,
-    ...getDatePreferenceDisplay(profile.idealType.datePreferences),
-    ...getImportantValueDisplay(profile.idealType.importantValues),
-  ].filter(Boolean).slice(0, 8);
-
-  const getContrastColor = (hex: string): string => {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance > 0.55 ? '#111111' : '#FFFFFF';
-  };
-  const buttonTextColor = accentColor ? getContrastColor(accentColor) : undefined;
-
   return (
-    <div
-      className="min-h-screen pb-24"
-      style={accentColor
-        ? {
-            // 인물 메인 컬러를 흰색 위에 옅게(톤다운) 전면에 깔아 화사하게 — 회색 톤 제거
-            backgroundColor: "#ffffff",
-            backgroundImage: `linear-gradient(180deg, ${accentColor}26 0%, ${accentColor}12 300px, ${accentColor}0A 100%)`,
-          }
-        : { backgroundColor: "var(--background)" }
-      }
-    >
-      {/* Header — 별도 색 띠 없이 투명 프로스티드 글래스. 본문 히어로 그라디언트가 그대로 비쳐 끊김(촌스러운 색 경계) 제거. */}
-      <div
-        className="sticky top-0 z-20 backdrop-blur-md"
-        style={accentColor
-          ? { backgroundColor: "transparent", borderBottom: "none" }
-          : { backgroundColor: "hsl(var(--card) / 0.85)", borderBottom: "1px solid hsl(var(--border) / 0.5)" }
-        }
-      >
-        <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center">
-            <Button variant="ghost" size="icon" onClick={onBack} className="mr-2">
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
-            <h2 className="text-base font-semibold">{userInfo.nickname}님의 프로필</h2>
+    <>
+    <ProfileMagazineShell
+      accentColor={accentColor}
+      bottomBar={(
+        <div className="sticky bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border p-4 z-20">
+          <div className="max-w-2xl mx-auto space-y-2">
+          {inCoolTime && (
+            <p className="text-xs text-center text-amber-600 flex items-center justify-center gap-1">
+              ⏳ 매칭 성사 후 쿨타임 중 · {coolTimeRemainingDays}일 후 새 요청 가능
+            </p>
+          )}
+          {degree === 1 ? (
+            <div className="rounded-2xl bg-muted/40 border border-border p-4 text-center space-y-1">
+              <p className="text-sm font-medium text-foreground">이미 친구예요</p>
+              <p className="text-xs text-muted-foreground">
+                지인끼리는 소개 요청 없이 직접 연락할 수 있어요.
+              </p>
+            </div>
+          ) : !isPalettePick && mutualFriends.length === 0 ? (
+            <div className="rounded-2xl bg-muted/60 border border-border p-4 text-center space-y-3">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">소개 요청을 하려면 공통 친구가 필요해요</p>
+                <p className="text-xs text-muted-foreground">친구를 연결하면 지인을 통한 신뢰있는 주선이 가능해요.</p>
+              </div>
+              {onNavigateToFriends && (
+                <Button variant="outline" size="sm" className="w-full" onClick={onNavigateToFriends}>
+                  친구 연결하기
+                </Button>
+              )}
+            </div>
+          ) : (
+            <>
+              <Button
+                size="lg"
+                className="w-full h-14 bg-brand-soft text-brand-strong hover:bg-brand-soft/90 font-bold"
+                onClick={isPalettePick ? handleDirectRequest : handleMatchRequest}
+                disabled={alreadyRequested || inCoolTime}
+                variant={alreadyRequested || inCoolTime ? "secondary" : "default"}
+              >
+                <Send className="w-5 h-5 mr-2" />
+                {alreadyRequested
+                  ? "소개 요청 완료"
+                  : inCoolTime
+                  ? `쿨타임 중 (${coolTimeRemainingDays}일 남음)`
+                  : "소개 요청하기"}
+              </Button>
+              {isPalettePick && !alreadyRequested && (
+                <p className="text-xs text-center text-muted-foreground mt-2">
+                  팔레트 Pick은 공통 친구 없이 바로 상대방에게 프로필이 전달돼요
+                </p>
+              )}
+            </>
+          )}
           </div>
-          <div className="flex items-center gap-1">
+        </div>
+      )}
+    >
+      <ProfileMagazineHeader
+        title={`${userInfo.nickname}님의 프로필`}
+        onBack={onBack}
+        accentColor={accentColor}
+        rightSlot={(
+          <>
             <button
+              type="button"
               onClick={() => setShowHideConfirm(true)}
               className="flex items-center gap-1.5 text-xs text-muted-foreground px-3 py-1.5 rounded-full hover:bg-muted transition-colors"
             >
               <EyeOff className="w-3.5 h-3.5" />
               추천받지 않기
             </button>
-            {/* 신고 / 차단 (App Store 1.2.0 — UGC 안전장치) */}
             <SafetyMenu
               targetName={userInfo.nickname}
               targetUserId={userId}
               onBlock={onBack}
             />
-          </div>
-        </div>
-      </div>
+          </>
+        )}
+      />
 
-      <div className="max-w-2xl mx-auto">
-        {/* Hero — 대표사진을 표지로. 이름·색·한 줄 태그라인이 사진 위에 얹힌다 (스펙 카드가 아니라 '사람'의 첫인상). */}
-        <div className="relative w-full aspect-[4/5] max-h-[520px] bg-muted overflow-hidden">
-          {sortedPhotos.length > 0 ? (
-            <img src={sortedPhotos[0].url} alt="" className="absolute inset-0 w-full h-full object-cover" />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-sm text-muted-foreground">사진 없음</span>
-            </div>
-          )}
-          <div
-            className="absolute inset-x-0 bottom-0 px-5 pb-5 pt-16"
-            style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.62))" }}
-          >
-            {profile.colorType?.name && (
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 mb-2">
-                {accentColor && <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: accentColor }} />}
-                <span className="text-xs font-medium" style={{ color: accentColor ?? "#333" }}>{profile.colorType.name}</span>
-              </div>
-            )}
-            <h2 className="text-2xl font-bold text-white drop-shadow-sm leading-tight">{userInfo.nickname}</h2>
-            {heroSpecLine && (
-              <p className="text-sm text-white/95 mt-1 font-medium tracking-tight">{heroSpecLine}</p>
-            )}
-            {profile.colorType?.description && (
-              <p className="text-sm text-white/80 mt-1.5 leading-snug line-clamp-2">{profile.colorType.description}</p>
-            )}
-          </div>
-        </div>
+      <ProfileMagazineHero
+        nickname={userInfo.nickname}
+        heroSpecLine={heroSpecLine}
+        colorType={profile.colorType}
+        primaryPhotoUrl={sortedPhotos[0]?.url ?? null}
+      />
 
         {/* 연결 맥락 — 지인망 신뢰 신호 */}
         {!detailsHidden && mutualFriends.length > 0 && (
@@ -726,7 +648,6 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
           </div>
         )}
 
-        {/* 발견 덱 — 색·궁합·연결·심리 인사이트 카드 */}
         {!detailsHidden && (
           <ProfileDiscoveryDeck
             profile={profile}
@@ -735,7 +656,6 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
           />
         )}
 
-        {/* 본문 — photo essay + 보증 + 접힌 스펙 + 이상형 */}
         <div className="p-6 space-y-6">
           {(
             <>
@@ -798,142 +718,19 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                 </div>
               )}
 
-              <Collapsible open={detailsExpanded} onOpenChange={setDetailsExpanded}>
-                <CollapsibleTrigger className="w-full flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3.5 text-sm font-medium text-foreground hover:bg-muted/40 transition-colors">
-                  기본 정보 더 보기
-                  <ChevronDown
-                    className={`w-4 h-4 text-muted-foreground transition-transform ${detailsExpanded ? "rotate-180" : ""}`}
-                  />
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-3 space-y-3">
-                  {PROFILE_GROUPS.map((group) => (
-                    <CategoryCard key={group.key} group={group} values={toProfileValues(profile)} mode="view" />
-                  ))}
-                  {profile?.introduction.datingStyle &&
-                    Object.keys(profile.introduction.datingStyle).length > 0 && (
-                      <div className="bg-card rounded-lg border border-border p-4">
-                        <p className="text-xs font-semibold text-muted-foreground mb-2">연애 스타일</p>
-                        <div className="space-y-2">
-                          {Object.entries(profile.introduction.datingStyle).map(([qKey, optKey]) => (
-                            <div key={qKey} className="flex items-center justify-between text-sm">
-                              <span className="text-muted-foreground text-xs">
-                                {DATING_STYLE_QUESTION_LABELS[qKey] ?? qKey}
-                              </span>
-                              <span className="font-medium">
-                                {DATING_STYLE_OPTION_LABELS[optKey] ?? optKey}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                </CollapsibleContent>
-              </Collapsible>
+              <ProfileDetailsCollapsible
+                profile={profile}
+                open={detailsExpanded}
+                onOpenChange={setDetailsExpanded}
+              />
                 </>
               )}
             </>
           )}
 
-          {/* 이런 인연을 찾아요 — 컴팩트 요약 */}
-          {!detailsHidden &&
-            (idealSummaryChips.length > 0 ||
-              getDealBreakerDisplay(profile.idealType.dealBreakers).length > 0 ||
-              profile.idealType.ageMin ||
-              profile.idealType.ageMax) && (
-            <Section title="이런 인연을 찾아요">
-              {idealSummaryChips.length > 0 && <ChipGroup items={idealSummaryChips} />}
-              {(profile.idealType.ageMin || profile.idealType.ageMax ||
-                profile.idealType.heightMin || profile.idealType.heightMax) && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  {[
-                    (profile.idealType.ageMin || profile.idealType.ageMax) &&
-                      `나이 ${profile.idealType.ageMin ?? "?"}~${profile.idealType.ageMax ?? "?"}세`,
-                    (profile.idealType.heightMin || profile.idealType.heightMax) &&
-                      `키 ${profile.idealType.heightMin ?? "?"}~${profile.idealType.heightMax ?? "?"}cm`,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
-              )}
-              {getDealBreakerDisplay(profile.idealType.dealBreakers).length > 0 && (
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  절대 안 되는 것: {getDealBreakerDisplay(profile.idealType.dealBreakers).join(" · ")}
-                </p>
-              )}
-            </Section>
-          )}
+          {!detailsHidden && <ProfileIdealTypeSummary idealType={profile.idealType} />}
         </div>
-      </div>
-
-      {/* Sticky Bottom Action — ADR 0063: .app-frame 가 transform 컨테이너라 fixed 는 스크롤에 딸려 올라감 → sticky */}
-      <div className="sticky bottom-0 left-0 right-0 bg-card/95 backdrop-blur-sm border-t border-border p-4 z-20">
-        <div className="max-w-2xl mx-auto space-y-2">
-          {inCoolTime && (
-            <p className="text-xs text-center text-amber-600 flex items-center justify-center gap-1">
-              ⏳ 매칭 성사 후 쿨타임 중 · {coolTimeRemainingDays}일 후 새 요청 가능
-            </p>
-          )}
-          {/**
-           * 하단 액션 분기 정의 (명확):
-           *
-           *  ┌──────────────────────────┬──────────────────┬─────────────────────────────────────┐
-           *  │ 케이스                   │ 조건             │ 표시                                │
-           *  ├──────────────────────────┼──────────────────┼─────────────────────────────────────┤
-           *  │ ① 1촌 (이미 친구)        │ degree === 1     │ "이미 친구" 안내 + 소개 요청 버튼 X │
-           *  │ ② 팔레트 Pick (AI 추천)  │ degree === 0     │ "소개 요청하기" (시스템 직접 연결)  │
-           *  │ ③ 공통 친구 있음         │ mutualFriends>0  │ "소개 요청하기" (주선자 선택)       │
-           *  │ ④ 공통 친구 없음         │ 2·3촌 + mutual=0 │ "공통 친구 필요" sheet (친구 연결)  │
-           *  └──────────────────────────┴──────────────────┴─────────────────────────────────────┘
-           *
-           * 기존 버그: ① 1촌인데 mutualFriends=0 이면 ④ 가 트리거 됐음 (주선자 대시보드 > 지인 진입).
-           */}
-          {degree === 1 ? (
-            // ① 1촌 — 이미 친구. 소개 요청 의미 없음 (지인끼리는 직접 연락)
-            <div className="rounded-2xl bg-muted/40 border border-border p-4 text-center space-y-1">
-              <p className="text-sm font-medium text-foreground">이미 친구예요</p>
-              <p className="text-xs text-muted-foreground">
-                지인끼리는 소개 요청 없이 직접 연락할 수 있어요.
-              </p>
-            </div>
-          ) : !isPalettePick && mutualFriends.length === 0 ? (
-            // ④ 2·3촌 + 공통 친구 0 → 친구 연결 유도
-            <div className="rounded-2xl bg-muted/60 border border-border p-4 text-center space-y-3">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">소개 요청을 하려면 공통 친구가 필요해요</p>
-                <p className="text-xs text-muted-foreground">친구를 연결하면 지인을 통한 신뢰있는 주선이 가능해요.</p>
-              </div>
-              {onNavigateToFriends && (
-                <Button variant="outline" size="sm" className="w-full" onClick={onNavigateToFriends}>
-                  친구 연결하기
-                </Button>
-              )}
-            </div>
-          ) : (
-            // ②③ 팔레트 Pick 또는 공통 친구 있음 → 소개 요청 버튼
-            <>
-              <Button
-                size="lg"
-                className="w-full h-14 bg-brand-soft text-brand-strong hover:bg-brand-soft/90 font-bold"
-                onClick={isPalettePick ? handleDirectRequest : handleMatchRequest}
-                disabled={alreadyRequested || inCoolTime}
-                variant={alreadyRequested || inCoolTime ? "secondary" : "default"}
-              >
-                <Send className="w-5 h-5 mr-2" />
-                {alreadyRequested
-                  ? "소개 요청 완료"
-                  : inCoolTime
-                  ? `쿨타임 중 (${coolTimeRemainingDays}일 남음)`
-                  : "소개 요청하기"}
-              </Button>
-              {isPalettePick && !alreadyRequested && (
-                <p className="text-xs text-center text-muted-foreground mt-2">
-                  팔레트 Pick은 공통 친구 없이 바로 상대방에게 프로필이 전달돼요
-                </p>
-              )}
-            </>
-          )}
-        </div>
-      </div>
+    </ProfileMagazineShell>
 
       {/* Hide Confirm Dialog */}
       <Dialog open={showHideConfirm} onOpenChange={setShowHideConfirm}>
@@ -1101,6 +898,6 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
