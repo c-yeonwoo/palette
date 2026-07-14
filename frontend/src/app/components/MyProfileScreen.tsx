@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import {
-  Edit3, Loader2, Settings, LogOut, ChevronLeft,
+  Edit3, Loader2, ChevronLeft,
   ExternalLink, CheckCircle2, Share2, Link,
   AlertCircle, Phone, Eye, ChevronRight, Camera, Plus,
 } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
-import { authService } from "../../lib/auth/authService";
 import { toast } from "sonner";
 import { MatchmakerProfileScreen } from "./MatchmakerProfileScreen";
 import NiceVerificationModal from "./NiceVerificationModal";
@@ -134,11 +133,9 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [showPhoneVerificationModal, setShowPhoneVerificationModal] = useState(false);
   const [showCompletionChecklist, setShowCompletionChecklist] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -165,16 +162,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowSettingsMenu(false);
-    };
-    if (showSettingsMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [showSettingsMenu]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
       if (shareMenuRef.current && !shareMenuRef.current.contains(e.target as Node)) setShowShareMenu(false);
     };
     if (showShareMenu) {
@@ -182,16 +169,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [showShareMenu]);
-
-  const handleLogout = async () => {
-    try {
-      await authService.logout();
-      toast.success('로그아웃되었습니다');
-      window.location.reload();
-    } catch {
-      toast.error('로그아웃에 실패했습니다');
-    }
-  };
 
   const handleCopyLink = async () => {
     if (!profile) return;
@@ -346,25 +323,6 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
                   </button>
                   <button onClick={handleCopyLink} className="p-2 hover:bg-muted rounded-lg" title="링크 복사">
                     <Link className="w-5 h-5 text-muted-foreground" />
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="relative" ref={menuRef}>
-              <button
-                onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-                className="w-9 h-9 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center"
-              >
-                <Settings className="w-4 h-4 text-white" />
-              </button>
-              {showSettingsMenu && (
-                <div className="absolute right-0 top-11 w-40 bg-card border border-border rounded-xl shadow-lg py-1 z-30">
-                  <button
-                    onClick={handleLogout}
-                    className="w-full px-4 py-3 text-left text-sm text-red-500 hover:bg-muted flex items-center gap-2"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    로그아웃
                   </button>
                 </div>
               )}
