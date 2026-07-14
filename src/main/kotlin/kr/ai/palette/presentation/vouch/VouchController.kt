@@ -1,11 +1,13 @@
 package kr.ai.palette.presentation.vouch
 
+import jakarta.validation.constraints.Size
 import kr.ai.palette.domain.auth.AuthUser
 import kr.ai.palette.domain.common.UserId
 import kr.ai.palette.domain.friendship.FriendshipRepository
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestRepository
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestStatus
 import kr.ai.palette.domain.user.UserRepository
+import kr.ai.palette.domain.vouch.VouchPreset
 import kr.ai.palette.persistence.vouch.VouchEntity
 import kr.ai.palette.persistence.vouch.VouchJpaRepository
 import org.springframework.http.ResponseEntity
@@ -14,11 +16,35 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
 
+data class CreateVouchRequest(
+    /** L1 chip. null/blank = L0 quick vouch. */
+    val presetKey: String? = null,
+    /** L2 optional one-liner. */
+    @field:Size(max = 50)
+    val message: String? = null,
+)
+
+data class VouchItemDto(
+    val voucherNickname: String,
+    val presetKey: String?,
+    val presetLabel: String?,
+    val message: String?,
+)
+
 data class VouchResponse(
     val targetUserId: String,
     val vouchCount: Int,
     val voucherNicknames: List<String>,
-    val isVouchedByMe: Boolean
+    val vouches: List<VouchItemDto>,
+    val isVouchedByMe: Boolean,
+    val myVouch: VouchItemDto?,
+    /** Available L1 presets for the vouch sheet. */
+    val presets: List<VouchPresetDto> = VouchPreset.entries.map { VouchPresetDto(it.name, it.label) },
+)
+
+data class VouchPresetDto(
+    val key: String,
+    val label: String,
 )
 
 @RestController
@@ -34,7 +60,8 @@ class VouchController(
     @Transactional
     fun vouchForUser(
         @AuthenticationPrincipal authUser: AuthUser,
-        @PathVariable targetUserId: UUID
+        @PathVariable targetUserId: UUID,
+        @RequestBody(required = false) body: CreateVouchRequest?,
     ): ResponseEntity<VouchResponse> {
         val myId = authUser.userId
         val targetId = UserId(targetUserId)
@@ -51,9 +78,26 @@ class VouchController(
 
         val myIdStr = myId.value.toString()
         val targetIdStr = targetUserId.toString()
+        val preset = VouchPreset.fromKey(body?.presetKey)
+        if (body?.presetKey != null && body.presetKey.isNotBlank() && preset == null) {
+            return ResponseEntity.badRequest().build()
+        }
+        val message = body?.message?.trim()?.takeIf { it.isNotEmpty() }?.take(50)
 
-        if (!vouchJpaRepository.existsByTargetUserIdAndVoucherId(targetIdStr, myIdStr)) {
-            vouchJpaRepository.save(VouchEntity(targetUserId = targetIdStr, voucherId = myIdStr))
+        val existing = vouchJpaRepository.findByTargetUserIdAndVoucherId(targetIdStr, myIdStr)
+        if (existing != null) {
+            existing.presetKey = preset?.name
+            existing.message = message
+            vouchJpaRepository.save(existing)
+        } else {
+            vouchJpaRepository.save(
+                VouchEntity(
+                    targetUserId = targetIdStr,
+                    voucherId = myIdStr,
+                    presetKey = preset?.name,
+                    message = message,
+                )
+            )
         }
 
         return ResponseEntity.ok(buildVouchResponse(targetIdStr, myIdStr))
@@ -90,15 +134,27 @@ class VouchController(
 
     private fun buildVouchResponse(targetUserId: String, requesterId: String): VouchResponse {
         val vouchers = vouchJpaRepository.findByTargetUserId(targetUserId)
-        val voucherNicknames = vouchers.mapNotNull { vouch ->
-            runCatching { userRepository.findById(UserId(UUID.fromString(vouch.voucherId))) }
-                .getOrNull()?.publicInfo?.nickname
-        }
+        val items = vouchers.mapNotNull { toItemDto(it) }
+        val myVouch = vouchers.find { it.voucherId == requesterId }?.let { toItemDto(it) }
         return VouchResponse(
             targetUserId = targetUserId,
             vouchCount = vouchers.size,
-            voucherNicknames = voucherNicknames,
-            isVouchedByMe = vouchers.any { it.voucherId == requesterId }
+            voucherNicknames = items.map { it.voucherNickname },
+            vouches = items,
+            isVouchedByMe = myVouch != null,
+            myVouch = myVouch,
+        )
+    }
+
+    private fun toItemDto(vouch: VouchEntity): VouchItemDto? {
+        val nickname = runCatching { userRepository.findById(UserId(UUID.fromString(vouch.voucherId))) }
+            .getOrNull()?.publicInfo?.nickname ?: return null
+        val preset = VouchPreset.fromKey(vouch.presetKey)
+        return VouchItemDto(
+            voucherNickname = nickname,
+            presetKey = preset?.name,
+            presetLabel = preset?.label,
+            message = vouch.message,
         )
     }
 }

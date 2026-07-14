@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { ChevronLeft, Loader2, Send, Users, ExternalLink, Lock, EyeOff, Palette as PaletteIcon } from "lucide-react";
+import { ChevronLeft, Loader2, Send, Users, ExternalLink, Lock, EyeOff, Palette as PaletteIcon, BadgeCheck } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { CategoryCard } from "./profile/CategoryCard";
@@ -12,12 +12,14 @@ import { ProfileMagazineHeader } from "./profile/ProfileMagazineHeader";
 import { ProfileMagazineHero } from "./profile/ProfileMagazineHero";
 import { ProfileDetailsCollapsible } from "./profile/ProfileDetailsCollapsible";
 import { ProfileIdealTypeSummary } from "./profile/ProfileIdealTypeSummary";
+import { VouchSheet } from "./profile/VouchSheet";
 import { buildHeroSpecLine } from "../../lib/profileEssay";
 import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
 import { onboardingProgress } from "../../lib/onboarding/progress";
 import { jobCategoryLabel } from "../../lib/jobCategory";
 import { InfoHint } from "./InfoHint";
 import { SafetyMenu } from "./safety/SafetyMenu";
+import { vouchDisplayLine, type VouchItem, type VouchResponse } from "../../lib/vouchPresets";
 
 interface MutualFriend {
   name: string;
@@ -160,14 +162,17 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   // 열람 전 색 궁합 teaser (백엔드 profile-view-cost 가 내려줌)
   const [teaser, setTeaser] = useState<{ headline: string; viewerColorHex: string | null; targetColorHex: string | null } | null>(null);
 
-  // Vouch state
+  // Vouch state — L0/L1/L2 (칩·한마디 옵셔널)
   const [vouchCount, setVouchCount] = useState(0);
-  const [voucherNicknames, setVoucherNicknames] = useState<string[]>([]);
+  const [vouches, setVouches] = useState<VouchItem[]>([]);
   const [isVouchedByMe, setIsVouchedByMe] = useState(false);
+  const [myVouch, setMyVouch] = useState<VouchItem | null>(null);
+  const [showVouchSheet, setShowVouchSheet] = useState(false);
+  const [isVouching, setIsVouching] = useState(false);
   const [myInterests, setMyInterests] = useState<string[]>([]);
   const [detailsExpanded, setDetailsExpanded] = useState(false);
-  const [isVouching, setIsVouching] = useState(false);
-  const [isFriend, setIsFriend] = useState(false);
+  /** 1촌이면 보증 CTA 노출 (백엔드도 1촌·성사 매칭만 허용) */
+  const canVouch = degree === 1 || isVouchedByMe;
   // Hide state
   const [isHidden, setIsHidden] = useState(false);
   const [isHiding, setIsHiding] = useState(false);
@@ -188,8 +193,6 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
       .get<{ introduction?: { interests?: string[] } }>("/api/v1/profile")
       .then((p) => setMyInterests(p.introduction?.interests ?? []))
       .catch(() => {});
-    // 1촌(mutualFriends가 있으면)이거나 직접 알면 보증 가능 여부 확인
-    setIsFriend(mutualFriends.length > 0 || degree < 2);
   }, [userId]);
 
   const checkPaymentStatus = async () => {
@@ -276,35 +279,30 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     }
   };
 
+  const applyVouchResponse = (res: VouchResponse) => {
+    setVouchCount(res.vouchCount);
+    setVouches(res.vouches ?? []);
+    setIsVouchedByMe(res.isVouchedByMe);
+    setMyVouch(res.myVouch ?? null);
+  };
+
   const fetchVouchInfo = async () => {
     try {
-      const res = await api.get<{ vouchCount: number; isVouchedByMe: boolean; voucherNicknames: string[] }>(
-        `/api/v1/vouch/${userId}`
-      );
-      setVouchCount(res.vouchCount);
-      setVoucherNicknames(res.voucherNicknames ?? []);
-      setIsVouchedByMe(res.isVouchedByMe);
+      const res = await api.get<VouchResponse>(`/api/v1/vouch/${userId}`);
+      applyVouchResponse(res);
     } catch {
       // ignore
     }
   };
 
-  const handleVouch = async () => {
+  const handleUnvouch = async () => {
     setIsVouching(true);
     try {
-      if (isVouchedByMe) {
-        await api.delete(`/api/v1/vouch/${userId}`);
-        setVouchCount(v => v - 1);
-        setIsVouchedByMe(false);
-        toast.info("보증을 취소했습니다");
-      } else {
-        await api.post(`/api/v1/vouch/${userId}`);
-        setVouchCount(v => v + 1);
-        setIsVouchedByMe(true);
-        toast.success("사진 보증 완료! 이 분의 신뢰도가 높아졌어요 ✅");
-      }
-    } catch (e: any) {
-      toast.error(e?.message || "보증에 실패했습니다");
+      const res = await api.delete<VouchResponse>(`/api/v1/vouch/${userId}`);
+      applyVouchResponse(res);
+      toast.info("보증을 취소했어요");
+    } catch {
+      toast.error("보증 취소에 실패했어요");
     } finally {
       setIsVouching(false);
     }
@@ -648,6 +646,41 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
           </div>
         )}
 
+        {/* 1촌 보증 CTA — 칩/한마디는 시트에서 옵셔널 */}
+        {canVouch && !detailsHidden && (
+          <div className="mx-4 mt-3 flex items-center gap-2">
+            {isVouchedByMe ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setShowVouchSheet(true)}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium border border-border bg-card hover:bg-muted transition-colors"
+                >
+                  <BadgeCheck className="w-4 h-4 text-brand-strong" />
+                  보증 수정
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUnvouch}
+                  disabled={isVouching}
+                  className="rounded-xl px-4 py-2.5 text-sm text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  {isVouching ? <Loader2 className="w-4 h-4 animate-spin" /> : "취소"}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowVouchSheet(true)}
+                className="w-full flex items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-medium bg-brand-soft text-brand-strong hover:bg-brand-soft/90 transition-colors"
+              >
+                <BadgeCheck className="w-4 h-4" />
+                이 분 보증하기
+              </button>
+            )}
+          </div>
+        )}
+
         {!detailsHidden && (
           <ProfileDiscoveryDeck
             profile={profile}
@@ -701,20 +734,29 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
 
               {vouchCount > 0 && (
                 <div
-                  className="rounded-xl p-4 border"
+                  className="rounded-xl p-4 border space-y-3"
                   style={{
                     backgroundColor: accentColor ? `${accentColor}10` : "hsl(var(--muted))",
                     borderColor: accentColor ? `${accentColor}25` : "hsl(var(--border))",
                   }}
                 >
-                  <p className="text-xs font-semibold text-muted-foreground mb-1.5">
-                    {voucherNicknames[0]
-                      ? `${voucherNicknames[0]}${voucherNicknames.length > 1 ? ` 님 외 ${voucherNicknames.length - 1}명` : " 님"}의 한마디`
-                      : `친구 ${vouchCount}명이 신뢰를 보증`}
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    친구 {vouchCount}명이 보증해요
                   </p>
-                  <p className="text-sm text-foreground leading-relaxed">
-                    가깝게 지내는 지인들이 이 분을 자신 있게 소개했어요.
-                  </p>
+                  <div className="space-y-2.5">
+                    {vouches.slice(0, 5).map((v, i) => (
+                      <div key={i} className="text-sm text-foreground leading-relaxed">
+                        <span className="font-medium">{v.voucherNickname}</span>
+                        <span className="text-muted-foreground"> · </span>
+                        <span>{vouchDisplayLine(v)}</span>
+                      </div>
+                    ))}
+                    {vouches.length === 0 && (
+                      <p className="text-sm text-foreground leading-relaxed">
+                        가깝게 지내는 지인들이 이 분을 보증했어요.
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -751,6 +793,16 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
           </div>
         </DialogContent>
       </Dialog>
+
+      <VouchSheet
+        open={showVouchSheet}
+        onClose={() => setShowVouchSheet(false)}
+        targetName={userInfo?.nickname ?? ""}
+        targetUserId={userId}
+        initialPresetKey={myVouch?.presetKey}
+        initialMessage={myVouch?.message}
+        onSuccess={applyVouchResponse}
+      />
 
       {/* Matchmaker Selection Modal */}
       {showMatchmakerModal && (

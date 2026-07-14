@@ -584,3 +584,8 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     INDEX idx_chat_msg_request (request_id, created_at),
     INDEX idx_chat_msg_request_sender (request_id, sender_id)
 ) ENGINE=InnoDB;
+
+-- ── 32. 친구 보증 칩/한마디 (L0 원탭 · L1 preset · L2 optional message) ──────
+-- 재적재 시 기존 컬럼 에러는 continue-on-error 로 무시.
+ALTER TABLE vouches ADD COLUMN preset_key VARCHAR(32);
+ALTER TABLE vouches ADD COLUMN message VARCHAR(50);

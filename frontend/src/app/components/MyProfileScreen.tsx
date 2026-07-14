@@ -18,6 +18,7 @@ import { ProfileDetailsCollapsible } from "./profile/ProfileDetailsCollapsible";
 import { ProfileIdealTypeSummary } from "./profile/ProfileIdealTypeSummary";
 import { buildHeroSpecLine } from "../../lib/profileEssay";
 import { jobCategoryLabel } from "../../lib/jobCategory";
+import { vouchDisplayLine, type VouchItem, type VouchResponse } from "../../lib/vouchPresets";
 
 interface MyProfileScreenProps {
   onBack: () => void;
@@ -127,12 +128,12 @@ interface ProfileData {
     idealTypeInsight?: string | null;
     strengths?: string[] | null;
   } | null;
-  vouches?: Array<{ message: string }>;
 }
 
 export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigateToColor }: MyProfileScreenProps) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [vouches, setVouches] = useState<VouchItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [showPhoneVerificationModal, setShowPhoneVerificationModal] = useState(false);
@@ -149,6 +150,8 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
           try {
             const profileData = await api.get<ProfileData>('/api/v1/profile');
             setProfile(profileData);
+            const vouchRes = await api.get<VouchResponse>(`/api/v1/vouch/${userData.userId}`);
+            setVouches(vouchRes.vouches ?? []);
           } catch {
             console.log('No profile found for user');
           }
@@ -376,20 +379,24 @@ export function MyProfileScreen({ onBack, onEdit, onConvertToRegular, onNavigate
             accentColor={accentColor}
           />
 
-          {profile.vouches && profile.vouches.length > 0 && (
+          {vouches.length > 0 && (
             <div
-              className="rounded-xl p-4 border"
+              className="rounded-xl p-4 border space-y-3"
               style={{
                 backgroundColor: accentColor ? `${accentColor}10` : "hsl(var(--muted))",
                 borderColor: accentColor ? `${accentColor}25` : "hsl(var(--border))",
               }}
             >
-              <p className="text-xs font-semibold text-muted-foreground mb-1.5">친구 추천사</p>
-              <div className="space-y-2">
-                {profile.vouches.map((v, i) => (
-                  <p key={i} className="text-sm text-foreground leading-relaxed">
-                    "{v.message}"
-                  </p>
+              <p className="text-xs font-semibold text-muted-foreground">
+                친구 {vouches.length}명이 보증해요
+              </p>
+              <div className="space-y-2.5">
+                {vouches.map((v, i) => (
+                  <div key={i} className="text-sm text-foreground leading-relaxed">
+                    <span className="font-medium">{v.voucherNickname}</span>
+                    <span className="text-muted-foreground"> · </span>
+                    <span>{vouchDisplayLine(v)}</span>
+                  </div>
                 ))}
               </div>
             </div>

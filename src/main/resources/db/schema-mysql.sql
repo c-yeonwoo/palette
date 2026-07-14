@@ -285,6 +285,8 @@
         id binary(16) not null,
         target_user_id varchar(255) not null,
         voucher_id varchar(255) not null,
+        preset_key varchar(32),
+        message varchar(50),
         primary key (id)
     ) engine=InnoDB;
 
