@@ -589,3 +589,16 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 -- 재적재 시 기존 컬럼 에러는 continue-on-error 로 무시.
 ALTER TABLE vouches ADD COLUMN preset_key VARCHAR(32);
 ALTER TABLE vouches ADD COLUMN message VARCHAR(50);
+
+-- ── 33. 일일 질문 답변 (홈 ‘오늘’ 리텐션) ───────────────────────────────────
+CREATE TABLE IF NOT EXISTS daily_answers (
+    id BINARY(16) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    answer_date DATE NOT NULL,
+    question_id VARCHAR(64) NOT NULL,
+    answer_text VARCHAR(120) NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_daily_answer_user_date (user_id, answer_date),
+    INDEX idx_daily_answer_user (user_id)
+) ENGINE=InnoDB;

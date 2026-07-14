@@ -5,6 +5,7 @@ import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { getCompatibilityDeterministic, COLOR_META, type ColorType } from "../../lib/colorCompatibility";
 import { DailyMatchBanner } from "./DailyMatchBanner";
+import { TodaySection } from "./TodaySection";
 import { jobCategoryLabel } from "../../lib/jobCategory";
 import { OnboardingTourCard } from "./onboarding/OnboardingTourCard";
 import { onboardingProgress } from "../../lib/onboarding/progress";
@@ -183,11 +184,14 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
 
   useEffect(() => {
     fetchUserAndFeed();
-    // 헤더 물감 잔액 (ADR 0044) — 비용 게이트(열람/소개요청) 전에 잔액을 인지시킴
+    refreshBalance();
+  }, []);
+
+  const refreshBalance = () => {
     api.get<{ points: number }>("/api/v1/billing/balance")
       .then((b) => setBalancePoints(b.points))
       .catch(() => { /* 잔액 조회 실패 시 chip 숨김 */ });
-  }, []);
+  };
 
   const buildQueryString = (f: FilterState): string => {
     const params = new URLSearchParams();
@@ -321,6 +325,14 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
           </div>
         </div>
       </header>
+
+      {/* 오늘 — 일일 질문 리텐션 (지인 유무와 무관, ADR 0077) */}
+      {userProfile?.accountType === "REGULAR" && (
+        <TodaySection
+          onAnswered={refreshBalance}
+          onGoToPick={() => setHomeTab("recommend")}
+        />
+      )}
 
       {/* 온보딩 안내 카드 (O-001) — 일반 회원만, 모든 단계 완료/dismiss 시 자동 숨김 */}
       {userProfile?.accountType === "REGULAR" && (
