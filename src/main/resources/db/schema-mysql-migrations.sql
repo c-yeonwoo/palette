@@ -571,3 +571,16 @@ CREATE TABLE IF NOT EXISTS palette_pick_batch_runs (
 -- 코드에서 미사용 처리(orphan). 재적재 시 기존 컬럼 에러는 continue-on-error 로 무시.
 ALTER TABLE profiles ADD COLUMN work_sido VARCHAR(50);
 ALTER TABLE profiles ADD COLUMN work_sigungu VARCHAR(50);
+
+-- ── 31. 인앱 채팅 메시지 (ADR 0066) ─────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id BINARY(16) NOT NULL,
+    request_id BINARY(16) NOT NULL,
+    sender_id VARCHAR(36) NOT NULL,
+    body TEXT NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    read_at DATETIME(6),
+    PRIMARY KEY (id),
+    INDEX idx_chat_msg_request (request_id, created_at),
+    INDEX idx_chat_msg_request_sender (request_id, sender_id)
+) ENGINE=InnoDB;

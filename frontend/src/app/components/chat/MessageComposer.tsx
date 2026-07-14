@@ -15,12 +15,13 @@ const PLACEHOLDERS: Record<Channel, string> = {
 };
 
 interface MessageComposerProps {
-  channel: Channel;
+  channel?: Channel;
   onSend: (text: string) => void;
+  disabled?: boolean;
   className?: string;
 }
 
-export function MessageComposer({ channel, onSend, className }: MessageComposerProps) {
+export function MessageComposer({ channel = "public", onSend, disabled = false, className }: MessageComposerProps) {
   const [text, setText] = useState("");
   const [warning, setWarning] = useState<string>("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -38,7 +39,7 @@ export function MessageComposer({ channel, onSend, className }: MessageComposerP
 
   const handleSend = () => {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed || disabled) return;
     const { ok } = checkMessage(trimmed);
     if (!ok) return;
     onSend(trimmed);
@@ -83,7 +84,7 @@ export function MessageComposer({ channel, onSend, className }: MessageComposerP
         />
         <button
           onClick={handleSend}
-          disabled={!text.trim() || !!warning}
+          disabled={!text.trim() || !!warning || disabled}
           className={cn(
             "w-10 h-10 flex-shrink-0 rounded-xl flex items-center justify-center transition-all",
             text.trim() && !warning

@@ -46,6 +46,8 @@ interface ProfileDiscoveryDeckProps {
   profile: DiscoveryProfile;
   targetUserId: string;
   mutualFriends: MutualFriend[];
+  /** 내 프로필 미리보기 — 궁합·연결 카드 숨김, 색·심리·이상형 인사이트만 */
+  isSelf?: boolean;
 }
 
 type CardKind = "color" | "compat" | "connection" | "psychology" | "ideal";
@@ -75,6 +77,7 @@ function buildCards(
   myInterests: string[],
   mutualFriends: MutualFriend[],
   targetUserId: string,
+  isSelf: boolean,
 ): DiscoveryCard[] {
   const cards: DiscoveryCard[] = [];
   const ct = profile.colorType;
@@ -94,7 +97,7 @@ function buildCards(
     });
   }
 
-  if (theirType && theirHex && myColorType) {
+  if (!isSelf && theirType && theirHex && myColorType) {
     const compat = getCompatibilityDeterministic(myColorType, theirType, targetUserId);
     const myHex = COLOR_META[myColorType]?.hex;
     if (compat && myHex) {
@@ -116,7 +119,7 @@ function buildCards(
   const common = theirInterests.filter((i) => myInterests.includes(i));
   const friendNames = mutualFriends.map((f) => f.name).filter(Boolean);
 
-  if (friendNames.length > 0 || common.length > 0) {
+  if (!isSelf && (friendNames.length > 0 || common.length > 0)) {
     const parts: string[] = [];
     if (friendNames.length > 0) {
       const shown = friendNames.slice(0, 2).join("·");
@@ -131,7 +134,7 @@ function buildCards(
     }
     cards.push({
       kind: "connection",
-      title: "연결고리",
+      title: friendNames.length > 0 ? "혹시 아는 사이?" : "연결고리",
       body: parts.join(" · ") || "지인 네트워크로 이어진 인연이에요.",
       chips: common.length > 0 ? common.slice(0, 4) : undefined,
       accent: theirHex,
@@ -233,6 +236,7 @@ export function ProfileDiscoveryDeck({
   profile,
   targetUserId,
   mutualFriends,
+  isSelf = false,
 }: ProfileDiscoveryDeckProps) {
   const [myColorType, setMyColorType] = useState<ColorType | null>(null);
   const [myInterests, setMyInterests] = useState<string[]>([]);
@@ -240,6 +244,7 @@ export function ProfileDiscoveryDeck({
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
+    if (isSelf) return;
     api
       .get<{ colorType?: { type?: string }; introduction?: { interests?: string[] } }>(
         "/api/v1/profile",
@@ -249,7 +254,7 @@ export function ProfileDiscoveryDeck({
         setMyInterests(p.introduction?.interests ?? []);
       })
       .catch(() => {});
-  }, []);
+  }, [isSelf]);
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -258,7 +263,7 @@ export function ProfileDiscoveryDeck({
     onSelect();
   }, [emblaApi]);
 
-  const cards = buildCards(profile, myColorType, myInterests, mutualFriends, targetUserId);
+  const cards = buildCards(profile, myColorType, myInterests, mutualFriends, targetUserId, isSelf);
   if (cards.length === 0) return null;
 
   if (cards.length === 1) {

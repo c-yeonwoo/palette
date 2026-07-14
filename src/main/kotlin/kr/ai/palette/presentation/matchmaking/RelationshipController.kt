@@ -7,6 +7,8 @@ import kr.ai.palette.domain.matchmaking.MatchmakingRequestId
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestRepository
 import kr.ai.palette.domain.matchmaking.MatchmakingRequestStatus
 import kr.ai.palette.domain.user.UserRepository
+import kr.ai.palette.persistence.relationship.ChatMessageEntity
+import kr.ai.palette.persistence.relationship.ChatMessageJpaRepository
 import kr.ai.palette.persistence.relationship.MeetingFeedbackEntity
 import kr.ai.palette.persistence.relationship.MeetingFeedbackJpaRepository
 import kr.ai.palette.persistence.relationship.PhotoFeedbackEntity
@@ -65,7 +67,25 @@ data class RelationshipStatusResponse(
     val partnerName: String? = null,
     val partnerPhone: String? = null,
     val partnerKakaoId: String? = null,
+    /** 상대가 보낸 미읽음 채팅 수 (ADR 0066) */
+    val unreadCount: Int = 0,
 )
+
+data class ChatMessageResponse(
+    val id: String,
+    val requestId: String,
+    val senderId: String,
+    val body: String,
+    val createdAt: String,
+    val readAt: String? = null,
+)
+
+data class ChatMessagesListResponse(
+    val messages: List<ChatMessageResponse>,
+    val unreadCount: Int = 0,
+)
+
+data class SendChatMessageRequest(val body: String)
 
 enum class PhotoSimilarity(val label: String) {
     VERY_SIMILAR("사진과 매우 비슷해요"),
@@ -84,10 +104,34 @@ class RelationshipController(
     private val relationshipStageRepository: RelationshipStageJpaRepository,
     private val photoFeedbackRepository: PhotoFeedbackJpaRepository,
     private val meetingFeedbackRepository: MeetingFeedbackJpaRepository,
+    private val chatMessageRepository: ChatMessageJpaRepository,
     private val userRepository: UserRepository,
+    private val blockService: kr.ai.palette.application.safety.BlockService,
 ) {
 
     private data class PartnerContact(val name: String?, val phone: String?, val kakaoId: String?)
+
+    private fun isParty(request: MatchmakingRequest, userId: UserId): Boolean =
+        userId == request.requesterId || userId == request.targetUserId
+
+    private fun resolveStage(requestId: UUID): RelationshipStage {
+        val record = relationshipStageRepository.findByRequestId(requestId)
+        return record?.stage?.let { RelationshipStage.valueOf(it) } ?: RelationshipStage.MATCHED
+    }
+
+    private fun countUnread(requestId: UUID, readerId: UserId): Int =
+        chatMessageRepository
+            .countByRequestIdAndSenderIdNotAndReadAtIsNull(requestId, readerId.value.toString())
+            .toInt()
+
+    private fun toChatMessageResponse(entity: ChatMessageEntity) = ChatMessageResponse(
+        id = entity.id.toString(),
+        requestId = entity.requestId.toString(),
+        senderId = entity.senderId,
+        body = entity.body,
+        createdAt = entity.createdAt.toString(),
+        readAt = entity.readAt?.toString(),
+    )
 
     /**
      * 매칭 상대(요청자↔수신자 중 내가 아닌 쪽)의 연락처를 조회한다 (ADR 0065).
@@ -143,8 +187,92 @@ class RelationshipController(
                 partnerName = partner.name,
                 partnerPhone = partner.phone,
                 partnerKakaoId = partner.kakaoId,
+                unreadCount = countUnread(requestId, authUser.userId),
             )
         )
+    }
+
+    /**
+     * 채팅 메시지 조회 (ADR 0066) — 폴링용 증분 조회. ENDED 관계도 읽기 전용 허용.
+     */
+    @GetMapping("/{requestId}/messages")
+    @Transactional
+    fun getChatMessages(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @PathVariable requestId: UUID,
+        @RequestParam(required = false) after: UUID?,
+    ): ResponseEntity<ChatMessagesListResponse> {
+        val request = matchmakingRequestRepository.findById(MatchmakingRequestId(requestId))
+            ?: return ResponseEntity.notFound().build()
+
+        if (request.status != MatchmakingRequestStatus.COMPLETED) {
+            return ResponseEntity.badRequest().build()
+        }
+        if (!isParty(request, authUser.userId)) {
+            return ResponseEntity.status(403).build()
+        }
+
+        val readerId = authUser.userId.value.toString()
+        val messages = if (after == null) {
+            chatMessageRepository.findByRequestIdOrderByCreatedAtAsc(requestId)
+        } else {
+            val anchor = chatMessageRepository.findById(after).orElse(null)
+                ?: return ResponseEntity.ok(ChatMessagesListResponse(emptyList(), countUnread(requestId, authUser.userId)))
+            chatMessageRepository.findByRequestIdAndCreatedAtAfterOrderByCreatedAtAsc(requestId, anchor.createdAt)
+        }
+
+        chatMessageRepository.markAsRead(requestId, readerId, Instant.now())
+
+        return ResponseEntity.ok(
+            ChatMessagesListResponse(
+                messages = messages.map(::toChatMessageResponse),
+                unreadCount = 0,
+            )
+        )
+    }
+
+    /**
+     * 채팅 메시지 전송 (ADR 0066). ENDED 관계는 403.
+     */
+    @PostMapping("/{requestId}/messages")
+    @Transactional
+    fun sendChatMessage(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @PathVariable requestId: UUID,
+        @RequestBody body: SendChatMessageRequest,
+    ): ResponseEntity<ChatMessageResponse> {
+        val request = matchmakingRequestRepository.findById(MatchmakingRequestId(requestId))
+            ?: return ResponseEntity.notFound().build()
+
+        if (request.status != MatchmakingRequestStatus.COMPLETED) {
+            return ResponseEntity.badRequest().build()
+        }
+        if (!isParty(request, authUser.userId)) {
+            return ResponseEntity.status(403).build()
+        }
+        if (resolveStage(requestId) == RelationshipStage.ENDED) {
+            return ResponseEntity.status(403).build()
+        }
+
+        val partnerId = if (request.requesterId == authUser.userId) request.targetUserId else request.requesterId
+        if (blockService.isBlockedBetween(authUser.userId.value, partnerId.value)) {
+            return ResponseEntity.status(403).build()
+        }
+
+        val text = body.body.trim()
+        if (text.isEmpty() || text.length > 2000) {
+            return ResponseEntity.badRequest().build()
+        }
+
+        val entity = chatMessageRepository.save(
+            ChatMessageEntity(
+                requestId = requestId,
+                senderId = authUser.userId.value.toString(),
+                body = text,
+            )
+        )
+
+        return ResponseEntity.ok(toChatMessageResponse(entity))
     }
 
     @PutMapping("/{requestId}/stage")
@@ -327,6 +455,7 @@ class RelationshipController(
                 partnerName = partner.name,
                 partnerPhone = partner.phone,
                 partnerKakaoId = partner.kakaoId,
+                unreadCount = countUnread(req.id.value, myId),
             )
         }
 

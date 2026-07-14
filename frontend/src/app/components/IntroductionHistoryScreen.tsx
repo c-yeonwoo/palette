@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
-import { Heart, Clock, CheckCircle2, XCircle, MessageSquare, Send, Users, ChevronLeft, Sparkles } from "lucide-react";
+import { Heart, Clock, CheckCircle2, XCircle, MessageSquare, Send, Users, ChevronLeft, Sparkles, MessageCircle } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
 import { FirstMessageSuggestionModal } from "./intro/FirstMessageSuggestionModal";
 import { PostMatchFeedbackSheet } from "./match/PostMatchFeedbackSheet";
 import { InfoHint } from "./InfoHint";
+import { ChatThread } from "./chat/ChatThread";
 
 interface MatchRequest {
   id: string;
@@ -41,6 +42,13 @@ interface RelationshipStatus {
   partnerName?: string | null;
   partnerPhone?: string | null;
   partnerKakaoId?: string | null;
+  unreadCount?: number;
+}
+
+interface ActiveChat {
+  requestId: string;
+  partnerName: string;
+  readOnly: boolean;
 }
 
 const PHOTO_FEEDBACK_OPTIONS = [
@@ -79,6 +87,8 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
   // 만남 후 주선자 후기 (ADR 0050)
   const [feedbackSheetFor, setFeedbackSheetFor] = useState<string | null>(null);
   const [feedbackDone, setFeedbackDone] = useState<Set<string>>(new Set());
+  const [activeChat, setActiveChat] = useState<ActiveChat | null>(null);
+  const [showRejectionRecovery, setShowRejectionRecovery] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -126,6 +136,7 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
     try {
       await api.put(`/api/v1/matchmaking/requests/${requestId}/target/reject`, { message: null });
       toast.info("매칭을 거절했습니다.");
+      setShowRejectionRecovery(true);
       fetchData();
     } catch {
       toast.error("거절에 실패했습니다");
@@ -266,6 +277,21 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
         {/* ── 진행 중 탭 ── */}
         {activeTab === "pending" && (
           <>
+            {showRejectionRecovery && (
+              <div className="mb-3 rounded-2xl border border-border bg-brand-soft px-4 py-3.5 space-y-2">
+                <p className="text-sm font-semibold text-foreground">이건 당신 잘못이 아니에요</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  거절은 자연스러운 과정이에요. 홈의 팔레트 Pick에서 다른 인연을 만나보세요.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowRejectionRecovery(false)}
+                  className="text-xs font-bold text-brand-strong"
+                >
+                  알겠어요
+                </button>
+              </div>
+            )}
             {pendingItems.length === 0 ? (
               <div className="py-16 flex flex-col items-center gap-4 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
@@ -382,11 +408,23 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
                   // 종결된 인연 (ADR 0051) — 단계바/설문/업데이트 없이 마무리 카드만
                   if (rel.stage === "ENDED") {
                     return (
-                      <div key={rel.requestId} className="bg-card rounded-2xl border border-border/60 p-4 space-y-1.5 text-center">
+                      <div key={rel.requestId} className="bg-card rounded-2xl border border-border/60 p-4 space-y-3 text-center">
                         <p className="text-sm font-semibold text-foreground">이번 인연은 여기서 마무리됐어요</p>
                         <p className="text-xs text-muted-foreground leading-relaxed">
                           소중한 만남이었어요.<br />더 잘 어울리는 색을 곧 다시 찾아드릴게요.
                         </p>
+                        <button
+                          type="button"
+                          onClick={() => setActiveChat({
+                            requestId: rel.requestId,
+                            partnerName: rel.partnerName ?? "상대방",
+                            readOnly: true,
+                          })}
+                          className="w-full rounded-xl border border-border bg-muted/30 hover:bg-muted/60 px-3 py-2.5 text-xs font-medium text-foreground transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          대화 기록 보기
+                        </button>
                       </div>
                     );
                   }
@@ -406,6 +444,33 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
                           <p className="text-sm">{rel.encouragementMessage}</p>
                         </div>
                       )}
+
+                      {/* 인앱 채팅 (ADR 0066) */}
+                      <button
+                        type="button"
+                        onClick={() => setActiveChat({
+                          requestId: rel.requestId,
+                          partnerName: rel.partnerName ?? "상대방",
+                          readOnly: false,
+                        })}
+                        className="w-full flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl border border-primary/30 bg-brand-soft/30 hover:bg-brand-soft/50 transition-colors text-left"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <MessageCircle className="w-4 h-4 text-primary flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-foreground">인앱 채팅</p>
+                            <p className="text-[11px] text-muted-foreground">번호 없이 먼저 대화해보세요</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {(rel.unreadCount ?? 0) > 0 && (
+                            <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold inline-flex items-center justify-center">
+                              {rel.unreadCount}
+                            </span>
+                          )}
+                          <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground rotate-180" />
+                        </div>
+                      </button>
 
                       {/* 연락처 공유 카드 (ADR 0065) — 성사 후 실제 연락 시작 전 단계에서 노출 */}
                       {(rel.stage === "MATCHED" || rel.stage === "CONTACTS_EXCHANGED") && (rel.partnerKakaoId || rel.partnerPhone) && (
@@ -631,6 +696,37 @@ export function IntroductionHistoryScreen({ onBack, onViewProfile }: { onBack?: 
           onClose={() => setFeedbackSheetFor(null)}
           onSubmitted={() => setFeedbackDone(prev => new Set(prev).add(feedbackSheetFor))}
         />
+      )}
+
+      {/* 인앱 채팅 오버레이 (ADR 0066) */}
+      {activeChat && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-background">
+          <header className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b border-border pt-safe-top">
+            <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveChat(null);
+                  fetchData();
+                }}
+                className="p-1.5 rounded-full hover:bg-muted/50 transition-colors -ml-1"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <h2 className="text-base font-semibold truncate">
+                {activeChat.partnerName}님과 채팅
+              </h2>
+            </div>
+          </header>
+          <div className="flex-1 max-w-2xl mx-auto w-full overflow-hidden">
+            <ChatThread
+              requestId={activeChat.requestId}
+              partnerName={activeChat.partnerName}
+              readOnly={activeChat.readOnly}
+              className="h-full"
+            />
+          </div>
+        </div>
       )}
     </div>
   );

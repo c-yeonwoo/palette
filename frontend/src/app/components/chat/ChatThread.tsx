@@ -1,94 +1,165 @@
 /**
- * ChatThread — F02 메시지 리스트 + 자동 스크롤
+ * ChatThread — 인앱 1:1 채팅 (ADR 0066)
+ * 5초 폴링 REST + 텍스트 메시지 전송
  */
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { EmptyState } from "../ui/empty-state";
 import { MessageCircle } from "lucide-react";
 import { MessageBubble } from "./MessageBubble";
 import { MessageComposer } from "./MessageComposer";
-import { ChannelSelector } from "./ChannelSelector";
-import { filterVisibleMessages } from "../../../lib/conversation-visibility";
-import type { Channel, Message } from "../../../data/mock-conversations";
-import { getColorTypeMeta } from "../../../lib/colorTypes";
-import type { MatchDetail } from "../../../data/mock-matches";
+import type { Message } from "../../../data/mock-conversations";
+import { api } from "../../../lib/api/apiClient";
+import { authService } from "../../../lib/auth/authService";
 import { cn } from "../ui/utils";
+import { toast } from "sonner";
 
-const VIEWER_ID = "me-001"; // 현재 사용자 (채팅 백엔드 연동 시 실제 userId 로 교체)
+const POLL_INTERVAL_MS = 5000;
+
+interface ApiChatMessage {
+  id: string;
+  requestId: string;
+  senderId: string;
+  body: string;
+  createdAt: string;
+  readAt?: string | null;
+}
+
+interface ChatMessagesResponse {
+  messages: ApiChatMessage[];
+  unreadCount: number;
+}
 
 interface ChatThreadProps {
-  match: MatchDetail;
-  isMatchmaker?: boolean;
+  requestId: string;
+  partnerName: string;
+  readOnly?: boolean;
   className?: string;
 }
 
-export function ChatThread({ match, isMatchmaker = false, className }: ChatThreadProps) {
-  // 채팅 백엔드 미구현 — 항상 빈 대화로 시작 (mock 미노출, MVP 제한)
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [channel, setChannel] = useState<Channel>("public");
-  const bottomRef = useRef<HTMLDivElement>(null);
+function toUiMessage(msg: ApiChatMessage, viewerId: string, partnerName: string): Message {
+  const isMine = msg.senderId === viewerId;
+  return {
+    id: msg.id,
+    matchId: msg.requestId,
+    channel: "public",
+    senderId: msg.senderId,
+    senderRole: isMine ? "me" : "partner",
+    senderName: isMine ? "나" : partnerName,
+    text: msg.body,
+    createdAt: msg.createdAt,
+  };
+}
 
-  const viewerRole = isMatchmaker ? "matchmaker" : "me";
-  const visible = filterVisibleMessages(messages, viewerRole, VIEWER_ID);
+export function ChatThread({ requestId, partnerName, readOnly = false, className }: ChatThreadProps) {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [viewerId, setViewerId] = useState<string | null>(null);
+  const [isSending, setIsSending] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const lastIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    authService.getCurrentUser().then((user) => {
+      if (user?.userId) setViewerId(user.userId);
+    });
+  }, []);
+
+  const mergeMessages = useCallback((incoming: ApiChatMessage[]) => {
+    if (incoming.length === 0) return;
+    setMessages((prev) => {
+      const map = new Map(prev.map((m) => [m.id, m]));
+      for (const msg of incoming) {
+        if (!viewerId) continue;
+        map.set(msg.id, toUiMessage(msg, viewerId, partnerName));
+      }
+      const merged = Array.from(map.values()).sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      );
+      const last = merged[merged.length - 1];
+      if (last) lastIdRef.current = last.id;
+      return merged;
+    });
+  }, [viewerId, partnerName]);
+
+  const fetchMessages = useCallback(async (after?: string | null) => {
+    if (!viewerId) return;
+    const qs = after ? `?after=${after}` : "";
+    const res = await api.get<ChatMessagesResponse>(
+      `/api/v1/relationships/${requestId}/messages${qs}`,
+    );
+    mergeMessages(res.messages ?? []);
+  }, [viewerId, requestId, mergeMessages]);
+
+  useEffect(() => {
+    if (!viewerId) return;
+    lastIdRef.current = null;
+    setMessages([]);
+    fetchMessages().catch(() => toast.error("메시지를 불러오지 못했어요"));
+  }, [viewerId, requestId, fetchMessages]);
+
+  useEffect(() => {
+    if (!viewerId) return;
+    const timer = setInterval(() => {
+      fetchMessages(lastIdRef.current).catch(() => {});
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [viewerId, requestId, fetchMessages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [visible.length]);
+  }, [messages.length]);
 
-  const handleSend = (text: string) => {
-    const newMsg: Message = {
-      id: `msg-${Date.now()}`,
-      matchId: match.matchId,
-      channel,
-      senderId: VIEWER_ID,
-      senderRole: "me",
-      senderName: "나",
-      text,
-      createdAt: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, newMsg]);
+  const handleSend = async (text: string) => {
+    if (readOnly || !viewerId || isSending) return;
+    setIsSending(true);
+    try {
+      const sent = await api.post<ApiChatMessage>(
+        `/api/v1/relationships/${requestId}/messages`,
+        { body: text },
+      );
+      mergeMessages([sent]);
+    } catch {
+      toast.error("메시지 전송에 실패했어요");
+    } finally {
+      setIsSending(false);
+    }
   };
 
-  const getSenderColor = (msg: Message): string | undefined => {
-    if (msg.senderRole === "me") {
-      return `hsl(${getColorTypeMeta(match.me.colorType).h} ${getColorTypeMeta(match.me.colorType).s}% ${getColorTypeMeta(match.me.colorType).l}%)`;
-    }
-    if (msg.senderRole === "partner") {
-      return `hsl(${getColorTypeMeta(match.partner.colorType).h} ${getColorTypeMeta(match.partner.colorType).s}% ${getColorTypeMeta(match.partner.colorType).l}%)`;
-    }
-    return "hsl(42 86% 46%)"; // 주선자 골드
-  };
+  if (!viewerId) {
+    return (
+      <div className={cn("flex flex-col h-full items-center justify-center", className)}>
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
-      {/* 채널 셀렉터 헤더 */}
-      <div className="px-4 py-3 border-b border-border-subtle flex items-center gap-2 bg-surface">
-        <span className="text-caption text-text-tertiary">채널:</span>
-        <ChannelSelector value={channel} onChange={setChannel} />
-      </div>
-
-      {/* 메시지 리스트 */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {visible.length === 0 ? (
+        {messages.length === 0 ? (
           <EmptyState
             icon={<MessageCircle />}
             title="대화 내역이 없어요"
-            body={isMatchmaker ? "양쪽에 한마디씩 남기고 시작해보세요." : "주선자에게 첫 인사를 남겨보세요."}
+            body={readOnly ? "종료된 인연의 대화 기록이 없어요." : "첫 인사를 남겨보세요."}
           />
         ) : (
-          visible.map((msg) => (
+          messages.map((msg) => (
             <MessageBubble
               key={msg.id}
               message={msg}
-              viewerSenderId={VIEWER_ID}
-              senderColorHex={getSenderColor(msg)}
+              viewerSenderId={viewerId}
             />
           ))
         )}
         <div ref={bottomRef} />
       </div>
 
-      {/* 입력창 */}
-      <MessageComposer channel={channel} onSend={handleSend} />
+      {readOnly ? (
+        <div className="px-4 py-3 border-t border-border-subtle bg-surface text-center">
+          <p className="text-caption text-text-tertiary">종료된 인연 — 대화 기록만 볼 수 있어요</p>
+        </div>
+      ) : (
+        <MessageComposer onSend={handleSend} disabled={isSending} />
+      )}
     </div>
   );
 }
