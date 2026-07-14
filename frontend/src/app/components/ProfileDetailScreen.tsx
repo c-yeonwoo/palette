@@ -2,11 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "./ui/dialog";
-import { ChevronLeft, Loader2, Send, Users, ExternalLink, Lock, EyeOff, Palette as PaletteIcon } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
+import { ChevronLeft, ChevronDown, Loader2, Send, Users, ExternalLink, Lock, EyeOff, Palette as PaletteIcon } from "lucide-react";
 import { api } from "../../lib/api/apiClient";
 import { toast } from "sonner";
-import { getCompatibilityDeterministic, COLOR_META, COMPAT_STYLE, type ColorType, type CompatibilityType } from "../../lib/colorCompatibility";
 import { CategoryCard } from "./profile/CategoryCard";
+import { ProfileDiscoveryDeck } from "./profile/ProfileDiscoveryDeck";
+import { ProfilePhotoEssay } from "./profile/ProfilePhotoEssay";
+import { buildHeroSpecLine } from "../../lib/profileEssay";
 import { PROFILE_GROUPS, toProfileValues } from "../../lib/profileSchema";
 import { onboardingProgress } from "../../lib/onboarding/progress";
 import {
@@ -160,7 +163,10 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
 
   // Vouch state
   const [vouchCount, setVouchCount] = useState(0);
+  const [voucherNicknames, setVoucherNicknames] = useState<string[]>([]);
   const [isVouchedByMe, setIsVouchedByMe] = useState(false);
+  const [myInterests, setMyInterests] = useState<string[]>([]);
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [isVouching, setIsVouching] = useState(false);
   const [isFriend, setIsFriend] = useState(false);
   // Hide state
@@ -179,6 +185,10 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     checkMatchmakingRequest();
     checkCoolTime();
     fetchVouchInfo();
+    api
+      .get<{ introduction?: { interests?: string[] } }>("/api/v1/profile")
+      .then((p) => setMyInterests(p.introduction?.interests ?? []))
+      .catch(() => {});
     // 1촌(mutualFriends가 있으면)이거나 직접 알면 보증 가능 여부 확인
     setIsFriend(mutualFriends.length > 0 || degree < 2);
   }, [userId]);
@@ -273,6 +283,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
         `/api/v1/vouch/${userId}`
       );
       setVouchCount(res.vouchCount);
+      setVoucherNicknames(res.voucherNicknames ?? []);
       setIsVouchedByMe(res.isVouchedByMe);
     } catch {
       // ignore
@@ -521,16 +532,6 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     </div>
   );
 
-  const InfoRow = ({ label, value }: { label: string; value: string | null | undefined }) => {
-    if (!value) return null;
-    return (
-      <div className="flex justify-between items-center py-2">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-medium">{value}</span>
-      </div>
-    );
-  };
-
   const ChipGroup = ({ items }: { items: string[] | null | undefined }) => {
     if (!items || items.length === 0) return <p className="text-muted-foreground text-sm">정보 없음</p>;
     return (
@@ -545,42 +546,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
   };
 
   // Display mappings
-  const getBodyTypeDisplay = (bodyType: string | null) => {
-    if (!bodyType) return null;
-    const map: Record<string, string> = {
-      SLIM: "슬림", AVERAGE: "보통", ATHLETIC: "탄탄",
-      MUSCULAR: "근육질", CHUBBY: "통통", CURVY: "풍만"
-    };
-    return map[bodyType] || bodyType;
-  };
-
   const getJobCategoryDisplay = (category: string | null) => jobCategoryLabel(category);
-
-  const getEducationDisplay = (level: string | null) => {
-    if (!level) return null;
-    const map: Record<string, string> = {
-      HIGH_SCHOOL: "고졸", ASSOCIATE: "전문대졸", BACHELOR: "대졸",
-      MASTER: "석사", DOCTORATE: "박사"
-    };
-    return map[level] || level;
-  };
-
-  const getFrequencyDisplay = (freq: string | null) => {
-    if (!freq) return null;
-    const map: Record<string, string> = {
-      NEVER: "안 함", SOMETIMES: "가끔", OFTEN: "자주"
-    };
-    return map[freq] || freq;
-  };
-
-  const getReligionDisplay = (religion: string | null) => {
-    if (!religion) return null;
-    const map: Record<string, string> = {
-      NONE: "무교", CHRISTIANITY: "기독교", CATHOLICISM: "천주교",
-      BUDDHISM: "불교", OTHER: "기타"
-    };
-    return map[religion] || religion;
-  };
 
   const getDatePreferenceDisplay = (prefs: string[]) => {
     // SoT: IdealTypeScreen.tsx 의 DATE_STYLE_OPTIONS — 6개 옵션 전체 매핑
@@ -637,6 +603,29 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
 
   const sortedPhotos = [...profile.photos].sort((a, b) => a.displayOrder - b.displayOrder);
   const accentColor = profile.colorType?.hex ?? null;
+  const heroSpecLine = buildHeroSpecLine(profile, getJobCategoryDisplay);
+  const essayContextParts: string[] = [];
+  if (mutualFriends.length > 0) {
+    const names = mutualFriends.slice(0, 2).map((f) => f.name).join("·");
+    essayContextParts.push(
+      mutualFriends.length > 2 ? `공통 친구 ${names} 외` : `공통 친구 ${names}`,
+    );
+  }
+  const commonInterests = (profile.introduction.interests ?? []).filter((i) =>
+    myInterests.includes(i),
+  );
+  if (commonInterests.length > 0) {
+    essayContextParts.push(`둘 다 ${commonInterests.slice(0, 3).join("·")}`);
+  }
+  const essayContextLine =
+    essayContextParts.length > 0 ? essayContextParts.join(" · ") : null;
+
+  const idealSummaryChips = [
+    ...getAppearanceStyleDisplay(profile.idealType.appearanceStyles),
+    ...profile.idealType.personalities,
+    ...getDatePreferenceDisplay(profile.idealType.datePreferences),
+    ...getImportantValueDisplay(profile.idealType.importantValues),
+  ].filter(Boolean).slice(0, 8);
 
   const getContrastColor = (hex: string): string => {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -713,34 +702,40 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
               </div>
             )}
             <h2 className="text-2xl font-bold text-white drop-shadow-sm leading-tight">{userInfo.nickname}</h2>
+            {heroSpecLine && (
+              <p className="text-sm text-white/95 mt-1 font-medium tracking-tight">{heroSpecLine}</p>
+            )}
             {profile.colorType?.description && (
-              <p className="text-sm text-white/90 mt-1 leading-snug">{profile.colorType.description}</p>
+              <p className="text-sm text-white/80 mt-1.5 leading-snug line-clamp-2">{profile.colorType.description}</p>
             )}
           </div>
         </div>
 
-        {/* 공감 먼저 — 공통 친구로 '아는 사이의 신뢰'를 스토리 초입에 (지인망 서비스의 핵심 감각). */}
+        {/* 연결 맥락 — 지인망 신뢰 신호 */}
         {!detailsHidden && mutualFriends.length > 0 && (
-          <div className="mx-4 mt-4 flex items-center gap-2.5 rounded-xl px-4 py-3"
-               style={{ backgroundColor: accentColor ? `${accentColor}14` : "hsl(var(--muted))" }}>
+          <div
+            className="mx-4 mt-4 flex items-center gap-2.5 rounded-xl px-4 py-3"
+            style={{ backgroundColor: accentColor ? `${accentColor}14` : "hsl(var(--muted))" }}
+          >
             <Users className="w-4 h-4 flex-shrink-0" style={{ color: accentColor ?? undefined }} />
             <p className="text-[13px] leading-snug text-foreground">
-              공통 친구 <span className="font-semibold">{mutualFriends.length}명</span>
-              <span className="text-muted-foreground"> · {mutualFriends.slice(0, 2).map(f => f.name).join(", ")}{mutualFriends.length > 2 ? " 외" : ""} 님이 이어줬어요</span>
+              <span className="font-semibold">{mutualFriends[0].name}</span>
+              {mutualFriends.length > 1 ? ` 님 외 ${mutualFriends.length - 1}명` : " 님"}
+              <span className="text-muted-foreground"> · 이 분을 이어줄 수 있어요</span>
             </p>
           </div>
         )}
 
-        {/* 색깔 궁합 배너 (색 이론 기반) — 공감 요소로 히어로 바로 아래 */}
-        <ColorCompatBanner
-          theirColorType={(profile.colorType?.type ?? null) as ColorType | null}
-          theirColorName={profile.colorType?.name ?? null}
-          theirColorHex={profile.colorType?.hex ?? null}
-          theirProfile={profile}
-          targetUserId={userId}
-        />
+        {/* 발견 덱 — 색·궁합·연결·심리 인사이트 카드 */}
+        {!detailsHidden && (
+          <ProfileDiscoveryDeck
+            profile={profile}
+            targetUserId={userId}
+            mutualFriends={mutualFriends}
+          />
+        )}
 
-        {/* 본문 — 탭 제거, 하나의 스토리 스크롤 (색 → 소개 → 이야기+사진 → 보증 → 한눈에 → 이런 인연) */}
+        {/* 본문 — photo essay + 보증 + 접힌 스펙 + 이상형 */}
         <div className="p-6 space-y-6">
           {(
             <>
@@ -759,292 +754,113 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                 </>
               ) : (
                 <>
-              {/* C-3 — 이 사람의 색 (백엔드 이미 내려주지만 ProfileDetail 에 미노출이었음) */}
-              {profile?.colorType?.name && (
-                <Section title="이 사람의 색">
-                  <div
-                    className="bg-card rounded-lg p-4 space-y-3"
-                    style={accentColor
-                      ? { border: `1px solid ${accentColor}40` }
-                      : { border: "1px solid hsl(var(--border))" }
-                    }
-                  >
-                    <div className="flex items-center gap-2">
-                      {accentColor && (
-                        <span
-                          className="w-4 h-4 rounded-full ring-1 ring-black/5 flex-shrink-0"
-                          style={{ backgroundColor: accentColor }}
-                        />
-                      )}
-                      <p className="text-sm font-bold text-foreground">{profile.colorType.name}</p>
-                    </div>
-                    {profile.colorType.reasoning && (
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {profile.colorType.reasoning}
-                      </p>
-                    )}
-                    {profile.colorType.personalitySummary && (
-                      <div>
-                        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">성향</p>
-                        <p className="text-sm text-foreground leading-relaxed">
-                          {profile.colorType.personalitySummary}
-                        </p>
-                      </div>
-                    )}
-                    {profile.colorType.strengths && profile.colorType.strengths.length > 0 && (
-                      <div>
-                        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">매력 포인트</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {profile.colorType.strengths.map((s, i) => (
-                            <span
-                              key={i}
-                              className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
-                              style={accentColor
-                                ? { backgroundColor: `${accentColor}15`, color: accentColor }
-                                : { backgroundColor: "hsl(var(--muted))" }}
-                            >
-                              {s}
-                            </span>
+              <ProfilePhotoEssay
+                introText={profile.introduction.text}
+                interviewAnswers={profile.introduction.interviewAnswers}
+                extraPhotos={sortedPhotos.slice(1)}
+                contextLine={essayContextLine}
+                accentColor={accentColor}
+              />
+
+              {profile.personalityTests && profile.personalityTests.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {profile.personalityTests.map((test, index) => (
+                    <a
+                      key={index}
+                      href={test.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-full px-4 py-2 text-sm font-medium text-purple-900 hover:text-purple-700 hover:border-purple-300 transition-colors"
+                    >
+                      {test.title}
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              {vouchCount > 0 && (
+                <div
+                  className="rounded-xl p-4 border"
+                  style={{
+                    backgroundColor: accentColor ? `${accentColor}10` : "hsl(var(--muted))",
+                    borderColor: accentColor ? `${accentColor}25` : "hsl(var(--border))",
+                  }}
+                >
+                  <p className="text-xs font-semibold text-muted-foreground mb-1.5">
+                    {voucherNicknames[0]
+                      ? `${voucherNicknames[0]}${voucherNicknames.length > 1 ? ` 님 외 ${voucherNicknames.length - 1}명` : " 님"}의 한마디`
+                      : `친구 ${vouchCount}명이 신뢰를 보증`}
+                  </p>
+                  <p className="text-sm text-foreground leading-relaxed">
+                    가깝게 지내는 지인들이 이 분을 자신 있게 소개했어요.
+                  </p>
+                </div>
+              )}
+
+              <Collapsible open={detailsExpanded} onOpenChange={setDetailsExpanded}>
+                <CollapsibleTrigger className="w-full flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3.5 text-sm font-medium text-foreground hover:bg-muted/40 transition-colors">
+                  기본 정보 더 보기
+                  <ChevronDown
+                    className={`w-4 h-4 text-muted-foreground transition-transform ${detailsExpanded ? "rotate-180" : ""}`}
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-3 space-y-3">
+                  {PROFILE_GROUPS.map((group) => (
+                    <CategoryCard key={group.key} group={group} values={toProfileValues(profile)} mode="view" />
+                  ))}
+                  {profile?.introduction.datingStyle &&
+                    Object.keys(profile.introduction.datingStyle).length > 0 && (
+                      <div className="bg-card rounded-lg border border-border p-4">
+                        <p className="text-xs font-semibold text-muted-foreground mb-2">연애 스타일</p>
+                        <div className="space-y-2">
+                          {Object.entries(profile.introduction.datingStyle).map(([qKey, optKey]) => (
+                            <div key={qKey} className="flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground text-xs">
+                                {DATING_STYLE_QUESTION_LABELS[qKey] ?? qKey}
+                              </span>
+                              <span className="font-medium">
+                                {DATING_STYLE_OPTION_LABELS[optKey] ?? optKey}
+                              </span>
+                            </div>
                           ))}
                         </div>
                       </div>
                     )}
-                  </div>
-                </Section>
-              )}
-
-              {/* 소개글 — 자유 텍스트 (편집화면의 "소개글" 필드) */}
-              {profile?.introduction.text && (
-                <Section title="소개글">
-                  <div
-                    className="bg-card rounded-lg p-4"
-                    style={accentColor
-                      ? { border: `1px solid ${accentColor}40` }
-                      : { border: "1px solid hsl(var(--border))" }
-                    }
-                  >
-                    <p className="text-sm text-foreground whitespace-pre-line leading-relaxed">
-                      {profile.introduction.text}
-                    </p>
-                  </div>
-                </Section>
-              )}
-
-              {/* 관심사 — 칩 */}
-              {profile?.introduction.interests && profile.introduction.interests.length > 0 && (
-                <Section title="관심사">
-                  <div className="bg-card rounded-lg border border-border p-4">
-                    <div className="flex flex-wrap gap-2">
-                      {profile.introduction.interests.map((interest) => (
-                        <span
-                          key={interest}
-                          className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-muted text-foreground"
-                          style={accentColor ? { backgroundColor: `${accentColor}15`, color: accentColor } : undefined}
-                        >
-                          {interest}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </Section>
-              )}
-
-              {/* 심리 프로필 — 애착 유형 */}
-              {profile?.attachmentProfile?.attachmentTypeLabel && (
-                <Section title="심리 프로필">
-                  <div className="bg-card rounded-lg border border-border p-4">
-                    <div className="flex items-start gap-3">
-                      {profile.attachmentProfile.attachmentTypeEmoji && (
-                        <span className="text-2xl flex-shrink-0" aria-hidden>
-                          {profile.attachmentProfile.attachmentTypeEmoji}
-                        </span>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-foreground">
-                          {profile.attachmentProfile.attachmentTypeLabel}
-                        </p>
-                        {profile.attachmentProfile.attachmentTypeDescription && (
-                          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                            {profile.attachmentProfile.attachmentTypeDescription}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </Section>
-              )}
-
-              {/* 이야기 — 인터뷰 답변을 비트로, 사이사이 추가 사진을 끼워 하나의 서사로 읽히게 (스펙 나열이 아니라 '읽는 재미') */}
-              {profile?.introduction.interviewAnswers && (() => {
-                const ia = profile.introduction.interviewAnswers!;
-                const beats = ([
-                  { q: "쉬는 날엔 이렇게 보내요", a: ia.hobby },
-                  { q: "제 매력 포인트는요", a: ia.charm },
-                  { q: "요즘 푹 빠져있는 건", a: ia.passion },
-                  { q: "저는 이럴 때 행복해요", a: ia.happiness },
-                  { q: "제 인생의 좌우명", a: ia.motto },
-                ] as const).filter((b) => b.a && b.a.trim());
-                const extra = sortedPhotos.slice(1); // 대표사진(index 0)은 히어로에 사용
-                if (beats.length === 0) return null;
-                return (
-                  <div className="-mx-6">
-                    <h3 className="px-6 mb-1 text-xs font-semibold text-muted-foreground uppercase tracking-widest">이야기</h3>
-                    {beats.map((b, i) => (
-                      <div key={i}>
-                        <div className="px-6 py-5">
-                          <p className="text-xs text-muted-foreground mb-1.5">Q. {b.q}</p>
-                          <p className="text-[15px] leading-relaxed text-foreground whitespace-pre-line">{b.a}</p>
-                        </div>
-                        {extra[i] && (
-                          <img src={extra[i].url} alt="" className="w-full aspect-[4/5] max-h-[460px] object-cover" />
-                        )}
-                      </div>
-                    ))}
-                    {/* 비트보다 사진이 많으면 남은 사진을 이어서 */}
-                    {extra.slice(beats.length).map((p) => (
-                      <img key={p.id} src={p.url} alt="" className="w-full aspect-[4/5] max-h-[460px] object-cover" />
-                    ))}
-                  </div>
-                );
-              })()}
-
-              {/* Personality Tests */}
-              {profile.personalityTests && profile.personalityTests.length > 0 && (
-                <Section title="나는 이런 사람이에요">
-                  <div className="bg-card rounded-lg border border-border p-4">
-                    <div className="flex flex-wrap gap-2">
-                      {profile.personalityTests.map((test, index) => (
-                        <a
-                          key={index}
-                          href={test.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-full px-4 py-2 text-sm font-medium text-purple-900 hover:text-purple-700 hover:border-purple-300 transition-colors"
-                        >
-                          {test.title}
-                          <ExternalLink className="w-3 h-3" />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                </Section>
-              )}
-
-              {/* 친구 보증 — 지인망 신뢰의 핵심. 서사 말미에 인용 카드로 (남의 프로필에도 이제 노출). */}
-              {vouchCount > 0 && (
-                <div className="rounded-xl p-4" style={{ backgroundColor: accentColor ? `${accentColor}12` : "hsl(var(--muted))" }}>
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <Users className="w-4 h-4 flex-shrink-0" style={{ color: accentColor ?? undefined }} />
-                    <span className="text-xs font-semibold text-foreground">친구 {vouchCount}명이 신뢰를 보증했어요</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">가깝게 지내는 지인들이 이 분을 자신 있게 소개했어요.</p>
-                </div>
-              )}
-
-              {/* 한눈에 보기 — 팩트는 서사 뒤로. 스펙이 사람을 앞서지 않게. */}
-              <Section title="한눈에 보기">
-                <div className="space-y-3">
-                  {PROFILE_GROUPS.map((group) => (
-                    <CategoryCard key={group.key} group={group} values={toProfileValues(profile)} mode="view" />
-                  ))}
-                </div>
-              </Section>
+                </CollapsibleContent>
+              </Collapsible>
                 </>
               )}
             </>
           )}
 
-          {/* 이런 인연을 찾아요 — 이상형 탭을 스크롤 하단으로 흡수 (탭 제거) */}
-          {!detailsHidden && (
-            <>
-              {/* Appearance Styles */}
-              <Section title="외모 스타일">
-                <ChipGroup items={getAppearanceStyleDisplay(profile.idealType.appearanceStyles)} />
-              </Section>
-
-              {/* DA-001 — 선호 나이·키 범위 */}
+          {/* 이런 인연을 찾아요 — 컴팩트 요약 */}
+          {!detailsHidden &&
+            (idealSummaryChips.length > 0 ||
+              getDealBreakerDisplay(profile.idealType.dealBreakers).length > 0 ||
+              profile.idealType.ageMin ||
+              profile.idealType.ageMax) && (
+            <Section title="이런 인연을 찾아요">
+              {idealSummaryChips.length > 0 && <ChipGroup items={idealSummaryChips} />}
               {(profile.idealType.ageMin || profile.idealType.ageMax ||
                 profile.idealType.heightMin || profile.idealType.heightMax) && (
-                <Section title="선호 조건">
-                  <div className="bg-card rounded-lg border border-border p-4 space-y-2">
-                    {(profile.idealType.ageMin || profile.idealType.ageMax) && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">나이</span>
-                        <span className="font-medium text-foreground">
-                          {profile.idealType.ageMin ?? "?"}~{profile.idealType.ageMax ?? "?"}세
-                        </span>
-                      </div>
-                    )}
-                    {(profile.idealType.heightMin || profile.idealType.heightMax) && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">키</span>
-                        <span className="font-medium text-foreground">
-                          {profile.idealType.heightMin ?? "?"}~{profile.idealType.heightMax ?? "?"}cm
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </Section>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {[
+                    (profile.idealType.ageMin || profile.idealType.ageMax) &&
+                      `나이 ${profile.idealType.ageMin ?? "?"}~${profile.idealType.ageMax ?? "?"}세`,
+                    (profile.idealType.heightMin || profile.idealType.heightMax) &&
+                      `키 ${profile.idealType.heightMin ?? "?"}~${profile.idealType.heightMax ?? "?"}cm`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
               )}
-
-              {/* C-3 — AI 가 유추한 어울리는 인연 (이상형 탭 최상단) */}
-              {profile.colorType?.idealTypeInsight && (
-                <Section title="팔레트가 본 어울리는 인연">
-                  <div
-                    className="bg-card rounded-lg p-4"
-                    style={accentColor
-                      ? { border: `1px solid ${accentColor}40` }
-                      : { border: "1px solid hsl(var(--border))" }
-                    }
-                  >
-                    <p className="text-sm text-foreground leading-relaxed">
-                      {profile.colorType.idealTypeInsight}
-                    </p>
-                  </div>
-                </Section>
+              {getDealBreakerDisplay(profile.idealType.dealBreakers).length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  절대 안 되는 것: {getDealBreakerDisplay(profile.idealType.dealBreakers).join(" · ")}
+                </p>
               )}
-
-              {/* Personalities */}
-              <Section title="성격">
-                <ChipGroup items={profile.idealType.personalities} />
-              </Section>
-
-              {/* Date Preferences */}
-              <Section title="데이트 스타일">
-                <ChipGroup items={getDatePreferenceDisplay(profile.idealType.datePreferences)} />
-              </Section>
-
-              {/* Important Values */}
-              <Section title="중요하게 생각하는 것">
-                <ChipGroup items={getImportantValueDisplay(profile.idealType.importantValues)} />
-              </Section>
-
-              {/* Deal Breakers */}
-              <Section title="절대 안 되는 것">
-                <ChipGroup items={getDealBreakerDisplay(profile.idealType.dealBreakers)} />
-              </Section>
-
-              {/* C-2 — 연애 스타일 (10문항). 본인 프로필과 동일 매핑 */}
-              {profile?.introduction.datingStyle &&
-                Object.keys(profile.introduction.datingStyle).length > 0 && (
-                  <Section title="연애 스타일">
-                    <div className="bg-card rounded-lg border border-border p-4">
-                      <div className="space-y-2.5">
-                        {Object.entries(profile.introduction.datingStyle).map(([qKey, optKey]) => (
-                          <div key={qKey} className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">
-                              {DATING_STYLE_QUESTION_LABELS[qKey] ?? qKey}
-                            </span>
-                            <span className="text-sm font-medium text-foreground">
-                              {DATING_STYLE_OPTION_LABELS[optKey] ?? optKey}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </Section>
-              )}
-            </>
+            </Section>
           )}
         </div>
       </div>
@@ -1282,166 +1098,6 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── 색깔 궁합 배너 ──────────────────────────────────────────
-// ─── AI 매칭 인사이트 생성 ────────────────────────────────────────────
-function generateMatchInsights(
-  myProfile: any,
-  theirProfile: ProfileData,
-  compat: ReturnType<typeof getCompatibilityDeterministic>,
-): string[] {
-  const points: string[] = [];
-
-  // 1. 색깔 궁합 기반 인사이트
-  if (compat) {
-    // 키는 colorCompatibility.ts 의 CompatibilityType 과 정확히 일치해야 함
-    // (complementary/analogous/contrast). 과거 complement/synergy/harmony 로 오타 →
-    // 보완색·유사색(가장 좋은 궁합)의 설명 문장이 통째로 누락되던 버그 수정.
-    const colorInsight: Record<CompatibilityType, string> = {
-      complementary: "서로 다른 에너지가 빈자리를 채워줘요. 함께할수록 균형이 생기는 관계예요.",
-      analogous:     "결이 비슷해서 자연스럽게 어우러져요. 편안하게 대화가 이어질 것 같아요.",
-      contrast:      "강한 대비가 서로에게 새로운 시각을 열어줘요. 만남 자체가 자극이 될 수 있어요.",
-    };
-    const insight = colorInsight[compat.type];
-    if (insight) points.push(insight);
-  }
-
-  // 2. 자기소개 인터뷰 기반 — 상대방의 답변 키워드로 대화 풍부도 예측
-  const answers = theirProfile.introduction.interviewAnswers;
-  if (answers) {
-    const filled = [answers.hobby, answers.charm, answers.passion, answers.happiness]
-      .filter((a): a is string => !!a && a.trim().length > 0);
-    if (filled.length >= 3) {
-      points.push("자기소개가 풍부해서 처음 만남에도 대화가 끊기지 않을 것 같아요.");
-    } else if (filled.length > 0) {
-      const snippet = filled[0].length > 18 ? filled[0].slice(0, 18) + "…" : filled[0];
-      points.push(`"${snippet}" — 답변에서 느껴지는 취향이 흥미로운 대화 소재가 될 거예요.`);
-    }
-  }
-
-  // 3. 라이프스타일 호환성 비교
-  const ml = myProfile?.lifestyleInfo;
-  const tl = theirProfile.lifestyleInfo;
-  if (ml && tl) {
-    const noSmoke = (v: string | null) => !v || v === "NEVER";
-    const lightDrink = (v: string | null) => !v || v === "NEVER" || v === "OCCASIONALLY";
-    if (noSmoke(ml.smoking) && noSmoke(tl.smoking) && lightDrink(ml.drinking) && lightDrink(tl.drinking)) {
-      points.push("생활 패턴이 비슷해요. 일상을 함께 그려나가기 편할 거예요.");
-    } else if (ml.religion && tl.religion && ml.religion === tl.religion && ml.religion !== "NONE") {
-      points.push("종교적 가치관이 일치해요. 중요한 부분에서 공감대가 생기기 쉬워요.");
-    }
-  }
-
-  // 4. 중요 가치관
-  const values = theirProfile.idealType.importantValues ?? [];
-  const valueLabel: Record<string, string> = {
-    PERSONALITY: "성격", APPEARANCE: "외모", STABILITY: "안정감",
-    HUMOR: "유머 감각", CARE: "배려심", AMBITION: "열정", HONESTY: "솔직함",
-  };
-  if (values.length > 0 && points.length < 3) {
-    const labels = values.slice(0, 2).map(v => valueLabel[v] ?? v).join("과 ");
-    points.push(`${labels}을 중시하는 가치관이 관계에서 신뢰를 만들어줄 것 같아요.`);
-  }
-
-  // 최소 2개 보장
-  if (points.length < 2) {
-    points.push("프로필을 더 읽다 보면 예상치 못한 공통점을 발견하게 될 거예요.");
-  }
-
-  return points.slice(0, 3);
-}
-
-// ─── 색깔 궁합 통합 배너 (색 이론 기반, LLM 아님) ───────────────────────────────────
-function ColorCompatBanner({
-  theirColorType,
-  theirColorName,
-  theirColorHex,
-  theirProfile,
-  targetUserId,
-}: {
-  theirColorType: ColorType | null;
-  theirColorName: string | null;
-  theirColorHex: string | null;
-  theirProfile: ProfileData;
-  targetUserId: string;
-}) {
-  const [myColorType, setMyColorType] = useState<ColorType | null>(null);
-  const [myProfile, setMyProfile] = useState<any>(null);
-
-  useEffect(() => {
-    api.get<any>("/api/v1/profile")
-      .then((p) => {
-        setMyColorType((p.colorType?.type ?? null) as ColorType | null);
-        setMyProfile(p);
-      })
-      .catch(() => {});
-  }, []);
-
-  if (!theirColorType || !theirColorHex || !theirColorName) return null;
-
-  const theirMeta = COLOR_META[theirColorType];
-  const myMeta = myColorType ? COLOR_META[myColorType] : null;
-  const compat = getCompatibilityDeterministic(myColorType, theirColorType, targetUserId);
-  const style = compat ? COMPAT_STYLE[compat.type] : null;
-
-  const insights = generateMatchInsights(myProfile, theirProfile, compat);
-
-  return (
-    <div className="px-4 pt-3">
-      {compat && myMeta ? (
-        <div className={`rounded-2xl border px-4 py-4 ${style!.bg} ${style!.border}`}>
-          {/* 상단: 두 색 도트 + 궁합 레이블 + AI 뱃지 */}
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex items-center shrink-0">
-              <span className="w-7 h-7 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: myMeta.hex }} />
-              <span className="w-7 h-7 rounded-full border-2 border-white shadow-sm -ml-2" style={{ backgroundColor: theirMeta.hex }} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-xs font-bold uppercase tracking-wide ${style!.text}`}>{compat.label}</span>
-                <span className={`text-xs font-semibold ${style!.text}`}>{compat.score}%</span>
-              </div>
-              <p className="text-xs text-neutral-500 mt-0.5 leading-snug">{compat.tagline}</p>
-            </div>
-            {/* 이 궁합은 색 이론(보완/유사/대비) 기반 계산 → "AI"로 표기하지 않음.
-                실 LLM 분석은 팔레트 Pick·프로필 소개글에만 사용 (정직 라벨링). */}
-            <span className="shrink-0 text-xs font-medium text-neutral-400 bg-black/5 px-2 py-0.5 rounded-full">✦ 색 궁합</span>
-          </div>
-
-          {/* 구분선 */}
-          <div className="border-t border-black/5 pt-3 space-y-2">
-            {insights.map((pt, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <span className={`text-xs mt-[3px] font-bold shrink-0 ${style!.text}`}>•</span>
-                <p className="text-xs text-neutral-600 leading-relaxed">{pt}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        /* 내 색깔 없을 때 — 상대 색깔 + 단순 분석 */
-        <div
-          className="rounded-2xl px-4 py-3.5 space-y-2"
-          style={{ backgroundColor: `${theirColorHex}12`, border: `1px solid ${theirColorHex}35` }}
-        >
-          <div className="flex items-center gap-2.5">
-            <span className="w-5 h-5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: theirColorHex }} />
-            <span className="text-sm font-semibold" style={{ color: theirColorHex }}>{theirColorName}</span>
-            {theirMeta?.energy && <span className="text-xs text-neutral-400">{theirMeta.energy}</span>}
-          </div>
-          <div className="border-t border-black/5 pt-2 space-y-1.5">
-            {generateMatchInsights(null, theirProfile, null).map((pt, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <span className="text-xs mt-[3px] font-bold shrink-0 text-neutral-400">•</span>
-                <p className="text-xs text-neutral-500 leading-relaxed">{pt}</p>
-              </div>
-            ))}
           </div>
         </div>
       )}
