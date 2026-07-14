@@ -107,7 +107,8 @@
 
 | 용어 | 영문 | 의미 |
 |------|------|------|
-| **팔레트 Pick** | Palette Pick | 홈 "지인 \| 팔레트 Pick" 탭 중 우측 — AI 색 궁합 기반 추천 카드 (`DailyRecommendationEntity`). 색 궁합 점수로 정렬. (과거 "오늘의 추천" — '오늘의/AI 추천'은 진부해 폐기, ADR 0028) |
+| **팔레트 Pick** | Palette Pick | 홈 "지인 \| 팔레트 Pick" 탭 중 우측 — AI 색 궁합 기반 추천 카드 (`DailyRecommendationEntity`). **시스템 주선자 = 팔리** (ADR 0078). 색 궁합 점수로 정렬. (과거 "오늘의 추천" — '오늘의/AI 추천'은 진부해 폐기, ADR 0028) |
+| **팔리** | Palli | 마스코트 · AI 인터뷰/리포트 화자 · **Pick 경로 시스템 주선자**. 사람 주선자 리그·정산과 분리 (ADR 0073/0078) |
 | **팔레트 매칭** | AI Recommendation | 시스템이 산출하는 매칭 후보 (팔레트 Pick의 백엔드 개념) |
 | **나의 색 / 컬러 타입** | Color Type | 8색 성격 메타포. AI가 근거·성향·이상형 유추와 함께 발급 (`ColorType`) |
 | **궁합** | Compatibility | 두 사람 색 타입 간 어울림 점수 (`colorCompatibility`) |
