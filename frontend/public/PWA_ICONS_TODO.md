@@ -27,7 +27,7 @@
 npx pwa-asset-generator <source-icon.png> public/ \
   --manifest src/manifest.json \
   --background "#ffffff" \
-  --theme-color "#F97316"
+  --theme-color "#FAA80A"
 ```
 
 ### 옵션 3: 디자이너에게 요청 (권장)

@@ -96,7 +96,7 @@ class ShareLinkController(
             ShareProfileResponse(
                 nickname = user.publicInfo.nickname,
                 gender = user.publicInfo.gender.name,
-                profile = ProfileResponse.from(profile, fileStorageService),
+                profile = ProfileResponse.forPublicShare(profile, fileStorageService),
                 viewCount = link.viewCount + 1
             )
         )

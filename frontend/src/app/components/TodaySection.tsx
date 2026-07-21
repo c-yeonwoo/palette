@@ -28,10 +28,12 @@ interface DailyTodayResponse {
 
 interface TodaySectionProps {
   onAnswered?: () => void;
+  /** 로드 시 오늘 답변 여부 전달 (미션 체크리스트 동기화) */
+  onStatus?: (answered: boolean) => void;
   onGoToPick?: () => void;
 }
 
-export function TodaySection({ onAnswered, onGoToPick }: TodaySectionProps) {
+export function TodaySection({ onAnswered, onStatus, onGoToPick }: TodaySectionProps) {
   const [data, setData] = useState<DailyTodayResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -40,10 +42,15 @@ export function TodaySection({ onAnswered, onGoToPick }: TodaySectionProps) {
   useEffect(() => {
     let cancelled = false;
     api.get<DailyTodayResponse>("/api/v1/daily/today")
-      .then((res) => { if (!cancelled) setData(res); })
+      .then((res) => {
+        if (cancelled) return;
+        setData(res);
+        onStatus?.(res.answered);
+      })
       .catch(() => { if (!cancelled) setData(null); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const submit = async (answer: string) => {

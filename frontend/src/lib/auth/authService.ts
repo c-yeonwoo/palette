@@ -41,10 +41,15 @@ export interface RefreshTokenResponse {
 
 export const authService = {
   /**
-   * Redirect to Kakao OAuth2 login
+   * Redirect to Kakao OAuth2 login.
+   * betaCode 가 있으면 쿼리로 전달 → 서버가 베타 쿠키를 재발급 (네이티브 쿠키 유실 대비).
    */
-  loginWithKakao(): void {
-    window.location.href = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OAUTH2.KAKAO}`;
+  loginWithKakao(betaCode?: string | null): void {
+    const base = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OAUTH2.KAKAO}`;
+    const url = betaCode
+      ? `${base}?betaCode=${encodeURIComponent(betaCode)}`
+      : base;
+    window.location.href = url;
   },
 
   /**
@@ -64,6 +69,7 @@ export const authService = {
     identityToken: string,
     authorizationCode?: string | null,
     displayName?: string | null,
+    betaCode?: string | null,
   ): Promise<boolean> {
     const response = await fetch(
       `${API_CONFIG.BASE_URL}/api/v1/auth/oauth/apple`,
@@ -71,20 +77,23 @@ export const authService = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ identityToken, authorizationCode, displayName }),
+        body: JSON.stringify({ identityToken, authorizationCode, displayName, betaCode }),
       }
     );
 
     if (!response.ok) {
       let message = 'Apple 로그인에 실패했어요. 다시 시도해주세요.';
+      let errorCode: string | undefined;
       try {
         const body = await response.json();
         if (body?.message) message = body.message;
+        if (body?.error) errorCode = body.error;
       } catch {
         /* JSON 파싱 실패는 무시 — 기본 메시지 사용 */
       }
-      const err = new Error(message) as Error & { status?: number };
+      const err = new Error(message) as Error & { status?: number; errorCode?: string };
       err.status = response.status;
+      err.errorCode = errorCode;
       throw err;
     }
 

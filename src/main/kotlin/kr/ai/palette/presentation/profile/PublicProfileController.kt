@@ -21,7 +21,7 @@ class PublicProfileController(
         val profile = profileRepository.findByUserId(UserId(UUID.fromString(userId)))
             ?: return ResponseEntity.notFound().build()
 
-        return ResponseEntity.ok(ProfileResponse.from(profile, fileStorageService))
+        return ResponseEntity.ok(ProfileResponse.forPublicShare(profile, fileStorageService))
     }
 
     @GetMapping("/users/{userId}/public")

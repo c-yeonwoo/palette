@@ -207,9 +207,17 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
   };
 
   const [isFeedVisible, setIsFeedVisible] = useState(true);
-  const [homeTab, setHomeTab] = useState<"recommend" | "network">("network");
+  // 친구 0명이면 팔리 Pick을 기본 시선 (TTFD). 친구가 생기면 지인 탭으로.
+  const [homeTab, setHomeTab] = useState<"recommend" | "network">("recommend");
+  const [homeTabTouched, setHomeTabTouched] = useState(false);
   // 지인 탭 — 특정 지인(공통 친구)으로 필터 (클라이언트). null = 전체
   const [selectedConnector, setSelectedConnector] = useState<string | null>(null);
+  const [answeredToday, setAnsweredToday] = useState(false);
+
+  useEffect(() => {
+    if (homeTabTouched) return;
+    setHomeTab(friendCount > 0 ? "network" : "recommend");
+  }, [friendCount, homeTabTouched]);
 
   const fetchUserAndFeed = async (f: FilterState = filters) => {
     try {
@@ -251,6 +259,7 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
   const applyFilters = () => {
     setFilters(pendingFilters);
     setShowFilter(false);
+    setHomeTabTouched(true);
     setHomeTab("network");
     fetchUserAndFeed(pendingFilters);
   };
@@ -329,18 +338,33 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
       {/* 오늘 — 일일 질문 리텐션 (지인 유무와 무관, ADR 0077) */}
       {userProfile?.accountType === "REGULAR" && (
         <TodaySection
-          onAnswered={refreshBalance}
-          onGoToPick={() => setHomeTab("recommend")}
+          onStatus={setAnsweredToday}
+          onAnswered={() => {
+            setAnsweredToday(true);
+            refreshBalance();
+          }}
+          onGoToPick={() => {
+            setHomeTabTouched(true);
+            setHomeTab("recommend");
+          }}
         />
       )}
 
-      {/* 온보딩 안내 카드 (O-001) — 일반 회원만, 모든 단계 완료/dismiss 시 자동 숨김 */}
+      {/* Wave A 미션 체크리스트 — 일반 회원만, 모든 단계 완료/dismiss 시 자동 숨김 */}
       {userProfile?.accountType === "REGULAR" && (
         <OnboardingTourCard
+          hasAnsweredToday={answeredToday}
           hasFriends={friendCount > 0}
           hasViewedProfile={onboardingProgress.hasViewedProfile()}
           hasSentMatchRequest={onboardingProgress.hasSentMatchRequest()}
           onNavigateToFriends={onNavigateToFriends}
+          onGoToToday={() => {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          onGoToPick={() => {
+            setHomeTabTouched(true);
+            setHomeTab("recommend");
+          }}
         />
       )}
 
@@ -543,7 +567,10 @@ export function MainFeedScreen({ onProfileClick, onNotificationClick, onNavigate
                   {([["network", "지인"], ["recommend", "팔레트 Pick"]] as const).map(([key, label]) => (
                     <button
                       key={key}
-                      onClick={() => setHomeTab(key)}
+                      onClick={() => {
+                        setHomeTabTouched(true);
+                        setHomeTab(key);
+                      }}
                       className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${
                         homeTab === key ? "bg-card text-foreground shadow-card" : "text-muted-foreground"
                       }`}
@@ -1222,19 +1249,19 @@ function EmptyState({ title, description }: { title: string; description: string
 function FirstTimeGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => void }) {
   const steps = [
     {
-      Icon: PaletteIcon,
-      title: "프로필 다듬기",
-      desc: "마이프로필에서 사진을 추가하면 매칭 확률이 올라가요",
+      Icon: Sparkles,
+      title: "팔리 Pick · 오늘 한 경험",
+      desc: "지인이 없어도 ‘팔레트 Pick’ 탭에서 오늘의 추천을 받을 수 있어요",
     },
     {
       Icon: Users,
-      title: "지인 연결하기",
+      title: "지인 1명 연결하기",
       desc: "친구를 초대하면 친구의 친구까지 소개받을 수 있어요",
     },
     {
-      Icon: Sparkles,
-      title: "팔리의 추천 받기",
-      desc: "매일 한 명, 팔리가 골라준 추천을 받아보세요",
+      Icon: PaletteIcon,
+      title: "프로필 다듬기",
+      desc: "사진·나의 색을 채울수록 추천과 주선 성사율이 올라가요",
     },
   ];
 
@@ -1245,11 +1272,11 @@ function FirstTimeGuide({ onNavigateToFriends }: { onNavigateToFriends?: () => v
         <div className="w-10 h-10 rounded-xl bg-surface flex items-center justify-center mb-3">
           <Sparkles className="w-5 h-5 text-brand-strong" />
         </div>
-        <h3 className="text-lg font-bold text-foreground mb-1">팔레트에 오신 걸 환영해요</h3>
+        <h3 className="text-lg font-bold text-foreground mb-1">아직 연결된 지인이 없어요</h3>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          지인 네트워크로 신뢰할 수 있는 만남을 만들어가요.
+          괜찮아요 — 위 ‘팔레트 Pick’ 탭에서 오늘 바로 시작할 수 있어요.
           <br />
-          아래 단계로 천천히 시작해보세요.
+          지인을 초대하면 친구의 친구 네트워크가 열립니다.
         </p>
       </div>
 

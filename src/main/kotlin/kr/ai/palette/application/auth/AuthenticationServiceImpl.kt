@@ -19,7 +19,7 @@ class AuthenticationServiceImpl(
     private val welcomeBonusService: kr.ai.palette.application.billing.WelcomeBonusService,
 ) : AuthenticationService {
 
-    override fun authenticateOAuth(oauthUserInfo: OAuthUserInfo): AuthenticationResult {
+    override fun authenticateOAuth(oauthUserInfo: OAuthUserInfo, betaCode: String?): AuthenticationResult {
         return try {
             // 기존 사용자 조회
             val existingUser = userRepository.findByOAuthInfo(
@@ -32,8 +32,8 @@ class AuthenticationServiceImpl(
                 // 기존 사용자: 마지막 로그인 업데이트
                 existingUser.updateLogin()
             } else {
-                // 신규 OAuth 가입: 베타 게이트 검증 (쿠키)
-                if (betaCodeValidator.isEnabled && !betaCodeValidator.validateFromCookie()) {
+                // 신규 OAuth 가입: body 코드 또는 베타 쿠키
+                if (!betaCodeValidator.validateCodeOrCookie(betaCode)) {
                     throw kr.ai.palette.infrastructure.beta.InvalidBetaCodeException()
                 }
                 createNewUser(oauthUserInfo)

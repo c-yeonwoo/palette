@@ -17,7 +17,7 @@ class BetaCodeController(
     fun status(): ResponseEntity<BetaStatusResponse> =
         ResponseEntity.ok(BetaStatusResponse(enabled = validator.isEnabled))
 
-    /** 베타 코드 검증 → 성공 시 1시간짜리 HttpOnly 쿠키 발급 */
+    /** 베타 코드 검증 → 성공 시 30일 HttpOnly(+Secure on HTTPS) 쿠키 발급 */
     @PostMapping("/verify")
     fun verify(
         @RequestBody request: VerifyBetaCodeRequest,

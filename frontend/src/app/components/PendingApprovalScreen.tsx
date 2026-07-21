@@ -58,7 +58,8 @@ export function PendingApprovalScreen({
             <h1 className="text-xl font-bold text-foreground">프로필 심사 중이에요</h1>
             <p className="text-sm text-muted-foreground leading-relaxed">
               신뢰할 수 있는 만남을 위해 운영자가 프로필과 사진을 확인하고 있어요.<br />
-              승인되면 바로 알려드릴게요. 보통 하루 이내에 완료돼요.
+              보통 <span className="text-foreground font-medium">12~24시간</span> 안에 결과를 알려드려요.
+              밤늦게 제출하시면 다음날 오전에 처리될 수 있어요.
             </p>
           </div>
         )}
@@ -67,7 +68,8 @@ export function PendingApprovalScreen({
         <div className="rounded-xl bg-muted/40 px-4 py-3 flex items-start gap-2 text-left">
           <ShieldCheck className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            팔레트는 모든 프로필을 사람이 직접 검토해 신뢰도를 지켜요. 조금만 기다려주세요.
+            팔레트는 모든 프로필을 사람이 직접 검토해 신뢰도를 지켜요.
+            승인되면 푸시·알림으로 바로 안내하고, 아래 버튼으로도 상태를 확인할 수 있어요.
           </p>
         </div>
 

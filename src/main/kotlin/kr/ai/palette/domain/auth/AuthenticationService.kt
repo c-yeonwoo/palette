@@ -9,7 +9,10 @@ interface AuthenticationService {
      * - 신규 사용자: 자동 회원가입 후 토큰 발급
      * - 기존 사용자: 토큰 발급
      */
-    fun authenticateOAuth(oauthUserInfo: OAuthUserInfo): AuthenticationResult
+    /**
+     * @param betaCode 네이티브/Apple 등 body로 전달된 베타 코드 (쿠키 미의존 경로). null이면 쿠키만 검사.
+     */
+    fun authenticateOAuth(oauthUserInfo: OAuthUserInfo, betaCode: String? = null): AuthenticationResult
 
     /**
      * Access Token 갱신

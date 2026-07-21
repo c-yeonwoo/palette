@@ -82,6 +82,42 @@ data class ProfileResponse(
                 settings = ProfileSettingsDto.from(profile.settings)
             )
         }
+
+        /**
+         * 공유 링크·공개 프로필용 화이트리스트.
+         * 의도된 공유는 유지하되 설정/소득/이상형 수치범위/열람·삭제 메타는 제외.
+         */
+        fun forPublicShare(profile: Profile, storage: FileStorageService? = null): ProfileResponse {
+            val full = from(profile, storage)
+            return full.copy(
+                careerInfo = full.careerInfo.copy(incomeRange = null),
+                idealType = full.idealType.copy(
+                    ageMin = null,
+                    ageMax = null,
+                    heightMin = null,
+                    heightMax = null,
+                ),
+                attachmentProfile = null,
+                metadata = ProfileMetadataDto(
+                    createdAt = full.metadata.createdAt,
+                    updatedAt = full.metadata.createdAt,
+                    lastAccessedAt = full.metadata.createdAt,
+                    deletedAt = null,
+                ),
+                metrics = ProfileMetricsDto(
+                    completionRate = full.metrics.completionRate,
+                    trustScore = full.metrics.trustScore,
+                    viewCount = 0,
+                ),
+                // 실제 공개 설정 플래그는 노출하지 않음 (공유 화면 호환용 더미)
+                settings = ProfileSettingsDto(
+                    isAcceptingMatches = true,
+                    hiddenAt = null,
+                    detailsVisibleToFriends = false,
+                    publicDiscoverable = true,
+                ),
+            )
+        }
     }
 }
 

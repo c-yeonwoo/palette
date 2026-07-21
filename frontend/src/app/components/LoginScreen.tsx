@@ -3,11 +3,14 @@ import { Button } from "./ui/button";
 import { Mail } from "lucide-react";
 import { toast } from "sonner";
 import { authService } from "../../lib/auth/authService";
+import { clearBetaPassed, getBetaCode } from "./BetaGateScreen";
 
 interface LoginScreenProps {
   onEmailLogin?: () => void;
   /** Apple 로그인 성공 시 호출 — 이메일 로그인 성공과 동일한 후처리(현재 유저 로드 + 라우팅). */
   onLoginSuccess?: () => void;
+  /** 베타 게이트 재진입 (invalid_beta_code) */
+  onBetaRequired?: () => void;
 }
 
 /**
@@ -24,12 +27,12 @@ function isIOSNative(): boolean {
   );
 }
 
-export function LoginScreen({ onEmailLogin, onLoginSuccess }: LoginScreenProps) {
+export function LoginScreen({ onEmailLogin, onLoginSuccess, onBetaRequired }: LoginScreenProps) {
   const showAppleSignIn = isIOSNative();
   const [appleLoading, setAppleLoading] = useState(false);
 
   const handleKakaoLogin = () => {
-    authService.loginWithKakao();
+    authService.loginWithKakao(getBetaCode() ?? undefined);
   };
 
   const handleAppleLogin = async () => {
@@ -61,6 +64,7 @@ export function LoginScreen({ onEmailLogin, onLoginSuccess }: LoginScreenProps) 
         identityToken,
         result.response?.authorizationCode,
         displayName,
+        getBetaCode() ?? undefined,
       );
 
       toast.success("Apple 계정으로 로그인되었습니다!");
@@ -73,6 +77,14 @@ export function LoginScreen({ onEmailLogin, onLoginSuccess }: LoginScreenProps) 
         /cancel/i.test(msg) ||
         /1001/.test(msg);
       if (canceled) return;
+      const status = error?.status as number | undefined;
+      const errCode = String(error?.errorCode ?? "");
+      if (status === 403 || errCode === "invalid_beta_code" || /베타|초대 코드|beta/i.test(msg)) {
+        clearBetaPassed();
+        toast.error("베타 코드가 필요해요. 코드를 다시 입력해주세요.");
+        onBetaRequired?.();
+        return;
+      }
       console.error("Apple Sign In failed:", error);
       toast.error(msg || "Apple 로그인에 실패했어요. 다시 시도해주세요.");
     } finally {
@@ -92,7 +104,7 @@ export function LoginScreen({ onEmailLogin, onLoginSuccess }: LoginScreenProps) 
       <div 
         className="absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: `url('/log-bg.png')`,
+          backgroundImage: `url('/log-bg.webp')`,
         }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/60" />

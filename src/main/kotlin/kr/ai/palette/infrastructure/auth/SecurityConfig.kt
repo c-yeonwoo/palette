@@ -21,6 +21,7 @@ class SecurityConfig(
     private val oAuth2AuthenticationSuccessHandler: OAuth2AuthenticationSuccessHandler,
     private val oAuth2AuthenticationFailureHandler: OAuth2AuthenticationFailureHandler,
     private val jwtAuthenticationFilter: JwtAuthenticationFilter,
+    private val betaCodeOAuthBootstrapFilter: kr.ai.palette.infrastructure.beta.BetaCodeOAuthBootstrapFilter,
     // 기본값(로컬 dev)은 localhost/127.0.0.1 **모든 포트** 허용 — vite 가 3000/5173/5178 등 어디로 떠도 CORS 통과.
     // prod 는 CORS_ALLOWED_ORIGINS 로 정확한 origin(https://www.palette.ai.kr) 을 주입해 override.
     @Value("\${cors.allowed-origins:http://localhost:[*],http://127.0.0.1:[*],capacitor://localhost,https://localhost,palette://localhost}")
@@ -57,6 +58,8 @@ class SecurityConfig(
                         "/oauth2/**",
                         "/login/**",
                         "/h2-console/**",
+                        "/actuator/health",
+                        "/actuator/health/**",
                         "/api/v1/profile/public/**",
                         "/api/v1/users/*/public",
                         "/api/v1/ai-interview/questions",
@@ -95,6 +98,7 @@ class SecurityConfig(
                     }
             }
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
+            .addFilterBefore(betaCodeOAuthBootstrapFilter, JwtAuthenticationFilter::class.java)
 
         return http.build()
     }
