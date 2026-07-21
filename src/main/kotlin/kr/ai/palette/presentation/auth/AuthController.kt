@@ -398,10 +398,7 @@ class EmailAuthController(
     @Transactional
     fun signup(@RequestBody request: EmailSignupRequest): ResponseEntity<TokenResponse> {
         // 베타 게이트: body 코드 또는 쿠키 둘 중 하나
-        if (betaCodeValidator.isEnabled &&
-            !betaCodeValidator.validate(request.betaCode) &&
-            !betaCodeValidator.validateFromCookie()
-        ) {
+        if (!betaCodeValidator.validateCodeOrCookie(request.betaCode)) {
             throw kr.ai.palette.infrastructure.beta.InvalidBetaCodeException()
         }
 
@@ -488,10 +485,7 @@ class EmailAuthController(
     @Transactional
     fun matchmakerSignup(@RequestBody request: MatchmakerSignupRequest): ResponseEntity<TokenResponse> {
         // 베타 게이트
-        if (betaCodeValidator.isEnabled &&
-            !betaCodeValidator.validate(request.betaCode) &&
-            !betaCodeValidator.validateFromCookie()
-        ) {
+        if (!betaCodeValidator.validateCodeOrCookie(request.betaCode)) {
             throw kr.ai.palette.infrastructure.beta.InvalidBetaCodeException()
         }
 

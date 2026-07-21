@@ -36,7 +36,7 @@ export function BlockListScreen({ onBack }: BlockListScreenProps) {
         const enriched = await Promise.all(
           (list ?? []).map(async (b) => {
             try {
-              const p = await api.get<any>(`/api/v1/profile/public/${b.blockedUserId}`);
+              const p = await api.get<any>(`/api/v1/profile/users/${b.blockedUserId}`);
               return { ...b, nickname: p?.nickname ?? undefined, photoUrl: p?.primaryPhotoUrl ?? null };
             } catch {
               return b;

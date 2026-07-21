@@ -1,17 +1,32 @@
 import { useEffect } from 'react';
 import { tokenStorage } from '../../lib/auth/tokenStorage';
+import { clearBetaPassed } from './BetaGateScreen';
 
 interface OAuth2RedirectHandlerProps {
   onSuccess: (isNewUser: boolean, missingFields?: string[]) => void;
   onError: () => void;
+  /** 베타 게이트 미통과 — 게이트 화면으로 복귀 */
+  onBetaRequired?: () => void;
 }
 
-export function OAuth2RedirectHandler({ onSuccess, onError }: OAuth2RedirectHandlerProps) {
+export function OAuth2RedirectHandler({ onSuccess, onError, onBetaRequired }: OAuth2RedirectHandlerProps) {
   useEffect(() => {
     const handleOAuth2Redirect = () => {
       try {
-        // Parse URL parameters
         const params = new URLSearchParams(window.location.search);
+        const error = params.get('error');
+
+        if (error) {
+          window.history.replaceState({}, document.title, '/');
+          if (error === 'invalid_beta_code') {
+            clearBetaPassed();
+            onBetaRequired?.();
+            return;
+          }
+          onError();
+          return;
+        }
+
         const accessToken = params.get('token');
         const refreshToken = params.get('refreshToken');
         const isNewUser = params.get('isNewUser') === 'true';
@@ -23,17 +38,14 @@ export function OAuth2RedirectHandler({ onSuccess, onError }: OAuth2RedirectHand
           return;
         }
 
-        // Parse missing fields
         const missingFields = missingFieldsParam
           ? missingFieldsParam.split(',').map(field => field.trim())
           : [];
 
-        // Calculate token expiry (default to 1 hour for access, 30 days for refresh)
         const now = new Date();
-        const accessTokenExpiry = new Date(now.getTime() + 3600 * 1000); // 1 hour
-        const refreshTokenExpiry = new Date(now.getTime() + 2592000 * 1000); // 30 days
+        const accessTokenExpiry = new Date(now.getTime() + 3600 * 1000);
+        const refreshTokenExpiry = new Date(now.getTime() + 2592000 * 1000);
 
-        // Save tokens to storage
         tokenStorage.setTokens({
           accessToken,
           refreshToken,
@@ -42,10 +54,7 @@ export function OAuth2RedirectHandler({ onSuccess, onError }: OAuth2RedirectHand
           refreshExpiresAt: refreshTokenExpiry.toISOString(),
         });
 
-        // Clear URL and navigate to root
         window.history.replaceState({}, document.title, '/');
-
-        // Call success callback with missing fields
         onSuccess(isNewUser, missingFields);
       } catch (error) {
         console.error('Error handling OAuth2 redirect:', error);
@@ -54,7 +63,7 @@ export function OAuth2RedirectHandler({ onSuccess, onError }: OAuth2RedirectHand
     };
 
     handleOAuth2Redirect();
-  }, [onSuccess, onError]);
+  }, [onSuccess, onError, onBetaRequired]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">

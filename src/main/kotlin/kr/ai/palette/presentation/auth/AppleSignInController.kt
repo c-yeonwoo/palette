@@ -31,6 +31,11 @@ data class AppleSignInRequest(
     val authorizationCode: String? = null,
     /** 사용자가 첫 가입 시 제공하는 이름 (Apple 은 첫 가입 1회만 노출). */
     val displayName: String? = null,
+    /**
+     * 베타 게이트 코드 — 네이티브는 cross-origin 쿠키가 안 실 수 있어 body로 전달.
+     * 쿠키와 OR 검증 ([BetaCodeValidator.validateCodeOrCookie]).
+     */
+    val betaCode: String? = null,
 )
 
 /**
@@ -112,7 +117,7 @@ class AppleSignInController(
         )
 
         return try {
-            when (val result = authenticationService.authenticateOAuth(oauthUserInfo)) {
+            when (val result = authenticationService.authenticateOAuth(oauthUserInfo, request.betaCode)) {
                 is AuthenticationResult.Success -> {
                     log.info("Apple Sign In 성공 user={} isNew={}", result.authUser.userId.value, result.isNewUser)
                     ResponseEntity.ok(
@@ -135,7 +140,10 @@ class AppleSignInController(
             // 신규 Apple 가입인데 베타 게이트 미통과 — 프론트가 베타 코드 입력 유도
             log.info("Apple Sign In 베타 게이트 차단 (신규 가입)")
             ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-                mapOf("error" to "BETA_GATE", "message" to "베타 기간에는 초대 코드가 필요해요. 코드 입력 후 다시 시도해주세요.")
+                mapOf(
+                    "error" to "invalid_beta_code",
+                    "message" to "베타 기간에는 초대 코드가 필요해요. 코드 입력 후 다시 시도해주세요.",
+                )
             )
         }
     }

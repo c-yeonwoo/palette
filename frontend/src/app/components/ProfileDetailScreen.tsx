@@ -245,7 +245,7 @@ export function ProfileDetailScreen({ userId, onBack, mutualFriends = [], degree
     try {
       setIsLoading(true);
       const [profileResponse, userResponse] = await Promise.all([
-        api.get<ProfileData>(`/api/v1/profile/public/${userId}`),
+        api.get<ProfileData>(`/api/v1/profile/users/${userId}`),
         api.get<PublicUserResponse>(`/api/v1/users/${userId}/public`)
       ]);
       setProfile(profileResponse);

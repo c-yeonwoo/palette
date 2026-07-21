@@ -31,6 +31,25 @@ class ProfileController(
         return ResponseEntity.ok(ProfileResponse.from(profile, fileStorageService))
     }
 
+    /**
+     * 로그인 사용자용 타인 프로필 (전체 필드).
+     * 공유 링크용 `/profile/public/{userId}` 와 분리 — public 은 화이트리스트만.
+     */
+    @GetMapping("/users/{userId}")
+    fun getUserProfile(
+        @AuthenticationPrincipal authUser: AuthUser,
+        @PathVariable userId: String,
+    ): ResponseEntity<ProfileResponse> {
+        val targetId = try {
+            kr.ai.palette.domain.common.UserId(UUID.fromString(userId))
+        } catch (_: IllegalArgumentException) {
+            return ResponseEntity.badRequest().build()
+        }
+        val profile = profileRepository.findByUserId(targetId)
+            ?: return ResponseEntity.notFound().build()
+        return ResponseEntity.ok(ProfileResponse.from(profile, fileStorageService))
+    }
+
     @PutMapping
     @Transactional
     fun updateProfile(

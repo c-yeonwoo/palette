@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 // ── 초기 진입 경로만 eager (첫 페인트 깜빡임 방지) ──
-import { BetaGateScreen, hasBetaPassed } from "./components/BetaGateScreen";
+import { BetaGateScreen, clearBetaPassed, hasBetaPassed } from "./components/BetaGateScreen";
 import { BetaWelcomeIntro, hasIntroSeen } from "./components/BetaWelcomeIntro";
 import { LoginScreen } from "./components/LoginScreen";
 import { OAuth2RedirectHandler } from "./components/OAuth2RedirectHandler";
@@ -455,6 +455,15 @@ export default function App() {
     setCurrentScreen("login");
   };
 
+  const handleBetaRequired = useCallback(() => {
+    // 게이트 마커·코드 정리 후 재입장 (호출부 clear 누락 대비)
+    clearBetaPassed();
+    setBetaPassed(false);
+    setIsLoggedIn(false);
+    toast.error("베타 코드가 필요해요. 코드를 다시 입력해주세요.");
+    setCurrentScreen("login");
+  }, []);
+
   const handleRequiredInfoComplete = () => {
     // After filling required info, go to account type selection
     setCurrentScreen("accountTypeSelection");
@@ -870,20 +879,11 @@ export default function App() {
           xmlns="http://www.w3.org/2000/svg"
           aria-label="Palette"
           className="animate-pulse"
-          style={{ filter: "drop-shadow(0 14px 34px rgba(224, 101, 74, 0.28))" }}
+          style={{ filter: "drop-shadow(0 14px 34px rgba(250, 168, 10, 0.28))" }}
         >
-          <defs>
-            <linearGradient id="palette-heart-loading" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#FF7E5F" />
-              <stop offset="0.4" stopColor="#FFB088" />
-              <stop offset="0.72" stopColor="#FFD166" />
-              <stop offset="1" stopColor="#5EEAD4" />
-            </linearGradient>
-          </defs>
-          <path
-            d="M50 80 C16 56 20 28 40 28 C49 28 50 37 50 39 C50 37 51 28 60 28 C80 28 84 56 50 80 Z"
-            fill="url(#palette-heart-loading)"
-          />
+          <rect width="100" height="100" rx="24" fill="#FFFFFF" />
+          <circle cx="40" cy="52" r="24" fill="#FAA80A" opacity="0.82" />
+          <circle cx="60" cy="52" r="24" fill="#F2789F" opacity="0.82" />
         </svg>
       </div>
     );
@@ -927,6 +927,7 @@ export default function App() {
       {currentScreen === "login" && (
         <LoginScreen
           onEmailLogin={handleEmailLogin}
+          onBetaRequired={handleBetaRequired}
           onLoginSuccess={handleEmailAuthSuccess}
         />
       )}
@@ -962,6 +963,7 @@ export default function App() {
         <OAuth2RedirectHandler
           onSuccess={handleOAuth2Success}
           onError={handleOAuth2Error}
+          onBetaRequired={handleBetaRequired}
         />
       )}
 

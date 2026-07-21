@@ -107,31 +107,22 @@ export function BetaGateScreen({ onPassed }: BetaGateScreenProps) {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Background Image — LoginScreen 과 동일 backdrop */}
+      {/* Background Image — LoginScreen 과 동일 backdrop (webp ~19KB) */}
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url('/log-bg.png')` }}
+        style={{ backgroundImage: `url('/log-bg.webp')` }}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/60" />
       </div>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center gap-8 px-6 max-w-md w-full">
-        {/* 필기체 P 마크 + Wordmark + 베타 슬러그 — LoginScreen 결 */}
+        {/* Wordmark + 베타 슬러그 — LoginScreen 과 동일 브랜드 마크 (ADR 0073) */}
         <div className="text-center flex flex-col items-center gap-6">
           <svg width="84" height="84" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Palette">
-            <defs>
-              <linearGradient id="palette-heart-beta" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor="#FF7E5F" />
-                <stop offset="0.4" stopColor="#FFB088" />
-                <stop offset="0.72" stopColor="#FFD166" />
-                <stop offset="1" stopColor="#5EEAD4" />
-              </linearGradient>
-            </defs>
             <rect width="100" height="100" rx="24" fill="#FFFFFF" />
-            <g transform="translate(50 50) scale(0.62) translate(-50 -54)">
-              <path d="M50 80 C16 56 20 28 40 28 C49 28 50 37 50 39 C50 37 51 28 60 28 C80 28 84 56 50 80 Z" fill="url(#palette-heart-beta)" />
-            </g>
+            <circle cx="40" cy="52" r="24" fill="#FAA80A" opacity="0.82" />
+            <circle cx="60" cy="52" r="24" fill="#F2789F" opacity="0.82" />
           </svg>
           <div className="space-y-3">
             <h1
@@ -145,10 +136,10 @@ export function BetaGateScreen({ onPassed }: BetaGateScreenProps) {
             </p>
           </div>
 
-          {/* Closed Beta 배지 — gold accent */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#FF7E5F]/40 bg-[#FF7E5F]/10 backdrop-blur-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#FF7E5F]" />
-            <span className="text-[#FF7E5F] text-[0.7rem] font-semibold uppercase tracking-[0.24em]">
+          {/* Closed Beta 배지 — brand gold */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#FAA80A]/45 bg-[#FAA80A]/12 backdrop-blur-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#FAA80A]" />
+            <span className="text-[#FAA80A] text-[0.7rem] font-semibold uppercase tracking-[0.24em]">
               Closed Beta
             </span>
           </div>
@@ -171,10 +162,11 @@ export function BetaGateScreen({ onPassed }: BetaGateScreenProps) {
               onChange={(e) => setCode(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               autoFocus
-              placeholder="ABCD-1234"
-              autoCapitalize="characters"
+              placeholder="palette-beta-····"
+              autoCapitalize="none"
+              autoCorrect="off"
               spellCheck={false}
-              className="w-full h-14 px-4 rounded-2xl bg-white/10 border border-white/20 text-white text-base placeholder-white/30 tracking-[0.2em] text-center font-mono backdrop-blur-md focus:outline-none focus:border-[#FF7E5F]/60 focus:bg-white/15 transition-colors"
+              className="w-full h-14 px-4 rounded-2xl bg-white/10 border border-white/20 text-white text-base placeholder-white/30 tracking-[0.08em] text-center font-mono backdrop-blur-md focus:outline-none focus:border-[#FAA80A]/70 focus:bg-white/15 transition-colors"
             />
           </div>
 
@@ -190,7 +182,7 @@ export function BetaGateScreen({ onPassed }: BetaGateScreenProps) {
         {/* Footer — 인스타 신청 안내 */}
         <p className="text-white/60 text-xs text-center mt-2 leading-relaxed">
           베타 코드가 없으신가요?<br />
-          인스타그램 <span className="text-[#FF7E5F] font-medium">@palette.kr</span> 에서 신청해주세요
+          인스타그램 <span className="text-[#FAA80A] font-medium">@palette.kr</span> 에서 신청해주세요
         </p>
       </div>
     </div>
